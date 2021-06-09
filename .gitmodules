@@ -1,3 +1,6 @@
 [submodule "themes/hugo-theme-texify"]
 	path = themes/hugo-theme-texify
 	url = https://github.com/queensferryme/hugo-theme-texify.git
+[submodule "themes/HugoTex"]
+	path = themes/HugoTex
+	url = https://github.com/HelloRusk/HugoTeX
