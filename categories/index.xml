@@ -2,9 +2,9 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Categories on Duc V. Le</title>
-    <link>https://levduc.keybase.pub/categories/</link>
+    <link>https://levduc.github.io/categories/</link>
     <description>Recent content in Categories on Duc V. Le</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://levduc.keybase.pub/categories/index.xml" rel="self" type="application/rss+xml" />
+    <language>en-us</language><atom:link href="https://levduc.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

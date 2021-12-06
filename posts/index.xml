@@ -2,17 +2,17 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Posts on Duc V. Le</title>
-    <link>https://levduc.keybase.pub/posts/</link>
+    <link>https://levduc.github.io/posts/</link>
     <description>Recent content in Posts on Duc V. Le</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 19 Nov 2020 15:47:37 -0500</lastBuildDate><atom:link href="https://levduc.keybase.pub/posts/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 19 Nov 2020 15:47:37 -0500</lastBuildDate><atom:link href="https://levduc.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Test</title>
-      <link>https://levduc.keybase.pub/posts/test/</link>
+      <link>https://levduc.github.io/posts/test/</link>
       <pubDate>Thu, 19 Nov 2020 15:47:37 -0500</pubDate>
       
-      <guid>https://levduc.keybase.pub/posts/test/</guid>
+      <guid>https://levduc.github.io/posts/test/</guid>
       <description>Hello world</description>
     </item>
     
