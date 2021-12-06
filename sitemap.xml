@@ -1,33 +1,21 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
   <url>
     <loc>https://levduc.keybase.pub/</loc>
     <lastmod>2020-11-19T15:47:37-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://levduc.keybase.pub/posts/</loc>
     <lastmod>2020-11-19T15:47:37-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://levduc.keybase.pub/posts/test/</loc>
     <lastmod>2020-11-19T15:47:37-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://levduc.keybase.pub/blogs/</loc>
     <priority>0</priority>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://levduc.keybase.pub/categories/</loc>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://levduc.keybase.pub/tags/</loc>
   </url>
-  
 </urlset>
