@@ -2,19 +2,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://levduc.github.io/</loc>
     <lastmod>2020-11-19T15:47:37-05:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/</loc>
+    <loc>https://levduc.github.io/posts/</loc>
     <lastmod>2020-11-19T15:47:37-05:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/test/</loc>
+    <loc>https://levduc.github.io/posts/test/</loc>
     <lastmod>2020-11-19T15:47:37-05:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/blogs/</loc>
+    <loc>https://levduc.github.io/blogs/</loc>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://levduc.github.io/categories/</loc>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://levduc.github.io/tags/</loc>
   </url>
 </urlset>
