@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fastlane</title>
+<meta name="description" content="Fastlane: a lean payment lane beside the EVM, committed under one BFT certificate. One consensus, many commitments.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --accent:#00008b;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--plane); color:var(--ink-1); font-family:var(--font);
+  font-weight:300; font-size:17px; line-height:1.5; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.12rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px 20px}
+.mono{font-family:var(--mono)}
+.eq{text-align:center; overflow-x:auto; overflow-y:hidden; position:relative; padding:2px 0}
+code{font-family:var(--mono); font-size:.92em; background:var(--surface-1); padding:0 .25em; border-radius:2px}
+
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.9rem; font-weight:400}
+.hero .sub{font-size:1.12rem; margin:.7rem 0 1.2rem; max-width:64ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); border-radius:3px;
+  padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; margin:0 0 .35rem}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; font-family:var(--mono); border:1px solid var(--ring);
+  background:var(--surface-1); color:var(--ink-1); padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.4; cursor:default}
+
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:28px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:1.75rem; font-weight:700; line-height:1.15; margin:.3rem 0 .25rem; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; margin:0; line-height:1.45}
+
+.controls{display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:200px; flex:1}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem}
+.ctl .val{font-weight:700}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px; overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono); font-size:.86rem;
+  padding:.35rem .75rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 16px 10px}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.hollow{background:transparent !important; border:2px solid}
+.tip{position:fixed; pointer-events:none; opacity:0; background:var(--plane); border:1px solid var(--ring);
+  border-radius:4px; padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:270px}
+.tip b{display:block; margin-bottom:.15rem}
+
+details.tbl{margin-top:12px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:.86rem; margin-top:10px}
+th,td{text-align:left; padding:.42rem .55rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.76rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.hl td{background:#eef3fb}
+
+.split{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:18px; align-items:start}
+.readout{display:grid; grid-template-columns:1fr; gap:10px}
+.ro{background:var(--plane); border:1px solid var(--ring); border-radius:4px; padding:10px 12px}
+.ro .k{font-family:var(--mono); font-size:.74rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.2rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro .d{font-size:.82rem; font-family:var(--mono); color:var(--ink-muted)}
+
+.cmp{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.cmp .card h3{font-size:1rem}
+.cmp ul{margin:.3rem 0 0; padding-left:1.1rem; font-size:.92rem}
+
+.steps{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0}
+.stepdot{font-family:var(--mono); font-size:.8rem; border:1px solid var(--ring); background:var(--plane);
+  border-radius:3px; padding:.2rem .5rem; cursor:pointer; color:var(--ink-2)}
+.stepdot[aria-current=true]{border-color:var(--accent); color:var(--accent); font-weight:700}
+.stepbox{min-height:7.2em}
+.stepbox .verdict{font-family:var(--mono); font-size:.84rem; font-weight:700; margin-top:.4rem}
+.v-good{color:var(--good)} .v-bad{color:var(--critical)} .v-warn{color:#9a6a00}
+
+.timeline{list-style:none; margin:0; padding:0; border-left:2px solid var(--grid)}
+.timeline li{position:relative; padding:0 0 22px 22px}
+.timeline li::before{content:""; position:absolute; left:-7px; top:.35em; width:12px; height:12px;
+  border-radius:50%; background:var(--plane); border:2px solid var(--s1)}
+.timeline .when{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em}
+.timeline .effect{font-family:var(--mono); font-size:.84rem; background:var(--surface-1); border:1px solid var(--grid);
+  border-radius:3px; padding:.3rem .55rem; margin-top:.35rem; display:inline-block}
+.timeline p{margin:.2rem 0 0}
+
+.phases{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+.phase .tag{font-family:var(--mono); font-size:.76rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase}
+.phase ul{margin:.4rem 0 0; padding-left:1.1rem; font-size:.9rem}
+.est{font-family:var(--mono); font-size:.72rem; color:var(--ink-muted); border:1px solid var(--grid); border-radius:2px; padding:0 .3em}
+
+footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
+
+@media (max-width:760px){
+  .split,.cmp,.phases{grid-template-columns:1fr}
+  .hero h1{font-size:2.3rem}
+  h2{font-size:1.5rem}
+}
+</style>
+</head>
+<body>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="home" href="../">← Duc V. Le</a>
+    <nav aria-label="Sections">
+      <a href="#idea">Idea</a><a href="#explore">Throughput</a><a href="#height">A height</a>
+      <a href="#drift">The drift</a><a href="#protocol">Protocol</a><a href="#changes">What changed</a>
+      <a href="#next">Proposals</a><a href="#props">Guarantees</a><a href="#results">Results</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<div class="hero" id="top">
+  <span class="venue">Prototype · measured on a 4-validator fleet</span>
+  <h1>Fastlane</h1>
+  <p class="sub">A lean payment lane beside the EVM, committed under one BFT certificate.
+    One consensus, many commitments.</p>
+  <p class="authors"><span class="me">Duc V. Le</span></p>
+  <p class="affils">Research prototype, 2026 · all numbers below are fleet measurements, September 14–15 2026</p>
+  <div class="btns">
+    <a class="btn primary" href="#explore">[Throughput explorer]</a>
+    <a class="btn" href="#protocol">[How it works]</a>
+    <a class="btn" href="#results">[Measured results]</a>
+  </div>
+
+  <div class="tiles" id="tiles">
+    <div class="tile">
+      <div class="k">Payments per second</div>
+      <div class="v"><span data-count="142443">142,443</span>–<span data-count="150965">150,965</span></div>
+      <p class="d">400 M gas per block, fan-out $N=100$, 1.86–1.97 blocks/s, every sampled block 767/767 = 100 % full, 10 min.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Held for 30 minutes</div>
+      <div class="v"><span data-count="28">28</span>/28 minutes &gt; 120k</div>
+      <p class="d">Same point, 30-min soak: 120,529–152,183 payments/s per minute, every block 100 % full, 4/4 nodes identical at height 3350.</p>
+    </div>
+    <div class="tile">
+      <div class="k">One payment per signature</div>
+      <div class="v"><span data-count="31317">31,317</span>–<span data-count="31910">31,910</span> tx/s</div>
+      <p class="d">Lean lane at 450 M, 1.81–1.84 blocks/s, 100 % full. The EVM lane on the same fleet: 4,377–8,419 tx/s (mean ~6,550), blocks never full.</p>
+    </div>
+  </div>
+</div>
+
+<section id="idea">
+  <p class="eyebrow">The problem</p>
+  <h2>One agreement layer, but not one commitment</h2>
+  <div class="lede">
+  <p>A smart-contract chain commits <em>everything</em> — accounts, contract storage, receipts — through a
+  single general-purpose Merkle–Patricia trie, and every validator re-executes and re-commits every block before
+  it votes. Payments don't need most of that. A payment only moves a balance and bumps a nonce.</p>
+  <p>Fastlane keeps the chain's one BFT consensus and adds a second execution domain beside the EVM: a
+  <strong>payment lane</strong> with a flat nonce-and-balance map and a hash-chain commitment. Both lanes are
+  decided in the same round by the same validators under the same certificate. The agreement is shared; only the
+  commitment differs. Unlike sharding there is no cross-shard atomicity problem, because nothing about agreement
+  is partitioned.</p>
+  </div>
+  <div class="cmp" style="margin-top:14px">
+    <div class="card">
+      <h3>EVM lane (unchanged)</h3>
+      <ul>
+        <li>Reth execution client over the Engine API</li>
+        <li>Full Merkle–Patricia state, receipts, logs</li>
+        <li>EIP-1559 native transfer: 122 bytes, 21,000 gas</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Payment lane (new)</h3>
+      <ul>
+        <li>A separate lean node, driven over a five-verb JSON-RPC shim</li>
+        <li>Flat nonce + balance map; no trie, no receipts, no logs</li>
+        <li>Fan-out transaction: one signature, $N$ outputs, $72 + 28N$ bytes</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>The binding</h3>
+    <p style="margin:.2rem 0 .6rem">A lean block is its framed bytes; its commitment chains to the previous one:</p>
+    <p class="eq">$c_h = \mathrm{keccak}\big(c_{h-1} \,\|\, h \,\|\, t_h \,\|\, \mathrm{keccak}(\mathrm{txs}_h)\big)$</p>
+    <p style="margin:.4rem 0 .6rem">The proposer places $c_h$ in the EVM header field that this chain never used (<code>prev_randao</code>),
+    so consensus signs the plain EVM block hash exactly as before, and that hash already covers $c_h$:</p>
+    <p class="eq">$\mathrm{cert}\big(H(\text{EVM header}_h)\big)$</p>
+    <p class="eq">$\text{EVM header}_h.\mathtt{prev\_randao} = c_h$</p>
+    <p class="note" style="margin:.4rem 0 0">Voting on the lane is structural (parent link, timestamp in lockstep with the EVM block, bytes hash to $c_h$).
+    Execution happens in the gap between votes and is anchored at decide. Total state-transition semantics: an invalid transaction
+    is a no-op, so a byzantine proposer can waste bytes but cannot halt or fork the lane.</p>
+  </div>
+</section>
+
+<section id="explore">
+  <p class="eyebrow">Interactive 1 · measured operating points</p>
+  <h2>Throughput explorer</h2>
+  <p class="lede">Pick a fan-out and a block budget. The slider only stops at budgets that were actually measured,
+  and every bar is the minimum–maximum over the run's per-minute samples. Nothing is interpolated.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">Fan-out (payments per signature)</span>
+      <div class="seg" id="ex-n" role="group" aria-label="Fan-out">
+        <button data-n="1" aria-pressed="false">N = 1</button>
+        <button data-n="100" aria-pressed="true">N = 100</button>
+        <button data-n="200" aria-pressed="false">N = 200</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="ex-b">Block budget: <span class="val" id="ex-bv">400 M gas</span></label>
+      <input type="range" id="ex-b" min="0" max="4" step="1" value="3">
+    </div>
+  </div>
+  <div class="split">
+    <div class="chart">
+      <svg id="ex-svg" role="img" aria-label="Measured payments per second by block budget"></svg>
+      <ul class="legend" id="ex-legend"></ul>
+    </div>
+    <div class="readout" id="ex-read"></div>
+  </div>
+  <details class="tbl"><summary>Table view: every measured point</summary><div class="tscroll" id="ex-table"></div></details>
+</section>
+
+<section id="height">
+  <p class="eyebrow">Interactive 2 · per-height timing logs</p>
+  <h2>Anatomy of a height</h2>
+  <p class="lede">Every validator logged one line per height with the time each phase finished. These are the mean
+  phase durations on one validator, over all heights it did not propose, for a run at each budget.
+  Watch <em>decided → anchored</em>: before the anchor fixes it grew with block size; after them it doesn't.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">Run</span>
+      <div class="seg" id="ht-run" role="group" aria-label="Run">
+        <button data-i="0" aria-pressed="false">300 M</button>
+        <button data-i="1" aria-pressed="false">350 M</button>
+        <button data-i="2" aria-pressed="false">400 M</button>
+        <button data-i="3" aria-pressed="true">450 M</button>
+        <button data-i="4" aria-pressed="false">400 M · fixed</button>
+        <button data-i="5" aria-pressed="false">450 M · fixed</button>
+      </div>
+    </div>
+  </div>
+  <div class="split">
+    <div class="chart">
+      <svg id="ht-svg" role="img" aria-label="Mean phase durations per height"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s1)"></span>selected run</li>
+        <li><span class="swatch hollow" style="border-color:var(--ink-muted)"></span>300 M, before fixes (reference)</li>
+      </ul>
+    </div>
+    <div class="readout" id="ht-read"></div>
+  </div>
+  <p class="note" style="margin-top:12px">Phases overlap the 500 ms minimum block interval and each other, so they don't add up to the period.
+  The period is the mean time from one decide to the next on that validator.</p>
+  <details class="tbl"><summary>Table view</summary><div class="tscroll" id="ht-table"></div></details>
+</section>
+
+<section id="drift">
+  <p class="eyebrow">Interactive 3 · a bug that looked like a design limit</p>
+  <h2>The drift</h2>
+  <p class="lede">For a day every run slowed down minute by minute while blocks stayed 100 % full and pools stayed deep.
+  The cause was in the lean node: when asked for block bytes by a commitment it had not indexed yet, it scanned its whole
+  log backwards, reading and hashing every block. The consensus layer asks about once per height, so each height cost
+  more than the last. Both runs below use the same consensus build, the same 225 M budget and $N=100$. The only change
+  is that the scan stops at the index floor.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">Lean node</span>
+      <div class="seg" id="dr-mode" role="group" aria-label="Lean node build">
+        <button data-m="0" aria-pressed="true">scans the log on a miss</button>
+        <button data-m="1" aria-pressed="false">scan capped (fix)</button>
+      </div>
+    </div>
+  </div>
+  <div class="split">
+    <div class="chart">
+      <svg id="dr-svg" role="img" aria-label="Blocks per minute over ten minutes, before and after the fix"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s2)"></span>scans the log on a miss</li>
+        <li><span class="swatch" style="background:var(--s1)"></span>scan capped</li>
+      </ul>
+    </div>
+    <div class="readout" id="dr-read"></div>
+  </div>
+  <details class="tbl"><summary>Table view</summary><div class="tscroll" id="dr-table"></div></details>
+</section>
+
+<section id="protocol">
+  <p class="eyebrow">Interactive 4 · step through one height</p>
+  <h2>How a height goes through</h2>
+  <p class="lede">Choose a scenario, then step through it. The commitment $c_h$ travels inside the EVM header, so the
+  consensus layer never has to vote on anything new.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">Scenario</span>
+      <div class="seg" id="pr-sc" role="group" aria-label="Scenario">
+        <button data-s="0" aria-pressed="true">honest</button>
+        <button data-s="1" aria-pressed="false">tampered bytes</button>
+        <button data-s="2" aria-pressed="false">lean node behind</button>
+        <button data-s="3" aria-pressed="false">proposer retry</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="pr-svg" role="img" aria-label="Protocol diagram"></svg>
+    <div class="steps" id="pr-steps"></div>
+    <div class="stepbox" id="pr-text" aria-live="polite"></div>
+    <div class="btns" style="margin-top:10px">
+      <button class="btn" id="pr-prev">← back</button>
+      <button class="btn primary" id="pr-next">next →</button>
+    </div>
+  </div>
+</section>
+
+<section id="changes">
+  <p class="eyebrow">What changed</p>
+  <h2>From the first version to today</h2>
+  <p class="lede">Each step with the measurement that motivated or confirmed it.</p>
+  <ol class="timeline" id="tl"></ol>
+
+  <h3 style="margin-top:14px">Where the decide-time anchor finds its block</h3>
+  <p class="lede" style="font-size:.95rem">At decide the consensus layer tells the lean node "this commitment is final".
+  Ideally the node already has that block staged from voting. A <em>peer</em> answer means it had to fetch the block
+  over the network while the next height waited. Counts from one validator's per-call log, 400 M runs.</p>
+  <div class="chart">
+    <svg id="ap-svg" role="img" aria-label="Anchor resolution path shares"></svg>
+    <ul class="legend" id="ap-legend"></ul>
+  </div>
+  <details class="tbl"><summary>Table view</summary><div class="tscroll" id="ap-table"></div></details>
+</section>
+
+<section id="next">
+  <p class="eyebrow">Proposals</p>
+  <h2>What comes next</h2>
+  <h3>1 · Proofs for light clients, without putting Merkle work back on validators</h3>
+  <p class="lede">The lane drops the trie and the receipts, so today a wallet can check a payment only by downloading the whole
+  lean block and re-hashing it (1.65–2.48 MB at the measured budgets). The block bytes are already certified, so the plan
+  builds proofs <em>from</em> them in three phases. Figures marked <span class="est">est.</span> are design estimates, not measurements.</p>
+  <div class="phases">
+    <div class="card phase">
+      <span class="tag" style="color:var(--s1)">Phase 1 · no protocol change</span>
+      <h3 style="margin-top:.3rem">Attested indexer</h3>
+      <ul>
+        <li>Replays certified blocks, indexes transactions, keeps a state accumulator with a checkpoint every $K=64$ blocks, signs roots.</li>
+        <li>Anyone can replay and audit it; balances are attested, not proven.</li>
+        <li>~2–3 weeks <span class="est">est.</span></li>
+      </ul>
+    </div>
+    <div class="card phase">
+      <span class="tag" style="color:var(--s3)">Phase 2 · format change</span>
+      <h3 style="margin-top:.3rem">Merkle root + one-bit receipts</h3>
+      <ul>
+        <li>The transaction hash inside $c_h$ becomes a Merkle root over the framed transactions.</li>
+        <li>Under total-STF a complete receipt is one bit per transaction ("applied" or "no-op").</li>
+        <li>Inclusion proofs 1.3–3.9 KB, 420–1300× smaller <span class="est">est.</span>; vote path +3 % <span class="est">est.</span></li>
+      </ul>
+    </div>
+    <div class="card phase">
+      <span class="tag" style="color:var(--s2)">Phase 3 · only on demand</span>
+      <h3 style="margin-top:.3rem">Delayed state root</h3>
+      <ul>
+        <li>Block $h$ carries the state root of $h-K$, computed in the background and checked at vote time.</li>
+        <li>Account proofs with no trusted party.</li>
+        <li>+0.6–1.5 cores and +20 GB per validator <span class="est">est.</span>; ~4–6 weeks <span class="est">est.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-top:26px">2 · A clean integration surface</h3>
+  <p class="lede">The code was written fast under benchmark pressure. An audit of all three parts gives the cut:</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Part</th><th class="num">Today</th><th class="num">Target <span class="est">est.</span></th><th>What goes</th></tr></thead>
+    <tbody>
+      <tr><td>Consensus-layer delta (Rust)</td><td class="num">+6,872 lines</td><td class="num">~2,300</td><td>timing instrumentation, an experiment knob, unrelated store work (own PR), five test traits collapsed to one</td></tr>
+      <tr><td>Consensus-layer delta (scripts, docs)</td><td class="num">+5,245 lines</td><td class="num">~800</td><td>fleet tooling moves out; one integration guide</td></tr>
+      <tr><td>Lean node repository (Rust)</td><td class="num">~17,000 lines</td><td class="num">~5,000</td><td>the log-scan fallback (full index from replay), stdout diagnostics, dead modes, a borrowed load generator, overlapping concurrency guards</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:26px">3 · Open measurement questions</h3>
+  <ul style="max-width:72ch">
+    <li>A mild decline over 30-minute runs at constant fullness: at 400 M, ~113.6 blocks/min over the first ten minutes against ~104.5 over the last ten. The log scan is ruled out (zero scans throughout).</li>
+    <li>450 M slides within ten minutes (114.38 → 98.44 blocks/min), so the knee at 2 blocks/s is between 400 and 450 M.</li>
+    <li>The 60 ms wait the lean node allows for a stage that hasn't arrived yet is sized from an estimate; the arrival stamps now in the logs should retune it.</li>
+  </ul>
+</section>
+
+<section id="props">
+  <p class="eyebrow">Guarantees</p>
+  <h2>Properties</h2>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>How</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>Flag off = unchanged chain</td><td>All lane logic behind one flag; the voted value is the plain EVM block hash</td><td>Flag-off tests with a lean-node double that fails if it is ever called</td></tr>
+      <tr><td>One certificate, two lanes</td><td>$c_h$ in the EVM header's <code>prev_randao</code>; validators check the lean bytes hash to it</td><td>Binding check at vote; bytes that don't match are voted Invalid</td></tr>
+      <tr><td>A bad transaction cannot stall the lane</td><td>Total state transition: an invalid transaction is a no-op</td><td>Byzantine proposer can waste bytes, cannot halt or fork</td></tr>
+      <tr><td>Lag never votes Invalid</td><td>A validator whose lean node is behind catches up within a per-peer time slice, otherwise abstains</td><td>Abstains are counted per reason, so a silently lagging validator is visible</td></tr>
+      <tr><td>No proposer equivocation</td><td>A signed stored block that can't be rehydrated means skipping the round, never building a second proposal</td><td>Decision-table tests on the reuse path</td></tr>
+      <tr><td>Each block appended exactly once</td><td>One commit gate re-checks the parent link before any apply</td><td>Concurrent feeds of the same block leave one record</td></tr>
+      <tr><td>Self-healing lean node</td><td>Announce/pull gossip, a syncing queue, peer backfill, snapshots</td><td>Lean node killed for 60 s under load: back at the tip in 2 s after restart</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="results">
+  <p class="eyebrow">Measured results</p>
+  <h2>Every run behind the numbers</h2>
+  <p class="lede">Four validators on four heterogeneous machines (12–20 cores) on one LAN (3–4 ms round trip),
+  500 ms minimum block interval, one load generator per machine. A number is reported only with block fullness;
+  a block that isn't full measures the load generator, not the chain.</p>
+  <h3>30-minute soaks</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Budget</th><th>Build</th><th class="num">Blocks/min</th><th class="num">Payments/s</th><th>Samples</th></tr></thead>
+    <tbody>
+      <tr><td>300 M, $N=100$</td><td>after drift fix</td><td class="num">103.1–115.2</td><td class="num">98,828–110,437</td><td>26/28 ≥ 100k · 100 % full</td></tr>
+      <tr><td>350 M, $N=100$</td><td>after drift fix</td><td class="num">97.5–113.3</td><td class="num">109,038–126,744</td><td>27/27 &gt; 100k · 100 % full</td></tr>
+      <tr class="hl"><td>400 M, $N=100$</td><td>final</td><td class="num">94.3–119.1</td><td class="num">120,529–152,183</td><td>28/28 &gt; 120k · 100 % full</td></tr>
+    </tbody>
+  </table></div>
+  <h3 style="margin-top:22px">10-minute points</h3>
+  <div class="tscroll" id="res-table"></div>
+  <p class="note" style="margin-top:14px">Code availability: not public yet. The July 2026 draft this page's framing comes from
+  predates these measurements; none of its numbers are used here.</p>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p class="note">Fastlane · research prototype · <a href="../">Duc V. Le</a></p>
+  </div>
+</footer>
+
+<script>
+/* Light only, like the rest of the site. Every number below comes from the fleet run logs (Sept 14-15 2026). */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function rng(a, f){ f = f || fmt; return f(a[0]) + '–' + f(a[1]); }
+function f2(x){ return x.toFixed(2); }
+
+/* ---------- one guarded tween for every animation ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return function(){}; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setTimeout(finish, ms + 150);   /* force-settle if rAF is starved */
+  return function cancel(){ finished = true; };
+}
+
+/* ---------- tooltip ---------- */
+var tip = $('tip');
+function showTip(e, html){ tip.innerHTML = html; tip.style.opacity = 1; moveTip(e); }
+function moveTip(e){
+  var x = e.clientX + 14, y = e.clientY + 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  if (x + w > window.innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > window.innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip(){ tip.style.opacity = 0; }
+function hover(node, html){
+  node.addEventListener('mouseenter', function(e){ showTip(e, html()); });
+  node.addEventListener('mousemove', moveTip);
+  node.addEventListener('mouseleave', hideTip);
+}
+
+/* chart width = the svg's rendered width, so a narrow screen gets a narrow viewBox, not tiny text */
+function svgW(svg){ var w = svg.parentNode.clientWidth - 32; return Math.max(300, Math.min(900, w)); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+/* ====================================================================
+   DATA — measured, per-minute min–max over each run
+   ==================================================================== */
+var PTS = [
+  /* N = 1, lean lane, final build */
+  { n:1, ser:'lean', b:150, bpm:[114.29,117.14], tx:[10989,11263], pay:[10989,11263], full:'5,769/5,769 = 100 %', win:'10 min', run:'v02-0915-0948' },
+  { n:1, ser:'lean', b:300, bpm:[115.31,118.12], tx:[22175,22715], pay:[22175,22715], full:'11,538/11,538 = 100 %', win:'8 min', run:'v02-0915-1001' },
+  { n:1, ser:'lean', b:450, bpm:[108.57,110.62], tx:[31317,31910], pay:[31317,31910], full:'17,307/17,307 = 100 %', win:'6 min', run:'v02-0915-1013' },
+  { n:1, ser:'lean', b:600, bpm:[85.85,89.06],   tx:[33016,34253], pay:[33016,34253], full:'23,076/23,076 = 100 %', win:'5 min', run:'v02-0915-1022' },
+  /* N = 1, EVM lane, same fleet and load discipline */
+  { n:1, ser:'evm', b:150, bpm:[48.75,94.29], tx:[4377,8419], pay:[4377,8419], full:'51–78 % (never full)', win:'10 min', run:'v02-0915-1903' },
+  { n:1, ser:'evm', b:300, bpm:[40.95,48.57], tx:[4875,8013], pay:[4875,8013], full:'50–69 % (never full)', win:'8 min', run:'v02-0915-1918' },
+  /* N = 100 */
+  { n:100, ser:'lean', b:225, bpm:[115.24,119.05], tx:[828,855],   pay:[82779,85516],   full:'431/431 = 100 %', win:'10 min', run:'v02-0915-0044', build:'after drift fix' },
+  { n:100, ser:'lean', b:300, bpm:[111.56,115.24], tx:[1069,1104], pay:[106914,110437], full:'575/575 = 100 %', win:'10 min', run:'v02-0915-0057', build:'after drift fix' },
+  { n:100, ser:'lean', b:350, bpm:[107.62,109.69], tx:[1204,1227], pay:[120354,122667], full:'671/671 = 100 %', win:'10 min', run:'v02-0915-0124', build:'after drift fix' },
+  { n:100, ser:'lean', b:400, bpm:[111.43,118.10], tx:[1424,1510], pay:[142443,150965], full:'767/767 = 100 %', win:'10 min', run:'v02-0915-1435', build:'final' },
+  { n:100, ser:'lean', b:450, bpm:[98.44,114.38],  tx:[1416,1645], pay:[141586,164509], full:'863/863 = 100 %', win:'10 min', run:'v02-0915-1450', build:'final' },
+  { n:100, ser:'pre',  b:400, bpm:[94.69,105.00],  tx:[1210,1342], pay:[121042,134225], full:'767/767 = 100 %', win:'10 min', run:'v02-0915-0211' },
+  { n:100, ser:'pre',  b:450, bpm:[90.94,94.69],   tx:[1308,1362], pay:[130798,136192], full:'863/863 = 100 %', win:'10 min', run:'v02-0915-0225' },
+  /* N = 200 */
+  { n:200, ser:'lean', b:350, bpm:[106.67,111.43], tx:[608,635], pay:[121600,127029], full:'342/342 = 100 %', win:'10 min', run:'v02-0915-0238', build:'after drift fix' }
+];
+var SER = {
+  lean:{ name:'Payment lane', slot:'--s1' },
+  pre: { name:'Payment lane, before anchor fixes', slot:'--s3' },
+  evm: { name:'EVM lane (baseline)', slot:'--s2' }
+};
+
+/* ====================================================================
+   1 · Throughput explorer
+   ==================================================================== */
+var EX = { n:100, b:400, entered:false };
+function exBudgets(n){
+  var s = {}; PTS.forEach(function(p){ if (p.n === n) s[p.b] = 1; });
+  return Object.keys(s).map(Number).sort(function(a,b){ return a-b; });
+}
+function exSeries(n){
+  var s = []; PTS.forEach(function(p){ if (p.n === n && s.indexOf(p.ser) < 0) s.push(p.ser); });
+  var order = ['lean','pre','evm']; return order.filter(function(k){ return s.indexOf(k) >= 0; });
+}
+function drawEx(animate){
+  var svg = $('ex-svg'); clear(svg);
+  var W = svgW(svg), H = W < 520 ? 300 : 330, m = { l:58, r:14, t:18, b:44 };
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var budgets = exBudgets(EX.n), series = exSeries(EX.n);
+  var pts = PTS.filter(function(p){ return p.n === EX.n; });
+  var ymax = 0; pts.forEach(function(p){ ymax = Math.max(ymax, p.pay[1]); });
+  var step = ymax > 100000 ? 50000 : (ymax > 20000 ? 10000 : 2000);
+  ymax = Math.ceil(ymax * 1.08 / step) * step;
+  var iw = W - m.l - m.r, ih = H - m.t - m.b;
+  function y(v){ return m.t + ih - v / ymax * ih; }
+  var band = iw / budgets.length;
+  function xc(b){ return m.l + band * (budgets.indexOf(b) + 0.5); }
+  for (var g = 0; g <= ymax; g += step){
+    svg.appendChild(el('line', { x1:m.l, x2:W-m.r, y1:y(g), y2:y(g), stroke:css('--grid') }));
+    svg.appendChild(el('text', { x:m.l-8, y:y(g)+4, 'text-anchor':'end', 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') },
+      g >= 1000 ? (g/1000) + 'k' : String(g)));
+  }
+  svg.appendChild(el('text', { x:12, y:m.t+ih/2, transform:'rotate(-90 12 ' + (m.t+ih/2) + ')', 'text-anchor':'middle',
+    'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') }, EX.n === 1 ? 'tx/s = payments/s' : 'payments/s'));
+  budgets.forEach(function(b){
+    var sel = b === EX.b;
+    var t = el('text', { x:xc(b), y:H-m.b+18, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12,
+      fill: sel ? css('--accent') : css('--ink-2'), 'font-weight': sel ? 700 : 400 }, b + ' M');
+    svg.appendChild(t);
+  });
+  svg.appendChild(el('text', { x:m.l+iw/2, y:H-6, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') }, 'block budget (gas)'));
+  var ns = series.length, bw = Math.min(26, band / (ns + 1.2));
+  pts.forEach(function(p){
+    var k = series.indexOf(p.ser), x = xc(p.b) + (k - (ns - 1) / 2) * (bw + 4);
+    var col = css(SER[p.ser].slot), sel = p.b === EX.b;
+    var y0 = y(p.pay[0]), y1 = y(p.pay[1]);
+    var g = el('g', { opacity: sel || !EX.entered ? 1 : 0.55 });
+    var bar = el('rect', { x:x-bw/2, width:bw, rx:4, fill:col, y:y(0), height:0 });
+    g.appendChild(bar);
+    var selAt = pts.filter(function(q){ return q.b === p.b; }), li = selAt.indexOf(p);
+    if (sel){
+      var lab = el('text', { x: xc(p.b), 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':11, fill:css('--ink-1'),
+        y: Math.max(12, y(Math.max.apply(null, selAt.map(function(q){ return q.pay[1]; }))) - 8 - (selAt.length - 1 - li) * 14) }, rng(p.pay));
+      lab.appendChild(el('title', {}, SER[p.ser].name));
+      g.appendChild(el('circle', { cx: xc(p.b) - (rng(p.pay).length * 2.9) - 8, cy: Number(lab.getAttribute('y')) - 4, r:3.5, fill:col }));
+      g.appendChild(lab);
+    }
+    var hit = el('rect', { x:x-bw/2-4, width:bw+8, y:m.t, height:ih, fill:'transparent', style:'cursor:pointer' });
+    g.appendChild(hit);
+    hover(hit, function(){ return '<b>' + SER[p.ser].name + ', ' + p.b + ' M</b>' + rng(p.pay) + ' payments/s<br>' +
+      f2(p.bpm[0]/60) + '–' + f2(p.bpm[1]/60) + ' blocks/s<br>' + p.full; });
+    hit.addEventListener('click', function(){ setExB(p.b); });
+    svg.appendChild(g);
+    /* the bar spans min..max: draw it as a range, rising from the baseline on entry */
+    function placeRange(q){ var lo = y(0) + (y0 - y(0)) * q, hi = y(0) + (y1 - y(0)) * q; bar.setAttribute('y', hi); bar.setAttribute('height', Math.max(2, lo - hi)); }
+    if (animate) tween(700, placeRange); else placeRange(1);
+  });
+  /* the 2 blocks/s product target shown on the readout; the chart has one axis only */
+  var lg = $('ex-legend'); lg.innerHTML = '';
+  series.forEach(function(k){ lg.insertAdjacentHTML('beforeend', '<li><span class="swatch" style="background:' + css(SER[k].slot) + '"></span>' + SER[k].name + '</li>'); });
+  lg.insertAdjacentHTML('beforeend', '<li class="note">bar = min–max of per-minute samples</li>');
+}
+function exRead(){
+  var box = $('ex-read'), rows = PTS.filter(function(p){ return p.n === EX.n && p.b === EX.b; });
+  box.innerHTML = '';
+  rows.forEach(function(p){
+    var bs = [p.bpm[0]/60, p.bpm[1]/60], ok = bs[0] >= 1.8;
+    box.insertAdjacentHTML('beforeend',
+      '<div class="ro"><div class="k" style="color:' + css(SER[p.ser].slot) + '">' + SER[p.ser].name + (p.build ? ' · ' + p.build : '') + '</div>' +
+      '<div class="v">' + rng(p.pay) + '</div><div class="d">' + (p.n === 1 ? 'tx/s = payments/s' : 'payments/s (' + rng(p.tx) + ' tx/s)') + '</div>' +
+      '<div class="d" style="margin-top:.35rem">' + f2(bs[0]) + '–' + f2(bs[1]) + ' blocks/s ' +
+        (ok ? '<span class="v-good">✓ ≥ 1.8 throughout</span>' : '<span class="v-warn">▲ below 1.8 at times</span>') + '</div>' +
+      '<div class="d">fullness ' + p.full + ' · ' + p.win + '</div></div>');
+  });
+  $('ex-bv').textContent = EX.b + ' M gas';
+}
+function setExB(b){ EX.b = b; var bs = exBudgets(EX.n); $('ex-b').value = bs.indexOf(b); drawEx(false); exRead(); syncExTable(); }
+function setExN(n){
+  EX.n = n; var bs = exBudgets(n);
+  $('ex-b').max = bs.length - 1;
+  var pick = bs.indexOf(EX.b) >= 0 ? EX.b : (n === 1 ? 450 : bs[bs.length - 1]);
+  if (bs.indexOf(pick) < 0) pick = bs[0];
+  Array.prototype.forEach.call($('ex-n').querySelectorAll('button'), function(bt){ bt.setAttribute('aria-pressed', String(Number(bt.dataset.n) === n)); });
+  EX.b = pick; $('ex-b').value = bs.indexOf(pick);
+  drawEx(true); exRead(); syncExTable();
+}
+$('ex-n').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setExN(Number(b.dataset.n)); });
+$('ex-b').addEventListener('input', function(){ var bs = exBudgets(EX.n); EX.b = bs[Number(this.value)]; drawEx(false); exRead(); syncExTable(); });
+$('ex-b').addEventListener('change', function(){ var bs = exBudgets(EX.n); EX.b = bs[Number(this.value)]; drawEx(false); exRead(); syncExTable(); });
+function tableHTML(head, rows, numCols){
+  var h = '<table><thead><tr>' + head.map(function(c, i){ return '<th' + (numCols.indexOf(i) >= 0 ? ' class="num"' : '') + '>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+  rows.forEach(function(r){ h += '<tr' + (r.hl ? ' class="hl"' : '') + '>' + r.c.map(function(c, i){ return '<td' + (numCols.indexOf(i) >= 0 ? ' class="num"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; });
+  return h + '</tbody></table>';
+}
+function allRows(){
+  return PTS.slice().sort(function(a,b){ return a.n - b.n || (a.ser > b.ser ? 1 : -1) || a.b - b.b; }).map(function(p){
+    return { hl: p.n === EX.n && p.b === EX.b, c:[ SER[p.ser].name + (p.build ? ' (' + p.build + ')' : ''), 'N = ' + p.n, p.b + ' M',
+      rng(p.bpm, f2), f2(p.bpm[0]/60) + '–' + f2(p.bpm[1]/60), rng(p.tx), rng(p.pay), p.full, p.win ] };
+  });
+}
+function syncExTable(){
+  var head = ['Lane','Fan-out','Budget','Blocks/min','Blocks/s','Tx/s','Payments/s','Fullness','Window'];
+  $('ex-table').innerHTML = tableHTML(head, allRows(), [3,4,5,6]);
+  $('res-table').innerHTML = tableHTML(head, allRows().map(function(r){ r.hl = false; return r; }), [3,4,5,6]);
+}
+
+/* ====================================================================
+   2 · Anatomy of a height (validator1, mean over validator-role heights > 100)
+   ==================================================================== */
+var HT = [
+  { lab:'300 M, before fixes', run:'v02-0915-0057', v:[286,124,127,12,65,90],  per:529 },
+  { lab:'350 M, before fixes', run:'v02-0915-0124', v:[305,114,146,14,65,134], per:549 },
+  { lab:'400 M, before fixes', run:'v02-0915-0211', v:[301,166,165,15,79,176], per:590 },
+  { lab:'450 M, before fixes', run:'v02-0915-0225', v:[313,178,208,17,76,203], per:633 },
+  { lab:'400 M, final',        run:'v02-0915-1435', v:[212,100,203,15,65,40],  per:520 },
+  { lab:'450 M, final',        run:'v02-0915-1450', v:[203,113,236,17,72,56],  per:545 }
+];
+var PH = ['previous decide → this height starts','height start → first proposal part','first → last proposal part',
+  'block assembled → prevote','prevote → decided','decided → anchored'];
+var HTS = { i:3, cur:null };
+function drawHt(from){
+  var svg = $('ht-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 520, rowH = narrow ? 50 : 40, m = { l: narrow ? 8 : 250, r:56, t:10, b:26 };
+  var H = m.t + m.b + rowH * PH.length;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var xmax = 350, iw = W - m.l - m.r;
+  function x(v){ return m.l + v / xmax * iw; }
+  [0,100,200,300].forEach(function(g){
+    svg.appendChild(el('line', { x1:x(g), x2:x(g), y1:m.t, y2:H-m.b, stroke:css('--grid') }));
+    svg.appendChild(el('text', { x:x(g), y:H-8, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') }, g + ' ms'));
+  });
+  var cur = HT[HTS.i].v, ref = HT[0].v, prev = from || cur;
+  var bars = [];
+  PH.forEach(function(name, k){
+    var y0 = m.t + k * rowH, by = narrow ? y0 + 18 : y0 + 9;
+    svg.appendChild(el('text', { x: narrow ? m.l : m.l - 10, y: narrow ? y0 + 12 : y0 + 23, 'text-anchor': narrow ? 'start' : 'end',
+      'font-family':'Ubuntu Mono', 'font-size':12, fill: k === 5 ? css('--ink-1') : css('--ink-2'), 'font-weight': k === 5 ? 700 : 400 }, name));
+    svg.appendChild(el('rect', { x:m.l, y:by - 3, width: Math.max(2, x(ref[k]) - m.l), height:26, rx:4, fill:'none', stroke:css('--ink-muted'), 'stroke-width':1.5, 'stroke-dasharray':'3 3' }));
+    var b = el('rect', { x:m.l, y:by, width:2, height:20, rx:4, fill:css('--s1') });
+    var t = el('text', { y:by + 15, 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-1') }, '');
+    svg.appendChild(b); svg.appendChild(t);
+    var hit = el('rect', { x:0, y:y0, width:W, height:rowH, fill:'transparent' });
+    svg.appendChild(hit);
+    hover(hit, function(){ return '<b>' + name + '</b>' + HT[HTS.i].lab + ': ' + HT[HTS.i].v[k] + ' ms<br>300 M before fixes: ' + ref[k] + ' ms'; });
+    bars.push({ b:b, t:t, from:prev[k], to:cur[k], ref:ref[k] });
+  });
+  if (HTS.cancel) HTS.cancel();
+  HTS.cancel = tween(from === undefined ? 0 : 600, function(p){
+    bars.forEach(function(o){ var v = o.from + (o.to - o.from) * p, w = Math.max(2, x(v) - m.l);
+      o.b.setAttribute('width', w); o.t.setAttribute('x', Math.max(m.l + w, x(o.ref)) + 6); o.t.textContent = Math.round(v) + ' ms'; });
+  });
+  var r = HT[HTS.i];
+  $('ht-read').innerHTML =
+    '<div class="ro"><div class="k">Mean period, decide to decide</div><div class="v">' + r.per + ' ms</div><div class="d">300 M before fixes: 529 ms · 500 ms floor</div></div>' +
+    '<div class="ro"><div class="k">Decided → anchored</div><div class="v">' + r.v[5] + ' ms</div><div class="d">' +
+      (HTS.i >= 4 ? 'the anchor finds the block staged: no fetch' : 'grows with the block: the anchor often fetched the block from a peer') + '</div></div>' +
+    '<div class="ro"><div class="k">Run</div><div class="v" style="font-size:1rem">' + r.lab + '</div><div class="d">' + r.run + ' · $N=100$</div></div>';
+  if (window.renderMathInElement) renderMathInElement($('ht-read'), KOPTS);
+}
+function setHt(i){
+  var from = HT[HTS.i].v; HTS.i = i;
+  Array.prototype.forEach.call($('ht-run').querySelectorAll('button'), function(bt){ bt.setAttribute('aria-pressed', String(Number(bt.dataset.i) === i)); });
+  drawHt(from); syncHtTable();
+}
+$('ht-run').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setHt(Number(b.dataset.i)); });
+function syncHtTable(){
+  $('ht-table').innerHTML = tableHTML(['Run'].concat(PH).concat(['Period']), HT.map(function(r, i){
+    return { hl: i === HTS.i, c:[r.lab + '<br><span class="note">' + r.run + '</span>'].concat(r.v.map(function(v){ return v + ' ms'; })).concat([r.per + ' ms']) };
+  }), [1,2,3,4,5,6,7]);
+}
+
+/* ====================================================================
+   3 · The drift (225 M, N = 100, same consensus build; lean node differs only by the scan cap)
+   ==================================================================== */
+var DR = [
+  { name:'scans the log on a miss', run:'v02-0915-0031', slot:'--s2', t:[123,186,250,313,376,439,502,565],
+    bpm:[98.10,84.76,77.81,77.14,74.29,70.48,63.81,60.95], pay:[70465,60887,55895,55414,53362,50625,45837,43784] },
+  { name:'scan capped', run:'v02-0915-0044', slot:'--s1', t:[123,186,249,313,376,440,503,566],
+    bpm:[119.05,118.10,115.24,115.31,115.24,116.25,115.24,116.19], pay:[85516,84832,82779,82833,82779,83506,82779,83463] }
+];
+var DRS = { m:0 };
+function drawDr(animate){
+  var svg = $('dr-svg'); clear(svg);
+  var W = svgW(svg), H = W < 520 ? 280 : 310, m = { l:48, r:18, t:16, b:40 };
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - m.l - m.r, ih = H - m.t - m.b, ymin = 50, ymax = 125;
+  function x(t){ return m.l + (t - 100) / 500 * iw; }
+  function y(v){ return m.t + ih - (v - ymin) / (ymax - ymin) * ih; }
+  [50,75,100,125].forEach(function(g){
+    svg.appendChild(el('line', { x1:m.l, x2:W-m.r, y1:y(g), y2:y(g), stroke:css('--grid') }));
+    svg.appendChild(el('text', { x:m.l-8, y:y(g)+4, 'text-anchor':'end', 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') }, g));
+  });
+  svg.appendChild(el('line', { x1:m.l, x2:W-m.r, y1:y(120), y2:y(120), stroke:css('--ink-muted'), 'stroke-dasharray':'4 4' }));
+  svg.appendChild(el('text', { x:m.l+4, y:y(120)-6, 'text-anchor':'start', 'font-family':'Ubuntu Mono', 'font-size':11, fill:css('--ink-muted') }, '120 = 2 blocks/s ceiling'));
+  [120,240,360,480,600].forEach(function(t){
+    svg.appendChild(el('text', { x:x(t), y:H-m.b+18, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') }, 'min ' + (t/60)));
+  });
+  svg.appendChild(el('text', { x:m.l, y:m.t-2, 'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-muted') }, 'blocks/min'));
+  var show = DRS.m === 1 ? [0,1] : [0];
+  show.forEach(function(k){
+    var s = DR[k], col = css(s.slot), d = '';
+    s.t.forEach(function(t, i){ d += (i ? 'L' : 'M') + x(t) + ' ' + y(s.bpm[i]); });
+    var path = el('path', { d:d, fill:'none', stroke:col, 'stroke-width':2.5, 'stroke-linejoin':'round' });
+    svg.appendChild(path);
+    var dots = [];
+    s.t.forEach(function(t, i){
+      var c = el('circle', { cx:x(t), cy:y(s.bpm[i]), r:4.5, fill:col, stroke:css('--surface-1'), 'stroke-width':2 });
+      svg.appendChild(c); dots.push(c);
+      var hit = el('circle', { cx:x(t), cy:y(s.bpm[i]), r:12, fill:'transparent' });
+      svg.appendChild(hit);
+      hover(hit, function(){ return '<b>' + s.name + '</b>t = ' + t + ' s<br>' + s.bpm[i].toFixed(2) + ' blocks/min<br>' + fmt(s.pay[i]) + ' payments/s<br>100 % full'; });
+    });
+    var last = s.t.length - 1;
+    svg.appendChild(el('text', { x:x(s.t[last]) - 4, y:y(s.bpm[last]) + 18, 'text-anchor':'end',
+      'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-1') }, s.bpm[last].toFixed(2)));
+    var doAnim = animate && (k === show[show.length - 1]);
+    if (doAnim){
+      var L = 0; try { L = path.getTotalLength(); } catch(e){}
+      if (L){
+        path.setAttribute('stroke-dasharray', L); path.setAttribute('stroke-dashoffset', L);
+        dots.forEach(function(c){ c.setAttribute('opacity', 0); });
+        tween(900, function(p){ path.setAttribute('stroke-dashoffset', L * (1 - p));
+          dots.forEach(function(c, i){ c.setAttribute('opacity', p * s.t.length >= i ? 1 : 0); }); },
+          function(){ path.removeAttribute('stroke-dasharray'); path.removeAttribute('stroke-dashoffset'); dots.forEach(function(c){ c.removeAttribute('opacity'); }); });
+      }
+    }
+  });
+  var a = DR[0], b = DR[1];
+  $('dr-read').innerHTML =
+    '<div class="ro"><div class="k" style="color:' + css(a.slot) + '">Scans the log on a miss</div><div class="v">98.10 → 60.95</div><div class="d">blocks/min, minute 2 to 9 · 70,465 → 43,784 payments/s</div>' +
+      '<div class="d">backward log scans on one node: 17 by height 65, 148 by height 504</div></div>' +
+    (DRS.m === 1 ? '<div class="ro"><div class="k" style="color:' + css(b.slot) + '">Scan capped at the index floor</div><div class="v">115.24–119.05</div><div class="d">blocks/min, flat · 82,779–85,516 payments/s</div><div class="d">log scans: 0 for the whole run</div></div>'
+                 : '<div class="ro"><div class="k">Apply the fix</div><div class="d">Switch to "scan capped" to draw the same run with the one change.</div></div>') +
+    '<div class="ro"><div class="k">Why it grows</div><div class="d">cost per miss ∝ height × block bytes; every block here is 431/431 = 100 % full (1.24 MB)</div></div>';
+}
+function setDr(mv){
+  DRS.m = mv;
+  Array.prototype.forEach.call($('dr-mode').querySelectorAll('button'), function(bt){ bt.setAttribute('aria-pressed', String(Number(bt.dataset.m) === mv)); });
+  drawDr(true);
+}
+$('dr-mode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setDr(Number(b.dataset.m)); });
+$('dr-table').innerHTML = tableHTML(['Sample (s)','Scans the log: blocks/min','payments/s','Scan capped: blocks/min','payments/s'],
+  DR[0].t.map(function(t, i){ return { c:[t + ' / ' + DR[1].t[i], DR[0].bpm[i].toFixed(2), fmt(DR[0].pay[i]), DR[1].bpm[i].toFixed(2), fmt(DR[1].pay[i])] }; }), [1,2,3,4]);
+
+/* ====================================================================
+   4 · Protocol stepper
+   ==================================================================== */
+var NODES = {
+  pcl:{ x:0.17, y:0.30, t:'Proposer', s:'consensus' },
+  pln:{ x:0.17, y:0.72, t:'Proposer', s:'lean node' },
+  evm:{ x:0.50, y:0.30, t:'EVM header', s:'prev_randao = c' },
+  vcl:{ x:0.83, y:0.30, t:'Validators', s:'consensus' },
+  vln:{ x:0.83, y:0.72, t:'Validators', s:'lean node' },
+  cert:{ x:0.50, y:0.72, t:'Certificate', s:'on EVM hash' }
+};
+var BASE = [
+  { on:['pln'], pk:['pln','pln'], h:'1 · Build the lean block first', p:'The proposer asks its lean node to build a block from its pool and gets back the bytes and their commitment $c_h$. The lean node stages its own block, so it will not need to fetch it later.' },
+  { on:['pln','pcl','evm'], pk:['pln','evm'], h:'2 · Bind it into the EVM header', p:'The EVM payload is built with <code>prev_randao</code> $= c_h$. The proposal carries the EVM payload plus the lean bytes, and consensus will vote on the plain EVM block hash.' },
+  { on:['evm','vcl','vln'], pk:['evm','vcl'], h:'3 · Validators check the binding', p:'Each validator recomputes $\\mathrm{keccak}$ over the lean bytes and compares it with $c_h$ in the header, checks the parent link and that the timestamp matches the EVM block, and hands the bytes to its lean node to execute in the background.' },
+  { on:['vcl','cert'], pk:['vcl','cert'], h:'4 · Vote', p:'The vote is structural: no lean execution result is waited for. Two thirds of prevotes and precommits give a certificate on the EVM hash, which covers $c_h$.', ok:'Valid: vote cast' },
+  { on:['cert','vln','pln'], pk:['cert','vln'], h:'5 · Decide and anchor', p:'Every node tells its lean node "$c_h$ is final". The block is already staged from step 3 (or from step 1 on the proposer), so the lean node promotes it in a few milliseconds.', ok:'Anchored from the staged copy' },
+  { on:['vln','evm'], pk:['evm','vln'], h:'6 · A laggard syncs later', p:'A node that missed the height asks peers for the lean bytes by the commitment its own certified EVM header names, and checks the hash before using them. No separate index from heights to lean blocks is needed.' }
+];
+var SC = [
+  { name:'honest', steps:BASE },
+  { name:'tampered', steps:BASE.slice(0,2).concat([
+    { on:['evm','vcl'], pk:['evm','vcl'], bad:true, h:'3 · The bytes don’t match the header', p:'A byzantine proposer ships lean bytes whose hash is not the $c_h$ in its own EVM header. This is a protocol violation, observed by every honest validator.', ok:'Invalid: the proposal is rejected, the round moves on', cls:'v-bad' } ]) },
+  { name:'behind', steps:BASE.slice(0,2).concat([
+    { on:['vcl','vln'], pk:['vcl','vln'], warn:true, h:'3 · This validator’s lean node is behind', p:'The proposal builds on a lean block this node has not seen. The consensus layer asks peer lean nodes for the missing blocks, giving each peer a slice of a 5 s budget. If it still cannot catch up, that is lag, not a violation.', ok:'Abstain: no vote this round, never Invalid (Invalid would stick to an honest value forever)', cls:'v-warn' },
+    { on:['vcl','cert'], pk:['vcl','cert'], h:'4 · The others still decide', p:'The other validators vote and the height is decided without this one. The abstain is counted by reason, so a validator that abstains every round shows up in metrics instead of looking healthy.', ok:'Height decided; the laggard syncs by commitment', cls:'v-good' } ]) },
+  { name:'retry', steps:BASE.slice(0,2).concat([
+    { on:['pcl','pln'], pk:['pcl','pln'], warn:true, h:'3 · Same round, asked again', p:'Consensus asks the proposer again for a value in the same round. It has the block it already signed and streamed, but its lean node lost the staged bytes, so the block can’t be rebuilt byte-for-byte.', ok:'Skip the round. Building a different block would be equivocation.', cls:'v-warn' },
+    { on:['pcl','vcl'], pk:['pcl','vcl'], h:'4 · The round times out', p:'The round times out like any missed proposal and the next proposer takes over. Only an unsigned stored block, which never left this node, may be rebuilt fresh.', ok:'Safe: at most one proposal per height and round', cls:'v-good' } ]) }
+];
+var PRS = { s:0, k:0, cancel:null };
+function drawPr(animate){
+  var svg = $('pr-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 520, H = narrow ? 250 : 230;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var st = SC[PRS.s].steps[PRS.k], bw = narrow ? 92 : 130, bh = narrow ? 44 : 46;
+  function P(id){ var n = NODES[id]; return { x: n.x * W, y: n.y * H }; }
+  function C(id){ var c = P(id); return { x: c.x + bw/2 - 4, y: c.y - bh/2 }; }
+  var edges = [['pln','pcl'],['pcl','evm'],['evm','vcl'],['vcl','vln'],['vcl','cert'],['cert','pln'],['cert','vln'],['pln','evm']];
+  edges.forEach(function(e){ var a = P(e[0]), b = P(e[1]);
+    svg.appendChild(el('line', { x1:a.x, y1:a.y, x2:b.x, y2:b.y, stroke:css('--grid'), 'stroke-width':2 })); });
+  Object.keys(NODES).forEach(function(id){
+    var n = NODES[id], c = P(id), on = st.on.indexOf(id) >= 0;
+    var stroke = on ? (st.bad ? css('--critical') : (st.warn ? '#9a6a00' : css('--accent'))) : css('--axis');
+    svg.appendChild(el('rect', { x:c.x - bw/2, y:c.y - bh/2, width:bw, height:bh, rx:4, fill: on ? '#ffffff' : css('--surface-1'), stroke:stroke, 'stroke-width': on ? 2.2 : 1 }));
+    svg.appendChild(el('text', { x:c.x, y:c.y - 3, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size': narrow ? 11 : 13, 'font-weight':700, fill: on ? css('--ink-1') : css('--ink-muted') }, n.t));
+    svg.appendChild(el('text', { x:c.x, y:c.y + 13, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size': narrow ? 10 : 12, fill: on ? css('--ink-2') : css('--ink-muted') }, n.s));
+  });
+  var a = C(st.pk[0]), b = C(st.pk[1]);
+  var pkt = el('g', {});
+  pkt.appendChild(el('circle', { r:11, fill: st.bad ? css('--critical') : css('--s1'), stroke:'#ffffff', 'stroke-width':2 }));
+  pkt.appendChild(el('text', { y:4, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12, 'font-weight':700, fill:'#ffffff' }, 'c'));
+  svg.appendChild(pkt);
+  if (PRS.cancel) PRS.cancel();
+  function place(p){ pkt.setAttribute('transform', 'translate(' + (a.x + (b.x - a.x) * p) + ' ' + (a.y + (b.y - a.y) * p - (a === b ? 0 : 0)) + ')'); }
+  place(0);
+  PRS.cancel = tween(animate ? 800 : 0, place);
+  var steps = SC[PRS.s].steps;
+  $('pr-steps').innerHTML = steps.map(function(s, i){ return '<button class="stepdot" data-k="' + i + '" aria-current="' + (i === PRS.k) + '">' + (i+1) + '</button>'; }).join('');
+  $('pr-text').innerHTML = '<h3>' + st.h + '</h3><p style="margin:0">' + st.p + '</p>' + (st.ok ? '<div class="verdict ' + (st.cls || 'v-good') + '">' + st.ok + '</div>' : '');
+  if (window.renderMathInElement) renderMathInElement($('pr-text'), KOPTS);
+  $('pr-prev').disabled = PRS.k === 0; $('pr-next').disabled = PRS.k === steps.length - 1;
+}
+function setPr(s, k){ PRS.s = s; PRS.k = k;
+  Array.prototype.forEach.call($('pr-sc').querySelectorAll('button'), function(bt){ bt.setAttribute('aria-pressed', String(Number(bt.dataset.s) === s)); });
+  drawPr(true); }
+$('pr-sc').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setPr(Number(b.dataset.s), 0); });
+$('pr-steps').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setPr(PRS.s, Number(b.dataset.k)); });
+$('pr-prev').addEventListener('click', function(){ if (PRS.k > 0) setPr(PRS.s, PRS.k - 1); });
+$('pr-next').addEventListener('click', function(){ if (PRS.k < SC[PRS.s].steps.length - 1) setPr(PRS.s, PRS.k + 1); });
+
+/* ====================================================================
+   What changed — timeline
+   ==================================================================== */
+var TL = [
+  { when:'first version', h:'Two lanes under one certificate', p:'Consensus voted on a combined value, $\\mathrm{keccak}(\\text{EVM hash} \\,\\|\\, c_h)$; lean bytes rode beside the EVM payload.',
+    e:'$N=100$: 55,534 payments/s at 150 M and 83,286 at 225 M, 1.93 blocks/s, 100 % full' },
+  { when:'Sept 14 · v0.2', h:'Bind the lean block into the EVM header', p:'$c_h$ moves into <code>prev_randao</code>; consensus votes on the plain EVM hash; decide anchors by commitment; sync fetches lean bytes by the commitment the certified header names. Flag off stays byte-identical to the stock chain.',
+    e:'first fleet read 0.73 blocks/s: retracted, the decide anchor rescanned the log; fixed, opening 1.90 blocks/s at $N=50$ / 150 M' },
+  { when:'Sept 15, 00:47', h:'Remove the serving-path log scan', p:'An index miss no longer scans the log backwards. The 10-minute decline in every run so far disappears.',
+    e:'225 M: 98.10 → 60.95 blocks/min becomes 115.24–119.05, flat; 300 M: 106,914–110,437 payments/s' },
+  { when:'Sept 15, afternoon', h:'Stop the anchor racing its own stage', p:'The proposer stages the block it builds; a peer announcement never re-fetches a block already held; the anchor waits for a stage in progress, or up to 60 ms for one that has not arrived yet.',
+    e:'400 M: 121,042–134,225 → 142,443–150,965 payments/s; peer fetches at decide 646 → 16' },
+  { when:'Sept 15', h:'Safety fixes from review', p:'A proposer that cannot rebuild a block it already signed skips the round instead of proposing twice; a lagging validator abstains rather than voting Invalid; one commit gate per append; staged and directly executed blocks produce the same state.',
+    e:'local 5-validator run after the merge: 119 / 107 / 119 heights/min, 191/191 = 100 % full, 5/5 identical' },
+  { when:'Sept 15, evening', h:'Measure single payments fairly', p:'Both lanes at one payment per signature with enough offered load that the chain, not the load generator, is the limit.',
+    e:'EVM lane 4,377–8,419 tx/s, never full; payment lane 31,317–31,910 tx/s at 450 M, 100 % full' }
+];
+$('tl').innerHTML = TL.map(function(t){ return '<li><div class="when">' + t.when + '</div><h3>' + t.h + '</h3><p>' + t.p + '</p><div class="effect">' + t.e + '</div></li>'; }).join('');
+
+/* ====================================================================
+   Anchor path shares (validator1, 400 M)
+   ==================================================================== */
+var AP = [
+  { lab:'proposer stages its block', run:'v02-0915-0326', c:[717,663,357,61] },
+  { lab:'+ no re-fetch of held blocks', run:'v02-0915-0340', c:[486,185,646,27] },
+  { lab:'+ wait for the stage (final)', run:'v02-0915-1435', c:[1244,23,16,2] },
+  { lab:'final, 30-min soak', run:'v02-0915-1504', c:[3353,45,28,2] }
+];
+var APK = [ { n:'staged (ideal)', s:'--s1' }, { n:'already appended', s:'--s3' }, { n:'fetched from a peer', s:'--s2' }, { n:'from bytes', s:'--s4' } ];
+function drawAp(animate){
+  var svg = $('ap-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 520, rowH = narrow ? 50 : 38, m = { l: narrow ? 6 : 230, r:10, t:6, b:22 };
+  var H = m.t + m.b + rowH * AP.length;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - m.l - m.r;
+  [0,25,50,75,100].forEach(function(g){ var x = m.l + g/100*iw;
+    svg.appendChild(el('line', { x1:x, x2:x, y1:m.t, y2:H-m.b, stroke:css('--grid') }));
+    svg.appendChild(el('text', { x:x, y:H-6, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':11, fill:css('--ink-muted') }, g + '%')); });
+  var segs = [];
+  AP.forEach(function(r, i){
+    var y0 = m.t + i * rowH, by = narrow ? y0 + 18 : y0 + 8, tot = r.c.reduce(function(a,b){ return a+b; }, 0);
+    svg.appendChild(el('text', { x: narrow ? m.l : m.l - 10, y: narrow ? y0 + 12 : y0 + 22, 'text-anchor': narrow ? 'start' : 'end',
+      'font-family':'Ubuntu Mono', 'font-size':12, fill:css('--ink-2') }, r.lab));
+    var acc = 0;
+    r.c.forEach(function(v, k){
+      var share = v / tot, x0 = acc; acc += share;
+      var rect = el('rect', { y:by, height:20, fill:css(APK[k].s), x:m.l + x0*iw, width:0 });
+      svg.appendChild(rect);
+      var lbl = null;
+      if (share * iw > 42){ lbl = el('text', { y:by + 14, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':11, fill:'#ffffff', 'font-weight':700 }, Math.round(share*100) + '%'); svg.appendChild(lbl); }
+      hover(rect, function(){ return '<b>' + r.lab + '</b>' + APK[k].n + ': ' + v + ' of ' + tot + ' anchors<br>' + r.run; });
+      segs.push({ r:rect, l:lbl, x0:x0, w:share });
+    });
+  });
+  tween(animate ? 800 : 0, function(p){ segs.forEach(function(s){
+    var w = Math.max(0, s.w * iw * p - 2); s.r.setAttribute('width', w);
+    if (s.l){ s.l.setAttribute('x', m.l + s.x0*iw + (s.w*iw)/2); s.l.setAttribute('opacity', p > 0.8 ? 1 : 0); } }); });
+  var lg = $('ap-legend'); lg.innerHTML = '';
+  APK.forEach(function(k){ lg.insertAdjacentHTML('beforeend', '<li><span class="swatch" style="background:' + css(k.s) + '"></span>' + k.n + '</li>'); });
+}
+$('ap-table').innerHTML = tableHTML(['Build','Run'].concat(APK.map(function(k){ return k.n; })),
+  AP.map(function(r){ return { c:[r.lab, r.run].concat(r.c.map(String)) }; }), [2,3,4,5]);
+
+/* ====================================================================
+   boot, entrances, resize
+   ==================================================================== */
+var KOPTS = { delimiters:[{left:'$', right:'$', display:false}], throwOnError:false };
+setExN(100); EX.entered = false;
+drawHt(); syncHtTable();
+drawDr(false); drawPr(false); drawAp(false);
+
+function countTiles(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
+    var to = Number(n.dataset.count); tween(900, function(p){ n.textContent = fmt(to * p); });
+  });
+}
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+var ENTER = {
+  explore:function(){ EX.entered = true; drawEx(true); },
+  height:function(){ var z = HT[HTS.i].v.map(function(){ return 0; }); drawHt(z); },
+  drift:function(){ drawDr(true); },
+  changes:function(){ drawAp(true); },
+  protocol:function(){ drawPr(true); }
+};
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(s){ s.style.opacity = 0; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var s = en.target; io.unobserve(s);
+      tween(500, function(p){ s.style.opacity = p; }, function(){ s.style.opacity = ''; });
+      if (ENTER[s.id]) setTimeout(ENTER[s.id], 150);
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(s){ io.observe(s); });
+  countTiles();
+} else { EX.entered = true; drawEx(false); }
+
+var rz = null;
+window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(function(){
+  drawEx(false); drawHt(); drawDr(false); drawPr(false); drawAp(false); }, 150); });
+
+document.addEventListener('DOMContentLoaded', function(){
+  if (window.renderMathInElement) renderMathInElement(document.body, KOPTS);
+});
+window.addEventListener('load', function(){
+  if (window.renderMathInElement) renderMathInElement(document.body, KOPTS);
+});
+</script>
+</body>
+</html>
