@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Circle's Post-Quantum Security Roadmap</title>
+<meta name="description" content="Circle Whitepaper 2026 — a three-phase plan (Now, Transition, Switch) for moving blockchains, smart contracts, and digital assets to post-quantum cryptography.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* validated categorical slots 1-3 on #fafafa (all-pairs pass; slot 3 < 3:1 -> labels + table) */
+  --ph-now:#2a78d6; --ph-tr:#eb6834; --ph-sw:#1baf7a;
+  --classical:#8a8a8a;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid); scroll-margin-top:48px}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px}
+code,.mono{font-family:var(--mono); font-size:.9em}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-family:var(--mono); font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:64ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.aimark{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted)}
+.aimark a{color:var(--ink-muted); text-decoration:underline; text-underline-offset:2px}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- problem ---------- */
+.three{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:8px}
+.three .card h3{font-size:1.02rem}
+.three .card p{font-size:.93rem; margin:0}
+.quote{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:22px 0 0; max-width:72ch; font-style:italic}
+
+/* ---------- roadmap ---------- */
+.phases{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:20px}
+.phase{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:0 0 8px; position:relative; overflow:hidden}
+.phase .ph-head{padding:12px 16px 10px; border-bottom:1px solid var(--grid)}
+.phase .ph-head .ph-k{font-family:var(--mono); font-size:.76rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
+.phase .ph-head h3{margin:.1rem 0 .15rem; font-size:1.2rem}
+.phase .ph-head p{font-size:.86rem; margin:0}
+.phase .bar{height:4px}
+.item{padding:10px 16px; border-bottom:1px solid var(--grid)}
+.item:last-child{border-bottom:0}
+.item .it{font-weight:700; font-size:.95rem; color:var(--ink-head)}
+.item .sec{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted); margin-left:.3rem}
+.item p{font-size:.86rem; margin:.2rem 0 .35rem; line-height:1.45}
+.tags{display:flex; flex-wrap:wrap; gap:5px}
+.atag{font-family:var(--mono); font-size:.74rem; border:1px solid var(--ring); background:var(--plane);
+  border-radius:3px; padding:.05rem .4rem; cursor:pointer; color:var(--accent)}
+.atag:hover{border-color:var(--accent)}
+.atag.none{color:var(--ink-muted); cursor:default; border-style:dashed}
+.arrowsep{display:none}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; margin:0 0 14px}
+.ctl-l{font-family:var(--mono); font-size:.84rem; color:var(--ink-2); margin-right:.4rem}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px; overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.dash{background:var(--plane); border:1px dashed var(--axis)}
+.tip{position:fixed; pointer-events:none; opacity:0; background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- explorer ---------- */
+.meterrow{display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin:0 0 12px}
+.meter{display:flex; gap:3px}
+.meter span{width:22px; height:12px; border-radius:2px; background:var(--plane); border:1px dashed var(--axis)}
+.count{font-family:var(--mono); font-size:.9rem; color:var(--ink-2)}
+.count b{font-size:1.15rem; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.chip{cursor:pointer}
+.chip:focus{outline:none}
+.chip:focus-visible .chip-off{stroke:var(--accent); stroke-width:2.5}
+.detail{margin-top:16px; border:1px solid var(--ring); border-radius:4px; background:var(--surface-1); padding:18px; box-shadow:var(--shadow)}
+.detail-grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); gap:22px}
+.detail h3{display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem}
+.detail .lay{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted); font-weight:400; letter-spacing:.04em; text-transform:uppercase}
+.detail dl{margin:.6rem 0 0}
+.detail dt{font-family:var(--mono); font-size:.72rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .15rem}
+.detail dd{margin:0 0 .8rem; font-size:.92rem; color:var(--ink-2)}
+.mit{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px}
+.mcol{border:1px solid var(--ring); border-radius:4px; background:var(--plane); padding:10px 10px 8px}
+.mcol .mk{font-family:var(--mono); font-size:.74rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; display:flex; align-items:center; gap:.35rem}
+.mcol ul{margin:.35rem 0 0; padding-left:1rem; font-size:.86rem; color:var(--ink-2)}
+.mcol li{margin-bottom:.2rem}
+.mcol .empty{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); margin:.35rem 0 0}
+.mcol.later{opacity:.5}
+.prov{margin-top:12px; border-left:3px solid var(--warning); padding:.15rem 0 .15rem 12px; font-family:var(--mono); font-size:.8rem; color:var(--ink-2); line-height:1.5}
+.prov b{color:var(--ink-1)}
+
+/* ---------- sizes ---------- */
+.sizegrid{display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:20px; align-items:start}
+.readout{display:flex; flex-direction:column; gap:10px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:11px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.45rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro .s{font-size:.86rem; color:var(--ink-2); margin:.15rem 0 0}
+.bar-hit{cursor:pointer}
+
+/* ---------- exposure ---------- */
+.outcome{font-family:var(--mono)}
+
+/* ---------- recovery ---------- */
+.rec{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px}
+.rec .card h3{font-size:1rem}
+.rec .card p{font-size:.9rem; margin:0}
+.flag{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin-top:18px}
+.flag ul{margin:.3rem 0 0; padding-left:1.1rem; font-size:.92rem}
+.flag li{margin-bottom:.35rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+td.grp{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted); font-style:italic; padding-top:.8rem}
+.cap{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); margin:.2rem 0 0}
+.st{font-family:var(--mono); font-size:.8rem; font-weight:700; white-space:nowrap}
+.st.bad{color:var(--critical)} .st.ok{color:var(--good)}
+.tblgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:26px}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+.provlist{margin:.4rem 0 0; padding-left:1.2rem; font-size:.92rem}
+.provlist li{margin-bottom:.55rem}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted)}
+footer p{color:var(--ink-muted); margin:0 0 .5rem}
+footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var(--surface-1); border-radius:4px; padding:10px 12px; color:var(--ink-2)}
+
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2rem}
+  .three,.phases,.detail-grid,.sizegrid,.rec,.flag,.tblgrid{grid-template-columns:1fr}
+  .mit{grid-template-columns:1fr}
+  .chart{padding:12px 10px 10px}
+  .seg{flex-wrap:wrap}
+  .seg button{flex:1 1 auto}
+  .tile .v{font-size:1.75rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#attacks">Attacks</a>
+    <a href="#sizes">Signatures</a>
+    <a href="#exposure">Exposure</a>
+    <a href="#recovery">Recovery</a>
+    <a href="#tables">Tables</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">Circle Whitepaper 2026</span>
+  <h1>Circle's Post-Quantum Security Roadmap</h1>
+  <p class="sub">Securing blockchains, smart contracts, and digital assets for the quantum era: a three-phase plan (Now, Transition, Switch) that protects privacy first, gives developers a post-quantum signature verifier on Arc, and keeps a path to recover funds once classical signatures are cut off.</p>
+  <p class="authors">
+    Mira Belenkiy<sup>1</sup>, <span class="me">Duc V. Le</span><sup>1</sup>, Gordon Liao<sup>1</sup>,
+    Vipin Singh Sehrawat<sup>1</sup>, Dragos Rotaru<sup>1</sup>, Sergey Gorbunov<sup>1</sup>,
+    Milap Sheth<sup>1</sup>, Jay Logelin<sup>1</sup>, Anthony De Abreu<sup>1</sup>, and Dan Boneh<sup>2</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Circle &nbsp;·&nbsp; <sup>2</sup>Stanford University</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/pq-roadmap.pdf">[Paper PDF]</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+    <span class="aimark">AI-generated page<a href="#ai-note" aria-label="About this page">*</a></span>
+  </div>
+</div></header>
+
+<!-- ============ TILES ============ -->
+<section id="numbers"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>The gap, the cost, the plan</h2>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Logical qubits to break 256-bit ECC</div>
+      <div class="v">1,200–1,450</div>
+      <p class="d">Recent estimate for Shor's algorithm on the curves used by Bitcoin and Ethereum (Babbush et al., 2026). The paper compares this with 48 logical qubits on Quantinuum's Helios H2 (§2.1).</p>
+    </div>
+    <div class="tile">
+      <div class="k">SLH-DSA signature size</div>
+      <div class="v"><span data-count="7856" data-fmt="int">7,856</span> bytes</div>
+      <p class="d">Against the fixed 65-byte ECDSA signature that <code>ecrecover</code> expects (§2.5, §4.3). Arc will deploy an SLH-DSA-SHA2-128s verifier as a precompile on mainnet (§3.1).</p>
+    </div>
+    <div class="tile">
+      <div class="k">Phases × attacks</div>
+      <div class="v">3 × 7</div>
+      <p class="d">Now, Transition, and Switch, mapped against seven quantum attacks (A1–A7) on the application, consensus, and network layers (Table 4).</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Every account that has signed has published its public key</h2>
+  <p class="lede">Blockchains authorize transactions with elliptic-curve signatures. On a cryptographically relevant quantum computer (CRQC), Shor's algorithm recovers a private key from its public key, and an EVM account reveals its public key the first time it sends a transaction. The paper calls this a potential cliff event rather than a gradual erosion: millions of funded addresses are exposed, including an estimated 14 million Bitcoin addresses.</p>
+  <p class="lede">Circle meets the problem three times over: as the developer of the Arc blockchain, as the operator of USDC contracts on more than 30 blockchains that will each migrate on their own timeline, and as a service provider that depends on cloud and hardware vendors.</p>
+  <div class="three">
+    <div class="card">
+      <h3>Only public-key cryptography breaks</h3>
+      <p>ECDSA, Ed25519, BLS, ECDH, ElGamal, pairing-based SNARKs, and Pedersen commitments fall to Shor. AES, SHA-256, Keccak, and hash-based STARKs are considered safe; NIST treats AES-128 as secure for the foreseeable future (§2.1–2.2).</p>
+    </div>
+    <div class="card">
+      <h3>Privacy cannot be patched later</h3>
+      <p>Ciphertext recorded today can be decrypted once a CRQC exists (harvest now, decrypt later). The paper calls this the greatest risk for blockchain cryptography today, so encryption moves first.</p>
+    </div>
+    <div class="card">
+      <h3>Rushing is its own risk</h3>
+      <p>An enterprise whose HSM cannot sign post-quantum might export its key to an ordinary CPU, and is then more likely to lose it to a conventional attack than to a quantum one. NIST's search for additional signature schemes is still running (§1).</p>
+    </div>
+  </div>
+  <p class="quote">&ldquo;You can always upgrade your signatures but you can never get your privacy back due to harvest-now-decrypt-later.&rdquo; — §1, Algorithm Choices</p>
+</div></section>
+
+<!-- ============ ROADMAP ============ -->
+<section id="roadmap"><div class="wrap">
+  <p class="eyebrow">The roadmap</p>
+  <h2>Three phases: Now, Transition, Switch</h2>
+  <p class="lede">The phases follow urgency. Privacy protections ship first, signature and consensus changes follow as post-quantum infrastructure matures, and a hard cutoff comes only once recovery paths exist. The paper gives no calendar dates for Circle's phases; the binding external deadlines it cites fall in 2030 and 2035 (Table 3). Tags name the attacks each item counters in Table 4; click one to open it below.</p>
+  <div class="phases" id="phases"></div>
+</div></section>
+
+<!-- ============ EXPLORER ============ -->
+<section id="attacks"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 1 + Table 4</p>
+  <h2>Seven attacks on one transaction</h2>
+  <p class="lede">Figure 1 follows a transaction from wallet to validators and pins seven quantum attacks to the stage they target. Pick a phase to see which attacks have at least one countermeasure listed in Table 4 by the end of it. Click an attack for its description, timing, and countermeasures.</p>
+  <div class="controls">
+    <div><span class="ctl-l">By the end of</span>
+      <div class="seg" id="phaseSeg" role="group" aria-label="Phase">
+        <button data-p="0" aria-pressed="true">Now</button><button data-p="1" aria-pressed="false">Transition</button><button data-p="2" aria-pressed="false">Switch</button>
+      </div>
+    </div>
+  </div>
+  <div class="meterrow">
+    <div class="meter" id="meter" aria-hidden="true"></div>
+    <div class="count" id="count"></div>
+  </div>
+  <div class="chart"><div id="lifecycle"></div>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--ph-now)"></span>first countered in Now</li>
+      <li><span class="swatch" style="background:var(--ph-tr)"></span>first countered in Transition</li>
+      <li><span class="swatch" style="background:var(--ph-sw)"></span>first countered in Switch</li>
+      <li><span class="swatch dash"></span>no countermeasure yet</li>
+    </ul>
+  </div>
+  <div class="detail" id="detail" aria-live="polite"></div>
+  <details class="tbl"><summary>Table view: Table 4, attacks and the phase(s) that address each</summary>
+    <div class="tscroll"><table id="t4"></table></div>
+  </details>
+</div></section>
+
+<!-- ============ SIZES ============ -->
+<section id="sizes"><div class="wrap">
+  <p class="eyebrow">Interactive · §2.5, §3.1, §4.3</p>
+  <h2>Why Arc's transaction signatures stay ECDSA for now</h2>
+  <p class="lede">Arc will deploy an SLH-DSA verifier that smart contracts can call, but native transaction signatures remain ECDSA for the near future. The paper gives three reasons: post-quantum signature length and verification time would cut throughput, Falcon's standardization as FN-DSA (shorter and faster) is pending, and hardware wallets need to support whatever is picked. The sizes below are the ones the paper quotes.</p>
+  <div class="controls">
+    <div><span class="ctl-l">Scheme</span>
+      <div class="seg" id="schemeSeg" role="group" aria-label="Signature scheme"></div>
+    </div>
+    <div><span class="ctl-l">Scale</span>
+      <div class="seg" id="scaleSeg" role="group" aria-label="Axis scale">
+        <button data-s="lin" aria-pressed="true">Linear</button><button data-s="log" aria-pressed="false">Log</button>
+      </div>
+    </div>
+  </div>
+  <div class="sizegrid">
+    <div class="chart"><div id="sizechart"></div>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--classical)"></span>classical (broken by Shor)</li>
+        <li><span class="swatch" style="background:var(--ph-now)"></span>post-quantum</li>
+      </ul>
+    </div>
+    <div class="readout" id="sizeRead"></div>
+  </div>
+  <details class="tbl"><summary>Table view: signature sizes quoted in the paper</summary>
+    <div class="tscroll"><table>
+      <thead><tr><th>Scheme</th><th class="num">Bytes</th><th>Basis</th><th>Where</th></tr></thead>
+      <tbody id="sizeTbody"></tbody>
+    </table></div>
+  </details>
+  <p class="note" style="margin-top:14px"><strong>Not a signature.</strong> Encrypting an Arc memo with HPKE over X-Wing adds 1,136 bytes to the payload (§3.2). Arc memos are capped only by the block gas limit; the paper notes other chains will need larger memos to carry post-quantum public-key encryption.</p>
+</div></section>
+
+<!-- ============ EXPOSURE ============ -->
+<section id="exposure"><div class="wrap">
+  <p class="eyebrow">Interactive · §2.3 (A7), §3.4.2, §4.4</p>
+  <h2>Shrinking the window in which a public key is visible</h2>
+  <p class="lede">A plain account exposes its public key from its first transaction onward, so any CRQC can attack it at rest. Hash-and-rotate stores only a hash of the next key and uses each key once, so the key is exposed only between broadcast and inclusion. What that buys depends on the machine: a <em>fast-clock</em> CRQC could finish an attack in seconds to minutes, while a <em>slow-clock</em> one is limited to long-window, at-rest attacks (§2.3).</p>
+  <div class="controls">
+    <div><span class="ctl-l">Attacker</span>
+      <div class="seg" id="clockSeg" role="group" aria-label="CRQC clock speed">
+        <button data-c="fast" aria-pressed="true">Fast-clock CRQC</button><button data-c="slow" aria-pressed="false">Slow-clock CRQC</button>
+      </div>
+    </div>
+    <button class="btn" id="replay">&#9654; Replay</button>
+  </div>
+  <div class="chart"><div id="expchart"></div>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--critical);opacity:.35"></span>public key visible</li>
+      <li><span class="swatch" style="background:var(--ink-1)"></span>attacker's key-recovery time (faded = uncertain upper range)</li>
+      <li><span class="swatch" style="background:var(--ph-now)"></span>transaction (broadcast → included)</li>
+    </ul>
+  </div>
+  <p class="note" style="margin-top:12px">Schematic: the time axis has no units because the paper gives none beyond &ldquo;seconds–minutes&rdquo; for fast-clock on-spend attacks. The outcome column quotes the paper; it is not computed from the drawing.</p>
+  <div class="card" style="margin-top:14px">
+    <h3>Key derivation matters</h3>
+    <p style="font-size:.92rem;margin:0">BIP-32 and BIP-44 derive child keys from parent signing scalars, so compromising one intermediate scalar yields every descendant key, and intermediate public keys are often exposed in practice: one signature can reveal a whole subtree. The paper recommends alternatives such as SLIP-0010 for hash-and-rotate wallets (§3.4.2).</p>
+  </div>
+</div></section>
+
+<!-- ============ RECOVERY ============ -->
+<section id="recovery"><div class="wrap">
+  <p class="eyebrow">Switch · §5.1–5.3</p>
+  <h2>A freeze is not a forfeit</h2>
+  <p class="lede">At the Switch, Arc and USDC contracts reject ECDSA-signed transactions and funds in unmigrated accounts are frozen. The paper treats this as a protective control against quantum-enabled theft, not a finding that the holder has abandoned the asset. Where it is technically feasible and legally supportable, frozen assets should stay recoverable if entitlement can be shown with reliable evidence.</p>
+  <div class="rec">
+    <div class="card"><h3>Move to Arc</h3><p>Copy frozen USDC contracts from non-compliant chains to Arc and manage recovery there. Before a CRQC exists, the copy can allow automatic withdrawal to a post-quantum account with a verified signature.</p></div>
+    <div class="card"><h3>Seed-phrase proofs</h3><p>Prove knowledge of the BIP-39 seed rather than the signing key: a practical ZK circuit exists for SLIP-0010 (Baldimtsi et al.), and a zk-STARK circuit has been proposed for BIP-32 (Osuntokun).</p></div>
+    <div class="card"><h3>TEE-attested recovery</h3><p>A private contract in Arc's privacy layer checks the seed inside the enclave and issues an attested claim authorizing migration. The seed never leaves the enclave and the attestation is verifiable on-chain.</p></div>
+    <div class="card"><h3>Off-chain evidence</h3><p>Customer records, custodial or exchange attestations, legal process, or estate documents, in limited circumstances. For self-custodied EOAs, KYC alone may not establish who controls an address.</p></div>
+  </div>
+  <div class="flag">
+    <div class="card">
+      <h3>Flag days elsewhere</h3>
+      <ul>
+        <li><a href="https://github.com/bitcoin/bips/blob/master/bip-0361.mediawiki">BIP-361</a> restricts ECDSA/Schnorr spends to a quantum-safe rescue protocol; wallets that cannot use it (e.g. hardware wallets) lose funds.</li>
+        <li><a href="https://x.com/Optimism/status/2015423032613855380">Optimism</a> has announced a hard January 2036 deadline with no described rescue plan.</li>
+        <li>The <a href="https://assets.ctfassets.net/sygt3q11s4a9/6EjYavuGdtJDYCqaJrASj9/9f464a8bf26f44bd6c85710fe7e4a29f/Quantum_Computing_and_Blockchain_v10.3_15April2026.pdf">Coinbase position paper</a> also contemplates a flag day.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What the paper asks regulators for</h3>
+      <ul>
+        <li>How much notice issuers owe before a post-quantum cutoff.</li>
+        <li>What evidence suffices to recover assets from vulnerable EOAs or contracts.</li>
+        <li>How long locked assets stay recoverable before counting as unclaimed.</li>
+        <li>How escheat, custody, redemption, sanctions, AML/CFT, estate, and court-order rules apply. Escheat is named the closest analogue.</li>
+      </ul>
+      <p class="note" style="margin:.4rem 0 0">The paper puts the window for this guidance at potentially 5–10 years.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROPERTIES ============ -->
+<section id="tables"><div class="wrap">
+  <p class="eyebrow">Properties</p>
+  <h2>What breaks, and what Arc uses instead</h2>
+  <div class="tblgrid">
+    <div>
+      <h3>Table 1. Quantum impact on cryptographic primitives</h3>
+      <div class="tscroll"><table>
+        <thead><tr><th>Primitive</th><th>Examples of blockchain use</th><th>PQ status</th></tr></thead>
+        <tbody>
+          <tr><td>ECDSA / Ed25519 / BLS</td><td>Tx sigs, consensus</td><td><span class="st bad">&#10005; Broken (Shor)</span></td></tr>
+          <tr><td>ECDH / DH / ElGamal</td><td>Key exchange, KEM, privacy</td><td><span class="st bad">&#10005; Broken (Shor)</span></td></tr>
+          <tr><td>EC-pairing SNARKs</td><td>Groth16, PlonK, Halo2</td><td><span class="st bad">&#10005; Broken (Shor)</span></td></tr>
+          <tr><td>Pedersen / ElGamal Encryption</td><td>Zcash, Bulletproofs, conf. tokens</td><td><span class="st bad">&#10005; Broken (Shor)</span></td></tr>
+          <tr><td>AES / SHA-256 / Keccak</td><td>Symmetric enc., hashing</td><td><span class="st ok">&#10003; Safe</span></td></tr>
+          <tr><td>X-Wing / X25519MLKEM768</td><td>key encapsulation</td><td><span class="st ok">&#10003; Safe</span></td></tr>
+          <tr><td>STARK (FRI/STIR/WHIR)</td><td>ZK proofs, Merkle trees</td><td><span class="st ok">&#10003; Safe</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div>
+      <h3>Arc's post-quantum choices</h3>
+      <div class="tscroll"><table>
+        <thead><tr><th>Use</th><th>Algorithm</th><th>Level / note</th></tr></thead>
+        <tbody>
+          <tr><td>Enclave communication</td><td>TLS 1.3, X25519MLKEM768</td><td>Hybrid, NIST level 3</td></tr>
+          <tr><td>Transaction &amp; memo encryption</td><td>HPKE with X-Wing</td><td>Hybrid, NIST level 3</td></tr>
+          <tr><td>Signature precompile</td><td>SLH-DSA-SHA2-128s</td><td>Hash-based, level 1; SHA2 because the EVM has a SHA2 precompile</td></tr>
+          <tr><td>Privacy-layer state at rest</td><td>AES-256-GCM-SIV, keys via HKDF-SHA-256</td><td>Symmetric</td></tr>
+          <tr><td>Native tx signatures</td><td>ECDSA</td><td>Unchanged until the Switch</td></tr>
+          <tr><td>Consensus signatures</td><td>to be chosen</td><td>Awaiting an aggregate alternative to BLS (§5.1)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="cap">Sources: §1 (Algorithm Choices), §3.1, §3.3, §5.1. A hybrid stays secure while either its classical or its post-quantum half does.</p>
+    </div>
+  </div>
+
+  <div class="tblgrid" style="margin-top:30px">
+    <div>
+      <h3>Table 2. Quantum threats by blockchain layer</h3>
+      <div class="tscroll"><table>
+        <thead><tr><th>Layer</th><th>Attack</th><th>Time constraint</th></tr></thead>
+        <tbody>
+          <tr><td>Application</td><td>At-rest forgery (public key, trapdoor)</td><td>Offline</td></tr>
+          <tr><td>Application</td><td>Retroactive privacy loss</td><td>Offline (irreversible)</td></tr>
+          <tr><td>Consensus</td><td>Long-range / posterior</td><td>Offline</td></tr>
+          <tr><td>Consensus</td><td>Real-time disruption</td><td>Offline</td></tr>
+          <tr><td>Network</td><td>P2P session compromise</td><td>Offline</td></tr>
+          <tr><td>Network</td><td>RPC interception</td><td>Offline</td></tr>
+          <tr><td>Network</td><td>On-spend (mempool)</td><td>Seconds–min.</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div>
+      <h3>Table 3. PQ migration mandates and guidance</h3>
+      <div class="tscroll"><table>
+        <thead><tr><th>Organization</th><th>Document</th><th class="num">Deadline</th></tr></thead>
+        <tbody>
+          <tr><td class="grp" colspan="3">Government</td></tr>
+          <tr><td>EU</td><td>PQC Roadmap (2024/1101)</td><td class="num">2030</td></tr>
+          <tr><td>United States</td><td>NSM-10 / M-23-02</td><td class="num">2035</td></tr>
+          <tr><td>Canada (CCCS)</td><td>PQC Migration Roadmap</td><td class="num">2035</td></tr>
+          <tr><td>Germany (BSI)</td><td>PQ recommendations</td><td class="num">2030</td></tr>
+          <tr><td>UK (NCSC)</td><td>Next Steps in Preparing for PQC</td><td class="num">Advisory</td></tr>
+          <tr><td class="grp" colspan="3">Standards bodies &amp; agencies</td></tr>
+          <tr><td>NIST</td><td>CSWP migration roadmap</td><td class="num">Advisory</td></tr>
+          <tr><td>ETSI</td><td>Quantum-safe whitepaper</td><td class="num">Advisory</td></tr>
+          <tr><td>ENISA</td><td>PQC mitigation report</td><td class="num">Advisory</td></tr>
+          <tr><td>GSM Association</td><td>Telco PQ impact assessment</td><td class="num">Advisory</td></tr>
+          <tr><td class="grp" colspan="3">Industry &amp; research</td></tr>
+          <tr><td>World Economic Forum</td><td>Quantum-secure economy</td><td class="num">Advisory</td></tr>
+          <tr><td>SandboxAQ / Google</td><td>Nature paper</td><td class="num">Advisory</td></tr>
+          <tr><td>PQShield</td><td>Quantum threat series</td><td class="num">Advisory</td></tr>
+          <tr><td>Fraunhofer SIT</td><td>Practical PQC</td><td class="num">Advisory</td></tr>
+          <tr><td>CWI/TNO/AIVD (NL)</td><td>PQ migration handbook</td><td class="num">Advisory</td></tr>
+          <tr><td>CSIRO (Australia)</td><td>PQC whitepaper</td><td class="num">Advisory</td></tr>
+        </tbody>
+      </table></div>
+      <p class="cap">The paper judges the 2030–2035 cluster a reasonable timeline, safely ahead of a plausible quantum breakthrough.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROVENANCE ============ -->
+<section id="provenance"><div class="wrap">
+  <p class="eyebrow">Provenance</p>
+  <h2>Where the paper's own sources differ</h2>
+  <p class="lede">This page reproduces each source as written rather than reconciling them.</p>
+  <ol class="provlist">
+    <li><strong>A4 has three names.</strong> &ldquo;History Rewrite&rdquo; in the §2.3 text, &ldquo;Long-range&rdquo; in Figure 1 and Table 4, and &ldquo;Long-range / posterior&rdquo; in Table 2.</li>
+    <li><strong>A1 timing.</strong> Figure 1 annotates at-rest forgery with &ldquo;hours–days&rdquo;; Table 2 lists its time constraint as &ldquo;Offline&rdquo;.</li>
+    <li><strong>A2 placement.</strong> Figure 1 draws retroactive privacy loss at the validator (consensus) stage; §2.3 and Table 2 list it under the Application layer.</li>
+    <li><strong>A4 Transition countermeasure.</strong> Table 4 says &ldquo;PoW / social checkpointing (§4.7)&rdquo;; the text of §4.7 describes a &ldquo;post-quantum secured checkpoint of block state&rdquo; and does not mention PoW or social checkpointing.</li>
+    <li><strong>A6 Transition countermeasure.</strong> Table 4 cites &ldquo;TLS PQ upgrade (§4.6)&rdquo;; §4.6 covers libp2p and does not discuss TLS.</li>
+  </ol>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Cite</p>
+  <h2>BibTeX</h2>
+  <pre class="bib" id="bibtex">@misc{belenkiy2026circle,
+  title        = {Circle's Post-Quantum Security Roadmap: Securing Blockchains,
+                  Smart Contracts, and Digital Assets for the Quantum Era},
+  author       = {Belenkiy, Mira and Le, Duc V. and Liao, Gordon and
+                  Sehrawat, Vipin Singh and Rotaru, Dragos and Gorbunov, Sergey and
+                  Sheth, Milap and Logelin, Jay and De Abreu, Anthony and Boneh, Dan},
+  howpublished = {Circle Whitepaper},
+  year         = {2026},
+  url          = {https://levduc.github.io/papers/pq-roadmap.pdf}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Code.</strong> No code or data accompanies this whitepaper; it describes a roadmap rather than an implementation. Items such as Arc's SLH-DSA precompile and privacy layer are described in the paper, not released with it.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p class="ai" id="ai-note">* This page was generated with AI (Claude) from the paper's LaTeX source. The PDF is authoritative; where they differ, trust the PDF. Section, table, and figure numbers follow the current build of the paper.</p>
+  <p>Circle's Post-Quantum Security Roadmap · Circle Whitepaper 2026 · Circle, Stanford University.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function fmt(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function $(id){ return document.getElementById(id); }
+
+/* ---------- motion: every animation goes through tween() ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return function(){}; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* force-settle if requestAnimationFrame is starved (throttled tab) */
+  setTimeout(finish, ms + 150);
+  return function cancel(){ finished = true; };
+}
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+var tip = $('tip');
+function showTip(html, ev){
+  tip.innerHTML = html; tip.style.opacity = 1;
+  var x = ev.clientX + 14, y = ev.clientY + 14;
+  var w = tip.offsetWidth, h = tip.offsetHeight;
+  if (x + w > window.innerWidth - 8) x = ev.clientX - w - 14;
+  if (y + h > window.innerHeight - 8) y = ev.clientY - h - 14;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip(){ tip.style.opacity = 0; }
+
+/* =======================================================================
+   Data — all from the paper source (§2.3, Figure 1, Table 2, Table 4)
+   ===================================================================== */
+var PH = ['Now', 'Transition', 'Switch'];
+var PHC = ['--ph-now', '--ph-tr', '--ph-sw'];
+
+var ATTACKS = [
+  { id:'A1', short:'At-rest forgery', name:'At-rest forgery', layer:'Application', target:'sign',
+    fig:'Break keys or SNARK trapdoors (hours–days)', t2:'At-rest forgery (public key, trapdoor) · Offline',
+    desc:'A CRQC that sees an account\'s public key recovers the private key and forges arbitrary signatures. Every EVM address that has ever signed is exposed, including token transfers, EIP-712 permits, and any signature checked through <code>ecrecover</code>. Pairing-based SNARKs with trusted setups fall the same way: the setup trapdoor can be recovered and proofs forged. Stablecoin minting keys are a narrower but higher-impact target.',
+    m:[ ['SLH-DSA precompile (§3.1)','Arc Privacy (§3.3)','ERC-4337 smart accounts (§3.4.1)','frame txs (§3.4.5)','PQ public-key registry (§3.4.4)'],
+        ['Cold storage / multisig custody (§4.1)','USDC upgrades (§4.2)','ecrecover override (§4.3)','key mgmt (§4.5)'],
+        ['Hard switch (§5.1)','account rescue (§5.2)'] ],
+    prov:'Figure 1 gives &ldquo;hours–days&rdquo; for this attack; Table 2 gives &ldquo;Offline&rdquo;.' },
+  { id:'A6', short:'RPC intercept', name:'RPC interception', layer:'Network', target:'e1',
+    fig:'Break TLS, observe txs, inject responses', t2:'RPC interception · Offline',
+    desc:'Breaking the TLS ECDH handshake for JSON-RPC calls exposes queries and submitted transactions.',
+    m:[ ['Arc Privacy RPC (§3.3)'], ['TLS PQ upgrade (§4.6)','encrypted mempool (§4.4)'], [] ],
+    prov:'Table 4 cites &ldquo;TLS PQ upgrade (§4.6)&rdquo;, but §4.6 covers libp2p and does not discuss TLS.' },
+  { id:'A5', short:'P2P compromise', name:'P2P session compromise', layer:'Network', target:'e2',
+    fig:'Break libp2p Noise, RLPx, traffic analysis', t2:'P2P session compromise · Offline',
+    desc:'Breaking ECDH in peer-to-peer protocols such as libp2p/Noise enables traffic analysis, impersonation, and eclipse attacks. libp2p currently uses X25519 for key agreement and Ed25519 for identity; its 2025 annual report says post-quantum support is under exploration (§4.6).',
+    m:[ [], ['libp2p / Noise PQ upgrade (§4.6)'], [] ] },
+  { id:'A7', short:'On-spend', name:'On-spend attack', layer:'Network', target:'mem',
+    fig:'Break key from mempool tx (sec–min)', t2:'On-spend (mempool) · Seconds–min.',
+    desc:'Signatures visible in the mempool may allow key recovery before confirmation: a race between the attacker and a user rotating keys to avoid migrating to a post-quantum signature. Fast-clock CRQCs could finish in seconds to minutes (Babbush et al., 2026); slow-clock machines are limited to longer-window at-rest attacks.',
+    m:[ ['Hash-and-rotate (§3.4.2)','Arc Privacy (§3.3)'], ['Encrypted mempool (§4.4)'], ['PQ transaction signatures (§5.1)'] ] },
+  { id:'A3', short:'Disruption', name:'Real-time consensus disruption', layer:'Consensus', target:'val',
+    fig:'Break validator keys offline, rewrite history (with A4)', t2:'Real-time disruption · Offline',
+    desc:'A CRQC recovers validator keys (ECDSA, Ed25519, BLS) from on-chain signatures, enabling equivocation, double-signing, and censorship with no slashing deterrent, since the attacker holds no stake. Chains that elect leaders with ECC-based VRFs (Algorand, Ouroboros, some Cosmos chains) also become grindable; Tendermint-family consensus, including Arc\'s Malachite, uses round-robin proposers and is not exposed to that variant. Keys can be precomputed, so even sub-second consensus is at risk.',
+    m:[ [], [], ['PQ consensus signatures (§5.1)'] ] },
+  { id:'A4', short:'Long-range', name:'History rewrite', layer:'Consensus', target:'val',
+    fig:'Break validator keys offline, rewrite history (with A3)', t2:'Long-range / posterior · Offline',
+    desc:'With every historical validator key recoverable at once, an attacker can forge the history of a proof-of-stake chain. The attack is more likely to succeed against nodes that were offline and missed a state checkpoint. §4.7 answers with post-quantum validator signatures plus a post-quantum secured checkpoint, and optionally an optimistic re-validation of history in an archival node.',
+    m:[ [], ['PoW / social checkpointing (§4.7)'], ['PQ consensus signatures (§5.1)'] ],
+    prov:'Named &ldquo;History Rewrite&rdquo; in §2.3, &ldquo;Long-range&rdquo; in Figure 1 and Table 4, and &ldquo;Long-range / posterior&rdquo; in Table 2. Table 4\'s &ldquo;PoW / social checkpointing&rdquo; does not appear in §4.7, which describes a post-quantum secured checkpoint.' },
+  { id:'A2', short:'Privacy loss', name:'Retroactive privacy loss', layer:'Application', target:'val',
+    fig:'Decrypt on-chain data (irreversible)', t2:'Retroactive privacy loss · Offline (irreversible)',
+    desc:'Harvest-now-decrypt-later, which the paper calls the greatest risk for blockchain cryptography today. Encrypted on-chain data, shielded notes, and confidential tokens fall to a quantum attack on the ECDH KEM and on cryptographic commitments.',
+    m:[ ['Encrypted memos (§3.2)','Arc Privacy (§3.3)'], ['Key management & rotation order (§4.5)'], [] ],
+    prov:'Figure 1 draws this attack at the validator stage; §2.3 and Table 2 place it in the Application layer.' }
+];
+ATTACKS.forEach(function(a){
+  a.first = -1;
+  for (var i = 0; i < 3; i++) if (a.m[i].length){ a.first = i; break; }
+});
+function byId(id){ for (var i = 0; i < ATTACKS.length; i++) if (ATTACKS[i].id === id) return ATTACKS[i]; }
+
+/* roadmap items (§3–§5); tags from Table 4 rows that cite the section */
+var ROADMAP = [
+  { k:'Section 3', t:'Quantum Ready Now', d:'Protect privacy against harvest-now-decrypt-later and let USDC users start moving to post-quantum wallets.', items:[
+    { t:'SLH-DSA-SHA2-128s precompile', s:'§3.1', d:'Smart accounts verify post-quantum signatures on-chain. Aptos has proposed the same scheme (<a href="https://github.com/aptos-foundation/AIPs/blob/main/aips/aip-137-post-quantum-aptos-accounts-via-slh-dsa-sha2-128s.md">AIP-137</a>).', a:['A1'] },
+    { t:'Encrypted memos', s:'§3.2', d:'An SDK to encrypt memos with X-Wing HPKE, at 1,136 extra bytes each.', a:['A2'] },
+    { t:'Private TEE (privacy layer)', s:'§3.3', d:'Transactions, contract state, and traces stay encrypted; decryption only inside AWS Nitro enclaves.', a:['A1','A2','A6','A7'] },
+    { t:'Account migration options', s:'§3.4', d:'ERC-4337 accounts (§3.4.1), hash-and-rotate (§3.4.2), dual key derivation (§3.4.3), a PQ public-key registry (§3.4.4), frame transactions / EIP-8141 (§3.4.5).', a:['A1','A7'] }
+  ]},
+  { k:'Section 4', t:'Transition', d:'Run in hybrid mode while the rest of the ecosystem catches up; design for a fast switchover.', items:[
+    { t:'Cold storage to multisig', s:'§4.1', d:'On-chain multisig contracts that can mix signature schemes across chains. Threshold/MPC signing is judged too costly for now.', a:['A1'] },
+    { t:'USDC dual-mode contracts', s:'§4.2', d:'Upgradeable proxies accept classical and post-quantum signatures, with a switch to disable classical ones without another upgrade.', a:['A1'] },
+    { t:'Fixing ecrecover', s:'§4.3', d:'A hardfork routes <code>ecrecover</code> to an <code>ECRecoverOverride</code> contract; $v = 29$ selects the post-quantum path, keeping the ABI for immutable contracts.', a:['A1'] },
+    { t:'Encrypted mempool', s:'§4.4', d:'Under investigation: hide payloads even from validators until ordering.', a:['A6','A7'] },
+    { t:'Key management & inventory', s:'§4.5', d:'Inventory the stack, assess vendors, rotate keys in order: if $A$ protects $B$ protects $C$, rotate $A$ first.', a:['A1','A2'] },
+    { t:'libp2p', s:'§4.6', d:'Replace X25519 and Ed25519 in the networking stack once post-quantum support lands.', a:['A5','A6'] },
+    { t:'Chain history integrity', s:'§4.7', d:'Post-quantum validator signatures plus a post-quantum secured checkpoint.', a:['A4'] }
+  ]},
+  { k:'Section 5', t:'Switch', d:'Leave classical cryptography, with ample notice and ecosystem coordination.', items:[
+    { t:'Hard switch', s:'§5.1', d:'Reject ECDSA transactions, make <code>ecrecover</code> post-quantum only, upgrade consensus signatures, finish infrastructure; possibly delist USDC from chains that lack protections.', a:['A1','A3','A4','A7'] },
+    { t:'Account recovery', s:'§5.2', d:'Move to Arc, seed-phrase proofs, TEE-attested recovery, off-chain evidence.', a:['A1'] },
+    { t:'Policy implications', s:'§5.3', d:'Guidance on notice, evidence, and unclaimed assets; escheat as the closest legal analogue.', a:[] }
+  ]}
+];
+
+/* =======================================================================
+   1. Roadmap columns
+   ===================================================================== */
+function buildRoadmap(){
+  var host = $('phases'); host.innerHTML = '';
+  ROADMAP.forEach(function(ph, pi){
+    var col = document.createElement('div'); col.className = 'phase';
+    col.innerHTML = '<div class="bar" style="background:var(' + PHC[pi] + ')"></div>' +
+      '<div class="ph-head"><div class="ph-k" style="color:var(--ink-muted)">' + ph.k + '</div><h3>' + ph.t + '</h3><p>' + ph.d + '</p></div>';
+    ph.items.forEach(function(it){
+      var d = document.createElement('div'); d.className = 'item rv-item';
+      var tags = it.a.length ? it.a.map(function(id){
+        return '<button class="atag" data-a="' + id + '" data-p="' + pi + '" title="' + byId(id).name + '">' + id + '</button>';
+      }).join('') : '<span class="atag none">no Table 4 row</span>';
+      d.innerHTML = '<span class="it">' + it.t + '</span><span class="sec">' + it.s + '</span><p>' + it.d + '</p><div class="tags">' + tags + '</div>';
+      col.appendChild(d);
+    });
+    host.appendChild(col);
+  });
+  host.addEventListener('click', function(ev){
+    var b = ev.target.closest('.atag[data-a]'); if (!b) return;
+    setPhase(+b.getAttribute('data-p'), true);
+    selectAttack(b.getAttribute('data-a'), true);
+    var t = $('attacks'); if (t.scrollIntoView) t.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth' });
+  });
+}
+function enterRoadmap(){
+  var items = document.querySelectorAll('#phases .phase');
+  Array.prototype.forEach.call(items, function(n, i){
+    n.style.opacity = 0; n.style.transform = 'translateY(14px)';
+    setTimeout(function(){
+      tween(520, function(p){ n.style.opacity = p; n.style.transform = 'translateY(' + (14 * (1 - p)) + 'px)'; });
+    }, i * 140);
+  });
+}
+
+/* =======================================================================
+   2. Lifecycle explorer (Figure 1 + Table 4)
+   ===================================================================== */
+var STAGES = [
+  { id:'user', t:'User', s:'wallet', layer:'' },
+  { id:'sign', t:'Sign tx', s:'ECDSA', layer:'Application' },
+  { id:'node', t:'Node', s:'e.g., reth', layer:'Network' },
+  { id:'mem', t:'Mempool', s:'P2P broadcast', layer:'Network' },
+  { id:'val', t:'Validators', s:'e.g., Malachite', layer:'Consensus' }
+];
+var EDGE_LABEL = { e1:'RPC over TLS', e2:'libp2p' };
+var phase = 0, selected = 'A7';
+var chipNodes = {};
+
+function drawLifecycle(){
+  var host = $('lifecycle'); host.innerHTML = '';
+  var narrow = host.clientWidth < 620;
+  var W, H, pos = {}, chipPos = {}, svg;
+  var ink = css('--ink-1'), muted = css('--ink-muted'), axis = css('--axis'), accent = css('--accent');
+  if (!narrow){
+    W = 960; H = 292;
+    var xs = [60, 230, 470, 700, 885], ws = [100, 140, 160, 140, 130];
+    STAGES.forEach(function(s, i){ pos[s.id] = { x: xs[i] - ws[i] / 2, y: 76, w: ws[i], h: 62, cx: xs[i], cy: 107 }; });
+    pos.e1 = { cx: (pos.sign.x + pos.sign.w + pos.node.x) / 2, cy: 107 };
+    pos.e2 = { cx: (pos.node.x + pos.node.w + pos.mem.x) / 2, cy: 107 };
+    ATTACKS.forEach(function(a, i){ chipPos[a.id] = { x: 8 + i * 136.3, y: 214, w: 124, h: 64 }; });
+  } else {
+    W = 360; H = 612;
+    var ys = [26, 130, 250, 370, 490];
+    STAGES.forEach(function(s, i){ pos[s.id] = { x: 6, y: ys[i], w: 160, h: 50, cx: 86, cy: ys[i] + 25 }; });
+    pos.e1 = { cx: 86, cy: (pos.sign.y + 50 + pos.node.y) / 2 };
+    pos.e2 = { cx: 86, cy: (pos.node.y + 50 + pos.mem.y) / 2 };
+    var cy = { A1:155, A6:215, A5:335, A7:395, A3:470, A4:522, A2:574 };
+    ATTACKS.forEach(function(a){ chipPos[a.id] = { x: 194, y: cy[a.id] - 23, w: 162, h: 46 }; });
+  }
+  svg = el('svg', { viewBox: narrow ? '0 0 ' + W + ' ' + H : '0 40 ' + W + ' ' + (H - 40), role: 'img',
+    'aria-label': 'Transaction lifecycle from user to validators with seven quantum attacks' });
+  var defs = el('defs');
+  var mk = el('marker', { id: 'arr', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+  mk.appendChild(el('path', { d: 'M0,0 L10,5 L0,10 z', fill: muted }));
+  defs.appendChild(mk); svg.appendChild(defs);
+
+  /* connectors (drawn first, under everything) */
+  var conG = el('g');
+  ATTACKS.forEach(function(a){
+    var c = chipPos[a.id], t = pos[a.target], x1, y1, x2, y2;
+    if (!narrow){
+      x1 = c.x + c.w / 2; y1 = c.y;
+      x2 = t.cx; y2 = (a.target === 'e1' || a.target === 'e2') ? t.cy + 6 : t.y + t.h;
+      if (a.target === 'val'){ x2 = t.cx + ({ A3: -34, A4: 0, A2: 34 })[a.id]; }
+    } else {
+      x1 = c.x; y1 = c.y + c.h / 2;
+      if (a.target === 'e1' || a.target === 'e2'){ x2 = t.cx + 6; y2 = t.cy; }
+      else { x2 = t.x + t.w; y2 = t.cy + (a.target === 'val' ? ({ A3: -14, A4: 0, A2: 14 })[a.id] : 0); }
+    }
+    var ln = el('line', { x1: x1, y1: y1, x2: x2, y2: y2, stroke: axis, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' });
+    ln.setAttribute('data-a', a.id);
+    conG.appendChild(ln);
+  });
+  svg.appendChild(conG);
+
+  /* edges */
+  for (var i = 0; i < STAGES.length - 1; i++){
+    var A = pos[STAGES[i].id], B = pos[STAGES[i + 1].id];
+    if (!narrow) svg.appendChild(el('line', { x1: A.x + A.w + 3, y1: 107, x2: B.x - 4, y2: 107, stroke: muted, 'stroke-width': 1.6, 'marker-end': 'url(#arr)' }));
+    else svg.appendChild(el('line', { x1: 86, y1: A.y + A.h + 3, x2: 86, y2: B.y - 4, stroke: muted, 'stroke-width': 1.6, 'marker-end': 'url(#arr)' }));
+  }
+  ['e1', 'e2'].forEach(function(e){
+    var p = pos[e];
+    if (!narrow) svg.appendChild(el('text', { x: p.cx, y: 96, 'text-anchor': 'middle', 'font-family': css('--mono'), 'font-size': 12, fill: muted }, EDGE_LABEL[e]));
+    else svg.appendChild(el('text', { x: 78, y: p.cy + 4, 'text-anchor': 'end', 'font-family': css('--mono'), 'font-size': 11.5, fill: muted }, EDGE_LABEL[e]));
+  });
+
+  /* stage boxes */
+  STAGES.forEach(function(s){
+    var p = pos[s.id];
+    svg.appendChild(el('rect', { x: p.x, y: p.y, width: p.w, height: p.h, rx: 4, fill: '#ffffff', stroke: axis, 'stroke-width': 1.2 }));
+    var ty = p.y + (narrow ? 21 : 27);
+    svg.appendChild(el('text', { x: p.cx, y: ty, 'text-anchor': 'middle', 'font-family': css('--font'), 'font-size': narrow ? 14 : 15, 'font-weight': 700, fill: css('--ink-head') }, s.t));
+    svg.appendChild(el('text', { x: p.cx, y: ty + (narrow ? 17 : 19), 'text-anchor': 'middle', 'font-family': css('--mono'), 'font-size': 12, fill: muted }, s.s));
+    if (s.layer){
+      if (!narrow) svg.appendChild(el('text', { x: p.cx, y: p.y - 10, 'text-anchor': 'middle', 'font-family': css('--mono'), 'font-size': 11.5, 'letter-spacing': '.06em', fill: muted }, s.layer.toUpperCase()));
+      else svg.appendChild(el('text', { x: p.x + 2, y: p.y - 6, 'font-family': css('--mono'), 'font-size': 10.5, 'letter-spacing': '.05em', fill: muted }, s.layer.toUpperCase()));
+    }
+  });
+
+  /* attack chips */
+  chipNodes = {};
+  ATTACKS.forEach(function(a){
+    var c = chipPos[a.id];
+    var g = el('g', { class: 'chip', tabindex: 0, role: 'button', 'aria-label': a.id + ' ' + a.name });
+    var off = el('rect', { class: 'chip-off', x: c.x, y: c.y, width: c.w, height: c.h, rx: 4, fill: '#ffffff', stroke: axis, 'stroke-width': 1.3, 'stroke-dasharray': '4 3' });
+    var on = el('g', { opacity: 0 });
+    var col = a.first >= 0 ? css(PHC[a.first]) : axis;
+    on.appendChild(el('rect', { x: c.x, y: c.y, width: c.w, height: c.h, rx: 4, fill: col, 'fill-opacity': 0.13, stroke: col, 'stroke-width': 1.6 }));
+    on.appendChild(el('rect', { x: c.x, y: c.y, width: 5, height: c.h, rx: 2, fill: col }));
+    var sel = el('rect', { x: c.x - 3, y: c.y - 3, width: c.w + 6, height: c.h + 6, rx: 6, fill: 'none', stroke: accent, 'stroke-width': 2.2, opacity: 0 });
+    g.appendChild(off); g.appendChild(on); g.appendChild(sel);
+    var tx = c.x + 12, st;
+    if (!narrow){
+      g.appendChild(el('text', { x: tx, y: c.y + 20, 'font-family': css('--mono'), 'font-size': 13.5, 'font-weight': 700, fill: ink }, a.id));
+      g.appendChild(el('text', { x: tx, y: c.y + 38, 'font-family': css('--font'), 'font-size': 13, fill: ink }, a.short));
+      st = el('text', { x: tx, y: c.y + 55, 'font-family': css('--mono'), 'font-size': 11, fill: muted }, '');
+    } else {
+      g.appendChild(el('text', { x: tx, y: c.y + 19, 'font-family': css('--font'), 'font-size': 13, fill: ink }, a.id + ' · ' + a.short));
+      st = el('text', { x: tx, y: c.y + 36, 'font-family': css('--mono'), 'font-size': 11, fill: muted }, '');
+    }
+    g.appendChild(st);
+    g.addEventListener('click', function(){ selectAttack(a.id, true); });
+    g.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); selectAttack(a.id, true); } });
+    g.addEventListener('mousemove', function(ev){ showTip('<b>' + a.id + ' · ' + a.name + '</b>' + a.layer + ' layer<br>Figure 1: ' + a.fig, ev); });
+    g.addEventListener('mouseleave', hideTip);
+    svg.appendChild(g);
+    chipNodes[a.id] = { on: on, sel: sel, st: st, line: conG.querySelector('line[data-a="' + a.id + '"]'), v: 0 };
+  });
+  host.appendChild(svg);
+  paintChips(false);
+}
+
+function covered(a, p){ return a.first >= 0 && a.first <= p; }
+var chipCancel = null;
+function paintChips(animate){
+  var n = 0;
+  ATTACKS.forEach(function(a){
+    var c = chipNodes[a.id]; if (!c) return;
+    var cov = covered(a, phase); if (cov) n++;
+    c.st.textContent = cov ? '✓ since ' + PH[a.first] : '— none yet';
+    c.target = cov ? 1 : 0; c.from = c.v;
+    c.sel.setAttribute('opacity', a.id === selected ? 1 : 0);
+    c.line.setAttribute('stroke', a.id === selected ? css('--accent') : css('--axis'));
+    c.line.setAttribute('stroke-width', a.id === selected ? 2 : 1.5);
+  });
+  if (chipCancel) chipCancel();
+  chipCancel = tween(animate ? 420 : 0, function(t){
+    ATTACKS.forEach(function(a){ var c = chipNodes[a.id]; if (!c) return; c.v = lerp(c.from, c.target, t); c.on.setAttribute('opacity', c.v); });
+  });
+  paintMeter(n, animate);
+}
+var meterFrom = 0, meterCancel = null;
+function paintMeter(n, animate){
+  var m = $('meter');
+  if (!m.children.length) for (var i = 0; i < 7; i++) m.appendChild(document.createElement('span'));
+  var sorted = ATTACKS.slice().sort(function(a, b){ return (a.first < 0 ? 9 : a.first) - (b.first < 0 ? 9 : b.first); });
+  sorted.forEach(function(a, i){
+    var s = m.children[i], cov = covered(a, phase);
+    s.style.background = cov ? 'var(' + PHC[a.first] + ')' : '';
+    s.style.borderStyle = cov ? 'solid' : 'dashed';
+    s.style.borderColor = cov ? 'transparent' : '';
+    s.title = a.id + (cov ? ' — first countered in ' + PH[a.first] : ' — no countermeasure yet');
+  });
+  var from = meterFrom; meterFrom = n;
+  if (meterCancel) meterCancel();
+  meterCancel = tween(animate ? 420 : 0, function(t){
+    $('count').innerHTML = '<b>' + Math.round(lerp(from, n, t)) + '</b> of 7 attacks have a countermeasure listed by the end of <b style="font-size:1em">' + PH[phase] + '</b>';
+  });
+}
+
+function setPhase(p, animate){
+  phase = p;
+  Array.prototype.forEach.call(document.querySelectorAll('#phaseSeg button'), function(b){ b.setAttribute('aria-pressed', +b.getAttribute('data-p') === p ? 'true' : 'false'); });
+  paintChips(animate); renderDetail(animate);
+}
+function selectAttack(id, animate){ selected = id; paintChips(false); renderDetail(animate); }
+
+function renderDetail(animate){
+  var a = byId(selected), d = $('detail');
+  var cols = a.m.map(function(list, i){
+    var dot = '<span class="swatch" style="background:var(' + PHC[i] + ')"></span>';
+    var body = list.length ? '<ul>' + list.map(function(x){ return '<li>' + x + '</li>'; }).join('') + '</ul>' : '<p class="empty">&mdash; none listed</p>';
+    return '<div class="mcol' + (i > phase ? ' later' : '') + '"><div class="mk">' + dot + PH[i] + '</div>' + body + '</div>';
+  }).join('');
+  d.innerHTML = '<div class="detail-grid"><div>' +
+    '<h3>' + a.id + ' · ' + a.name + ' <span class="lay">' + a.layer + ' layer</span></h3>' +
+    '<p style="font-size:.93rem;margin:.4rem 0 0">' + a.desc + '</p></div><div>' +
+    '<dl><dt>Timing and label, Figure 1</dt><dd>' + a.fig + '</dd><dt>Table 2</dt><dd>' + a.t2 + '</dd></dl>' +
+    '<div class="note" style="font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:.72rem;margin-bottom:.35rem">Countermeasures, Table 4</div>' +
+    '<div class="mit">' + cols + '</div>' +
+    (a.prov ? '<div class="prov"><b>Provenance.</b> ' + a.prov + '</div>' : '') +
+    '</div></div>';
+  if (animate){ d.style.opacity = 0; tween(260, function(p){ d.style.opacity = p; }); }
+}
+
+function buildT4(){
+  var h = '<thead><tr><th>Attack</th><th>Now (§3)</th><th>Transition (§4)</th><th>Switch (§5)</th></tr></thead><tbody>';
+  var order = ['A1','A2','A3','A4','A5','A6','A7'];
+  var label = { A1:'(A1) At-rest forgery', A2:'(A2) Privacy loss', A3:'(A3) Consensus disruption', A4:'(A4) Long-range attack', A5:'(A5) P2P compromise', A6:'(A6) RPC intercept', A7:'(A7) On-spend' };
+  order.forEach(function(id){
+    var a = byId(id);
+    h += '<tr><td><b>' + label[id] + '</b></td>' + a.m.map(function(l){ return '<td>' + (l.length ? l.join('; ') : '&mdash;') + '</td>'; }).join('') + '</tr>';
+  });
+  $('t4').innerHTML = h + '</tbody>';
+}
+
+/* =======================================================================
+   3. Signature sizes (§2.5, §4.3)
+   ===================================================================== */
+var SIGS = [
+  { k:'ECDSA', n:'ECDSA', b:65, lbl:'65 B', pq:false, basis:'Elliptic curve', where:'§4.3: the fixed 65-byte signature <code>ecrecover</code> expects', std:'Today\'s EVM transaction signature. Broken by Shor.' },
+  { k:'Falcon', n:'Falcon-512', b:666, lbl:'~666 B', pq:true, basis:'Lattice', where:'§2.5: &ldquo;encoding-dependent and commonly reported around 666 bytes&rdquo;', std:'Shortest NIST-selected PQ signature; to be published as FN-DSA. Arc is waiting on it for native transaction signatures (§3.1).' },
+  { k:'ML-DSA', n:'ML-DSA-44', b:2420, lbl:'2,420 B', pq:true, basis:'Lattice (module-LWE/SIS)', where:'§2.5: &ldquo;2420-byte signatures&rdquo;', std:'FIPS 204. Comparatively fast verification.' },
+  { k:'SLH-DSA', n:'SLH-DSA', b:7856, lbl:'7,856 B', pq:true, basis:'Hash-based', where:'§2.5: &ldquo;7856-byte signatures&rdquo;', std:'FIPS 205. Most conservative assumptions, slower signing. Arc\'s precompile uses the SHA2-128s parameter set (§3.1).' }
+];
+var sigSel = 3, sigScale = 'lin', sigBars = [], sigEntered = false;
+
+function sigX(b, x0, x1){
+  if (sigScale === 'lin') return x0 + (x1 - x0) * b / 8000;
+  return x0 + (x1 - x0) * (Math.log(b) / Math.LN10 - 1) / 3;    /* 10 .. 10,000 */
+}
+function drawSizes(mode){
+  var host = $('sizechart'); host.innerHTML = '';
+  var narrow = host.clientWidth < 520;
+  var W = narrow ? 340 : 600, rowH = narrow ? 62 : 56, top = 12, H = top + rowH * SIGS.length + 34;
+  var x0 = narrow ? 4 : 112, x1 = narrow ? W - 60 : W - 78;
+  var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Signature sizes in bytes' });
+  var grid = el('g'), mono = css('--mono'), muted = css('--ink-muted');
+  var ticks = sigScale === 'lin' ? [0, 2000, 4000, 6000, 8000] : [10, 100, 1000, 10000];
+  ticks.forEach(function(t){
+    var x = sigX(t === 0 ? 0 : t, x0, x1); if (sigScale === 'lin' && t === 0) x = x0;
+    grid.appendChild(el('line', { x1: x, x2: x, y1: top - 4, y2: H - 28, stroke: css('--grid'), 'stroke-width': 1 }));
+    grid.appendChild(el('text', { x: x, y: H - 10, 'text-anchor': 'middle', 'font-family': mono, 'font-size': 11.5, fill: muted }, fmt(t)));
+  });
+  grid.appendChild(el('text', { x: x1 + (narrow ? 56 : 74), y: H - 10, 'text-anchor': 'end', 'font-family': mono, 'font-size': 11.5, fill: muted }, 'bytes'));
+  svg.appendChild(grid);
+  sigBars = [];
+  SIGS.forEach(function(s, i){
+    var y = top + i * rowH, bh = 20, by = narrow ? y + 24 : y + (rowH - bh) / 2 - 4;
+    var g = el('g', { class: 'bar-hit' });
+    g.appendChild(el('rect', { x: 0, y: y, width: W, height: rowH, fill: 'transparent' }));
+    if (narrow) g.appendChild(el('text', { x: x0, y: y + 16, 'font-family': css('--font'), 'font-size': 13.5, 'font-weight': 700, fill: css('--ink-1') }, s.n));
+    else g.appendChild(el('text', { x: x0 - 10, y: by + 15, 'text-anchor': 'end', 'font-family': css('--font'), 'font-size': 14, 'font-weight': 700, fill: css('--ink-1') }, s.n));
+    var full = Math.max(4, sigX(s.b, x0, x1) - x0);
+    var bar = el('rect', { x: x0, y: by, width: 0, height: bh, rx: 4, fill: s.pq ? css('--ph-now') : css('--classical') });
+    bar.setAttribute('data-final', full.toFixed(2));
+    var lab = el('text', { x: x0 + 6, y: by + 15, 'font-family': mono, 'font-size': 12.5, 'font-weight': 700, fill: css('--ink-1') }, s.lbl);
+    g.appendChild(bar); g.appendChild(lab);
+    g.addEventListener('click', function(){ setSig(i); });
+    g.addEventListener('mousemove', function(ev){ showTip('<b>' + s.n + '</b>' + s.lbl + ' · ' + s.basis, ev); });
+    g.addEventListener('mouseleave', hideTip);
+    svg.appendChild(g);
+    sigBars.push({ bar: bar, lab: lab, full: full, w: 0, i: i, x0: x0 });
+  });
+  host.appendChild(svg);
+  if (mode === 'hidden') return;
+  growSizes(mode === 'enter' ? 'enter' : 'static');
+}
+function placeBar(b, w){
+  b.w = w; b.bar.setAttribute('width', Math.max(0, w));
+  b.lab.setAttribute('x', b.x0 + Math.max(0, w) + 6);
+  b.bar.setAttribute('opacity', b.i === sigSel ? 1 : 0.45);
+}
+function growSizes(mode){
+  sigBars.forEach(function(b, k){
+    var from = mode === 'enter' ? 0 : (mode === 'static' ? b.full : b.w);
+    if (mode === 'static'){ placeBar(b, b.full); return; }
+    setTimeout(function(){ tween(mode === 'enter' ? 900 : 480, function(t){ placeBar(b, lerp(from, b.full, t)); }); }, mode === 'enter' ? k * 110 : 0);
+  });
+}
+function rescale(){
+  var old = sigBars.map(function(b){ return b.w; });
+  drawSizes('hidden');
+  sigBars.forEach(function(b, i){ placeBar(b, old[i] || 0); });
+  growSizes('update');
+}
+function setSig(i){
+  sigSel = i;
+  Array.prototype.forEach.call(document.querySelectorAll('#schemeSeg button'), function(b, k){ b.setAttribute('aria-pressed', k === i ? 'true' : 'false'); });
+  sigBars.forEach(function(b){ b.bar.setAttribute('opacity', b.i === i ? 1 : 0.45); });
+  var s = SIGS[i], ratio = s.b / 65;
+  var ratioTxt = i === 0 ? '1×' : (s.k === 'Falcon' ? '≈ ' : '') + ratio.toFixed(2) + '×';
+  $('sizeRead').innerHTML =
+    '<div class="ro"><div class="k">' + s.n + '</div><div class="v"><span id="sizeV">' + s.lbl + '</span></div><p class="s">' + s.where + '</p></div>' +
+    '<div class="ro"><div class="k">Relative to ECDSA</div><div class="v">' + ratioTxt + '</div><p class="s">' + (i === 0 ? 'The baseline.' : 'Derived here: ' + fmt(s.b) + ' ÷ 65. Does not fit the 65-byte <code>ecrecover</code> input.') + '</p></div>' +
+    '<div class="ro"><div class="k">' + s.basis + '</div><p class="s" style="margin:0">' + s.std + '</p></div>';
+  if (i !== 0 && !REDUCED){
+    var v = $('sizeV'), pre = s.k === 'Falcon' ? '~' : '';
+    tween(520, function(t){ v.textContent = pre + fmt(lerp(0, s.b, t)) + ' B'; });
+  }
+}
+function buildSizeUI(){
+  var seg = $('schemeSeg');
+  seg.innerHTML = SIGS.map(function(s, i){ return '<button data-i="' + i + '" aria-pressed="' + (i === sigSel) + '">' + s.k + '</button>'; }).join('');
+  seg.addEventListener('click', function(ev){ var b = ev.target.closest('button'); if (b) setSig(+b.getAttribute('data-i')); });
+  $('scaleSeg').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) return;
+    sigScale = b.getAttribute('data-s');
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    rescale();
+  });
+  $('sizeTbody').innerHTML = SIGS.map(function(s){ return '<tr><td>' + s.n + '</td><td class="num">' + (s.k === 'Falcon' ? '~' : '') + fmt(s.b) + '</td><td>' + s.basis + '</td><td>' + s.where + '</td></tr>'; }).join('');
+}
+
+/* =======================================================================
+   4. Exposure window (§2.3 A7, §3.4.2, §4.4, §3.3)
+   ===================================================================== */
+var clock = 'fast';
+var LANES = [
+  { k:'plain', n:'Plain EOA (ECDSA)', s:'key public after its first tx',
+    out:{ fast:['bad','Forgery possible: key exposed at rest and on spend'], slow:['bad','Forgery possible: key exposed at rest (A1)'] } },
+  { k:'hr', n:'Hash-and-rotate (§3.4.2)', s:'exposed broadcast → inclusion',
+    out:{ fast:['race','Race: attacker must forge a competing UserOperation inside the window'], slow:['ok','Out of reach: slow-clock is limited to at-rest attacks (§2.3)'] } },
+  { k:'em', n:'+ Encrypted mempool (§4.4)', s:'payload hidden until ordering',
+    out:{ fast:['race','Narrower race: the window shrinks (§4.4)'], slow:['ok','Out of reach'] } },
+  { k:'arc', n:'Arc privacy layer (§3.3)', s:'tx and signature encrypted',
+    out:{ fast:['ok','Signature never public outside the enclave'], slow:['ok','Signature never public outside the enclave'] } }
+];
+/* schematic time units: three transactions; b = broadcast, o = ordering, i = inclusion */
+var TXS = [ { b: 14, o: 17, i: 19 }, { b: 44, o: 47, i: 49 }, { b: 74, o: 77, i: 79 } ];
+var expParts = [], expProg = 1, expCancel = null;
+
+function drawExposure(progress){
+  var host = $('expchart'); host.innerHTML = '';
+  var narrow = host.clientWidth < 620;
+  var W = narrow ? 340 : 940, laneH = narrow ? 124 : 66, top = 8;
+  var lx = narrow ? 4 : 206, rx = narrow ? W - 4 : 640, ox = narrow ? 4 : 660;
+  var H = top + laneH * LANES.length + 26;
+  var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Public-key exposure over time for four account designs' });
+  var mono = css('--mono'), muted = css('--ink-muted'), crit = css('--critical'), ink = css('--ink-1');
+  function X(t){ return lx + (rx - lx) * t / 100; }
+  expParts = [];
+  LANES.forEach(function(L, li){
+    var y0 = top + li * laneH;
+    var ty = narrow ? y0 + 30 : y0 + 26;      /* track y */
+    if (li) svg.appendChild(el('line', { x1: 0, x2: W, y1: y0, y2: y0, stroke: css('--grid') }));
+    if (!narrow){
+      svg.appendChild(el('text', { x: 0, y: y0 + 24, 'font-family': css('--font'), 'font-size': 13.5, 'font-weight': 700, fill: ink }, L.n));
+      svg.appendChild(el('text', { x: 0, y: y0 + 41, 'font-family': mono, 'font-size': 11, fill: muted }, L.s));
+    } else {
+      svg.appendChild(el('text', { x: 0, y: y0 + 16, 'font-family': css('--font'), 'font-size': 13.5, 'font-weight': 700, fill: ink }, L.n));
+    }
+    var band = narrow ? ty + 4 : ty - 6;
+    if (L.k !== 'arc') svg.appendChild(el('line', { x1: lx, x2: rx, y1: band + 7, y2: band + 7, stroke: css('--axis'), 'stroke-width': 1 }));
+    /* exposure intervals */
+    var iv = [];
+    if (L.k === 'plain') iv.push([TXS[0].b, 100]);
+    else if (L.k === 'hr') TXS.forEach(function(t){ iv.push([t.b, t.i]); });
+    else if (L.k === 'em') TXS.forEach(function(t){ iv.push([t.o, t.i]); });
+    var exp = iv.map(function(v){
+      var r = el('rect', { x: X(v[0]), y: band, width: 0, height: 14, rx: 2, fill: crit, 'fill-opacity': 0.35 });
+      svg.appendChild(r); return { r: r, a: v[0], b: v[1] };
+    });
+    if (L.k === 'arc') svg.appendChild(el('text', { x: X(50), y: band + 11, 'text-anchor': 'middle', 'font-family': mono, 'font-size': 11, fill: muted }, 'encrypted: nothing public'));
+    if (L.k === 'plain') svg.appendChild(el('text', { x: rx, y: band - 4, 'text-anchor': 'end', 'font-family': mono, 'font-size': 10.5, fill: muted }, 'forever →'));
+    /* transactions */
+    var txm = TXS.map(function(t){
+      var m = el('rect', { x: X(t.b), y: band + 17, width: X(t.i) - X(t.b), height: 4, rx: 2, fill: css('--ph-now'), opacity: 0 });
+      svg.appendChild(m); return { r: m, a: t.b };
+    });
+    /* attacker runs: fast = short, slow = long; start at each exposure start */
+    var runs = exp.map(function(e){
+      var lo = clock === 'fast' ? 1 : 30, hi = clock === 'fast' ? 8 : 48;
+      var f = el('rect', { x: X(e.a), y: band + 25, width: 0, height: 5, rx: 2, fill: ink, 'fill-opacity': 0.22 });
+      var r = el('rect', { x: X(e.a), y: band + 25, width: 0, height: 5, rx: 2, fill: ink });
+      svg.appendChild(f); svg.appendChild(r); return { r: r, f: f, a: e.a, lo: lo, hi: hi };
+    });
+    /* outcome */
+    var o = L.out[clock], icon = o[0] === 'bad' ? '✕' : o[0] === 'race' ? '!' : '✓';
+    var oc = o[0] === 'bad' ? crit : o[0] === 'race' ? css('--serious') : css('--good');
+    var oy = narrow ? y0 + 82 : y0 + 22;
+    var ot = el('text', { x: ox, y: oy, 'font-family': mono, 'font-size': 12, class: 'outcome' });
+    var t1 = el('tspan', { fill: oc, 'font-weight': 700 }, icon + ' ' + (o[0] === 'bad' ? 'Exposed' : o[0] === 'race' ? 'Race' : 'Protected'));
+    ot.appendChild(t1); svg.appendChild(ot);
+    var words = o[1].split(' '), line = '', lines = [], maxc = narrow ? 50 : 38;
+    words.forEach(function(w){ if ((line + ' ' + w).trim().length > maxc){ lines.push(line.trim()); line = w; } else line += ' ' + w; });
+    lines.push(line.trim());
+    lines.forEach(function(s, k){ svg.appendChild(el('text', { x: ox, y: oy + 15 + k * 13.5, 'font-family': mono, 'font-size': 11, fill: css('--ink-2') }, s)); });
+    expParts.push({ exp: exp, txm: txm, runs: runs, X: X, rx: rx });
+  });
+  svg.appendChild(el('text', { x: lx, y: H - 6, 'font-family': mono, 'font-size': 11, fill: muted }, 'time → (schematic, no units)'));
+  var cursor = el('line', { x1: lx, x2: lx, y1: top, y2: H - 22, stroke: css('--accent'), 'stroke-width': 1.2, opacity: 0 });
+  svg.appendChild(cursor);
+  expParts.cursor = cursor;
+  host.appendChild(svg);
+  setExposure(progress);
+}
+function setExposure(T){                       /* T in 0..1: sweep through schematic time */
+  expProg = T;
+  var now = T * 100;
+  expParts.forEach(function(L){
+    L.exp.forEach(function(e){ var end = Math.min(e.b, now); L_w(e.r, L.X(e.a), end > e.a ? L.X(end) - L.X(e.a) : 0); });
+    L.txm.forEach(function(m){ m.r.setAttribute('opacity', now >= m.a ? 1 : 0); });
+    L.runs.forEach(function(r){
+      var e1 = Math.min(r.a + r.lo, now, 100), e2 = Math.min(r.a + r.hi, now, 100);
+      L_w(r.r, L.X(r.a), e1 > r.a ? L.X(e1) - L.X(r.a) : 0);
+      L_w(r.f, L.X(r.a), e2 > r.a ? L.X(e2) - L.X(r.a) : 0);
+    });
+  });
+  var c = expParts.cursor;
+  if (c){ var x = expParts[0].X(now); c.setAttribute('x1', x); c.setAttribute('x2', x); c.setAttribute('opacity', T > 0 && T < 1 ? 0.8 : 0); }
+}
+function L_w(r, x, w){ r.setAttribute('x', x); r.setAttribute('width', Math.max(0, w)); }
+function playExposure(){
+  if (expCancel) expCancel();
+  expCancel = tween(1800, function(t){ setExposure(t); });
+}
+
+/* =======================================================================
+   Tiles, BibTeX, KaTeX, boot
+   ===================================================================== */
+function countTiles(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
+    var to = +n.getAttribute('data-count');
+    tween(900, function(t){ n.textContent = fmt(lerp(0, to, t)); });
+  });
+}
+$('copyBib').addEventListener('click', function(){
+  var b = this, txt = $('bibtex').textContent;
+  function ok(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1400); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function(){});
+});
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+}
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+$('phaseSeg').addEventListener('click', function(ev){ var b = ev.target.closest('button'); if (b) setPhase(+b.getAttribute('data-p'), true); });
+$('clockSeg').addEventListener('click', function(ev){
+  var b = ev.target.closest('button'); if (!b) return;
+  clock = b.getAttribute('data-c');
+  Array.prototype.forEach.call(this.querySelectorAll('button'), function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+  drawExposure(0); playExposure();
+});
+$('replay').addEventListener('click', function(){ setExposure(0); playExposure(); });
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+buildRoadmap(); buildT4(); buildSizeUI();
+drawLifecycle(); renderDetail(false);
+drawSizes(hasIO ? 'hidden' : 'static'); setSig(sigSel);
+drawExposure(hasIO ? 0 : 1);
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var s = en.target; io.unobserve(s);
+      tween(550, function(p){ s.style.opacity = p; s.style.transform = p >= 1 ? '' : 'translateY(' + (16 * (1 - p)) + 'px)'; });
+      var id = s.id;
+      if (id === 'numbers') setTimeout(countTiles, 120);
+      else if (id === 'roadmap') enterRoadmap();
+      else if (id === 'attacks') setTimeout(function(){ ATTACKS.forEach(function(a){ chipNodes[a.id].v = 0; chipNodes[a.id].on.setAttribute('opacity', 0); }); meterFrom = 0; paintChips(true); }, 160);
+      else if (id === 'sizes') setTimeout(function(){ sigEntered = true; growSizes('enter'); }, 180);
+      else if (id === 'exposure') setTimeout(playExposure, 200);
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+} else { sigEntered = true; }
+
+/* a resize redraws at the new width, but never replays an entrance */
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  if (window.innerWidth === lastW) return; lastW = window.innerWidth;
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){
+    drawLifecycle();
+    drawSizes(sigEntered ? 'static' : 'hidden');
+    if (expCancel) expCancel();
+    drawExposure(1);
+  }, 120);
+});
+</script>
+</body>
+</html>

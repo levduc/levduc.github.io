@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<link rel="icon" href="data:,">
+<title>Merkle Pyramid Builder</title>
+<meta name="description" content="AFT 2023 — Pay Less for Your Privacy: batching on-chain mixer deposits into a Merkle subtree cuts the amortised deposit cost of Tornado-Cash-style mixers by up to 7×.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots, validated against #fafafa (light): adjacent CVD ΔE ≥ 9.1, normal ΔE ≥ 19.6.
+     s3/s4/s5 sit below 3:1 on the surface, so every chart carries direct labels and a table view. */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --s7:#4a3aa7; /* VC series: its own entity colour; pair with s3 validated (CVD ΔE 31.1) */
+  --good:#0ca30c; --critical:#d03b3b;
+  --accent:#00008b; --tint:rgba(0,0,139,.055);
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:#ffffff}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono)}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:0}
+.ctl.grow{flex:1; min-width:220px}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px; margin:0}
+.ticks{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.72rem; color:var(--ink-muted); padding:0 2px}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .75rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px 16px 12px; box-shadow:var(--shadow); min-width:0}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.ring{background:#fff; border:2px dashed var(--ink-1); border-radius:1px}
+.tip{position:fixed; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- readouts ---------- */
+.readrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-top:16px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:11px 14px; background:var(--surface-1); min-width:0}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.45rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; line-height:1.25}
+.ro .d{font-family:var(--mono); font-size:.78rem; color:var(--ink-2); margin-top:.15rem}
+
+/* ---------- pyramid ---------- */
+.pyr{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,290px); gap:18px; align-items:start}
+.side{display:flex; flex-direction:column; gap:12px}
+.queue{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1); padding:11px 14px}
+.qlist{list-style:none; margin:.45rem 0 0; padding:0; display:flex; flex-direction:column; gap:4px; min-height:30px}
+.qlist li{font-family:var(--mono); font-size:.86rem; border:1px solid var(--ink-1); background:#fff;
+  border-radius:2px; padding:.18rem .5rem; text-align:center}
+.qlist li.empty{border-style:dashed; color:var(--ink-muted); border-color:var(--axis)}
+.log{font-family:var(--mono); font-size:.82rem; color:var(--ink-2); min-height:3.2em; margin:10px 0 0;
+  border-left:3px solid var(--accent); padding:.1rem 0 .1rem 12px}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; max-width:100%}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.hl td{background:var(--surface-1); font-weight:700}
+td.sel{font-weight:700; background:var(--tint)}
+
+/* ---------- misc ---------- */
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:74ch}
+.prov{counter-reset:p; list-style:none; padding:0; margin:0}
+.prov li{counter-increment:p; position:relative; padding:0 0 0 2.2rem; margin:0 0 1.1rem; max-width:80ch}
+.prov li::before{content:counter(p); position:absolute; left:0; top:.05rem; font-family:var(--mono);
+  font-weight:700; font-size:.8rem; width:1.5rem; height:1.5rem; border:1px solid var(--accent); color:var(--accent);
+  border-radius:50%; display:flex; align-items:center; justify-content:center}
+.prov b{color:var(--ink-head)}
+.cmp{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px}
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+.katex{font-size:1.02em; text-transform:none; letter-spacing:0}
+.lc{text-transform:none}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2rem}
+  .pyr,.cmp{grid-template-columns:1fr}
+  .ctl.grow{flex:1 1 100%; min-width:0}
+  .seg button{padding:.35rem .6rem}
+  .tile .v{font-size:1.7rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#pyramid">Pyramid</a>
+    <a href="#cost">Gas</a>
+    <a href="#finality">Waiting</a>
+    <a href="#fairness">Fairness</a>
+    <a href="#guarantees">Guarantees</a>
+    <a href="#results">Results</a>
+    <a href="#provenance">Provenance</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">AFT 2023</span>
+  <h1>Pay Less for Your Privacy: Towards Cost-Effective On-Chain Mixers</h1>
+  <p class="sub">The <strong>Merkle Pyramid Builder</strong>: queue mixer deposits in a small subtree so that only one depositor in every $l$ re-hashes the path to the root — and is reimbursed by everyone else in the queue.</p>
+  <p class="authors">
+    Zhipeng Wang<sup>1</sup>, Marko Cirkovic<sup>2</sup>, <span class="me">Duc V. Le</span><sup>3,*</sup>,
+    William Knottenbelt<sup>1</sup>, Christian Cachin<sup>2</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Imperial College London, UK &nbsp;·&nbsp; <sup>2</sup>University of Bern, Switzerland &nbsp;·&nbsp; <sup>3</sup>Visa Research, USA<br>
+  <sup>*</sup>The main part of the work was conducted while the author was at the University of Bern.<br>
+  5th Conference on Advances in Financial Technologies (AFT 2023), Princeton, NJ, USA · LIPIcs vol. 282, article 16</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/onchain-mixers.pdf">Paper (PDF)</a>
+    <a class="btn" href="https://eprint.iacr.org/2023/1222">ePrint 2023/1222</a>
+    <a class="btn" href="#cite">BibTeX</a>
+  </div>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section id="tldr"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What batching buys</h2>
+  <p class="lede">Tornado-Cash-style mixers hide a withdrawal among every earlier deposit, but they charge each depositor for re-hashing the whole deposit Merkle tree with a SNARK-friendly hash.</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">A Tornado Cash deposit today</div>
+      <div class="v"><span data-count="1111030">1,111,030</span> gas</div>
+      <p class="d">Average over 156,466 deposits into the 0.1/1/10/100 ETH pools (Dec 2019 – Jan 2023): $53\times$ a 21,000-gas transfer, about $\$66$ in June 2023.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Amortised deposit cost</div>
+      <div class="v">up to 7× less</div>
+      <p class="d">With the Merkle Pyramid Builder, compared with Tornado Cash — without weakening the privacy guarantee.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Per deposit, largest queue</div>
+      <div class="v">≈<span data-count="146">146</span>K gas</div>
+      <p class="d">Nearly the same at every tree depth from 10 to 30 (Fig.&nbsp;10). The text places this at $l=128$; the figure's label sits at $l=256$ — see <a href="#provenance">provenance</a>.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Every deposit pays for the whole tree</h2>
+  <p class="lede">A mixer contract keeps all deposit commitments $\mathsf{cm}_i$ as leaves of a Merkle tree of depth $d$. To withdraw, a client proves in zero knowledge that it can open <em>some</em> leaf under a recent root, and reveals a nullifier so the same leaf cannot be spent twice. Appending a leaf means recomputing the $d$ hashes on its path to the root — cheap in theory, $O(\log n)$, but with a SNARK-friendly hash such as MiMC that path costs around a million gas, and it is paid again for every one of $k$ deposits: $O(k\cdot\log n)$.</p>
+  <div class="callout">
+    <p style="margin:0">Yet nobody withdraws immediately: users are advised to wait for other deposits so they blend into a larger anonymity set, often for days. The root does not need to move on every deposit. <strong>Queue $l$ deposits, build their subtree incrementally, and update the root once</strong> — $O(k+\log n)$ instead of $O(k\log n)$.</p>
+  </div>
+  <p>The paper's design, inspired by Merkle Mountain Ranges, stores only the $O(\log l)$ “peaks” of the partially built subtree on-chain. Most deposits hash nothing or a few levels; the $l$-th deposit completes the subtree and walks it up to the root. Because that last client pays much more, every other client in the queue adds a small fee $d^0$ that the contract forwards to whoever closes the queue. A second variant (<strong>VC</strong>) lets that last client compute the new root off-chain and submit a proof, so the contract only verifies.</p>
+</div></section>
+
+<!-- ============ PYRAMID ============ -->
+<section id="pyramid"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 2 of the paper</p>
+  <h2>Build the pyramid one deposit at a time</h2>
+  <p class="lede">Press <em>Deposit</em>. Orange leaves are queued, not yet under any root; dashed boxes are the peaks the contract keeps in its deposit queue. Watch which hashes each deposit triggers — and who pays for the walk to the root. Switch to <em>Basic mixer</em> to see the one-deposit-one-update behaviour of today's mixers.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="qLbl">Queue size $l$</span>
+      <div class="seg" role="group" aria-labelledby="qLbl" id="qSeg"></div>
+    </div>
+    <div class="ctl">
+      <span class="lbl" id="mLbl">Mixer</span>
+      <div class="seg" role="group" aria-labelledby="mLbl" id="mSeg">
+        <button type="button" data-m="mpb" aria-pressed="true">Pyramid (MPB)</button>
+        <button type="button" data-m="basic" aria-pressed="false">Basic mixer</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="lbl">&nbsp;</span>
+      <div class="btns">
+        <button class="btn primary" id="depBtn">Deposit →</button>
+        <button class="btn" id="playBtn">▶ Auto</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pyr">
+    <div class="chart">
+      <svg id="treeSvg" role="img" aria-labelledby="treeTitle"><title id="treeTitle">Deposit Merkle tree of depth 5 with the current deposit queue subtree shaded</title></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--ink-1)"></span>Under the current root</li>
+        <li><span class="swatch" style="background:var(--s2)"></span>Queued (not yet in the anonymity set)</li>
+        <li><span class="swatch" style="background:var(--s1)"></span>Hashed by this deposit</li>
+        <li><span class="swatch ring"></span>Stored in the deposit queue</li>
+      </ul>
+      <p class="log" id="pyrLog" aria-live="polite">32 empty leaves. The first queue covers the shaded subtree.</p>
+    </div>
+    <div class="side">
+      <div class="queue">
+        <div class="ro" style="border:0;padding:0;background:none"><div class="k">Deposit queue (newest on top)</div></div>
+        <ul class="qlist" id="qList"></ul>
+      </div>
+      <div class="ro"><div class="k">Hashes by this deposit</div><div class="v" id="roNow">—</div><div class="d" id="roNowD">&nbsp;</div></div>
+      <div class="ro"><div class="k">Total hashes so far</div><div class="v" id="roTot">0 vs 0</div><div class="d" id="roTotD">pyramid vs basic, same deposits</div></div>
+      <div class="ro"><div class="k">In the anonymity set</div><div class="v" id="roAnon">0 of 0</div><div class="d" id="roAnonD">deposits under a published root</div></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px" id="pyrScale"></p>
+  <p class="note">Counts are hash evaluations from the construction in §5, which calls deposits of even index $i$ free — the index is 0-based, as in Fig.&nbsp;2 (a leaf of index $i$ inside its queue merges once for each trailing 1-bit of $i$; the $l$-th deposit also hashes the $d-\log_2 l$ levels above the subtree), drawn on a depth-5 tree for legibility. They are not gas: measured gas also includes per-transaction costs that do not shrink with batching, which is why the curves below flatten near 145K.</p>
+</div></section>
+
+<!-- ============ COST ============ -->
+<section id="cost"><div class="wrap">
+  <p class="eyebrow">Interactive · Figures 10 and 11 of the paper</p>
+  <h2>Gas per deposit versus queue size</h2>
+  <p class="lede">Average gas paid per client, measured on a local EVM (ganache) for eight queue sizes and five tree depths. Drag the queue size: the slider stops only at the eight measured sizes. Deeper trees cost more at small queues, but the cost of the root walk is shared by more clients as $l$ grows and every depth converges.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="vLbl">View</span>
+      <div class="seg" role="group" aria-labelledby="vLbl" id="viewSeg">
+        <button type="button" data-v="depth" aria-pressed="true">All depths · Fig. 10</button>
+        <button type="button" data-v="vc" aria-pressed="false">MPB + VC, $d=20$ · Fig. 11</button>
+      </div>
+    </div>
+    <div class="ctl" id="depthCtl">
+      <span class="lbl" id="dLbl">Tree depth $d$</span>
+      <div class="seg" role="group" aria-labelledby="dLbl" id="dSeg"></div>
+    </div>
+    <div class="ctl grow">
+      <label for="lRange">Deposit-queue size $l$ = <span class="val" id="lVal">32</span></label>
+      <input type="range" id="lRange" min="0" max="7" step="1" value="4">
+      <div class="ticks" aria-hidden="true"><span>2</span><span>4</span><span>8</span><span>16</span><span>32</span><span>64</span><span>128</span><span>256</span></div>
+    </div>
+  </div>
+
+  <div class="chart">
+    <svg id="costSvg" role="img" aria-labelledby="costTitle"><title id="costTitle">Average deposit gas per client against deposit-queue size</title></svg>
+    <ul class="legend" id="costLegend"></ul>
+  </div>
+
+  <div class="readrow">
+    <div class="ro"><div class="k" id="c1k">Per deposit</div><div class="v" id="c1">—</div><div class="d" id="c1d">&nbsp;</div></div>
+    <div class="ro"><div class="k">Versus Tornado Cash</div><div class="v" id="c2">—</div><div class="d">1,111,030 gas per deposit</div></div>
+    <div class="ro"><div class="k" id="c3k">Whole queue</div><div class="v" id="c3">—</div><div class="d" id="c3d">&nbsp;</div></div>
+  </div>
+
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll"><table id="costTable"></table></div>
+  </details>
+  <p class="note" style="margin-top:14px"><strong>Data provenance.</strong> No raw measurements ship with the paper. Every MPB and VC value here was recovered from the vector coordinates of the markers in the paper's own figure files (Fig.&nbsp;10, <span class="mono">mpb_gascost_all.pdf</span>; Fig.&nbsp;11, <span class="mono">mpb_gascost_with_vc.pdf</span>), to better than ±1K gas, and is shown to the nearest thousand. The $d=20$ series is identical in both figures, and matches the labels the authors printed on an earlier plot of the same data (555k, 338k, 235k, 187k, 164k, 154k, 148k, 146k) to within 1K. The Tornado Cash line, 1,111,030 gas, is stated in the text. The text lists queue sizes up to 128; both figures plot a further point at 256.</p>
+</div></section>
+
+<!-- ============ FINALITY ============ -->
+<section id="finality"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 9 of the paper</p>
+  <h2>The price of batching: waiting for the queue</h2>
+  <p class="lede">A queued deposit is not under any root yet, so it cannot be withdrawn and does not enlarge anyone's anonymity set. How long that lasts depends on how busy the pool is. The paper measured the average gap $\Delta$ between two Tornado Cash deposits in each ETH pool and uses 12-second post-merge slots.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="pLbl">Tornado Cash pool</span>
+      <div class="seg" role="group" aria-labelledby="pLbl" id="poolSeg"></div>
+    </div>
+    <div class="ctl grow">
+      <label for="fRange">Deposit-queue size $l$ = <span class="val" id="fVal">32</span></label>
+      <input type="range" id="fRange" min="0" max="7" step="1" value="4">
+      <div class="ticks" aria-hidden="true"><span>2</span><span>4</span><span>8</span><span>16</span><span>32</span><span>64</span><span>128</span><span>256</span></div>
+    </div>
+  </div>
+
+  <div class="chart">
+    <svg id="finSvg" role="img" aria-labelledby="finTitle"><title id="finTitle">Expected deposit finalisation time in hours against deposit-queue size</title></svg>
+    <ul class="legend" id="finLegend"></ul>
+  </div>
+
+  <div class="readrow">
+    <div class="ro"><div class="k">Text formula · $(l-1)\Delta/2$</div><div class="v" id="f1">—</div><div class="d" id="f1d">&nbsp;</div></div>
+    <div class="ro"><div class="k">As plotted in Fig. 9 · $l\cdot\Delta$</div><div class="v" id="f2">—</div><div class="d" id="f2d">&nbsp;</div></div>
+    <div class="ro"><div class="k">Pool's average gap $\Delta$</div><div class="v" id="f3">—</div><div class="d" id="f3d">&nbsp;</div></div>
+  </div>
+
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll"><table id="finTable"></table></div>
+  </details>
+  <div class="callout" style="margin-top:18px">
+    <p style="margin:0"><strong>Two answers to one question.</strong> §7.2 defines the expected wait of a client in a queue of size $l$ as $\mathbb{E}_{final}(\Delta,l)=\sum_{i=1}^{l}\frac{1}{l}(l-i)\Delta=\frac{(l-1)\Delta}{2}$. The points plotted in Fig.&nbsp;9 are instead exactly $l\cdot\Delta$ — the time to fill a whole queue (e.g. 0.1 ETH pool, $l=2$: $2\cdot 269\cdot 12\,\text{s}=1.79$ h). Both are shown; the page does not pick one.</p>
+  </div>
+  <p class="note">Busy-ness varies: from October 1, 2020 to the OFAC sanctions on August 8, 2022 the four pools averaged $51\pm25$ deposits a day, and $9\pm8$ afterwards (Fig.&nbsp;15). On that basis the paper notes that with $l=32$ users would wait less than 4 days on average.</p>
+</div></section>
+
+<!-- ============ FAIRNESS ============ -->
+<section id="fairness"><div class="wrap">
+  <p class="eyebrow">Interactive · Table 1 of the paper</p>
+  <h2>Keeping the last depositor whole</h2>
+  <p class="lede">The client who closes a queue pays for the whole root update. So the first $l-1$ clients of queue $i$ each pay a fee $d^0_i=C_{i-1}/l$, calibrated on what the <em>previous</em> queue cost; the contract accumulates it and forwards it to the last client. Gas prices drift between queues, so the last client's net cost $d^1_i$ differs from everyone else's — by exactly $gas_{update}$ times the price change. That is the paper's $\varepsilon$-fairness with $\varepsilon=gas_{update}$.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="flLbl">Queue size $l$ (depth 20)</span>
+      <div class="seg" role="group" aria-labelledby="flLbl" id="flSeg"></div>
+    </div>
+    <div class="ctl grow">
+      <label for="p0">Gas price during queue $i-1$ = <span class="val" id="p0v">30</span> Gwei <span class="note">(your input)</span></label>
+      <input type="range" id="p0" min="1" max="200" step="1" value="30">
+    </div>
+    <div class="ctl grow">
+      <label for="p1">Gas price during queue $i$ = <span class="val" id="p1v">30</span> Gwei <span class="note">(your input)</span></label>
+      <input type="range" id="p1" min="1" max="200" step="1" value="30">
+    </div>
+    <div class="ctl"><span class="lbl">&nbsp;</span><button class="btn" id="presetBtn">§7.3 case: $l=32$, $\Delta p=30$</button></div>
+  </div>
+
+  <div class="chart">
+    <svg id="fairSvg" role="img" aria-labelledby="fairTitle"><title id="fairTitle">Cost of the first l−1 clients versus the last client in queue i, in ETH</title></svg>
+  </div>
+
+  <div class="readrow">
+    <div class="ro"><div class="k">Update gas <span class="lc">ε</span> at this queue size</div><div class="v" id="g1">—</div><div class="d" id="g1d">&nbsp;</div></div>
+    <div class="ro"><div class="k">Refund to last client</div><div class="v" id="g2">—</div><div class="d" id="g2d">&nbsp;</div></div>
+    <div class="ro"><div class="k">Gap, last vs. others</div><div class="v" id="g3">—</div><div class="d" id="g3d">&nbsp;</div></div>
+  </div>
+
+  <div class="tscroll"><table id="fairTable" aria-label="Live Table 1: deposit cost calibration"></table></div>
+
+  <div class="cmp">
+    <div class="ro"><div class="k">§7.3 as printed</div>
+      <div class="d" style="font-size:.84rem">$gas_{update}=2^5\times1.78\times10^5=5.69M$ gas, “$d=20$ (cf. Fig. 10)”; at 30 Gwei the gap is $5.69\times10^6\times30\times10^9$ Wei $=0.17$ ETH.</div></div>
+    <div class="ro"><div class="k">Same case from Fig. 10’s $d=20$ curve</div>
+      <div class="d" style="font-size:.84rem">$l=32$ is ≈164K gas per client, so $gas_{update}\approx32\times164\text{K}\approx5.25M$ gas and the gap is ≈0.16 ETH. The 1.78×10⁵ printed in §7.3 matches Fig. 10’s $d=30$ curve (≈178K), not $d=20$.</div></div>
+  </div>
+  <p class="note" style="margin-top:14px">As in §7.3, $gas_{update}$ is taken as $l$ times the average per-client deposit gas (Fig.&nbsp;10, $d=20$, recovered values). Over any $n\le7$ days, more than 80% of the gas-price differences between Tornado Cash deposits were below 30 Gwei (Fig.&nbsp;12), which is why the preset uses $\Delta p=30$. A price drop can make $d^1_i$ negative: the refund then exceeds the last client's gas bill.</p>
+</div></section>
+
+<!-- ============ GUARANTEES ============ -->
+<section id="guarantees"><div class="wrap">
+  <p class="eyebrow">Guarantees</p>
+  <h2>What changes, and what does not</h2>
+  <p class="lede">The paper's framework scores a mixer on five properties. Batching changes only efficiency and how fairness is achieved; the proofs for privacy and correctness go through unchanged.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>Basic mixer (e.g. Tornado Cash)</th><th>MPB</th><th>MPB + VC</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Correctness</strong></td><td colspan="3">Nullifier list prevents double withdrawal: $\mathsf{Adv}^{\mathsf{h}}_{\mathcal{A},ww}\le\mathsf{negl}(\lambda)$.</td></tr>
+      <tr><td><strong>Privacy</strong></td><td colspan="3">Transaction linking $\mathsf{Adv}^{\mathsf{h}}_{\mathcal{A},tx}\le\frac{1}{|\mathsf{CmpSet}^{\mathsf{h}}|}+\mathsf{negl}(\lambda)$; address linking $\mathsf{Adv}^{\mathsf{h}}_{\mathcal{A},addr}\le\frac{1}{|\mathsf{DepAddrSet}^{\mathsf{h}}|}+\mathsf{negl}(\lambda)$. Deposits still in the queue are not counted in either set.</td></tr>
+      <tr><td><strong>Availability</strong></td><td colspan="3">Autonomous contract on a permissionless chain. Sanctions can pressure front-ends and relays, but users can still reach the contract via the CLI or intermediary addresses.</td></tr>
+      <tr><td><strong>Efficiency</strong> (computation for $l$ deposits)</td><td>$l\cdot O(\log n)$</td><td>$l+O(\log n)$</td><td>$l+O(\log n)\cdot\mathsf{costVc}+\mathsf{costGc}$</td></tr>
+      <tr><td><strong>Fairness</strong></td><td>Every deposit pays the same update</td><td colspan="2">$\varepsilon$-fairness with $\varepsilon=gas_{update}$, via fee calibration (Table 1)</td></tr>
+      <tr><td><strong>On-chain queue storage</strong></td><td>—</td><td colspan="2">$O(\log l)$ peaks (a naive batch would store $O(l)$ leaves)</td></tr>
+      <tr><td><strong>Root-list eviction attack</strong> ($k$ recent roots; $k=100$ in Tornado Cash)</td><td>costs at least $k\times(\mathsf{amt}+\mathsf{fee})$</td><td colspan="2">typically needs $k\times l$ deposits to force $k$ root updates</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured</p>
+  <h2>Implementation and results</h2>
+  <p class="lede">Withdrawal circuit in Circom; Groth16 via snarkjs; Pedersen hash for commitments ($H_p$) and MiMC for the tree ($H_{2p}$). Contracts deployed on a ganache EVM; experiments on an Intel Core i7-11800H at 2.30 GHz with 16 GB RAM. The VC deposit contract adapts the circuit of Tornado Cash's anonymity mining.</p>
+
+  <h3 style="margin-top:26px">Average gas per deposit (Figs. 10 and 11)</h3>
+  <div class="tscroll"><table id="resTable"></table></div>
+  <p class="note">Recovered from figure geometry, nearest 1K gas (see provenance). The text reports the VC deposit that updates the root at approximately 436K gas.</p>
+
+  <h3 style="margin-top:26px">Contract deployment (Fig. 8)</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Tree depth $d$</th><th class="num">10</th><th class="num">15</th><th class="num">20</th><th class="num">25</th><th class="num">30</th></tr></thead>
+    <tbody><tr><td>Deployment gas</td><td class="num">≈6.37M</td><td class="num">≈6.49M</td><td class="num">≈6.60M</td><td class="num">≈6.71M</td><td class="num">≈6.81M</td></tr></tbody>
+  </table></div>
+  <p class="note">Recovered from the bar heights in <span class="mono">deploy_cost.pdf</span> (±10K gas). The text: “always between 6M and 7M gas”, a one-time cost amortised over the life of the contract.</p>
+
+  <h3 style="margin-top:26px">Tornado Cash measurements used by the paper</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Quantity</th><th class="num">Value</th><th>Scope</th></tr></thead>
+    <tbody>
+      <tr><td>Average deposit cost, ETH pools</td><td class="num">1,111,030 gas</td><td>156,466 deposits, blocks 9,117,019 – 16,329,600 (Dec 16, 2019 – Jan 3, 2023)</td></tr>
+      <tr><td>Average gap between deposits $\Delta$</td><td class="num">269 / 136 / 156 / 232 blocks</td><td>0.1 / 1 / 10 / 100 ETH pools</td></tr>
+      <tr><td>Daily deposits, four pools</td><td class="num">$51\pm25$ → $9\pm8$</td><td>Oct 1, 2020 – Aug 8, 2022, then after the OFAC sanctions</td></tr>
+      <tr><td>Gas-price gap between deposits $\le$ 7 days apart</td><td class="num">&gt;80% below 30 Gwei</td><td>Fig. 12</td></tr>
+      <tr><td>Recent-root list size $k$</td><td class="num">100</td><td>vs. more than 26,000 deposits in each ETH pool</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ PROVENANCE ============ -->
+<section id="provenance"><div class="wrap">
+  <p class="eyebrow">Provenance</p>
+  <h2>Where the paper disagrees with itself</h2>
+  <p class="lede">Each chart above reproduces its source faithfully. Where two places in the paper give different numbers, both are shown and flagged here rather than silently reconciled.</p>
+  <ol class="prov">
+    <li><b>Finalisation time, formula vs. figure.</b> §7.2 gives $\mathbb{E}_{final}=(l-1)\Delta/2$, but every point in Fig.&nbsp;9 equals $l\cdot\Delta\cdot12\,$s — the time to fill the whole queue, roughly twice the formula for large $l$. The waiting-time chart plots both.</li>
+    <li><b>$gas_{update}$ in the fairness example.</b> §7.3 computes $2^5\times1.78\times10^5=5.69M$ gas for “depth 20 (cf. Fig. 10)”. Fig.&nbsp;10's $d=20$, $l=32$ point is ≈164K; ≈178K is the $d=30$ point. With 164K the example becomes ≈5.25M gas and ≈0.16 ETH instead of 0.17 ETH. The arithmetic of §7.3 itself is correct.</li>
+    <li><b>Largest queue size.</b> §7.1 lists $l\in\{2,\dots,128\}$ and reports “around 146K” at $l=128$. Figs.&nbsp;10–11 plot eight sizes up to $2^8=256$, and the “146k” label sits at 256. At 128 the recovered values range from ≈145K ($d=10$) to ≈152K ($d=30$).</li>
+    <li><b>VC saving ratio.</b> §7.4 states a saving ratio of $\frac{1M}{436K\cdot l}=\frac{2.29}{l}$ for a queue of size $l$. Fig.&nbsp;11 shows the MPB+VC per-client cost at $l=2$ as ≈273K gas, about 4.1× below Tornado Cash's 1,111,030, whereas $2.29/l$ gives 1.15 at $l=2$ and less than 1 from $l=4$. The formula is quoted, not used.</li>
+    <li><b>Figure numbering.</b> Figure numbers on this page follow the full version (the linked PDF, also ePrint 2023/1222). The AFT proceedings version omits the VC setup pseudocode (Fig.&nbsp;6 here), so its later figures are numbered one lower — Fig.&nbsp;10 here is Fig.&nbsp;9 there.</li>
+    <li><b>Chart data.</b> No notebook or raw data ships with the paper. Values in the gas and deployment charts were recovered from the vector coordinates of the figure PDFs; values stated in prose are used verbatim.</li>
+  </ol>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{wang2023payless,
+  title     = {Pay Less for Your Privacy: Towards Cost-Effective
+               On-Chain Mixers},
+  author    = {Wang, Zhipeng and Cirkovic, Marko and Le, Duc V. and
+               Knottenbelt, William and Cachin, Christian},
+  booktitle = {5th Conference on Advances in Financial Technologies
+               (AFT 2023)},
+  editor    = {Bonneau, Joseph and Weinberg, S. Matthew},
+  series    = {Leibniz International Proceedings in Informatics (LIPIcs)},
+  volume    = {282},
+  publisher = {Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  year      = {2023}
+}
+
+@misc{wang2023payless-full,
+  author       = {Wang, Zhipeng and Cirkovic, Marko and Le, Duc V. and
+                  Knottenbelt, William and Cachin, Christian},
+  title        = {Pay Less for Your Privacy: Towards Cost-Effective
+                  On-Chain Mixers},
+  howpublished = {Cryptology ePrint Archive, Paper 2023/1222},
+  year         = {2023},
+  note         = {\url{https://eprint.iacr.org/2023/1222}}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Code and data.</strong> The paper has no code or data availability statement and links no public repository for its implementation. The only code it references is Tornado Cash's anonymity-mining circuit (<a href="https://github.com/tornadocash/tornado-anonymity-mining">tornadocash/tornado-anonymity-mining</a>), which the authors adapted for the VC deposit evaluation.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">Pay Less for Your Privacy · AFT 2023 · Imperial College London, University of Bern, Visa Research.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+
+/* ---------- motion: every animation goes through tween() ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return { stop:function(){} }; }
+  var t0 = null, finished = false, stopped = false;
+  function finish(){ if (finished || stopped) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished || stopped) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* force-settle if requestAnimationFrame is starved (throttled tab) */
+  setTimeout(finish, ms + 150);
+  return { stop:function(){ stopped = true; }, finish:finish };
+}
+function later(fn, ms){ if (REDUCED) fn(); else setTimeout(fn, ms); }
+function drawOn(path, ms, delay){
+  if (REDUCED) return;
+  var L; try { L = path.getTotalLength(); } catch(e){ return; }
+  if (!L) return;
+  path.setAttribute('stroke-dasharray', L); path.setAttribute('stroke-dashoffset', L);
+  later(function(){
+    tween(ms, function(p){ path.setAttribute('stroke-dashoffset', L * (1 - p)); },
+      function(){ path.removeAttribute('stroke-dasharray'); path.removeAttribute('stroke-dashoffset'); });
+  }, delay || 0);
+}
+function fadeIn(node, ms, delay){
+  if (REDUCED) return;
+  node.setAttribute('opacity', 0);
+  later(function(){ tween(ms, function(p){ node.setAttribute('opacity', p); },
+    function(){ node.removeAttribute('opacity'); }); }, delay || 0);
+}
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function kGas(v){ return '≈' + Math.round(v / 1000).toLocaleString('en-US') + 'K'; }
+function mGas(v){ return '≈' + (v / 1e6).toFixed(2) + 'M'; }
+function axisK(v){ return v === 0 ? '0' : (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : (v / 1000) + 'K'); }
+
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+function segInit(id, items, sel, onPick){
+  var seg = $(id);
+  seg.innerHTML = '';
+  items.forEach(function(it, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = it.label;
+    b.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(seg.children, function(c, j){ c.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+      onPick(i);
+    });
+    seg.appendChild(b);
+  });
+}
+function segSet(id, i){
+  Array.prototype.forEach.call($(id).children, function(c, j){ c.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+}
+
+/* =======================================================================
+   Data. Stated-in-text values are verbatim. MPB / VC per-client gas are
+   recovered from the marker coordinates of the paper's figure PDFs
+   (images/mpb_gascost_all.pdf = Fig. 10, images/mpb_gascost_with_vc.pdf =
+   Fig. 11); displayed to the nearest 1K gas. Nothing is extrapolated.
+   ===================================================================== */
+var L_PTS  = [2, 4, 8, 16, 32, 64, 128, 256];
+var DEPTHS = [10, 15, 20, 25, 30];
+var MPB = {
+  10: [336046, 228976, 180551, 159420, 150397, 146656, 145171, 144622],
+  15: [445426, 283667, 207897, 173093, 157233, 150074, 146880, 145476],
+  20: [555095, 338501, 235314, 186802, 164087, 153501, 148594, 146333],
+  25: [665052, 393480, 262804, 200547, 170960, 156937, 150312, 147192],
+  30: [775297, 448603, 290365, 214328, 177850, 160383, 152035, 148053]
+};
+var VC20 = [273095, 197501, 164814, 151552, 146462, 144688, 144188, 144130];
+var TC_GAS = 1111030;                    /* §4.3, 156,466 deposits */
+var POOLS = [                            /* §7.2, blocks between deposits */
+  { label:'0.1 ETH', delta:269 }, { label:'1 ETH', delta:136 },
+  { label:'10 ETH', delta:156 },  { label:'100 ETH', delta:232 }
+];
+var SLOT_S = 12;
+var DEPTH_SLOT = { 10:'--s1', 15:'--s2', 20:'--s3', 25:'--s4', 30:'--s5' };
+
+/* =======================================================================
+   Generic line chart (Figs 9-11): one y-axis, thin lines, ≥8px markers,
+   direct labels, hover per point, crosshair at a (fractional) index.
+   ===================================================================== */
+function lineChart(svg, cfg, enter){
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 360 : 900, H = narrow ? 300 : 380;
+  var padL = narrow ? 44 : 66, padR = narrow ? (cfg.labelRight ? 70 : 14) : (cfg.labelRight ? 150 : 24);
+  var padT = narrow ? 22 : 22, padB = narrow ? 46 : 50;
+  var inset = cfg.labelLeft ? (narrow ? 44 : 62) : (narrow ? 12 : 22);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var n = cfg.x.length;
+  function X(i){ return padL + inset + i * (W - padL - padR - inset - (narrow ? 8 : 14)) / (n - 1); }
+  function Y(v){ return H - padB - v / cfg.yMax * (H - padT - padB); }
+  var grid = css('--grid'), axis = css('--axis'), muted = css('--ink-muted'), ink = css('--ink-1'), surf = css('--surface-1');
+  var fs = narrow ? 11 : 12;
+
+  for (var v = 0; v <= cfg.yMax + 1e-9; v += cfg.yStep){
+    var gy = Y(v);
+    svg.appendChild(el('line', { x1:padL, y1:gy, x2:W - padR, y2:gy, stroke:v === 0 ? axis : grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:padL - 7, y:gy + 4, 'text-anchor':'end', 'font-size':fs - 1, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, cfg.yFmt(v)));
+  }
+  cfg.x.forEach(function(lbl, i){
+    svg.appendChild(el('line', { x1:X(i), y1:H - padB, x2:X(i), y2:H - padB + 5, stroke:axis }));
+    svg.appendChild(el('text', { x:X(i), y:H - padB + 18, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, lbl));
+  });
+  svg.appendChild(el('text', { x:(padL + W - padR) / 2, y:H - 8, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, cfg.xTitle));
+  if (!narrow) svg.appendChild(el('text', { x:14, y:(padT + H - padB) / 2, 'text-anchor':'middle', 'font-size':11, fill:muted,
+    'font-family':'Ubuntu Mono, monospace', transform:'rotate(-90 14 ' + ((padT + H - padB) / 2) + ')' }, cfg.yTitle));
+
+  if (cfg.ref){
+    var ry = Y(cfg.ref.v);
+    svg.appendChild(el('line', { x1:padL, y1:ry, x2:W - padR, y2:ry, stroke:ink, 'stroke-width':1.5, 'stroke-dasharray':'6 5' }));
+    svg.appendChild(el('text', { x:W - padR, y:ry - 7, 'text-anchor':'end', 'font-size':fs, fill:ink, 'font-weight':700,
+      'font-family':'Ubuntu Mono, monospace' }, cfg.ref.label));
+  }
+
+  /* crosshair */
+  if (cfg.sel !== undefined){
+    var fi = Math.max(0, Math.min(n - 1, cfg.sel));
+    var cx = X(Math.floor(fi)) + (fi - Math.floor(fi)) * (Math.floor(fi) < n - 1 ? X(Math.floor(fi) + 1) - X(Math.floor(fi)) : 0);
+    svg.appendChild(el('line', { x1:cx, y1:padT - 6, x2:cx, y2:H - padB, stroke:css('--accent'), 'stroke-width':1, 'stroke-dasharray':'2 3', opacity:.7 }));
+  }
+  var selI = cfg.sel === undefined ? -1 : Math.round(cfg.sel);
+
+  var paths = [], dots = [];
+  cfg.series.forEach(function(s){
+    var c = css(s.slot), op = s.dim ? 0.28 : 1;
+    var d = s.vals.map(function(v, i){ return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
+    var p = el('path', { d:d, fill:'none', stroke:c, 'stroke-width':s.dim ? 1.5 : 2.2, 'stroke-linejoin':'round', opacity:op });
+    svg.appendChild(p); paths.push(p);
+    var g = el('g', { opacity:op });
+    s.vals.forEach(function(v, i){
+      var isSel = i === selI && !s.dim;
+      g.appendChild(el('circle', { cx:X(i), cy:Y(v), r:isSel ? 6 : 4, fill:c, stroke:surf, 'stroke-width':2 }));
+    });
+    svg.appendChild(g); dots.push(g);
+    /* direct label */
+    if (cfg.labelLeft){
+      svg.appendChild(el('text', { x:X(0) - 10, y:Y(s.vals[0]) + 4, 'text-anchor':'end', 'font-size':fs,
+        fill:ink, 'font-weight':s.dim ? 400 : 700, opacity:s.dim ? .55 : 1, 'font-family':'Ubuntu Mono, monospace' }, s.short));
+    } else if (cfg.labelRight){
+      svg.appendChild(el('text', { x:X(n - 1) + 10, y:Y(s.vals[n - 1]) + 4, 'text-anchor':'start', 'font-size':fs,
+        fill:ink, 'font-weight':700, 'font-family':'Ubuntu Mono, monospace' }, s.short));
+    }
+    /* value label at the selected point for emphasised series */
+    if (selI >= 0 && !s.dim && s.valueLabel){
+      var vy = Y(s.vals[selI]) + (s.valueBelow ? 20 : -12);
+      svg.appendChild(el('text', { x:X(selI), y:vy, 'text-anchor':selI === n - 1 ? 'end' : (selI === 0 ? 'start' : 'middle'),
+        'font-size':fs, fill:ink, 'font-weight':700, stroke:surf, 'stroke-width':3.5, 'paint-order':'stroke',
+        'font-family':'Ubuntu Mono, monospace' }, cfg.valFmt(s.vals[selI])));
+    }
+  });
+
+  /* hover targets, larger than the marks */
+  cfg.series.forEach(function(s){
+    s.vals.forEach(function(v, i){
+      var h = el('circle', { cx:X(i), cy:Y(v), r:11, fill:'transparent' });
+      h.style.cursor = 'pointer';
+      h.addEventListener('mousemove', function(ev){ showTip(ev, '<b>' + s.name + '</b>' + cfg.tipFmt(v, i)); });
+      h.addEventListener('mouseleave', hideTip);
+      svg.appendChild(h);
+    });
+  });
+
+  if (enter){
+    paths.forEach(function(p, k){ drawOn(p, 800, k * 90); });
+    dots.forEach(function(g, k){ fadeIn(g, 420, 420 + k * 90); });
+  }
+}
+
+/* =======================================================================
+   1. Pyramid step-through
+   ===================================================================== */
+var TD = 5, NLEAF = 1 << TD;             /* drawn tree: depth 5, 32 leaves */
+var Q_OPTS = [2, 4, 8, 16];
+var pyr = { l:4, mode:'mpb', n:0, flash:{}, anim:null, busy:false, lastSeq:null, play:null };
+
+function log2(x){ return Math.round(Math.log(x) / Math.LN2); }
+function trailingOnes(q){ var t = 0; while (q & 1){ t++; q >>= 1; } return t; }
+/* levels hashed by the deposit that fills leaf index `leaf` */
+function hashLevels(leaf, l, mode, depth){
+  if (mode === 'basic') return depth;
+  var q = leaf % l;
+  return q === l - 1 ? depth : trailingOnes(q);
+}
+function totalHashes(n, l, mode, depth){ var s = 0; for (var i = 0; i < n; i++) s += hashLevels(i, l, mode, depth); return s; }
+function finalized(n, l, mode){ return mode === 'basic' ? n : Math.floor(n / l) * l; }
+
+function nodeState(level, j){
+  var a = j << level, b = ((j + 1) << level) - 1, n = pyr.n, l = pyr.l;
+  var F = finalized(n, l, pyr.mode);
+  if (a < F) return 'final';
+  if (pyr.mode === 'mpb' && level <= log2(l) && b < n) return 'pending';
+  return 'empty';
+}
+function isPeak(level, j){
+  if (pyr.mode !== 'mpb' || nodeState(level, j) !== 'pending') return false;
+  if (level === log2(pyr.l)) return true;
+  return nodeState(level + 1, j >> 1) !== 'pending';
+}
+function nodeName(level, j){
+  if (level === 0) return 'cm' + j;
+  var a = j << level, b = ((j + 1) << level) - 1;
+  return 'H(cm' + a + (level === 1 ? ',' : '…') + 'cm' + b + ')';
+}
+
+function drawTree(enter){
+  var svg = $('treeSvg');
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 360 : 640, H = narrow ? 260 : 340;
+  var padX = narrow ? 8 : 14, top = narrow ? 24 : 30, bot = narrow ? 20 : 44;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var rowH = (H - top - bot) / TD;
+  function P(level, j){
+    var span = (W - 2 * padX) / (NLEAF >> level);
+    return { x:padX + (j + 0.5) * span, y:top + (TD - level) * rowH };
+  }
+  var ink = css('--ink-1'), axis = css('--axis'), muted = css('--ink-muted');
+  var cPend = css('--s2'), cHash = css('--s1');
+  var rLeaf = narrow ? 3.6 : 6, rNode = narrow ? 5 : 8;
+
+  /* current queue's subtree (shaded triangle, as in Fig. 2) */
+  if (pyr.mode === 'mpb' && pyr.n < NLEAF){
+    var lg = log2(pyr.l), sIdx = Math.floor(pyr.n / pyr.l);
+    var apex = P(lg, sIdx), left = P(0, sIdx * pyr.l), right = P(0, (sIdx + 1) * pyr.l - 1);
+    var m = narrow ? 6 : 12;
+    svg.appendChild(el('polygon', { points:[apex.x + ',' + (apex.y - m - 4), (right.x + m) + ',' + (left.y + m), (left.x - m) + ',' + (left.y + m)].join(' '),
+      fill:css('--tint'), stroke:css('--accent'), 'stroke-width':1, 'stroke-dasharray':'4 4', 'stroke-opacity':.55 }));
+  }
+
+  var lvl, j, p, q;
+  for (lvl = 1; lvl <= TD; lvl++){
+    for (j = 0; j < (NLEAF >> lvl); j++){
+      p = P(lvl, j);
+      [0, 1].forEach(function(c){
+        q = P(lvl - 1, 2 * j + c);
+        svg.appendChild(el('line', { x1:p.x, y1:p.y, x2:q.x, y2:q.y, stroke:axis, 'stroke-width':1 }));
+      });
+    }
+  }
+  var nodesG = el('g', {});
+  svg.appendChild(nodesG);
+  for (lvl = 0; lvl <= TD; lvl++){
+    for (j = 0; j < (NLEAF >> lvl); j++){
+      p = P(lvl, j);
+      var st = nodeState(lvl, j), key = lvl + ':' + j;
+      var r = lvl === 0 ? rLeaf : rNode;
+      var fill = st === 'final' ? ink : (st === 'pending' ? cPend : '#ffffff');
+      var stroke = st === 'empty' ? axis : ink;
+      if (pyr.flash[key]){ fill = cHash; stroke = cHash; }
+      if (isPeak(lvl, j)){
+        var bx = r + (narrow ? 2.5 : 4);
+        nodesG.appendChild(el('rect', { x:p.x - bx, y:p.y - bx, width:2 * bx, height:2 * bx, fill:'none', stroke:ink, 'stroke-width':1.2, 'stroke-dasharray':'3 2' }));
+      }
+      var c = el('circle', { cx:p.x, cy:p.y, r:r, fill:fill, stroke:stroke, 'stroke-width':1.3, 'data-k':key });
+      (function(lv, jj){
+        c.addEventListener('mousemove', function(ev){
+          var s = nodeState(lv, jj);
+          showTip(ev, '<b>' + (lv === TD ? 'Root' : nodeName(lv, jj)) + '</b>' +
+            (s === 'final' ? 'under the published root' : s === 'pending' ? 'queued, not yet under a root' : 'empty (default zero value)'));
+        });
+      })(lvl, j);
+      c.addEventListener('mouseleave', hideTip);
+      nodesG.appendChild(c);
+    }
+  }
+  var rp = P(TD, 0);
+  svg.appendChild(el('text', { x:rp.x + rNode + 6, y:rp.y + 4, 'font-size':narrow ? 10 : 12, fill:ink, 'font-weight':700,
+    'font-family':'Ubuntu Mono, monospace' }, 'Root'));
+  if (!narrow){
+    for (j = 0; j < NLEAF; j += 1){
+      if (j % 2 && NLEAF > 16) continue;
+      p = P(0, j);
+      svg.appendChild(el('text', { x:p.x, y:p.y + 30, 'text-anchor':'middle', 'font-size':9.5, fill:muted,
+        'font-family':'Ubuntu Mono, monospace' }, 'cm' + j));
+    }
+  }
+  if (enter) fadeIn(nodesG, 500, 0);
+  return { P:P, svg:svg };
+}
+
+function syncPyrPanel(){
+  var n = pyr.n, l = pyr.l;
+  /* queue list: peaks of the current subtree, newest on top */
+  var peaks = [];
+  if (pyr.mode === 'mpb'){
+    for (var lvl = log2(l); lvl >= 0; lvl--)
+      for (var j = 0; j < (NLEAF >> lvl); j++) if (isPeak(lvl, j)) peaks.push(nodeName(lvl, j));
+  }
+  var ql = $('qList');
+  ql.innerHTML = '';
+  if (pyr.mode === 'basic'){ ql.innerHTML = '<li class="empty">no queue: every deposit updates the root</li>'; }
+  else if (!peaks.length){ ql.innerHTML = '<li class="empty">{ } empty</li>'; }
+  else peaks.slice().reverse().forEach(function(t){ var li = document.createElement('li'); li.textContent = t; ql.appendChild(li); });
+
+  var tm = totalHashes(n, l, 'mpb', TD), tb = totalHashes(n, l, 'basic', TD);
+  $('roTot').textContent = tm + ' vs ' + tb;
+  $('roTotD').textContent = n ? ('pyramid vs basic for the same ' + n + ' deposit' + (n > 1 ? 's' : '') + (tm ? ' · ' + (tb / tm).toFixed(1) + '× fewer' : '')) : 'pyramid vs basic, same deposits';
+  var F = finalized(n, l, pyr.mode);
+  $('roAnon').textContent = F + ' of ' + n;
+  $('roAnonD').textContent = pyr.mode === 'mpb' && n > F ? (n - F) + ' waiting for the queue to fill' : 'deposits under a published root';
+  $('depBtn').disabled = n >= NLEAF;
+  var d = 20, lg = log2(l);
+  $('pyrScale').innerHTML = 'At the paper\'s depth $d=20$, one queue of $l=' + l + '$ deposits needs ' + (l * d) + ' hashes one-at-a-time versus ' +
+    ((l - 1) + (d - lg)) + ' with the pyramid ($l-1$ merges plus $d-\\log_2 l=' + (d - lg) + '$ levels to the root).';
+  katexRender($('pyrScale'));
+}
+
+function pyrDeposit(){
+  if (pyr.n >= NLEAF) return;
+  if (pyr.busy && pyr.settle) pyr.settle();
+  var leaf = pyr.n, l = pyr.l;
+  var levels = hashLevels(leaf, l, pyr.mode, TD);
+  var closes = pyr.mode === 'mpb' && leaf % l === l - 1;
+  var seq = [];
+  for (var k = 1; k <= levels; k++) seq.push(k + ':' + (leaf >> k));
+  /* show the new leaf as queued/final first, then light the hashed nodes one by one */
+  pyr.n = leaf + 1;
+  var before = pyr.mode === 'mpb' && closes ? leaf : null;
+  if (before !== null){ pyr.n = leaf; pyr.nShadow = leaf + 1; }
+  pyr.flash = {}; pyr.flash['0:' + leaf] = true;
+  $('roNow').textContent = levels;
+  $('roNowD').textContent = pyr.mode === 'basic' ? 'full path to the root — paid by this depositor'
+    : (closes ? 'queue full: subtree + root path, refunded (l−1)·d⁰ from TotalFee'
+      : (levels ? 'merges inside the queue subtree' : 'just stored in the queue'));
+  var msg = pyr.mode === 'basic'
+    ? 'Deposit cm' + leaf + ': the contract re-hashes all ' + TD + ' levels and publishes a new root.'
+    : (closes ? 'Deposit cm' + leaf + ' fills the queue: ' + log2(l) + ' hash' + (log2(l) > 1 ? 'es' : '') + ' finish the subtree, ' + (TD - log2(l)) + ' more reach the root. The new root joins the root list, TotalFee is paid to this depositor, and the queue is cleared.'
+      : (levels ? 'Deposit cm' + leaf + ' merges with its left neighbour' + (levels > 1 ? 's' : '') + ': ' + levels + ' hash' + (levels > 1 ? 'es' : '') + ', no root update.'
+        : 'Deposit cm' + leaf + ' is simply pushed onto the queue: zero hashes.'));
+  $('pyrLog').textContent = msg;
+
+  var geo = drawTree(false);
+  pyr.busy = true;
+  var step = REDUCED ? 0 : 170, i = 0, cancelled = false;
+  function end(){
+    if (cancelled) return; cancelled = true;
+    if (pyr.nShadow){ pyr.n = pyr.nShadow; pyr.nShadow = null; }
+    pyr.flash = {}; pyr.busy = false; pyr.settle = null;
+    drawTree(false); syncPyrPanel();
+  }
+  pyr.settle = end;
+  syncPyrPanel();
+  if (REDUCED){ end(); return; }
+  function next(){
+    if (cancelled) return;
+    if (i >= seq.length){ setTimeout(end, 260); return; }
+    pyr.flash[seq[i]] = true; i++;
+    drawTree(false);
+    var key = seq[i - 1], c = $('treeSvg').querySelector('circle[data-k="' + key + '"]');
+    if (c){
+      var r0 = +c.getAttribute('r');
+      tween(step + 60, function(t){ c.setAttribute('r', r0 * (1 + 0.45 * Math.sin(Math.PI * t))); });
+    }
+    setTimeout(next, step);
+  }
+  setTimeout(next, 120);
+}
+function pyrReset(){
+  if (pyr.settle) pyr.settle();
+  stopPlay();
+  pyr.n = 0; pyr.flash = {};
+  $('roNow').textContent = '—'; $('roNowD').innerHTML = '&nbsp;';
+  $('pyrLog').textContent = pyr.mode === 'mpb'
+    ? '32 empty leaves. The first queue of ' + pyr.l + ' covers the shaded subtree.'
+    : '32 empty leaves. Every deposit will update the root immediately.';
+  drawTree(false); syncPyrPanel();
+}
+function stopPlay(){ if (pyr.play){ clearInterval(pyr.play); pyr.play = null; } $('playBtn').textContent = '▶ Auto'; }
+segInit('qSeg', Q_OPTS.map(function(q){ return { label:String(q) }; }), 1, function(i){ pyr.l = Q_OPTS[i]; pyrReset(); });
+Array.prototype.forEach.call($('mSeg').children, function(b){
+  b.addEventListener('click', function(){
+    Array.prototype.forEach.call($('mSeg').children, function(c){ c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+    pyr.mode = b.getAttribute('data-m'); pyrReset();
+  });
+});
+$('depBtn').addEventListener('click', function(){ stopPlay(); pyrDeposit(); });
+$('resetBtn').addEventListener('click', pyrReset);
+$('playBtn').addEventListener('click', function(){
+  if (pyr.play){ stopPlay(); return; }
+  if (pyr.n >= NLEAF) pyrReset();
+  this.textContent = '❚❚ Pause';
+  pyrDeposit();
+  pyr.play = setInterval(function(){ if (pyr.n >= NLEAF){ stopPlay(); return; } pyrDeposit(); }, REDUCED ? 500 : 1500);
+});
+
+/* =======================================================================
+   2. Gas per deposit (Figs 10, 11)
+   ===================================================================== */
+var cost = { view:'depth', d:20, target:4, disp:4, raf:null, entered:false };
+function costSeries(){
+  if (cost.view === 'depth'){
+    return DEPTHS.slice().reverse().map(function(d){
+      return { key:'d' + d, name:'MPB, depth ' + d, short:'d=' + d, slot:DEPTH_SLOT[d], vals:MPB[d], dim:d !== cost.d, valueLabel:true };
+    });
+  }
+  return [
+    { key:'d20', name:'MPB, depth 20', short:'MPB', slot:DEPTH_SLOT[20], vals:MPB[20], valueLabel:true },
+    { key:'vc', name:'MPB + VC, depth 20', short:'MPB+VC', slot:'--s7', vals:VC20, valueLabel:true, valueBelow:true }
+  ];
+}
+function drawCost(enter){
+  lineChart($('costSvg'), {
+    x:L_PTS.map(String), xTitle:'Deposit-queue size l', yTitle:'Gas per deposit (per client)',
+    yMax:1200000, yStep:200000, yFmt:axisK, valFmt:kGas, labelLeft:true,
+    ref:{ v:TC_GAS, label:'Tornado Cash 1,111,030' },
+    sel:cost.disp, series:costSeries(),
+    tipFmt:function(v, i){ return 'l = ' + L_PTS[i] + ': ' + kGas(v) + ' gas<br>' + (TC_GAS / v).toFixed(1) + '× cheaper than Tornado Cash'; }
+  }, enter);
+  var lg = $('costLegend'); lg.innerHTML = '';
+  costSeries().slice().reverse().forEach(function(s){
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="swatch" style="background:' + css(s.slot) + '"></span>' + s.name;
+    lg.appendChild(li);
+  });
+  var li2 = document.createElement('li');
+  li2.innerHTML = '<span class="swatch" style="background:none;border-top:2px dashed ' + css('--ink-1') + ';height:0;width:16px;border-radius:0"></span>Tornado Cash (text)';
+  lg.appendChild(li2);
+}
+function syncCostReadouts(){
+  var i = cost.target, l = L_PTS[i];
+  $('lVal').textContent = l;
+  var d = cost.view === 'vc' ? 20 : cost.d;
+  var v = MPB[d][i];
+  if (cost.view === 'vc'){
+    var w = VC20[i];
+    $('c1k').textContent = 'Per deposit, MPB + VC';
+    $('c1').textContent = kGas(w) + ' gas';
+    $('c1d').textContent = 'MPB alone: ' + kGas(v) + ' (d = 20, l = ' + l + ')';
+    $('c2').textContent = (TC_GAS / w).toFixed(1) + '× cheaper';
+    $('c3k').textContent = 'VC saving over MPB';
+    $('c3').textContent = kGas(v - w) + ' gas';
+    $('c3d').textContent = 'per client; largest at small queues';
+  } else {
+    $('c1k').textContent = 'Per deposit';
+    $('c1').textContent = kGas(v) + ' gas';
+    $('c1d').textContent = 'depth ' + d + ', queue of ' + l;
+    $('c2').textContent = (TC_GAS / v).toFixed(1) + '× cheaper';
+    $('c3k').textContent = 'Whole queue (l × per deposit)';
+    $('c3').textContent = mGas(l * v) + ' gas';
+    $('c3d').textContent = 'the paper\'s gas_update for this l';
+  }
+  buildCostTable();
+}
+function buildCostTable(){
+  var i = cost.target;
+  var head = '<thead><tr><th>Series</th>' + L_PTS.map(function(l, k){ return '<th class="num lc">l = ' + l + '</th>'; }).join('') + '</tr></thead>';
+  var rows = DEPTHS.map(function(d){
+    return '<tr><td>MPB, d=' + d + '</td>' + MPB[d].map(function(v, k){ return '<td class="num' + (k === i && (cost.view === 'vc' ? d === 20 : d === cost.d) ? ' sel' : '') + '">' + kGas(v) + '</td>'; }).join('') + '</tr>';
+  }).join('');
+  rows += '<tr><td>MPB + VC, d=20</td>' + VC20.map(function(v, k){ return '<td class="num' + (k === i && cost.view === 'vc' ? ' sel' : '') + '">' + kGas(v) + '</td>'; }).join('') + '</tr>';
+  rows += '<tr><td>Tornado Cash</td><td class="num" colspan="8" style="text-align:center">1,111,030 at every l (no queue)</td></tr>';
+  var html = head + '<tbody>' + rows + '</tbody>';
+  $('costTable').innerHTML = html;
+  $('resTable').innerHTML = head.replace('<th>Series</th>', '<th>Series (gas per deposit)</th>') + '<tbody>' + rows.replace(/ sel/g, '') + '</tbody>';
+}
+function costLoop(){
+  var d = cost.target - cost.disp;
+  if (Math.abs(d) < 0.02){ cost.disp = cost.target; drawCost(false); cost.raf = null; return; }
+  cost.disp += d * 0.22; drawCost(false);
+  cost.raf = requestAnimationFrame(costLoop);
+}
+function costSettle(){ if (cost.raf){ cancelAnimationFrame(cost.raf); cost.raf = null; } cost.disp = cost.target; drawCost(false); }
+$('lRange').addEventListener('input', function(){
+  cost.target = +this.value; syncCostReadouts();
+  if (REDUCED){ costSettle(); return; }
+  if (!cost.raf) cost.raf = requestAnimationFrame(costLoop);
+});
+$('lRange').addEventListener('change', function(){ cost.target = +this.value; syncCostReadouts(); costSettle(); });
+segInit('viewSeg', [{ label:'' }, { label:'' }], 0, function(){});
+Array.prototype.forEach.call($('viewSeg').children, function(b, i){
+  b.innerHTML = i === 0 ? 'All depths · Fig. 10' : 'MPB + VC, d = 20 · Fig. 11';
+  b.addEventListener('click', function(){
+    cost.view = i === 0 ? 'depth' : 'vc';
+    $('depthCtl').style.visibility = cost.view === 'vc' ? 'hidden' : 'visible';
+    syncCostReadouts(); drawCost(true);
+  });
+});
+segInit('dSeg', DEPTHS.map(function(d){ return { label:String(d) }; }), 2, function(i){ cost.d = DEPTHS[i]; syncCostReadouts(); drawCost(false); });
+
+/* =======================================================================
+   3. Finalisation time (Fig. 9)
+   ===================================================================== */
+var fin = { pool:0, target:4, disp:4, raf:null, shown:null };
+function finVals(pool){
+  var D = POOLS[pool].delta;
+  return {
+    plot:L_PTS.map(function(l){ return l * D * SLOT_S / 3600; }),
+    text:L_PTS.map(function(l){ return (l - 1) * D / 2 * SLOT_S / 3600; })
+  };
+}
+function hrs(h){ return h < 48 ? h.toFixed(h < 10 ? 2 : 1) + ' h' : h.toFixed(0) + ' h (' + (h / 24).toFixed(1) + ' d)'; }
+function drawFin(enter, vals){
+  vals = vals || fin.shown || finVals(fin.pool);
+  lineChart($('finSvg'), {
+    x:L_PTS.map(String), xTitle:'Deposit-queue size l', yTitle:'Expected finalisation time (hours)',
+    yMax:240, yStep:60, yFmt:function(v){ return v + 'h'; }, valFmt:function(v){ return v.toFixed(1) + 'h'; }, labelRight:true,
+    sel:fin.disp,
+    series:[
+      { key:'plot', name:'As plotted in Fig. 9 (l·Δ)', short:'Fig. 9', slot:'--s1', vals:vals.plot, valueLabel:true },
+      { key:'text', name:'Text formula (l−1)Δ/2', short:'formula', slot:'--s2', vals:vals.text, valueLabel:true, valueBelow:true }
+    ],
+    tipFmt:function(v, i){ return POOLS[fin.pool].label + ' pool, l = ' + L_PTS[i] + ': ' + hrs(v); }
+  }, enter);
+}
+function syncFin(){
+  var i = fin.target, l = L_PTS[i], D = POOLS[fin.pool].delta, v = finVals(fin.pool);
+  $('fVal').textContent = l;
+  $('f1').textContent = hrs(v.text[i]); $('f1d').textContent = '(' + l + '−1)·' + D + '/2 blocks × 12 s';
+  $('f2').textContent = hrs(v.plot[i]); $('f2d').textContent = l + '·' + D + ' blocks × 12 s · ' + (v.plot[i] / v.text[i]).toFixed(2) + '× the formula';
+  $('f3').textContent = D + ' blocks'; $('f3d').textContent = POOLS[fin.pool].label + ' pool · ' + (D * SLOT_S / 60).toFixed(1) + ' min at 12 s/slot';
+  var head = '<thead><tr><th>' + POOLS[fin.pool].label + ' pool</th>' + L_PTS.map(function(x){ return '<th class="num lc">l = ' + x + '</th>'; }).join('') + '</tr></thead>';
+  function row(name, arr){ return '<tr><td>' + name + '</td>' + arr.map(function(h, k){ return '<td class="num' + (k === i ? ' sel' : '') + '">' + h.toFixed(2) + ' h</td>'; }).join('') + '</tr>'; }
+  $('finTable').innerHTML = head + '<tbody>' + row('Fig. 9 as plotted, l·Δ', v.plot) + row('Text formula, (l−1)Δ/2', v.text) + '</tbody>';
+}
+segInit('poolSeg', POOLS.map(function(p){ return { label:p.label }; }), 0, function(k){
+  var from = fin.shown || finVals(fin.pool), to = finVals(k);
+  fin.pool = k; syncFin();
+  tween(480, function(t){
+    fin.shown = { plot:from.plot.map(function(a, j){ return a + (to.plot[j] - a) * t; }),
+                  text:from.text.map(function(a, j){ return a + (to.text[j] - a) * t; }) };
+    drawFin(false, fin.shown);
+  }, function(){ fin.shown = to; drawFin(false, to); });
+});
+function finLoop(){
+  var d = fin.target - fin.disp;
+  if (Math.abs(d) < 0.02){ fin.disp = fin.target; drawFin(false); fin.raf = null; return; }
+  fin.disp += d * 0.22; drawFin(false);
+  fin.raf = requestAnimationFrame(finLoop);
+}
+function finSettle(){ if (fin.raf){ cancelAnimationFrame(fin.raf); fin.raf = null; } fin.disp = fin.target; drawFin(false); }
+$('fRange').addEventListener('input', function(){
+  fin.target = +this.value; syncFin();
+  if (REDUCED){ finSettle(); return; }
+  if (!fin.raf) fin.raf = requestAnimationFrame(finLoop);
+});
+$('fRange').addEventListener('change', function(){ fin.target = +this.value; syncFin(); finSettle(); });
+(function(){
+  var lg = $('finLegend');
+  lg.innerHTML = '<li><span class="swatch" style="background:' + css('--s1') + '"></span>As plotted in Fig. 9 · l·Δ</li>' +
+    '<li><span class="swatch" style="background:' + css('--s2') + '"></span>Text formula · (l−1)Δ/2</li>';
+})();
+
+/* =======================================================================
+   4. Fee calibration / ε-fairness (Table 1)
+   ===================================================================== */
+var fair = { li:4, p0:30, p1:30, shown:null };
+function fairCalc(){
+  var l = L_PTS[fair.li], gasUpd = l * MPB[20][fair.li];
+  var C0 = gasUpd * fair.p0 * 1e-9, C1 = gasUpd * fair.p1 * 1e-9;   /* ETH */
+  var d0 = C0 / l, d1 = C1 - (l - 1) * d0;
+  return { l:l, gasUpd:gasUpd, C0:C0, C1:C1, d0:d0, d1:d1, refund:(l - 1) * d0, gap:d1 - d0 };
+}
+function eth(v){ var a = Math.abs(v); return (v < 0 ? '−' : '') + (a >= 1 ? a.toFixed(3) : a >= 0.01 ? a.toFixed(4) : a.toFixed(5)) + ' ETH'; }
+function drawFair(vals, enter){
+  var svg = $('fairSvg');
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 360 : 900, padL = narrow ? 8 : 250, padR = narrow ? 14 : 110, rowH = narrow ? 56 : 44, top = 14;
+  var rows = [
+    { name:'Each of the first l−1 clients · d⁰ᵢ', v:vals.d0, slot:'--s1' },
+    { name:'Last client, net of refund · d¹ᵢ', v:vals.d1, slot:'--s2' }
+  ];
+  var H = top + rows.length * rowH + 30;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var lo = Math.min(0, vals.d1, vals.d0), hi = Math.max(vals.d0, vals.d1, 1e-9);
+  var span = (hi - lo) * 1.12 || 1;
+  var x0 = padL + (0 - lo) / span * (W - padL - padR);
+  function X(v){ return x0 + v / span * (W - padL - padR); }
+  var ink = css('--ink-1'), axis = css('--axis'), surf = css('--surface-1');
+  rows.forEach(function(r, i){
+    var y = top + i * rowH + (narrow ? 20 : 4), bh = narrow ? 18 : 24;
+    if (narrow) svg.appendChild(el('text', { x:padL, y:y - 6, 'font-size':11, fill:ink, 'font-family':'Ubuntu Mono, monospace' }, r.name));
+    else svg.appendChild(el('text', { x:padL - 12, y:y + bh / 2 + 4, 'text-anchor':'end', 'font-size':12.5, fill:ink, 'font-family':'Ubuntu Mono, monospace' }, r.name));
+    var xa = Math.min(X(0), X(r.v)), w = Math.max(Math.abs(X(r.v) - X(0)), 1.5);
+    var rect = el('rect', { x:xa, y:y, width:w, height:bh, rx:4, fill:css(r.slot) });
+    rect.addEventListener('mousemove', function(ev){ showTip(ev, '<b>' + r.name + '</b>' + eth(r.v)); });
+    rect.addEventListener('mouseleave', hideTip);
+    svg.appendChild(rect);
+    var neg = r.v < 0;
+    var label = eth(r.v) + (neg ? ' (receives)' : ''), lw = label.length * (narrow ? 6.1 : 6.9);
+    var inside = !neg && xa + w + 6 + lw > W - 2;
+    var lx = neg ? xa - 6 : (inside ? xa + w - 6 : xa + w + 6);
+    var negInside = neg && lx - lw < padL + 4;
+    var negRight = negInside && w < lw + 12;
+    if (negRight){ lx = X(0) + 6; negInside = false; neg = false; }
+    else if (negInside){ lx = xa + 6; }
+    svg.appendChild(el('text', { x:lx, y:y + bh / 2 + 4, 'text-anchor':negInside ? 'start' : ((neg || inside) ? 'end' : 'start'), 'font-size':narrow ? 11 : 12.5,
+      fill:(inside || negInside) ? '#ffffff' : ink, 'font-weight':700, 'font-family':'Ubuntu Mono, monospace' }, label));
+  });
+  svg.appendChild(el('line', { x1:X(0), y1:top - 4, x2:X(0), y2:top + rows.length * rowH, stroke:axis, 'stroke-width':1 }));
+  svg.appendChild(el('text', { x:X(0), y:H - 6, 'text-anchor':'middle', 'font-size':10.5, fill:css('--ink-muted'), 'font-family':'Ubuntu Mono, monospace' }, '0 ETH'));
+}
+function syncFair(animate){
+  var v = fairCalc();
+  $('p0v').textContent = fair.p0; $('p1v').textContent = fair.p1;
+  $('g1').textContent = mGas(v.gasUpd) + ' gas';
+  $('g1d').textContent = v.l + ' × ' + kGas(MPB[20][fair.li]) + ' (Fig. 10, d = 20) = ε';
+  $('g2').textContent = eth(v.refund);
+  $('g2d').textContent = 'TotalFee = (l−1)·d⁰ᵢ, forwarded by the contract';
+  $('g3').textContent = eth(v.gap);
+  var dp = fair.p1 - fair.p0;
+  $('g3d').textContent = '= ε·Δp = ' + mGas(v.gasUpd) + ' × ' + dp + ' Gwei';
+  $('fairTable').innerHTML = '<thead><tr><th class="lc">Table 1, queue i</th><th class="num">Value</th></tr></thead><tbody>' +
+    '<tr><td>First l−1 clients, each · d⁰ᵢ = Cᵢ₋₁/l</td><td class="num">' + eth(v.d0) + '</td></tr>' +
+    '<tr><td>Last client · d¹ᵢ = Cᵢ − (l−1)·d⁰ᵢ</td><td class="num">' + eth(v.d1) + '</td></tr>' +
+    '<tr><td>Previous queue total · Cᵢ₋₁ at ' + fair.p0 + ' Gwei</td><td class="num">' + eth(v.C0) + '</td></tr>' +
+    '<tr class="hl"><td>This queue total · Cᵢ = (l−1)·d⁰ᵢ + d¹ᵢ at ' + fair.p1 + ' Gwei</td><td class="num">' + eth(v.C1) + '</td></tr></tbody>';
+  var to = { d0:v.d0, d1:v.d1 };
+  if (animate && fair.shown){
+    var from = fair.shown;
+    tween(260, function(t){ fair.shown = { d0:from.d0 + (to.d0 - from.d0) * t, d1:from.d1 + (to.d1 - from.d1) * t }; drawFair(fair.shown); },
+      function(){ fair.shown = to; drawFair(to); });
+  } else { fair.shown = to; drawFair(to); }
+}
+segInit('flSeg', L_PTS.map(function(l){ return { label:String(l) }; }), 4, function(i){ fair.li = i; syncFair(true); });
+['p0', 'p1'].forEach(function(id){
+  $(id).addEventListener('input', function(){ fair[id] = +this.value; syncFair(true); });
+  $(id).addEventListener('change', function(){ fair[id] = +this.value; syncFair(false); });
+});
+$('presetBtn').addEventListener('click', function(){
+  fair.li = 4; fair.p0 = 20; fair.p1 = 50; $('p0').value = 20; $('p1').value = 50; segSet('flSeg', 4); syncFair(true);
+});
+
+/* =======================================================================
+   BibTeX copy
+   ===================================================================== */
+$('copyBib').addEventListener('click', function(){
+  var b = this, t = $('bibtex').textContent;
+  function done(){ b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   KaTeX + boot
+   ===================================================================== */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters:[ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError:false, ignoredTags:['script','noscript','style','textarea','pre','code','option']
+  });
+}
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+function redrawAll(){ drawTree(false); drawCost(false); drawFin(false); drawFair(fair.shown || fairCalc()); }
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+drawTree(false); syncPyrPanel();
+syncCostReadouts(); syncFin(); syncFair(false);
+if (!hasIO){ drawCost(false); drawFin(false); }
+
+/* scroll entrances: opacity/translate driven by the guarded tween (no CSS transitions) */
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);
+      var sec = en.target, id = sec.id;
+      tween(650, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      if (id === 'cost') setTimeout(function(){ drawCost(true); }, 150);
+      else if (id === 'finality') setTimeout(function(){ drawFin(true); }, 150);
+      else if (id === 'pyramid') setTimeout(function(){ drawTree(true); }, 100);
+      else if (id === 'fairness'){
+        var to = fairCalc(); fair.shown = { d0:0, d1:0 };
+        setTimeout(function(){ var from = { d0:0, d1:0 };
+          tween(700, function(t){ drawFair({ d0:to.d0 * t, d1:to.d1 * t }); }, function(){ fair.shown = { d0:to.d0, d1:to.d1 }; drawFair(fair.shown); }); }, 150);
+      }
+      else if (id === 'tldr'){
+        Array.prototype.forEach.call(sec.querySelectorAll('[data-count]'), function(node){
+          var target = +node.getAttribute('data-count');
+          tween(900, function(p){ node.textContent = fmt(target * p); }, function(){ node.textContent = fmt(target); });
+        });
+      }
+    });
+  }, { threshold:0.06, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+  /* before first intersection, charts render statically so nothing is blank if IO is slow */
+  drawCost(false); drawFin(false);
+}
+
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){ if (Math.abs(window.innerWidth - lastW) > 2){ lastW = window.innerWidth; redrawAll(); } }, 120);
+});
+</script>
+</body>
+</html>
