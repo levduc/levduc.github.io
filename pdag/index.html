@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Blockchain Privacy Graphs</title>
+<meta name="description" content="FC 2024 — A Transaction-Level Model for Blockchain Privacy: the PDAG, and consistent definitions of untraceability and unlinkability for Coinjoin, Tornado Cash, Monero and Zcash.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots — validated against #fafafa (dataviz validate_palette.js, light) */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --edge-p:#6b6b6b; --pool:#ececec;
+  --good:#0ca30c; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:var(--plane)}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono)}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2.2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:210px; flex:1}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chipbtn{font-family:var(--mono); font-size:.84rem; border:1px solid var(--ring); background:var(--surface-1);
+  color:var(--ink-1); border-radius:999px; padding:.2rem .7rem; cursor:pointer}
+.chipbtn[aria-pressed=true]{border-color:var(--accent); background:var(--accent); color:#fff}
+.chipbtn:hover{border-color:var(--accent)}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px 16px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.legend svg{width:auto; height:auto; display:inline-block; flex:none; overflow:visible}
+.k .katex, .eyebrow .katex{text-transform:none}
+.tip{position:fixed; left:0; top:0; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- read-outs ---------- */
+.rogrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:14px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-muted); font-weight:700; margin-bottom:.25rem}
+.ro .v{font-size:1.45rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro p{font-size:.92rem; margin:.2rem 0 0}
+.ro.focus{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+.verdict{display:inline-block; font-family:var(--mono); font-size:.78rem; font-weight:700;
+  border:1px solid currentColor; border-radius:999px; padding:.05rem .55rem; margin-top:.35rem}
+.verdict.bad{color:var(--critical)} .verdict.ok{color:var(--good)} .verdict.na{color:var(--ink-muted)}
+.split{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:20px; align-items:start}
+
+/* ---------- matrix toggles ---------- */
+table.mx{width:auto; border-collapse:collapse; margin:0}
+table.mx th, table.mx td{border:0; padding:4px 6px; text-align:center}
+table.mx th{font-family:var(--mono); font-size:.8rem; color:var(--ink-2); text-transform:none; letter-spacing:0}
+table.mx input{width:18px; height:18px; accent-color:var(--accent); cursor:pointer}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch; position:relative}
+table.data{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+table.data th, table.data td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+table.data th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700}
+table.data td.num, table.data th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+table.data tr.hl td{background:var(--surface-1)}
+.yes{color:var(--good); font-weight:700} .no{color:var(--critical); font-weight:700}
+.badge{font-family:var(--mono); font-size:.74rem; color:var(--ink-muted); white-space:nowrap}
+
+/* ---------- misc ---------- */
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:18px 0 0; max-width:74ch}
+.warnbox{border:1px solid var(--s2); border-radius:4px; padding:12px 14px; margin-top:16px; background:var(--plane)}
+.warnbox .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; font-weight:700; color:var(--ink-1)}
+ol.issues{padding-left:1.2rem; margin:.4rem 0 0} ol.issues li{margin-bottom:.7rem; max-width:78ch}
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px;
+  overflow-x:auto; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+.katex{font-size:1.02em}
+.ro .katex{font-size:1em}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2rem}
+  .split{grid-template-columns:1fr}
+  .controls .ctl{flex:1 1 100%; min-width:0}
+  .seg button{flex:1 1 auto}
+  .chart{padding:12px 10px 10px}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav aria-label="Sections">
+    <a href="#problem">Problem</a>
+    <a href="#pdag">PDAG</a>
+    <a href="#core">Untraceability</a>
+    <a href="#score">Unlinkability</a>
+    <a href="#coinjoin">Coinjoin</a>
+    <a href="#chains">Monero vs Zcash</a>
+    <a href="#guarantees">Guarantees</a>
+    <a href="#heuristics">Heuristics</a>
+    <a href="#source">Source notes</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">FC 2024</span>
+  <h1>A Transaction-Level Model for Blockchain Privacy</h1>
+  <p class="sub">One graph model, the <em>PDAG</em>, gives untraceability and unlinkability a single, consistent definition. The model is then used to compare Coinjoin, Tornado Cash, Monero and Zcash.</p>
+  <p class="authors">
+    François-Xavier Wicht<sup>1</sup>, Zhipeng Wang<sup>2</sup>, <span class="me">Duc V. Le</span><sup>3</sup>, Christian Cachin<sup>1</sup>
+  </p>
+  <p class="affils"><sup>1</sup>University of Bern &nbsp;·&nbsp; <sup>2</sup>Imperial College London &nbsp;·&nbsp; <sup>3</sup>Visa Research (main part of the work done at the University of Bern)</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/txgraph-privacy.pdf">[Paper PDF]</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+  </div>
+  <p class="note" style="margin:14px 0 0">The PDF is the full version (<a href="https://eprint.iacr.org/2023/1902">Cryptology ePrint Archive 2023/1902</a>, 11 December 2023). Every figure, definition, lemma and equation number on this page follows that version.</p>
+</div></header>
+
+<!-- ============ TILES ============ -->
+<section id="tldr"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What the model delivers</h2>
+  <div class="tiles" style="margin-top:14px">
+    <div class="tile"><div class="k">Monero ring</div><div class="v" data-count="16">16</div>
+      <p class="d">Monero from v0.18.0.0 is $16$-untraceable, provided its bipartite graph $G^*$ equals its core (Lemma 6).</p></div>
+    <div class="tile"><div class="k">Linking relations</div><div class="v" data-count="10">10</div>
+      <p class="d">Linking heuristics from the literature, written as inferred relations $\tilde L$ in one notation (Eqs. 1–10).</p></div>
+    <div class="tile"><div class="k">Systems modelled</div><div class="v" data-count="4">4</div>
+      <p class="d">Coinjoin and Tornado Cash (add-ons), Monero and Zcash (privacy-preserving chains), all in one graph (§4).</p></div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Everyone says "untraceable". Nobody means the same thing.</h2>
+  <p class="lede">Bitcoin and Ethereum show every sender, recipient and amount. The protections built on top take very different routes. Coinjoin merges many users' coins into one transaction. Tornado Cash uses zero-knowledge proofs to separate deposits from withdrawals. Monero hides the real input among decoys with ring signatures. Zcash hides it in a shielded pool. Each line of research uses its own model and notation, so they are hard to compare.</p>
+  <p class="lede">The paper asks three questions. How do these mechanisms compare? Which structures in a ledger protect privacy, and which break it? What forms does privacy take in a blockchain? To answer them, it extends the <em>Transaction DAG</em> (TDAG) of Cachin et al. into the <strong>PDAG</strong>, then defines two notions on that one graph:</p>
+  <div class="tiles" style="margin-top:6px">
+    <div class="tile"><div class="k">Untraceability</div><p class="d" style="margin-top:.35rem">Can the adversary tell <em>which input</em> a transaction really spent? The input states it cannot tell apart form the <em>untraceability set</em>. A transaction is $k$-untraceable if that set has $k\ge 2$ members after the graph is pruned to its core (Def. 6).</p></div>
+    <div class="tile"><div class="k">Unlinkability</div><p class="d" style="margin-top:.35rem">Can the adversary tell <em>which states belong together</em>? It groups states with an inferred relation $\tilde L$. The <em>unlinkability score</em> $u$ measures how far that grouping is from the true relation $L$ (Def. 10).</p></div>
+  </div>
+  <p class="note" style="margin-top:14px">Adversary model (§3.1): passive, computationally unbounded, idealised cryptography, and focused on the transaction layer. It only observes and records transactions.</p>
+</div></section>
+
+<!-- ============ 1. PDAG ============ -->
+<section id="pdag"><div class="wrap">
+  <p class="eyebrow">Interactive 1 · Figure 2</p>
+  <h2>Anatomy of a PDAG, and what the adversary sees</h2>
+  <p class="lede">A PDAG has <strong>states</strong> ($\bigcirc$, coins), <strong>witnesses</strong> ($\Box$, one per transaction) and <strong>nullifiers</strong> ($\Diamond$). Nullifiers are Monero key images, Zcash nullifiers or Tornado withdrawal commitments; they block double-spends. The paper adds <em>masking edges</em> to the TDAG: a masking edge consumes a state, but to everyone except the author it looks like an observing edge. Switch to the adversary's view and every masking edge disappears into the ambiguous ones.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">View</span>
+      <div class="seg" id="pdagView"><button type="button" aria-pressed="true" data-v="truth">Ground truth</button><button type="button" aria-pressed="false" data-v="adv">Adversary's view</button></div></div>
+    <div class="ctl"><span class="lbl">Transaction $T_{w_i}$ (click a witness or pick one)</span>
+      <div class="chips" id="pdagPick"></div></div>
+  </div>
+  <div class="chart"><svg id="pdagSvg" role="img" aria-label="PDAG of Figure 2 with four transactions"></svg>
+    <ul class="legend" id="pdagLegend"></ul></div>
+  <div class="rogrid" id="pdagRO"></div>
+  <details class="tbl"><summary>Table view — every edge of Figure 2</summary><div class="tscroll"><table class="data" id="pdagTable"></table></div></details>
+  <p class="note" style="margin-top:12px">Graph reproduced from <code>figures/pdag_example.tex</code> (Figure 2). Transaction descriptions follow §2.4.</p>
+</div></section>
+
+<!-- ============ 2. CORE ============ -->
+<section id="core"><div class="wrap">
+  <p class="eyebrow">Interactive 2 · Figure 3 · Definitions 5–7</p>
+  <h2>Untraceability: prune to the core, then count</h2>
+  <p class="lede">The adversary keeps only the regular transactions and their inputs, which gives a bipartite graph $G^*$ of states and witnesses (§3.2). Every witness consumes at least one state, so the real spends form a <em>maximum matching</em>. Any edge that belongs to <em>no</em> maximum matching cannot be the real spend. Pruning those edges leaves the Dulmage–Mendelsohn <strong>core</strong>, the union of all maximum matchings (Def. 5). A transaction is $k$-untraceable when $k\ge2$ of its edges survive in the core. A PDAG is only as untraceable as its weakest transaction (Def. 7).</p>
+  <div class="split">
+    <div>
+      <div class="controls" style="margin-bottom:10px">
+        <div class="ctl" style="flex:1 1 100%"><span class="lbl">Step</span>
+          <div class="seg" id="coreStage"><button type="button" aria-pressed="true" data-v="g">1 · Adversary's $G^*$</button><button type="button" aria-pressed="false" data-v="core">2 · $\mathbf{core}(G^*)$</button></div></div>
+      </div>
+      <div class="chart"><svg id="coreSvg" role="img" aria-label="Bipartite graph of three states and three witnesses"></svg>
+        <ul class="legend" id="coreLegend"></ul></div>
+    </div>
+    <div>
+      <p class="eyebrow" style="margin-top:4px">Edit $G^*$ — which state may each witness have spent?</p>
+      <table class="mx" id="coreMx" aria-label="Edge toggles"></table>
+      <div class="btns" style="margin-top:10px">
+        <button class="btn" type="button" id="corePaper">Paper's Figure 3</button>
+        <button class="btn" type="button" id="coreFull">All 9 edges</button>
+        <button class="btn" type="button" id="coreTruth" aria-pressed="false">Show ground truth</button>
+      </div>
+      <div class="rogrid" id="coreRO" style="grid-template-columns:1fr"></div>
+    </div>
+  </div>
+  <p class="callout">With the paper's graph, the two maximum matchings are $M_1$ and $M_2$ (§3.2). Neither uses $s_1\to w_3$ or $s_2\to w_3$, so the core drops both, and $w_3$ is left with a single edge: <strong>traceable</strong>. The graph <em>looks</em> 2- and 3-untraceable, but the PDAG gives no untraceability at all.</p>
+  <p class="note" style="margin-top:10px">Computed live by listing every matching of the 3×3 graph. The paper's case reproduces the core stated in §3.2: $\{s_1w_1, s_2w_2, s_3w_3, s_1w_2, s_2w_1\}$.</p>
+</div></section>
+
+<!-- ============ 3. SCORE ============ -->
+<section id="score"><div class="wrap">
+  <p class="eyebrow">Interactive 3 · Definition 10 · Lemmas 2–4, 7</p>
+  <h2>The unlinkability score, and the paper's two readings of it</h2>
+  <p class="lede">The adversary puts $n$ states into one class $[s]_{\tilde L}$. In this calculator, $l$ of them form a single group that truly belongs together, and the other $n-l$ are unrelated singletons. Definition 10 describes the score in words as <em>"the ratio of the number of unlinked pairs to all possible pairs"</em>. Its formula, however, counts only the pairs <em>inside</em> $[s]_{\tilde L}\setminus[s]_L$. The two agree in some places and not in others. The paper's worked values also split between them, so this calculator shows both: (A) is the formula for a member of the group, and (B) is the wording applied to the whole class.</p>
+  <div class="controls">
+    <div class="ctl"><label for="nIn">Adversary's class size $n=|[s]_{\tilde L}|$: <span class="val" id="nVal">3</span></label>
+      <input type="range" id="nIn" min="2" max="100" step="1" value="3"></div>
+    <div class="ctl"><label for="lIn">Size of the truly linked group, $l$: <span class="val" id="lVal">2</span></label>
+      <input type="range" id="lIn" min="1" max="3" step="1" value="2"></div>
+  </div>
+  <div class="controls" style="margin-top:-4px"><div class="ctl" style="flex:1 1 100%"><span class="lbl">Jump to a case from the paper</span><div class="chips" id="scorePresets"></div></div></div>
+  <div class="split">
+    <div class="chart"><svg id="scoreSvg" role="img" aria-label="Unlinkability score as a function of l for both readings"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s1)"></span>(A) Def. 10 formula, for a group member</li>
+        <li><span class="swatch" style="background:var(--s2)"></span>(B) Def. 10 wording, whole class: unlinked pairs / all pairs</li>
+      </ul></div>
+    <div class="rogrid" style="grid-template-columns:1fr; margin-top:0" id="scoreRO"></div>
+  </div>
+  <details class="tbl" open><summary>Table view — every place the paper gives a score</summary><div class="tscroll"><table class="data" id="scoreTable"></table></div>
+    <p class="note" style="margin-top:8px">(A) $=\binom{|[s]_{\tilde L}\setminus[s]_L|}{2}\big/\binom{|[s]_{\tilde L}|}{2}$, as written in Def. 10. (B) $=\big(\binom{n}{2}-p\big)/\binom{n}{2}$ over the whole class, where $p$ is the number of truly linked pairs: the Def. 10 wording, and the form used in the proofs of Lemmas 2, 4 and 7. Where the two kinds of state differ, (A) is given for both. $[s]_L$ always contains $s$, because $L$ is an equivalence relation (Def. 8). Fractions are left unreduced, as in the paper.</p></details>
+</div></section>
+
+<!-- ============ 4. COINJOIN ============ -->
+<section id="coinjoin"><div class="wrap">
+  <p class="eyebrow">Interactive 4 · Figure 6 · Lemma 1</p>
+  <h2>Coinjoin: beat the multi-input heuristic</h2>
+  <p class="lede">The multi-input heuristic (Eq. 1) assumes every input of a transaction has the same owner. Coinjoin breaks that assumption. In Figure 6, three users merge 7 inputs into one transaction, so the adversary's class is all 7 inputs. Each state's score depends only on how many of the 7 its owner holds. <strong>Click an input to change its owner.</strong></p>
+  <div class="btns" style="margin-bottom:12px">
+    <button class="btn" type="button" id="cjPaper">Paper's Figure 6 (2 + 2 + 3)</button>
+    <button class="btn" type="button" id="cjSolo">One owner (no Coinjoin)</button>
+    <button class="btn" type="button" id="cjSpread">Seven owners</button>
+  </div>
+  <div class="split">
+    <div class="chart"><svg id="cjGraph" role="img" aria-label="Coinjoin transaction with seven inputs"></svg>
+      <ul class="legend" id="cjLegend"></ul></div>
+    <div class="chart"><svg id="cjBars" role="img" aria-label="Per-input unlinkability score"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--ink-muted)"></span>bar = (A), per input, coloured by owner</li>
+        <li><span class="swatch" style="background:#dcdcdc"></span>Lemma 1 range</li>
+        <li><span class="swatch" style="background:var(--ink-1); height:2px"></span>(B), whole class</li>
+      </ul></div>
+  </div>
+  <div class="rogrid" id="cjRO"></div>
+  <details class="tbl"><summary>Table view — score of every input</summary><div class="tscroll"><table class="data" id="cjTable"></table></div></details>
+  <p class="note" style="margin-top:12px">The paper's split reproduces its stated scores: $\frac{10}{21}$ for the four inputs of the two 2-address users, and $\frac{6}{21}$ for the three inputs of the 3-address user (§4.1.1). Lemma 1 bounds a Coinjoin with at least two owners between $\binom{|S_I|-|U|}{2}/\binom{|S_I|}{2}$ and $\binom{|S_I|-|u|}{2}/\binom{|S_I|}{2}$, where $U$ is the largest owner class and $u$ the smallest.</p>
+</div></section>
+
+<!-- ============ 5. CHAINS ============ -->
+<section id="chains"><div class="wrap">
+  <p class="eyebrow">Interactive 5 · Figures 8 and 9 · Lemmas 6 and 8</p>
+  <h2>Monero vs Zcash: where the decoys come from</h2>
+  <p class="lede">Both chains hide the spent input behind masking edges and stop double-spends with nullifiers. They differ in <em>who</em> ends up in the untraceability set. A Monero ring signature names its decoys explicitly: 16 ring members since v0.18.0.0. A Zcash shielded spend names none, so the set is implicitly every earlier state in the pool. Step through each chain's sample run from the paper.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Chain</span>
+      <div class="seg" id="chainPick"><button type="button" aria-pressed="true" data-v="monero">Monero · Fig. 8</button><button type="button" aria-pressed="false" data-v="zcash">Zcash · Fig. 9</button></div></div>
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">View</span>
+      <div class="seg" id="chainView"><button type="button" aria-pressed="true" data-v="truth">Ground truth</button><button type="button" aria-pressed="false" data-v="adv">Adversary's view</button></div></div>
+    <div class="ctl"><span class="lbl">Transaction</span><div class="chips" id="chainTx"></div></div>
+  </div>
+  <div class="chart"><svg id="chainSvg" role="img" aria-label="Sample execution graph"></svg>
+    <ul class="legend" id="chainLegend"></ul></div>
+  <div class="rogrid" id="chainRO"></div>
+  <details class="tbl"><summary>Table view — every edge of the selected figure</summary><div class="tscroll"><table class="data" id="chainTable"></table></div></details>
+  <p class="note" style="margin-top:12px">Graphs reproduced from <code>figures/pdag_monero_h2.tex</code> (Figure 8) and <code>figures/pdag_zcash_all_min.tex</code> (Figure 9). Grey areas are the shielded pool, drawn exactly as in the figure source. The sample runs are toy-sized. The protocol-scale guarantees are the ones in the "At protocol scale" card.</p>
+</div></section>
+
+<!-- ============ GUARANTEES ============ -->
+<section id="guarantees"><div class="wrap">
+  <p class="eyebrow">Properties</p>
+  <h2>What each system guarantees, in the paper's terms</h2>
+  <div class="tscroll"><table class="data">
+    <thead><tr><th>System</th><th>Untraceability</th><th>Unlinkability</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Coinjoin</strong><br><span class="badge">add-on, Bitcoin</span></td><td><span class="no">✕ None</span>: consumption stays visible</td><td>Under the multi-input relation (Eq. 1), the score lies in the Lemma 1 range, set by the largest and smallest owner classes</td><td class="badge">§4.1.1 · Lemma 1</td></tr>
+      <tr><td><strong>Tornado Cash</strong><br><span class="badge">add-on, Ethereum</span></td><td><span class="no">✕ None</span>: consumption stays visible</td><td>Address reuse gives a score of $0$. Otherwise the score is fixed by the heuristic, Eqs. 4–7: $\frac{2}{3}$, $1$, $\frac{12-l(l-1)}{12}$, or the Lemma 5 expression (all "or linkable")</td><td class="badge">§4.1.2 · Lemmas 2–5</td></tr>
+      <tr><td><strong>Monero</strong><br><span class="badge">v0.18.0.0, ring size 16</span></td><td><span class="yes">✓ $16$-untraceable</span> if $G^*=\mathbf{core}(G^*)$</td><td>One-time addresses, so no two states share an address. The multi-output heuristic (Eq. 8) gives "linkable or $1$"</td><td class="badge">§4.2 · Lemmas 6–7</td></tr>
+      <tr><td><strong>Zcash</strong> transparent pool</td><td><span class="no">✕ None</span></td><td>—</td><td class="badge">§4.3</td></tr>
+      <tr><td><strong>Zcash</strong> shielded pool</td><td><span class="yes">✓ $p$-untraceable</span> if $G^*=\mathbf{core}(G^*)$, where $p=\min|\{s\mid s\prec w\}|$ over witnesses $w$</td><td>Leaks through contact with the transparent pool: round-trip transactions (Eq. 9, Lemma 9) and mining-pool payouts (Eq. 10, a score of $1$ outside the pool)</td><td class="badge">§4.3 · Lemmas 8–10</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:10px">"Linkable" means the heuristic was right and the score is $0$. The paper states the Tornado Cash, Monero and Zcash scores under the Def. 10 wording, reading (B) above; see <a href="#source">source notes</a>.</p>
+</div></section>
+
+<!-- ============ HEURISTICS ============ -->
+<section id="heuristics"><div class="wrap">
+  <p class="eyebrow">Results</p>
+  <h2>Ten numbered linking relations, one notation</h2>
+  <p class="lede">This is a formal-model paper, so it has no measurements or benchmarks. Its main result is this catalogue: heuristics from Bitcoin, Tornado Cash, Monero and Zcash research, each rewritten as an inferred linking relation $\tilde L$ on the PDAG, with the score each one leaves.</p>
+  <div class="tscroll"><table class="data">
+    <thead><tr><th class="num">Eq.</th><th>Heuristic</th><th>System</th><th>From</th><th>Score it leaves</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Multi-input: all inputs of a transaction share an owner</td><td>Bitcoin</td><td>Nakamoto</td><td>Coinjoin: Lemma 1 range</td></tr>
+      <tr><td class="num">2</td><td>Change address: a fresh-address output in a 2-output transaction belongs with an input</td><td>Bitcoin</td><td>—</td><td>—</td></tr>
+      <tr><td class="num">3</td><td>Multi-input + change address combined: the change output is linked to every input</td><td>Bitcoin</td><td>—</td><td>—</td></tr>
+      <tr><td class="num">—</td><td>Address reuse: depositor and withdrawer use the same address (uses $A$)</td><td>Tornado Cash</td><td>Wang et al.</td><td>$0$</td></tr>
+      <tr><td class="num">4</td><td>Deposit address pays the withdrawal fee</td><td>Tornado Cash</td><td>Wang et al.</td><td>linkable or $\frac{2}{3}$ (Lemma 2)</td></tr>
+      <tr><td class="num">5</td><td>Deposit and withdrawal addresses meet in a later transaction</td><td>Tornado Cash</td><td>Wang et al.</td><td>linkable or $1$ (Lemma 3)</td></tr>
+      <tr><td class="num">6</td><td>An address splits into three, and all three deposit</td><td>Tornado Cash</td><td>Wang et al.</td><td>$\frac{12-l(l-1)}{12}$ (Lemma 4)</td></tr>
+      <tr><td class="num">7</td><td>Cross-pool: one address deposits into the pools the other withdraws from</td><td>Tornado Cash</td><td>Wang et al.</td><td>linkable or $\big(\binom{2l}{2}-\binom{l}{2}\big)/\binom{2l}{l}$ (Lemma 5)</td></tr>
+      <tr><td class="num">8</td><td>Multi-output: two outputs of one transaction appear in distinct rings of another</td><td>Monero</td><td>Kumar et al.</td><td>linkable or $1$ (Lemma 7)</td></tr>
+      <tr><td class="num">9</td><td>Round-trip: a unique amount enters the shielded pool and soon leaves it</td><td>Zcash</td><td>Kappos et al.</td><td>$\binom{|S_I\cup S_O\setminus[s]_L|}{2}\big/\binom{|S_I\cup S_O|}{2}$ (Lemma 9)</td></tr>
+      <tr><td class="num">10</td><td>Mining-pool payout: a $z\to t$ transaction with over 100 outputs, one of them a known pool</td><td>Zcash</td><td>Kappos et al.</td><td>$1$ for non-miners (Lemma 10)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:10px">Address reuse has no equation number, because it uses the address relation $A$ directly rather than a new $\tilde L$. Equation numbers are from <code>main.aux</code> of the ePrint build. Expressions are copied as printed in the paper, including Lemma 5's denominator (see source notes). "Maximal extractable privacy" (§3.3): the largest score a relation $\tilde L$ allows, i.e. what a user can gain by deliberately mixing unlinked states into a transaction that the heuristic misreads.</p>
+</div></section>
+
+<!-- ============ SOURCE NOTES ============ -->
+<section id="source"><div class="wrap">
+  <p class="eyebrow">Provenance</p>
+  <h2>Where the paper disagrees with itself</h2>
+  <p class="lede">This page shows these issues as the paper states them instead of silently choosing one version. They appear in the ePrint text that the PDF links to.</p>
+  <ol class="issues">
+    <li><strong>Two readings of the unlinkability score.</strong> The words of Def. 10 ("unlinked pairs to all possible pairs") and its formula $\binom{|[s]_{\tilde L}\setminus[s]_L|}{2}/\binom{|[s]_{\tilde L}|}{2}$ disagree. Because $[s]_L\ni s$, the formula gives $0$ for any state that shares a class of two with one unrelated state, and the text says such a state should score $1$. The Coinjoin example, Lemma 1 and Lemma 9 follow the formula. The motivating example in §3.3 and the proofs of Lemmas 2, 3, 4, 7 and 10 follow the wording. Even the wording is used two ways. Lemma 2 scores the unlinked $s_w$ by the pairs of the whole class, including the $s_d$–$s_f$ pair, which does not involve $s_w$. Lemma 4 instead defines $l$ from $s$ itself, $l=|[s]_L\cap[s]_{\tilde L}|$. <a href="#score">Interactive 3</a> puts both readings next to each other.</li>
+    <li><strong>Lemma 5</strong> divides by $\binom{2l}{l}$, while every other score divides by a count of pairs, $\binom{\cdot}{2}$. It also subtracts a single $\binom{l}{2}$, although its proof describes two disjoint classes of size $l$. The two denominators agree only at $l=2$. The expression is reproduced here as printed.</li>
+    <li><strong>Coinjoin example (§4.1.1).</strong> The text lists the adversary's class as $\{s_1,\dots,s_6\}$ and numbers scores $u_1\dots u_6$. Figure 6 and the denominator $21=\binom{7}{2}$ both use 7 inputs, $s_0\dots s_6$. Interactive 4 uses the 7 inputs of Figure 6.</li>
+    <li><strong>Tornado Cash (§4.1.2).</strong> The text calls the deposit "$T_{w_1}$". Figure 7a and the rest of the paragraph call it $T_{w_0}$.</li>
+    <li><strong>Zcash (§4.3).</strong> The text sends $T_{w_4}$ to "shielded $s_{10}$ and transparent $s_8$, $s_{10}$". In Figure 9, $s_{10}$ sits inside the shielded area and $s_8$, $s_9$ sit outside. Interactive 5 follows the figure.</li>
+    <li><strong>Figure 3 text</strong> says "$1\le i\le 2$" for three transactions $T^*_{w_1},T^*_{w_2},T^*_{w_3}$.</li>
+  </ol>
+  <p class="note">The FC 2024 camera-ready (<code>lncs/</code> in the source repo) is a shorter version with different numbering. It keeps the same Def. 10 formula.</p>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{wicht2024transaction,
+  title     = {A Transaction-Level Model for Blockchain Privacy},
+  author    = {Wicht, Fran{\c{c}}ois-Xavier and Wang, Zhipeng and
+               Le, Duc V. and Cachin, Christian},
+  booktitle = {Financial Cryptography and Data Security (FC)},
+  year      = {2024},
+  note      = {Full version: Cryptology ePrint Archive, Paper 2023/1902}
+}</pre>
+  <div class="btns"><button class="btn" type="button" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Code and data.</strong> This is a formal-model paper. It has no data availability statement and no accompanying implementation or dataset, so none is linked here. Every number on this page comes from the paper's text, figures and lemmas, or is computed live from its definitions.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">A Transaction-Level Model for Blockchain Privacy · FC 2024 · University of Bern, Imperial College London, Visa Research.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+function isNarrow(){ return window.innerWidth < 620; }
+
+/* =======================================================================
+   Motion — every animation goes through tween(). It force-settles via
+   setTimeout(finish, ms + 150) if requestAnimationFrame is starved.
+   ===================================================================== */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  var h = { finished:false, cancelled:false };
+  function finish(){
+    if (h.finished || h.cancelled) return;
+    h.finished = true; step(1); if (done) done();
+  }
+  h.finish = finish;
+  h.cancel = function(){ h.cancelled = true; };
+  if (REDUCED || ms <= 0){ finish(); return h; }
+  var t0 = null;
+  function frame(t){
+    if (h.finished || h.cancelled) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setTimeout(finish, ms + 150);
+  return h;
+}
+/* keyed tweens: a new one on the same key cancels the old one */
+var ANIMS = {};
+function run(key, ms, step, done){
+  if (ANIMS[key]) ANIMS[key].cancel();
+  var h = tween(ms, step, done);
+  if (!h.finished) ANIMS[key] = h;
+  return h;
+}
+function settle(key){ if (ANIMS[key]){ ANIMS[key].finish(); delete ANIMS[key]; } }
+function lerp(a, b, p){ return a + (b - a) * p; }
+
+/* animate a set of [node, attr, target] triples from their current value */
+function animateAttrs(key, list, ms){
+  var from = list.map(function(t){
+    var v = parseFloat(t[0].getAttribute(t[1]));
+    return isNaN(v) ? (t[1] === 'opacity' ? 1 : 0) : v;
+  });
+  return run(key, ms, function(p){
+    list.forEach(function(t, i){ t[0].setAttribute(t[1], lerp(from[i], t[2], p)); });
+  });
+}
+
+/* tooltip */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = Math.max(4, y) + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+/* KaTeX */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError:false,
+    ignoredTags:['script','noscript','style','textarea','pre','code','option']
+  });
+}
+function setMath(node, html){ node.innerHTML = html; katexRender(node); }
+
+/* maths helpers */
+function binom(n, k){
+  if (n < k || n < 0 || k < 0) return 0;
+  var r = 1; for (var i = 1; i <= k; i++) r = r * (n - k + i) / i;
+  return Math.round(r);
+}
+function dec(x){ var s = x.toFixed(3); return (Math.abs(x - parseFloat(s)) < 1e-12 ? '= ' : '≈ ') + s; }
+function fracTex(a, b){ return '\\tfrac{' + a + '}{' + b + '}'; }
+
+/* segmented control */
+function seg(id, onPick){
+  var box = $(id);
+  Array.prototype.forEach.call(box.children, function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(box.children, function(c){ c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+      onPick(b.getAttribute('data-v'));
+    });
+  });
+}
+function pressOnly(box, pred){
+  Array.prototype.forEach.call(box.children, function(c, i){ c.setAttribute('aria-pressed', pred(c, i) ? 'true' : 'false'); });
+}
+
+/* =======================================================================
+   Graph renderer — PDAG drawings from the paper's TikZ sources.
+   Nodes live on a (col,row) grid; narrow screens rotate the graph so
+   it flows top-to-bottom with a smaller viewBox (nodes stay legible).
+   Edge types: C consuming, M masking, O observing, P producing.
+   ===================================================================== */
+var ETYPE = {
+  C:{ name:'consuming', color:'--s1' },
+  M:{ name:'masking',   color:'--s2' },
+  O:{ name:'observing', color:'--s3' },
+  P:{ name:'producing', color:'--edge-p' }
+};
+function defsArrows(svg){
+  var defs = el('defs', {});
+  ['C','M','O','P'].forEach(function(t){
+    var m = el('marker', { id:svg.id + '-a' + t, viewBox:'0 0 10 10', refX:9, refY:5,
+      markerWidth:7, markerHeight:7, orient:'auto-start-reverse', markerUnits:'userSpaceOnUse' });
+    m.appendChild(el('path', { d:'M0,0 L10,5 L0,10 z', fill:css(ETYPE[t].color) }));
+    defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+}
+function nodeLabel(g, id, x, y, size){
+  var base = id.charAt(0), sub = id.slice(1);
+  var t = el('text', { x:x, y:y + size * 0.36, 'text-anchor':'middle', 'font-size':size,
+    'font-family':'KaTeX_Math, Times New Roman, serif', 'font-style':'italic', fill:css('--ink-1') });
+  t.appendChild(document.createTextNode(base));
+  var s = el('tspan', { 'font-size':size * 0.68, dy:size * 0.28, 'font-style':sub === 'g' ? 'italic' : 'normal' });
+  s.textContent = sub; t.appendChild(s);
+  g.appendChild(t);
+}
+function layoutGraph(G, narrow){
+  var cs = G.nodes.map(function(n){ return n.c; }), rs = G.nodes.map(function(n){ return n.r; });
+  var cMin = Math.min.apply(null, cs), cMax = Math.max.apply(null, cs);
+  var rMin = Math.min.apply(null, rs), rMax = Math.max.apply(null, rs);
+  var pad = 30, W, H, map;
+  if (!narrow){
+    var dx = G.dx || 92, dy = G.dy || 58;
+    W = (cMax - cMin) * dx + 2 * pad; H = (rMax - rMin) * dy + 2 * pad;
+    map = function(c, r){ return [pad + (c - cMin) * dx, pad + (r - rMin) * dy]; };
+  } else {
+    var nx = G.ndx || 62, ny = G.ndy || 56;
+    W = (rMax - rMin) * nx + 2 * pad; H = (cMax - cMin) * ny + 2 * pad;
+    var off = Math.max(0, (300 - W) / 2); W = Math.max(W, 300);
+    map = function(c, r){ return [off + pad + (r - rMin) * nx, pad + (c - cMin) * ny]; };
+  }
+  return { W:W, H:H, map:map };
+}
+function nodeRad(n){ return n.k === 'n' ? 15 : 14; }
+function quadAt(p0, c, p2, t){
+  var a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, d = t * t;
+  return [a * p0[0] + b * c[0] + d * p2[0], a * p0[1] + b * c[1] + d * p2[1]];
+}
+function unit(a, b){ var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1; return [dx / L, dy / L]; }
+function edgeGeom(G, L, e){
+  var A = G.byId[e.f], B = G.byId[e.t];
+  var P0 = L.map(A.c, A.r), P2 = L.map(B.c, B.r);
+  var C = e.ctrl ? L.map(e.ctrl[0], e.ctrl[1]) : [(P0[0] + P2[0]) / 2, (P0[1] + P2[1]) / 2];
+  var u0 = unit(P0, C), u2 = unit(P2, C);
+  var s = [P0[0] + u0[0] * nodeRad(A), P0[1] + u0[1] * nodeRad(A)];
+  var t = [P2[0] + u2[0] * (nodeRad(B) + 1), P2[1] + u2[1] * (nodeRad(B) + 1)];
+  return { s:s, c:C, t:t };
+}
+function smoothPath(g){ return 'M' + g.s[0].toFixed(1) + ',' + g.s[1].toFixed(1) + ' Q' + g.c[0].toFixed(1) + ',' + g.c[1].toFixed(1) + ' ' + g.t[0].toFixed(1) + ',' + g.t[1].toFixed(1); }
+function wavyPath(g){
+  var N = 90, pts = [], len = 0, prev = null, i;
+  for (i = 0; i <= N; i++){
+    var p = quadAt(g.s, g.c, g.t, i / N);
+    if (prev) len += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+    pts.push({ p:p, l:len }); prev = p;
+  }
+  var d = '', A = 3, lam = 9, tail = 9;
+  for (i = 0; i <= N; i++){
+    var q = pts[Math.max(0, i - 1)].p, r = pts[Math.min(N, i + 1)].p;
+    var tx = r[0] - q[0], ty = r[1] - q[1], tl = Math.hypot(tx, ty) || 1;
+    var nx = -ty / tl, ny = tx / tl;
+    var env = Math.min(1, pts[i].l / 4, Math.max(0, (len - pts[i].l - tail) / 4));
+    var off = A * env * Math.sin(2 * Math.PI * pts[i].l / lam);
+    var x = pts[i].p[0] + nx * off, y = pts[i].p[1] + ny * off;
+    d += (i ? ' L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1);
+  }
+  return d;
+}
+function edgeStroke(svg, type){
+  var a = { fill:'none', stroke:css(ETYPE[type].color), 'stroke-width':type === 'O' ? 2.2 : 1.8,
+    'marker-end':'url(#' + svg.id + '-a' + type + ')', 'stroke-linecap':'round' };
+  if (type === 'O') a['stroke-dasharray'] = '1.5 4.5';
+  return a;
+}
+function prepGraph(G){
+  G.byId = {}; G.nodes.forEach(function(n){ G.byId[n.id] = n; });
+  G.edges.forEach(function(e, i){ e.i = i; });
+  return G;
+}
+/* Draw once; interactions only animate opacity of the drawn parts. */
+function drawGraph(svg, G, onPick){
+  clear(svg);
+  var narrow = isNarrow(), L = layoutGraph(G, narrow);
+  svg.setAttribute('viewBox', '0 0 ' + L.W + ' ' + L.H);
+  defsArrows(svg);
+  var ink = css('--ink-1'), plane = css('--plane');
+  (G.pools || []).forEach(function(p){
+    var a = L.map(p[0] - 0.42, p[1] - 0.5), b = L.map(p[2] + 0.42, p[3] + 0.5);
+    svg.appendChild(el('rect', { x:Math.min(a[0], b[0]), y:Math.min(a[1], b[1]),
+      width:Math.abs(b[0] - a[0]), height:Math.abs(b[1] - a[1]), fill:css('--pool'), rx:3 }));
+  });
+  if (G.pools && G.pools.length){
+    var q = G.pools[0], lp = L.map(q[0] - 0.42, q[1] - 0.5);
+    svg.appendChild(el('text', { x:lp[0] + 4, y:lp[1] - 5, 'font-size':10.5, fill:css('--ink-muted'),
+      'font-family':'Ubuntu Mono, monospace' }, 'shielded pool'));
+  }
+  var eLayer = el('g', {}), nLayer = el('g', {});
+  svg.appendChild(eLayer); svg.appendChild(nLayer);
+  G.dom = { edges:[], nodes:{} };
+  G.edges.forEach(function(e){
+    var geo = edgeGeom(G, L, e), grp = el('g', { opacity:1 });
+    var parts = {};
+    if (e.y === 'M'){
+      parts.wave = el('path', Object.assign(edgeStroke(svg, 'M'), { d:wavyPath(geo), opacity:1 }));
+      parts.dot  = el('path', Object.assign(edgeStroke(svg, 'O'), { d:smoothPath(geo), opacity:0 }));
+      grp.appendChild(parts.wave); grp.appendChild(parts.dot);
+    } else {
+      parts.line = el('path', Object.assign(edgeStroke(svg, e.y), { d:smoothPath(geo) }));
+      grp.appendChild(parts.line);
+    }
+    eLayer.appendChild(grp);
+    G.dom.edges.push({ e:e, g:grp, parts:parts });
+  });
+  G.nodes.forEach(function(n){
+    var p = L.map(n.c, n.r), g = el('g', { opacity:1 });
+    var common = { fill:plane, stroke:ink, 'stroke-width':1.4 };
+    if (n.k === 'w'){
+      g.appendChild(el('rect', Object.assign({ x:p[0] - 13, y:p[1] - 13, width:26, height:26, rx:1.5 }, common)));
+      g.setAttribute('tabindex', 0); g.setAttribute('role', 'button');
+      g.setAttribute('aria-label', 'Select transaction ' + n.id);
+      g.style.cursor = 'pointer';
+      g.appendChild(el('rect', { x:p[0] - 20, y:p[1] - 20, width:40, height:40, fill:'transparent' }));
+      g.addEventListener('click', function(){ onPick(n.id); });
+      g.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); onPick(n.id); } });
+    } else if (n.k === 'n'){
+      g.appendChild(el('polygon', Object.assign({ points:[[p[0], p[1] - 16], [p[0] + 16, p[1]], [p[0], p[1] + 16], [p[0] - 16, p[1]]].join(' ') }, common)));
+    } else {
+      g.appendChild(el('circle', Object.assign({ cx:p[0], cy:p[1], r:14 }, common)));
+      if (n.k === 'g') g.appendChild(el('circle', { cx:p[0], cy:p[1], r:11, fill:'none', stroke:ink, 'stroke-width':1 }));
+    }
+    nodeLabel(g, n.id, p[0], p[1], n.k === 'g' ? 12 : 13);
+    nLayer.appendChild(g);
+    G.dom.nodes[n.id] = g;
+  });
+}
+/* target opacities for a (view, selected witness) state */
+function graphTargets(G, view, sel){
+  var list = [];
+  var inN = {};
+  if (sel){
+    inN[sel] = true;
+    G.edges.forEach(function(e){ if (e.f === sel) inN[e.t] = true; if (e.t === sel) inN[e.f] = true; });
+  }
+  G.dom.edges.forEach(function(d){
+    var on = !sel || d.e.f === sel || d.e.t === sel;
+    list.push([d.g, 'opacity', on ? 1 : 0.13]);
+    if (d.parts.wave){
+      list.push([d.parts.wave, 'opacity', view === 'adv' ? 0 : 1]);
+      list.push([d.parts.dot, 'opacity', view === 'adv' ? 1 : 0]);
+    }
+  });
+  G.nodes.forEach(function(n){ list.push([G.dom.nodes[n.id], 'opacity', !sel || inN[n.id] ? 1 : 0.22]); });
+  return list;
+}
+function graphEnter(G, ms){
+  if (REDUCED) return;
+  var parts = [];
+  G.nodes.forEach(function(n){ G.dom.nodes[n.id].setAttribute('opacity', 0); });
+  G.dom.edges.forEach(function(d){ d.g.setAttribute('opacity', 0); });
+  var cMin = Math.min.apply(null, G.nodes.map(function(n){ return n.c; }));
+  var cMax = Math.max.apply(null, G.nodes.map(function(n){ return n.c; }));
+  run(G.key + '-enter', ms, function(p){
+    var front = cMin + (cMax - cMin + 1.5) * p;
+    G.nodes.forEach(function(n){ G.dom.nodes[n.id].setAttribute('opacity', Math.max(0, Math.min(1, (front - n.c) / 1.2))); });
+    G.dom.edges.forEach(function(d){
+      var c = Math.max(G.byId[d.e.f].c, G.byId[d.e.t].c);
+      d.g.setAttribute('opacity', Math.max(0, Math.min(1, (front - c) / 1.2)));
+    });
+  }, function(){ G.applied = false; if (G.after) G.after(); });
+}
+function legendFor(ul, types, view){
+  ul.innerHTML = '';
+  var shape = {
+    s:'<svg width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="#fff" stroke="#333" stroke-width="1.3"/></svg>',
+    w:'<svg width="16" height="16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="#fff" stroke="#333" stroke-width="1.3"/></svg>',
+    n:'<svg width="16" height="16" aria-hidden="true"><polygon points="8,1 15,8 8,15 1,8" fill="#fff" stroke="#333" stroke-width="1.3"/></svg>'
+  };
+  [['s','state'],['w','witness'],['n','nullifier']].forEach(function(x){
+    var li = document.createElement('li'); li.innerHTML = shape[x[0]] + x[1]; ul.appendChild(li);
+  });
+  types.forEach(function(t){
+    var c = css(ETYPE[t].color), sample;
+    if (t === 'M') sample = '<path d="M1,8 q2.5,-5 5,0 t5,0 t5,0 t5,0" fill="none" stroke="' + c + '" stroke-width="1.8"/>';
+    else sample = '<line x1="1" y1="8" x2="21" y2="8" stroke="' + c + '" stroke-width="' + (t === 'O' ? 2.2 : 1.8) + '"' + (t === 'O' ? ' stroke-dasharray="1.5 4" stroke-linecap="round"' : '') + '/>';
+    var li = document.createElement('li');
+    var txt = ETYPE[t].name + (t === 'O' && view === 'adv' ? ' / masking (indistinguishable)' : '');
+    li.innerHTML = '<svg width="24" height="16" aria-hidden="true">' + sample + '</svg>' + txt;
+    if (t === 'M' && view === 'adv'){ li.style.opacity = 0.4; li.innerHTML += ' — hidden'; }
+    ul.appendChild(li);
+  });
+}
+function texId(id){ return id.charAt(0) + '_{' + id.slice(1) + '}'; }
+function texSet(ids){ return ids.length ? '$\\{' + ids.map(texId).join(',') + '\\}$' : '—'; }
+
+/* per-witness analysis, straight from the edge list */
+function analyse(G, w){
+  var ins = G.edges.filter(function(e){ return e.t === w; });
+  var outs = G.edges.filter(function(e){ return e.f === w; });
+  var st = function(id){ return G.byId[id].k !== 'n'; };
+  var spent = ins.filter(function(e){ return (e.y === 'C' || e.y === 'M') && st(e.f); }).map(function(e){ return e.f; });
+  var visible = ins.filter(function(e){ return e.y === 'C' && st(e.f); }).map(function(e){ return e.f; });
+  var decoys = ins.filter(function(e){ return e.y === 'O' && st(e.f); }).map(function(e){ return e.f; });
+  var amb = ins.filter(function(e){ return (e.y === 'O' || e.y === 'M') && st(e.f); }).map(function(e){ return e.f; });
+  var nRead = ins.filter(function(e){ return !st(e.f); }).map(function(e){ return e.f; });
+  var produced = outs.filter(function(e){ return st(e.t); }).map(function(e){ return e.t; });
+  var nProd = outs.filter(function(e){ return !st(e.t); }).map(function(e){ return e.t; });
+  var genesis = ins.some(function(e){ return G.byId[e.f].k === 'g'; });
+  return { spent:spent, visible:visible, decoys:decoys, amb:amb, nRead:nRead, produced:produced, nProd:nProd, genesis:genesis };
+}
+function verdictHtml(G, w, a){
+  var info = G.info[w];
+  if (a.genesis) return '<span class="verdict na">initialisation — spends the genesis state</span>';
+  if (info.excluded) return '<span class="verdict na">' + info.excluded + ' — left out of $G^*$</span>';
+  if (a.visible.length) return '<span class="verdict bad">consuming edge visible — trivially traceable</span>';
+  if (a.amb.length < 2) return '<span class="verdict bad">1 ambiguous edge — trivially traceable</span>';
+  return '<span class="verdict ok">sender hidden among ' + a.amb.length + '</span>';
+}
+function renderRO(box, G, w, view){
+  var a = analyse(G, w), info = G.info[w];
+  var html = '';
+  html += '<div class="ro"><div class="k">$T_{' + texId(w) + '}$ · what happens</div><p>' + info.text + '</p></div>';
+  html += '<div class="ro' + (view === 'truth' ? ' focus' : '') + '"><div class="k">Ground truth</div>' +
+    '<p>Spends ' + texSet(a.spent) + '<br>Decoys ' + texSet(a.decoys) + '<br>Reads nullifiers ' + texSet(a.nRead) +
+    '<br>Produces ' + texSet(a.produced) + (a.nProd.length ? ' and ' + texSet(a.nProd) : '') + '</p></div>';
+  var k = a.visible.length ? a.visible.length : a.amb.length;
+  html += '<div class="ro' + (view === 'adv' ? ' focus' : '') + '"><div class="k">Adversary sees</div>' +
+    '<div class="v" data-k="' + k + '">' + (a.visible.length ? a.visible.length + ' consumed' : a.amb.length + ' ambiguous') + '</div>' +
+    '<p>' + (a.visible.length ? 'Inputs spent in the clear: ' + texSet(a.visible) : 'Untraceability set before core reduction: ' + texSet(a.amb)) + '</p>' +
+    verdictHtml(G, w, a) + '</div>';
+  setMath(box, html);
+}
+
+/* ---------- Figure 2 (figures/pdag_example.tex) ---------- */
+var FIG2 = prepGraph({
+  key:'fig2', dx:96, dy:58, ndx:62, ndy:56,
+  nodes:[
+    {id:'sg',k:'g',c:0,r:0},{id:'w0',k:'w',c:1,r:0},{id:'s0',k:'s',c:2,r:0},{id:'w1',k:'w',c:3,r:0},
+    {id:'n0',k:'n',c:4,r:-2},{id:'s1',k:'s',c:4,r:-1},{id:'s2',k:'s',c:4,r:0},{id:'s3',k:'s',c:4,r:1},{id:'s4',k:'s',c:4,r:2},
+    {id:'w2',k:'w',c:5,r:0},
+    {id:'n1',k:'n',c:6,r:-2},{id:'s6',k:'s',c:6,r:-1},{id:'s5',k:'s',c:6,r:0},{id:'s7',k:'s',c:6,r:1},
+    {id:'w3',k:'w',c:7,r:0},
+    {id:'n3',k:'n',c:8,r:-1},{id:'n2',k:'n',c:8,r:0},{id:'s8',k:'s',c:8,r:1}
+  ],
+  edges:[
+    {f:'sg',t:'w0',y:'C'},{f:'w0',t:'s0',y:'P'},{f:'s0',t:'w1',y:'M'},
+    {f:'w1',t:'s1',y:'P'},{f:'w1',t:'s2',y:'P'},{f:'w1',t:'s3',y:'P'},{f:'w1',t:'s4',y:'P'},{f:'w1',t:'n0',y:'P'},
+    {f:'s1',t:'w2',y:'M'},{f:'s2',t:'w2',y:'O'},{f:'s3',t:'w2',y:'O'},{f:'s4',t:'w2',y:'O'},{f:'n0',t:'w2',y:'O'},
+    {f:'w2',t:'s5',y:'P'},{f:'w2',t:'s6',y:'P'},{f:'w2',t:'s7',y:'P'},{f:'w2',t:'n1',y:'P'},
+    {f:'s1',t:'w3',y:'O',ctrl:[5.6,-1.55]},{f:'s2',t:'w3',y:'O',ctrl:[5.5,1.05]},{f:'s3',t:'w3',y:'O',ctrl:[5.6,1.65]},
+    {f:'s4',t:'w3',y:'M',ctrl:[5.9,2.45]},{f:'s5',t:'w3',y:'O'},{f:'s6',t:'w3',y:'O'},{f:'s7',t:'w3',y:'M'},
+    {f:'n1',t:'w3',y:'O'},{f:'n0',t:'w3',y:'O',ctrl:[5.5,-2.75]},
+    {f:'w3',t:'s8',y:'P'},{f:'w3',t:'n2',y:'P'},{f:'w3',t:'n3',y:'P'}
+  ],
+  info:{
+    w0:{ text:'Coins are minted to the miner\'s address $s_0$.' },
+    w1:{ text:'Transfers $s_0$ to four addresses $s_1,\\dots,s_4$ over a masking edge, <em>without</em> decoys. The witness checks the signature and the new nullifier $n_0$.' },
+    w2:{ text:'Moves $s_1$ to $s_5,s_6,s_7$, with decoys $s_2,s_3,s_4$ that are only read. It checks $n_0$ for conflicts and produces $n_1$.' },
+    w3:{ text:'Merges $s_4$ and $s_7$ into $s_8$, with five decoys $s_1,s_2,s_3,s_5,s_6$. It checks $n_0,n_1$ and produces $n_2,n_3$.' }
+  }
+});
+var pdagState = { view:'truth', sel:'w2' };
+function pdagApply(ms){
+  animateAttrs('pdag-op', graphTargets(FIG2, pdagState.view, pdagState.sel), ms);
+  legendFor($('pdagLegend'), ['C','M','O','P'], pdagState.view);
+  renderRO($('pdagRO'), FIG2, pdagState.sel, pdagState.view);
+  pressOnly($('pdagPick'), function(c){ return c.getAttribute('data-w') === pdagState.sel; });
+}
+function pdagPick(w){ pdagState.sel = w; pdagApply(380); }
+(function(){
+  var box = $('pdagPick');
+  ['w0','w1','w2','w3'].forEach(function(w){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chipbtn';
+    b.setAttribute('data-w', w); b.textContent = '$T_{' + texId(w) + '}$'; b.addEventListener('click', function(){ pdagPick(w); });
+    box.appendChild(b);
+  });
+  katexRender(box);
+  seg('pdagView', function(v){ pdagState.view = v; pdagApply(520); });
+  $('pdagTable').innerHTML = edgeTableHtml(FIG2);
+})();
+function edgeTableHtml(G){
+  return '<thead><tr><th>From</th><th>To</th><th>Type</th><th>Adversary sees</th></tr></thead><tbody>' +
+    G.edges.map(function(e){
+      var adv = e.y === 'M' ? 'observing (ambiguous)' : (e.y === 'O' ? 'observing (ambiguous)' : ETYPE[e.y].name);
+      return '<tr><td>$' + texId(e.f) + '$</td><td>$' + texId(e.t) + '$</td><td>' + ETYPE[e.y].name + '</td><td>' + adv + '</td></tr>';
+    }).join('') + '</tbody>';
+}
+
+/* =======================================================================
+   Interactive 2 — core of the bipartite graph (Figure 3)
+   ===================================================================== */
+var CORE_S = ['s1','s2','s3'], CORE_W = ['w1','w2','w3'];
+var PAPER_E = { 's1w1':1,'s1w2':1,'s1w3':1,'s2w1':1,'s2w2':1,'s2w3':1,'s3w3':1 };   /* figures/mapping_adversary_view.tex */
+var TRUTH_M1 = { 's1w1':1,'s2w2':1,'s3w3':1 };                                        /* masking edges, figures/mapping.tex */
+var coreE = Object.assign({}, PAPER_E), coreStage = 'g', coreTruth = false, coreDom = null;
+function sameSet(a, b){ var ka = Object.keys(a).filter(function(k){ return a[k]; }).sort(), kb = Object.keys(b).filter(function(k){ return b[k]; }).sort(); return ka.join() === kb.join(); }
+function allMaxMatchings(E){
+  var best = 0, out = [];
+  (function rec(i, used, cur){
+    if (i === CORE_W.length){
+      if (cur.length > best){ best = cur.length; out = []; }
+      if (cur.length === best) out.push(cur.slice());
+      return;
+    }
+    var w = CORE_W[i];
+    CORE_S.forEach(function(s){
+      if (E[s + w] && !used[s]){ used[s] = 1; cur.push(s + w); rec(i + 1, used, cur); cur.pop(); used[s] = 0; }
+    });
+    rec(i + 1, used, cur);
+  })(0, {}, []);
+  return { size:best, list:out };
+}
+function coreOf(E){
+  var mm = allMaxMatchings(E), C = {};
+  mm.list.forEach(function(m){ m.forEach(function(k){ C[k] = 1; }); });
+  return { mm:mm, core:C };
+}
+function drawCore(){
+  var svg = $('coreSvg'); clear(svg);
+  var narrow = isNarrow(), W = narrow ? 300 : 420, H = narrow ? 230 : 250;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  defsArrows(svg);
+  var xs = 52, xw = W - 52, y0 = 42, gap = (H - 84) / 2;
+  var pos = {}; CORE_S.forEach(function(s, i){ pos[s] = [xs, y0 + i * gap]; }); CORE_W.forEach(function(w, i){ pos[w] = [xw, y0 + i * gap]; });
+  var mut = css('--ink-muted');
+  svg.appendChild(el('text', { x:xs, y:16, 'text-anchor':'middle', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, 'states S*'));
+  svg.appendChild(el('text', { x:xw, y:16, 'text-anchor':'middle', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, 'witnesses W*'));
+  var eg = el('g', {}); svg.appendChild(eg);
+  coreDom = { edges:{} };
+  CORE_S.forEach(function(s){ CORE_W.forEach(function(w){
+    var k = s + w;
+    var geo = { s:[pos[s][0] + 15, pos[s][1]], t:[pos[w][0] - 15, pos[w][1]] };
+    geo.c = [(geo.s[0] + geo.t[0]) / 2, (geo.s[1] + geo.t[1]) / 2];
+    var g = el('g', { opacity:0 });
+    var dot = el('path', Object.assign(edgeStroke(svg, 'O'), { d:smoothPath(geo) }));
+    var wave = el('path', Object.assign(edgeStroke(svg, 'M'), { d:wavyPath(geo), opacity:0 }));
+    var cut = el('path', { d:smoothPath(geo), stroke:mut, 'stroke-width':1.3, 'stroke-dasharray':'5 4', fill:'none', opacity:0 });
+    g.appendChild(cut); g.appendChild(dot); g.appendChild(wave);
+    g.addEventListener('mousemove', function(ev){ showTip(ev, '<b>' + s + ' → ' + w + '</b>' + (coreOf(coreE).core[k] ? 'in some maximum matching' : 'in no maximum matching — pruned')); });
+    g.addEventListener('mouseleave', hideTip);
+    eg.appendChild(g);
+    coreDom.edges[k] = { g:g, dot:dot, wave:wave, cut:cut };
+  }); });
+  var plane = css('--plane'), ink = css('--ink-1');
+  CORE_S.concat(CORE_W).forEach(function(id){
+    var p = pos[id], g = el('g', {});
+    if (id.charAt(0) === 's') g.appendChild(el('circle', { cx:p[0], cy:p[1], r:14, fill:plane, stroke:ink, 'stroke-width':1.4 }));
+    else g.appendChild(el('rect', { x:p[0] - 13, y:p[1] - 13, width:26, height:26, fill:plane, stroke:ink, 'stroke-width':1.4 }));
+    nodeLabel(g, id, p[0], p[1], 13);
+    svg.appendChild(g);
+  });
+  coreDom.kLabels = {};
+  CORE_W.forEach(function(w){
+    var t = el('text', { x:pos[w][0] + 20, y:pos[w][1] + 4, 'font-size':12, fill:ink, 'font-family':'Ubuntu Mono, monospace' }, '');
+    svg.appendChild(t); coreDom.kLabels[w] = t;
+  });
+}
+function coreApply(ms){
+  var R = coreOf(coreE), list = [];
+  var truthOk = sameSet(coreE, PAPER_E);
+  if (!truthOk) coreTruth = false;
+  $('coreTruth').disabled = !truthOk;
+  $('coreTruth').setAttribute('aria-pressed', coreTruth ? 'true' : 'false');
+  $('coreTruth').textContent = coreTruth ? 'Hide ground truth' : 'Show ground truth';
+  CORE_S.forEach(function(s){ CORE_W.forEach(function(w){
+    var k = s + w, d = coreDom.edges[k], present = !!coreE[k], inCore = !!R.core[k];
+    var pruned = present && coreStage === 'core' && !inCore;
+    var masked = coreTruth && TRUTH_M1[k];
+    list.push([d.g, 'opacity', present ? 1 : 0]);
+    list.push([d.dot, 'opacity', present && !pruned && !masked ? 1 : 0]);
+    list.push([d.wave, 'opacity', present && masked && !pruned ? 1 : 0]);
+    list.push([d.cut, 'opacity', pruned ? 0.55 : 0]);
+  }); });
+  animateAttrs('core-op', list, ms);
+  var ks = {}, minK = Infinity;
+  CORE_W.forEach(function(w){
+    var n = 0;
+    CORE_S.forEach(function(s){ var k = s + w; if (coreE[k] && (coreStage === 'g' || R.core[k])) n++; });
+    ks[w] = n; minK = Math.min(minK, n);
+    coreDom.kLabels[w].textContent = 'k=' + n;
+  });
+  var mmTex = R.mm.list.map(function(m, i){
+    return '$M_{' + (i + 1) + '}=\\{' + m.map(function(k){ return k.slice(0, 2).replace('s', 's_') + k.slice(2).replace('w', 'w_'); }).join(',') + '\\}$';
+  }).join('<br>');
+  var html = '<div class="ro"><div class="k">Maximum matchings (size ' + R.mm.size + ')</div><p>' + mmTex + '</p></div>';
+  html += '<div class="ro focus"><div class="k">' + (coreStage === 'g' ? 'Untraceability set per witness in $G^*$' : 'After pruning to the core') + '</div><p>' +
+    CORE_W.map(function(w){
+      var n = ks[w];
+      return '$' + texId(w) + '$: $k=' + n + '$ ' + (n >= 2 ? '<span class="verdict ok">' + n + '-untraceable</span>' : '<span class="verdict bad">traceable</span>');
+    }).join('<br>') + '</p></div>';
+  html += '<div class="ro"><div class="k">Whole PDAG (Def. 7)</div><div class="v">' +
+    (minK >= 2 ? minK + '-untraceable' : 'not untraceable') + '</div><p>' +
+    (coreStage === 'g' ? 'Before pruning. Switch to step 2 to see what the adversary can remove.' : 'The weakest transaction decides.') + '</p></div>';
+  setMath($('coreRO'), html);
+  Array.prototype.forEach.call($('coreMx').querySelectorAll('input'), function(inp){ inp.checked = !!coreE[inp.getAttribute('data-k')]; });
+}
+(function(){
+  var mx = $('coreMx');
+  var h = '<thead><tr><th></th>' + CORE_W.map(function(w){ return '<th>$' + texId(w) + '$</th>'; }).join('') + '</tr></thead><tbody>';
+  CORE_S.forEach(function(s){
+    h += '<tr><th>$' + texId(s) + '$</th>' + CORE_W.map(function(w){
+      return '<td><input type="checkbox" data-k="' + s + w + '" aria-label="edge ' + s + ' to ' + w + '"></td>';
+    }).join('') + '</tr>';
+  });
+  mx.innerHTML = h + '</tbody>';
+  mx.addEventListener('change', function(ev){
+    var k = ev.target.getAttribute('data-k'); if (!k) return;
+    var w = k.slice(2), next = Object.assign({}, coreE); next[k] = ev.target.checked ? 1 : 0;
+    var hasEdge = CORE_S.some(function(s){ return next[s + w]; });
+    if (!hasEdge){ ev.target.checked = true; showTip({ clientX:ev.target.getBoundingClientRect().right, clientY:ev.target.getBoundingClientRect().top }, '<b>Every witness spends at least one state</b>so it keeps at least one edge.'); setTimeout(hideTip, 1800); return; }
+    coreE = next; coreApply(420);
+  });
+  seg('coreStage', function(v){ coreStage = v; coreApply(650); });
+  $('corePaper').addEventListener('click', function(){ coreE = Object.assign({}, PAPER_E); coreApply(420); });
+  $('coreFull').addEventListener('click', function(){ coreE = {}; CORE_S.forEach(function(s){ CORE_W.forEach(function(w){ coreE[s + w] = 1; }); }); coreTruth = false; coreApply(420); });
+  $('coreTruth').addEventListener('click', function(){ coreTruth = !coreTruth; coreApply(420); });
+  var lg = $('coreLegend');
+  lg.innerHTML = '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--s3') + '" stroke-width="2.2" stroke-dasharray="1.5 4" stroke-linecap="round"/></svg>ambiguous edge</li>' +
+    '<li><svg width="24" height="16" aria-hidden="true"><path d="M1,8 q2.5,-5 5,0 t5,0 t5,0 t5,0" fill="none" stroke="' + css('--s2') + '" stroke-width="1.8"/></svg>masking (ground truth)</li>' +
+    '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--ink-muted') + '" stroke-width="1.3" stroke-dasharray="5 4"/></svg>pruned: in no maximum matching</li>';
+})();
+
+/* =======================================================================
+   Interactive 3 — unlinkability score, both readings
+   ===================================================================== */
+var scoreN = 3, scoreL = 2, scoreShownL = 2;
+function scoreA(n, l){ return binom(n - l, 2) / binom(n, 2); }
+function scoreB(n, l){ return 1 - binom(l, 2) / binom(n, 2); }
+var SCORE_CASES = [
+  { lab:'§3.3 case 1', n:3, l:2 },
+  { lab:'§3.3 case 2', n:100, l:99 },
+  { lab:'Lemma 2', n:3, l:2 },
+  { lab:'Lemmas 3, 7', n:2, l:1 },
+  { lab:'Lemma 4, l=2', n:4, l:2 },
+  { lab:'Coinjoin 2-address', n:7, l:2 },
+  { lab:'Coinjoin 3-address', n:7, l:3 }
+];
+function scoreGeom(){
+  var narrow = isNarrow();
+  return narrow ? { W:330, H:250, pl:40, pr:16, pt:18, pb:36 } : { W:520, H:300, pl:46, pr:22, pt:20, pb:40 };
+}
+var scoreDom = null;
+function drawScore(enter){
+  var svg = $('scoreSvg'); clear(svg);
+  var G = scoreGeom(), n = scoreN;
+  svg.setAttribute('viewBox', '0 0 ' + G.W + ' ' + G.H);
+  var X = function(l){ return G.pl + (n === 1 ? 0 : (l - 1) / (n - 1)) * (G.W - G.pl - G.pr); };
+  var Y = function(u){ return G.pt + (1 - u) * (G.H - G.pt - G.pb); };
+  var mut = css('--ink-muted'), grid = css('--grid'), axis = css('--axis'), ink = css('--ink-1');
+  [0, 0.25, 0.5, 0.75, 1].forEach(function(u){
+    svg.appendChild(el('line', { x1:G.pl, x2:G.W - G.pr, y1:Y(u), y2:Y(u), stroke:u === 0 ? axis : grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:G.pl - 6, y:Y(u) + 4, 'text-anchor':'end', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, u.toFixed(2).replace(/0$/, '').replace(/\.0$/, '').replace(/\.$/, '')));
+  });
+  var ticks = n <= 12 ? Array.from({ length:n }, function(_, i){ return i + 1; }) : [1, Math.round(n / 4), Math.round(n / 2), Math.round(3 * n / 4), n];
+  ticks.forEach(function(l){
+    svg.appendChild(el('text', { x:X(l), y:G.H - G.pb + 16, 'text-anchor':'middle', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, String(l)));
+  });
+  svg.appendChild(el('text', { x:(G.pl + G.W - G.pr) / 2, y:G.H - 6, 'text-anchor':'middle', 'font-size':11.5, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, 'l = size of the truly linked group'));
+  function poly(f){ var pts = []; for (var l = 1; l <= n; l++) pts.push(X(l).toFixed(1) + ',' + Y(f(n, l)).toFixed(1)); return pts.join(' '); }
+  var la = el('polyline', { points:poly(scoreA), fill:'none', stroke:css('--s1'), 'stroke-width':2, 'stroke-linejoin':'round' });
+  var lb = el('polyline', { points:poly(scoreB), fill:'none', stroke:css('--s2'), 'stroke-width':2, 'stroke-linejoin':'round' });
+  svg.appendChild(la); svg.appendChild(lb);
+  if (n <= 16){
+    for (var l = 1; l <= n; l++){
+      svg.appendChild(el('circle', { cx:X(l), cy:Y(scoreA(n, l)), r:3, fill:css('--s1') }));
+      svg.appendChild(el('rect', { x:X(l) - 3, y:Y(scoreB(n, l)) - 3, width:6, height:6, fill:css('--s2') }));
+    }
+  }
+  var cross = el('line', { y1:G.pt, y2:G.H - G.pb, stroke:axis, 'stroke-width':1, opacity:0 });
+  svg.appendChild(cross);
+  var mA = el('circle', { r:6, fill:css('--s1'), stroke:css('--surface-1'), 'stroke-width':2 });
+  var mB = el('rect', { width:12, height:12, fill:css('--s2'), stroke:css('--surface-1'), 'stroke-width':2 });
+  var tA = el('text', { 'font-size':12, fill:ink, 'font-family':'Ubuntu Mono, monospace', 'font-weight':700 });
+  var tB = el('text', { 'font-size':12, fill:ink, 'font-family':'Ubuntu Mono, monospace', 'font-weight':700 });
+  svg.appendChild(mA); svg.appendChild(mB); svg.appendChild(tA); svg.appendChild(tB);
+  var hit = el('rect', { x:G.pl, y:G.pt, width:G.W - G.pl - G.pr, height:G.H - G.pt - G.pb, fill:'transparent' });
+  svg.appendChild(hit);
+  hit.addEventListener('mousemove', function(ev){
+    var r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * G.W / r.width;
+    var l = Math.max(1, Math.min(n, Math.round(1 + (sx - G.pl) / (G.W - G.pl - G.pr) * (n - 1))));
+    cross.setAttribute('x1', X(l)); cross.setAttribute('x2', X(l)); cross.setAttribute('opacity', 1);
+    showTip(ev, '<b>n = ' + n + ', l = ' + l + '</b>(A) ' + binom(n - l, 2) + '/' + binom(n, 2) + ' ' + dec(scoreA(n, l)) +
+      '<br>(B) ' + (binom(n, 2) - binom(l, 2)) + '/' + binom(n, 2) + ' ' + dec(scoreB(n, l)));
+  });
+  hit.addEventListener('mouseleave', function(){ cross.setAttribute('opacity', 0); hideTip(); });
+  scoreDom = { X:X, Y:Y, G:G, mA:mA, mB:mB, tA:tA, tB:tB };
+  placeScoreMarkers(scoreShownL);
+  if (enter && !REDUCED){
+    [la, lb].forEach(function(p, i){
+      var Lx; try { Lx = p.getTotalLength(); } catch(e){ return; }
+      p.setAttribute('stroke-dasharray', Lx); p.setAttribute('stroke-dashoffset', Lx);
+      setTimeout(function(){
+        tween(900, function(q){ p.setAttribute('stroke-dashoffset', Lx * (1 - q)); },
+          function(){ p.removeAttribute('stroke-dasharray'); p.removeAttribute('stroke-dashoffset'); });
+      }, i * 160);
+    });
+  }
+}
+function placeScoreMarkers(lf){
+  var d = scoreDom, n = scoreN;
+  var lo = Math.floor(lf), hi = Math.min(n, lo + 1), fr = lf - lo;
+  var ua = lerp(scoreA(n, lo), scoreA(n, hi), fr), ub = lerp(scoreB(n, lo), scoreB(n, hi), fr);
+  var x = d.X(lf), ya = d.Y(ua), yb = d.Y(ub);
+  d.mA.setAttribute('cx', x); d.mA.setAttribute('cy', ya);
+  d.mB.setAttribute('x', x - 6); d.mB.setAttribute('y', yb - 6);
+  var right = x < (d.G.W - d.G.pl) * 0.62;
+  [[d.tA, ya, '(A) ' + ua.toFixed(3)], [d.tB, yb, '(B) ' + ub.toFixed(3)]].forEach(function(t, i){
+    var yy = t[1] + 4;
+    if (Math.abs(ya - yb) < 16) yy += (i === 0 ? (ya <= yb ? -9 : 9) : (ya <= yb ? 9 : -9));
+    t[0].setAttribute('x', right ? x + 11 : x - 11); t[0].setAttribute('y', yy);
+    t[0].setAttribute('text-anchor', right ? 'start' : 'end'); t[0].textContent = t[2];
+  });
+}
+function scoreReadouts(){
+  var n = scoreN, l = scoreL, N2 = binom(n, 2);
+  var a = binom(n - l, 2), linked = binom(l, 2), out = binom(n - 1, 2);
+  var html = '';
+  html += '<div class="ro"><div class="k">(A) Def. 10 formula, for a group member</div>' +
+    '<div class="v">$' + fracTex(a, N2) + '$ <span style="font-size:.75em">' + dec(a / N2) + '</span></div>' +
+    '<p>$\\binom{n-l}{2}/\\binom{n}{2}=\\binom{' + (n - l) + '}{2}/\\binom{' + n + '}{2}$</p></div>';
+  html += '<div class="ro"><div class="k">(B) whole class: unlinked pairs / all pairs</div>' +
+    '<div class="v">$' + fracTex(N2 - linked, N2) + '$ <span style="font-size:.75em">' + dec((N2 - linked) / N2) + '</span></div>' +
+    '<p>$\\big(\\binom{' + n + '}{2}-\\binom{' + l + '}{2}\\big)/\\binom{' + n + '}{2}$</p></div>';
+  html += '<div class="ro"><div class="k">Also in play</div><p>Adversary picks a truly linked pair with chance $\\binom{l}{2}/\\binom{n}{2}=' + fracTex(linked, N2) + '$, ' + dec(linked / N2) + ' (§3.3).<br>' +
+    (n - l > 0 ? 'Formula (A) for one of the $' + (n - l) + '$ unrelated singletons: $\\binom{n-1}{2}/\\binom{n}{2}=' + fracTex(out, N2) + '$, ' + dec(out / N2) + '.' : 'No unrelated singletons: the whole class is one true group.') + '</p></div>';
+  setMath($('scoreRO'), html);
+}
+function scoreSet(n, l, ms){
+  var nChanged = n !== scoreN;
+  scoreN = n; scoreL = Math.max(1, Math.min(n, l));
+  $('nIn').value = scoreN; $('lIn').max = scoreN; $('lIn').value = scoreL;
+  $('nVal').textContent = scoreN; $('lVal').textContent = scoreL;
+  if (nChanged){ settle('score-l'); scoreShownL = scoreL; drawScore(false); }
+  var from = scoreShownL, to = scoreL;
+  run('score-l', ms, function(p){ scoreShownL = lerp(from, to, p); placeScoreMarkers(scoreShownL); });
+  scoreReadouts();
+  pressOnly($('scorePresets'), function(c){ var cs = SCORE_CASES[+c.getAttribute('data-i')]; return cs.n === scoreN && cs.l === scoreL; });
+}
+(function(){
+  var box = $('scorePresets');
+  SCORE_CASES.forEach(function(c, i){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chipbtn';
+    b.setAttribute('data-i', i); b.textContent = c.lab + ' (n=' + c.n + ', l=' + c.l + ')';
+    b.addEventListener('click', function(){ scoreSet(c.n, c.l, 500); });
+    box.appendChild(b);
+  });
+  $('nIn').addEventListener('input', function(){ scoreSet(+this.value, scoreL, 0); });
+  $('lIn').addEventListener('input', function(){ scoreSet(scoreN, +this.value, 260); });
+  $('nIn').addEventListener('change', function(){ settle('score-l'); });
+  $('lIn').addEventListener('change', function(){ settle('score-l'); });
+  /* provenance table: what the paper states vs. what each reading gives */
+  function A_(n, l){ return binom(n - l, 2) + '/' + binom(n, 2); }
+  function A2(n, l){ return A_(n, l) + ' in group<br>' + binom(n - 1, 2) + '/' + binom(n, 2) + ' singleton'; }
+  function B_(n, l){ return (binom(n, 2) - binom(l, 2)) + '/' + binom(n, 2); }
+  var rows = [
+    ['§3.3 motivating case 1', 'class of 3, two truly linked', 3, 2, 'adversary picks a linked pair with chance $\\frac{1}{3}$', A2(3, 2), B_(3, 2)],
+    ['§3.3 motivating case 2', 'class of 100, 99 truly linked', 100, 99, 'chance $\\approx 0.98$', A2(100, 99), B_(100, 99)],
+    ['Coinjoin, §4.1.1', 'inputs of the 2-address users', 7, 2, '$\\frac{10}{21}$', A_(7, 2), '16/21 (three owners, class-wide)'],
+    ['Coinjoin, §4.1.1', 'inputs of the 3-address user', 7, 3, '$\\frac{6}{21}$', A_(7, 3), '16/21 (three owners, class-wide)'],
+    ['Lemma 2', 'linked $s_d,s_f$ plus unlinked $s_w$; the lemma scores $s_w$', 3, 2, '$\\frac{2}{3}$', A_(3, 2) + ' for $s_d,s_f$<br>' + binom(2, 2) + '/' + binom(3, 2) + ' for $s_w$', B_(3, 2)],
+    ['Lemma 3', 'two unrelated states', 2, 1, '$1$', A_(2, 1), B_(2, 1)],
+    ['Lemma 4', 'class of 4, evaluated at $l=2$', 4, 2, '$\\frac{12-l(l-1)}{12}=\\frac{10}{12}$', A2(4, 2), B_(4, 2)],
+    ['Lemma 7', 'two unrelated outputs', 2, 1, '$1$', A_(2, 1), B_(2, 1)]
+  ];
+  $('scoreTable').innerHTML = '<thead><tr><th>Where</th><th>Situation</th><th class="num">n</th><th class="num">l</th><th>Paper states</th><th class="num">(A) formula</th><th class="num">(B) wording</th></tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td class="num">' + r[2] + '</td><td class="num">' + r[3] + '</td><td>' + r[4] + '</td><td class="num">' + r[5] + '</td><td class="num">' + r[6] + '</td></tr>'; }).join('') + '</tbody>';
+})();
+
+/* =======================================================================
+   Interactive 4 — Coinjoin (Figure 6, Lemma 1)
+   ===================================================================== */
+var CJ_IN = ['s0','s1','s2','s3','s4','s5','s6'], CJ_OUT = ['s7','s8','s9','s10','s11'];
+var CJ_PAPER = [0, 0, 1, 1, 2, 2, 2];                       /* u1:{s0,s1}  u2:{s2,s3}  u3:{s4,s5,s6} */
+var CJ_SLOTS = ['--s1','--s2','--s3','--s4','--s5','--edge-p','--ink-muted'];
+var cjOwner = CJ_PAPER.slice(), cjShown = null, cjDom = null;
+function cjScores(owner){
+  var n = owner.length, N2 = binom(n, 2), size = {};
+  owner.forEach(function(o){ size[o] = (size[o] || 0) + 1; });
+  var linked = 0; Object.keys(size).forEach(function(k){ linked += binom(size[k], 2); });
+  var groups = Object.keys(size).map(function(k){ return size[k]; });
+  var lemma = null;
+  if (groups.length >= 2){
+    var U = Math.max.apply(null, groups), u = Math.min.apply(null, groups);
+    lemma = [binom(n - U, 2), binom(n - u, 2), N2];
+  }
+  return {
+    per: owner.map(function(o){ return binom(n - size[o], 2); }), N2:N2,
+    classB:N2 - linked, size:size, lemma:lemma, groups:groups.length
+  };
+}
+function drawCjGraph(){
+  var svg = $('cjGraph'); clear(svg);
+  var narrow = isNarrow(), W = narrow ? 320 : 430, H = narrow ? 210 : 230;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  defsArrows(svg);
+  var plane = css('--plane'), ink = css('--ink-1');
+  var gx = (W - 40) / 6, wy = H / 2 + 4;
+  var wpos = [W / 2, wy];
+  cjDom = { rings:[], tags:[] };
+  CJ_OUT.forEach(function(id, i){
+    var x = W / 2 + (i - 2) * gx * 1.05, y = H - 24;
+    svg.appendChild(el('path', Object.assign(edgeStroke(svg, 'P'), { d:smoothPath({ s:[wpos[0], wpos[1] + 14], c:[(wpos[0] + x) / 2, (wpos[1] + y) / 2], t:[x, y - 15] }) })));
+    var g = el('g', {});
+    g.appendChild(el('circle', { cx:x, cy:y, r:14, fill:plane, stroke:ink, 'stroke-width':1.4 }));
+    nodeLabel(g, id, x, y, 12); svg.appendChild(g);
+  });
+  CJ_IN.forEach(function(id, i){
+    var x = 20 + i * gx, y = 40;
+    svg.appendChild(el('path', Object.assign(edgeStroke(svg, 'C'), { d:smoothPath({ s:[x, y + 14], c:[(wpos[0] + x) / 2, (wpos[1] + y) / 2], t:[wpos[0] + (x - wpos[0]) * 0.12, wpos[1] - 14] }) })));
+  });
+  var wg = el('g', {});
+  wg.appendChild(el('rect', { x:wpos[0] - 13, y:wpos[1] - 13, width:26, height:26, fill:plane, stroke:ink, 'stroke-width':1.4 }));
+  nodeLabel(wg, 'w', wpos[0], wpos[1], 13); svg.appendChild(wg);
+  CJ_IN.forEach(function(id, i){
+    var x = 20 + i * gx, y = 40, g = el('g', { tabindex:0, role:'button', 'aria-label':'Change owner of ' + id });
+    g.style.cursor = 'pointer';
+    var ring = el('circle', { cx:x, cy:y, r:14, fill:plane, stroke:ink, 'stroke-width':3.2 });
+    g.appendChild(el('circle', { cx:x, cy:y, r:20, fill:'transparent' }));
+    g.appendChild(ring); nodeLabel(g, id, x, y, 12);
+    var tag = el('text', { x:x, y:y - 21, 'text-anchor':'middle', 'font-size':11, fill:ink, 'font-family':'Ubuntu Mono, monospace', 'font-weight':700 }, '');
+    g.appendChild(tag);
+    function cycle(){ cjOwner[i] = (cjOwner[i] + 1) % 4; cjApply(420); }
+    g.addEventListener('click', cycle);
+    g.addEventListener('keydown', function(ev){ if (ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); cycle(); } });
+    svg.appendChild(g);
+    cjDom.rings.push(ring); cjDom.tags.push(tag);
+  });
+}
+function cjOwnerColor(o){ return css(CJ_SLOTS[o]); }
+var cjBarDom = null;
+function drawCjBars(){
+  var svg = $('cjBars'); clear(svg);
+  var narrow = isNarrow(), W = narrow ? 320 : 430, H = narrow ? 230 : 250;
+  var pl = 36, pr = 10, pt = 22, pb = 30;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var Y = function(u){ return pt + (1 - u) * (H - pt - pb); };
+  var mut = css('--ink-muted');
+  var band = el('rect', { x:pl, width:W - pl - pr, fill:'#dcdcdc', opacity:0.75 });
+  svg.appendChild(band);
+  [0, 0.5, 1].forEach(function(u){
+    svg.appendChild(el('line', { x1:pl, x2:W - pr, y1:Y(u), y2:Y(u), stroke:u === 0 ? css('--axis') : css('--grid') }));
+    svg.appendChild(el('text', { x:pl - 6, y:Y(u) + 4, 'text-anchor':'end', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, String(u)));
+  });
+  var bw = (W - pl - pr) / 7, bars = [], labels = [];
+  CJ_IN.forEach(function(id, i){
+    var x = pl + i * bw + 3;
+    var r = el('rect', { x:x, width:bw - 6, y:Y(0), height:0, rx:2 });
+    var t = el('text', { x:x + (bw - 6) / 2, y:Y(0) - 5, 'text-anchor':'middle', 'font-size':narrow ? 10 : 11, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace', 'font-weight':700 }, '');
+    var lab = el('text', { x:x + (bw - 6) / 2, y:H - pb + 16, 'text-anchor':'middle', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, id);
+    r.addEventListener('mousemove', function(ev){
+      var S = cjScores(cjOwner);
+      showTip(ev, '<b>' + id + ' · owner u' + (cjOwner[i] + 1) + '</b>(A) = ' + S.per[i] + '/' + S.N2 + ' ' + dec(S.per[i] / S.N2) + '<br>owner holds ' + S.size[cjOwner[i]] + ' of 7 inputs');
+    });
+    r.addEventListener('mouseleave', hideTip);
+    svg.appendChild(r); svg.appendChild(t); svg.appendChild(lab);
+    bars.push(r); labels.push(t);
+  });
+  var bLine = el('line', { x1:pl, x2:W - pr, stroke:css('--ink-1'), 'stroke-width':2, 'stroke-dasharray':'6 3' });
+  var bText = el('text', { x:W - pr, 'text-anchor':'end', 'font-size':11, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace' }, '');
+  svg.appendChild(bLine); svg.appendChild(bText);
+  cjBarDom = { Y:Y, bars:bars, labels:labels, band:band, bLine:bLine, bText:bText };
+}
+function cjApply(ms){
+  var S = cjScores(cjOwner), d = cjBarDom;
+  cjOwner.forEach(function(o, i){
+    cjDom.rings[i].setAttribute('stroke', cjOwnerColor(o));
+    cjDom.tags[i].textContent = 'u' + (o + 1);
+    d.bars[i].setAttribute('fill', cjOwnerColor(o));
+  });
+  var target = S.per.map(function(v){ return v / S.N2; });
+  var from = cjShown ? cjShown.slice() : target.map(function(){ return 0; });
+  if (!cjShown) cjShown = from.slice();
+  var lo = S.lemma ? S.lemma[0] / S.N2 : 0, hi = S.lemma ? S.lemma[1] / S.N2 : 0;
+  d.band.setAttribute('y', d.Y(hi)); d.band.setAttribute('height', Math.max(0, d.Y(lo) - d.Y(hi)));
+  d.band.setAttribute('opacity', S.lemma ? 0.75 : 0);
+  var bY = d.Y(S.classB / S.N2);
+  d.bLine.setAttribute('y1', bY); d.bLine.setAttribute('y2', bY);
+  d.bText.setAttribute('y', bY - 5); d.bText.textContent = '(B) ' + S.classB + '/' + S.N2;
+  run('cj-bars', ms, function(p){
+    target.forEach(function(v, i){
+      var cur = lerp(from[i], v, p); cjShown[i] = cur;
+      d.bars[i].setAttribute('y', d.Y(cur)); d.bars[i].setAttribute('height', d.Y(0) - d.Y(cur));
+      d.labels[i].setAttribute('y', d.Y(cur) - 5);
+      d.labels[i].textContent = S.per[i] + '/' + S.N2;
+    });
+  });
+  /* read-outs */
+  var owners = Object.keys(S.size).map(Number).sort();
+  var html = '<div class="ro"><div class="k">Owners (true relation $L$)</div><p>' + owners.map(function(o){
+    var ids = CJ_IN.filter(function(_, i){ return cjOwner[i] === o; });
+    return '<span class="swatch" style="display:inline-block;vertical-align:middle;background:' + cjOwnerColor(o) + '"></span> $u_{' + (o + 1) + '}$: ' + texSet(ids);
+  }).join('<br>') + '</p></div>';
+  html += '<div class="ro focus"><div class="k">Lemma 1 range</div>' + (S.lemma ?
+    '<div class="v">$[' + fracTex(S.lemma[0], S.N2) + ',\\ ' + fracTex(S.lemma[1], S.N2) + ']$</div><p>Largest owner class $|U|=' + Math.max.apply(null, owners.map(function(o){ return S.size[o]; })) + '$, smallest $|u|=' + Math.min.apply(null, owners.map(function(o){ return S.size[o]; })) + '$.</p>' :
+    '<div class="v">n/a</div><p>Lemma 1 needs at least two owners. With one owner the heuristic is exactly right, and every input scores $0$.</p>') + '</div>';
+  html += '<div class="ro"><div class="k">(B) whole class</div><div class="v">$' + fracTex(S.classB, S.N2) + '$</div><p>' + S.classB + ' of the ' + S.N2 + ' input pairs belong to different owners.</p></div>';
+  setMath($('cjRO'), html);
+  $('cjTable').innerHTML = '<thead><tr><th>Input</th><th>Owner</th><th class="num">Owner holds</th><th class="num">(A) score</th><th class="num">decimal</th></tr></thead><tbody>' +
+    CJ_IN.map(function(id, i){ return '<tr><td>$' + texId(id) + '$</td><td>$u_{' + (cjOwner[i] + 1) + '}$</td><td class="num">' + S.size[cjOwner[i]] + '</td><td class="num">' + S.per[i] + '/' + S.N2 + '</td><td class="num">' + (S.per[i] / S.N2).toFixed(3) + '</td></tr>'; }).join('') + '</tbody>';
+  katexRender($('cjTable'));
+  var lg = $('cjLegend');
+  lg.innerHTML = owners.map(function(o){ return '<li><span class="swatch" style="background:' + cjOwnerColor(o) + '"></span>owner u' + (o + 1) + '</li>'; }).join('') +
+    '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--s1') + '" stroke-width="1.8"/></svg>consuming</li>' +
+    '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--edge-p') + '" stroke-width="1.8"/></svg>producing</li>';
+}
+$('cjPaper').addEventListener('click', function(){ cjOwner = CJ_PAPER.slice(); cjApply(520); });
+$('cjSolo').addEventListener('click', function(){ cjOwner = [0,0,0,0,0,0,0]; cjApply(520); });
+$('cjSpread').addEventListener('click', function(){ cjOwner = [0,1,2,3,4,5,6]; cjApply(520); });
+
+/* =======================================================================
+   Interactive 5 — Monero (Figure 8) vs Zcash (Figure 9)
+   ===================================================================== */
+var FIG8 = prepGraph({
+  key:'fig8', dx:104, dy:58, ndx:62, ndy:58,
+  nodes:[
+    {id:'sg',k:'g',c:0,r:0},{id:'w1',k:'w',c:1,r:0},{id:'s1',k:'s',c:2,r:0},{id:'w2',k:'w',c:3,r:0},
+    {id:'s2',k:'s',c:4,r:-1.5},{id:'n1',k:'n',c:4,r:-0.5},{id:'s3',k:'s',c:4,r:0.5},{id:'s4',k:'s',c:4,r:1.5},
+    {id:'w4',k:'w',c:5,r:-1.5},{id:'s5',k:'s',c:5,r:-0.45},{id:'w3',k:'w',c:5,r:0.5},
+    {id:'s8',k:'s',c:6,r:-1.5},{id:'n2',k:'n',c:6,r:-0.3},{id:'s6',k:'s',c:6,r:0.6},{id:'s7',k:'s',c:6,r:1.5}
+  ],
+  edges:[
+    {f:'sg',t:'w1',y:'C'},{f:'w1',t:'s1',y:'P'},{f:'s1',t:'w2',y:'M'},
+    {f:'w2',t:'s2',y:'P'},{f:'w2',t:'s3',y:'P'},{f:'w2',t:'s4',y:'P'},{f:'w2',t:'n1',y:'P'},
+    {f:'s3',t:'w3',y:'M'},{f:'s4',t:'w3',y:'O'},{f:'n1',t:'w3',y:'O'},
+    {f:'w3',t:'n2',y:'P'},{f:'w3',t:'s6',y:'P'},{f:'w3',t:'s5',y:'P'},{f:'w3',t:'s7',y:'P'},
+    {f:'s2',t:'w4',y:'C'},{f:'s5',t:'w4',y:'C'},{f:'w4',t:'s8',y:'P'}
+  ],
+  info:{
+    w1:{ text:'Mining reward: the first block\'s coins go to user $u$ at $s_1$.', excluded:'mining transaction' },
+    w2:{ text:'$u$ pays $s_4$ from $s_1$: $s_2$ is the fee and $s_3$ the change. The key image goes into nullifier $n_1$.' },
+    w3:{ text:'$s_3$ pays $s_6,s_7$ with fee $s_5$. The ring also names $s_4$. The witness checks the key image in $n_1$, and $n_2$ holds both key images.' },
+    w4:{ text:'Mining transaction: the fees $s_2,s_5$ and the block reward go to the miner at $s_8$.', excluded:'mining transaction' }
+  },
+  scale:'<p>The drawing uses a ring of two. Since v0.18.0.0 (<em>Fluorine Fermi</em>) every Monero ring has <strong>16</strong> members, and <strong>Lemma 6</strong> says: if $G^*=\\mathbf{core}(G^*)$ then $G$ is $16$-untraceable. The proof: any witness left with $k&lt;16$ edges means the graph could be decomposed, which contradicts $G^*$ being its own core.</p>'
+});
+var FIG9 = prepGraph({
+  key:'fig9', dx:86, dy:58, ndx:60, ndy:52,
+  pools:[[5,-1,8,1],[6,0,9,0],[8,1,10,2]],
+  nodes:[
+    {id:'sg',k:'g',c:0,r:0},{id:'w0',k:'w',c:1,r:0},{id:'s0',k:'s',c:2,r:0},{id:'w1',k:'w',c:3,r:0},
+    {id:'s2',k:'s',c:4,r:-1},{id:'s1',k:'s',c:4,r:0},{id:'w2',k:'w',c:5,r:0},
+    {id:'s5',k:'s',c:6,r:-1},{id:'s4',k:'s',c:6,r:0},{id:'s3',k:'s',c:6,r:1},{id:'w3',k:'w',c:7,r:0},
+    {id:'s7',k:'s',c:8,r:-1},{id:'s6',k:'s',c:8,r:0},{id:'n1',k:'n',c:8,r:1},{id:'w4',k:'w',c:9,r:0},
+    {id:'s9',k:'s',c:10,r:-1},{id:'s8',k:'s',c:10,r:0},{id:'s10',k:'s',c:10,r:1},{id:'n2',k:'n',c:10,r:2}
+  ],
+  edges:[
+    {f:'sg',t:'w0',y:'C'},{f:'w0',t:'s0',y:'P'},{f:'s0',t:'w1',y:'C'},{f:'w1',t:'s1',y:'P'},{f:'w1',t:'s2',y:'P'},
+    {f:'s1',t:'w2',y:'C'},{f:'w2',t:'s3',y:'P'},{f:'w2',t:'s4',y:'P'},{f:'w2',t:'s5',y:'P'},
+    {f:'s3',t:'w3',y:'M'},{f:'s4',t:'w3',y:'O'},{f:'w3',t:'s6',y:'P'},{f:'w3',t:'s7',y:'P'},{f:'w3',t:'n1',y:'P'},
+    {f:'s6',t:'w4',y:'M'},{f:'n1',t:'w4',y:'O'},{f:'s3',t:'w4',y:'O',ctrl:[7.6,2.3]},{f:'s4',t:'w4',y:'O',ctrl:[7.5,-1.15]},
+    {f:'w4',t:'s8',y:'P'},{f:'w4',t:'s9',y:'P'},{f:'w4',t:'s10',y:'P'},{f:'w4',t:'n2',y:'P'}
+  ],
+  info:{
+    w0:{ text:'Pre-mine: every coin is minted into the unmined-coins state $s_0$.' },
+    w1:{ text:'Some unmined coins go to the first successful miner $u$ at $s_1$; the rest stay in $s_2$. Transparent.' },
+    w2:{ text:'$u$ sends $s_1$ into the shielded pool, to $s_3,s_4$, paying fee $s_5$. The input is transparent, so its consumption is visible.' },
+    w3:{ text:'Shielded $s_3$ pays $s_6$ with fee $s_7$. Every earlier shielded state ($s_3,s_4$) enters, since nothing leaks about the sender. Produces nullifier $n_1$.' },
+    w4:{ text:'Shielded $s_6$ pays shielded $s_{10}$ and transparent $s_8$, with fee $s_9$ (roles as drawn in Fig. 9). Reads $n_1$ and produces $n_2$, which contains $n_1$.' }
+  },
+  scale:'<p>A shielded spend names no ring. Its untraceability set is implicitly <em>every</em> earlier state. <strong>Lemma 8</strong>: if $G^*=\\mathbf{core}(G^*)$ then the shielded pool is $p$-untraceable, with $p=\\min\\big(|\\{s\\mid s\\prec w,\\ \\forall w\\in W\\}|\\big)$. The transparent pool gives no untraceability.</p>'
+});
+var chainState = { g:FIG8, view:'truth', sel:'w3' };
+function chainDraw(enter){
+  var G = chainState.g;
+  drawGraph($('chainSvg'), G, function(w){ chainState.sel = w; chainApply(380); });
+  var box = $('chainTx'); box.innerHTML = '';
+  G.nodes.filter(function(n){ return n.k === 'w'; }).forEach(function(n){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chipbtn';
+    b.setAttribute('data-w', n.id); b.textContent = '$T_{' + texId(n.id) + '}$';
+    b.addEventListener('click', function(){ chainState.sel = n.id; chainApply(380); });
+    box.appendChild(b);
+  });
+  katexRender(box);
+  setMath($('chainTable'), edgeTableHtml(G));
+  if (enter){ G.after = function(){ chainApply(300); }; graphEnter(G, 900); }
+  else { G.after = null; animateAttrs('chain-op', graphTargets(G, chainState.view, chainState.sel), 0); }
+}
+function chainApply(ms, skipOpacity){
+  var G = chainState.g;
+  if (!skipOpacity) animateAttrs('chain-op', graphTargets(G, chainState.view, chainState.sel), ms);
+  legendFor($('chainLegend'), ['C','M','O','P'], chainState.view);
+  renderRO($('chainRO'), G, chainState.sel, chainState.view);
+  var extra = document.createElement('div'); extra.className = 'ro';
+  extra.innerHTML = '<div class="k">At protocol scale</div>' + G.scale;
+  katexRender(extra); $('chainRO').appendChild(extra);
+  pressOnly($('chainTx'), function(c){ return c.getAttribute('data-w') === chainState.sel; });
+}
+seg('chainPick', function(v){
+  chainState.g = v === 'zcash' ? FIG9 : FIG8;
+  chainState.sel = v === 'zcash' ? 'w4' : 'w3';
+  chainDraw(true); chainApply(0, true);
+});
+seg('chainView', function(v){ chainState.view = v; chainApply(520); });
+
+/* =======================================================================
+   BibTeX copy
+   ===================================================================== */
+$('copyBib').addEventListener('click', function(){
+  var b = this, t = $('bibtex').textContent;
+  function done(){ b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   Boot, entrances, resize
+   ===================================================================== */
+function drawAllStatic(){
+  drawGraph($('pdagSvg'), FIG2, pdagPick); animateAttrs('pdag-op', graphTargets(FIG2, pdagState.view, pdagState.sel), 0);
+  drawCore(); coreApply(0);
+  drawScore(false);
+  drawCjGraph(); drawCjBars(); cjShown = null; cjApply(0);
+  chainDraw(false);
+}
+drawAllStatic();
+pdagApply(0); chainApply(0); scoreSet(scoreN, scoreL, 0);
+
+var ENTER = {
+  tldr: function(){
+    Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
+      var to = +n.getAttribute('data-count');
+      tween(900, function(p){ n.textContent = Math.round(to * p); });
+    });
+  },
+  pdag: function(){ FIG2.after = function(){ pdagApply(300); }; graphEnter(FIG2, 1000); },
+  core: function(){
+    CORE_S.forEach(function(s){ CORE_W.forEach(function(w){ coreDom.edges[s + w].g.setAttribute('opacity', 0); }); });
+    coreApply(700);
+  },
+  score: function(){ drawScore(true); },
+  coinjoin: function(){ cjShown = [0,0,0,0,0,0,0]; cjApply(900); },
+  chains: function(){ chainState.g.after = function(){ chainApply(300); }; graphEnter(chainState.g, 900); }
+};
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(600, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      if (ENTER[sec.id]) ENTER[sec.id]();
+    });
+  }, { threshold:0.12 });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var lastNarrow = isNarrow();
+window.addEventListener('resize', function(){
+  var nw = isNarrow(); if (nw === lastNarrow) return; lastNarrow = nw;
+  Object.keys(ANIMS).forEach(settle);
+  drawAllStatic(); pdagApply(0); chainApply(0); scoreSet(scoreN, scoreL, 0);
+});
+window.addEventListener('load', function(){ katexRender(document.body); });
+</script>
+</body>
+</html>

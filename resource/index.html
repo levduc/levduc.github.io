@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modeling Resources</title>
+<meta name="description" content="OPODIS 2022 — A resource allocator abstraction that explains why Proof-of-Work, Proof-of-Stake and Proof-of-Storage fall to different attacks.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid); scroll-margin-top:52px}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.note code{font-family:var(--mono)}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:20px}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:72ch}
+.flag{border-left:3px solid var(--warning); padding:.35rem 0 .35rem 14px; margin:18px 0 0; max-width:74ch}
+.flag b{color:var(--ink-head)}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50;
+  background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head)}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+.tile .src{font-family:var(--mono); font-size:.74rem; color:var(--ink-muted); margin:.5rem 0 0}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin-bottom:18px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:200px; flex:1}
+.ctl label{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); flex-wrap:wrap}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:14px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono);
+  font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.dash{height:0; border-top:2px dashed currentColor; border-radius:0; width:14px}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .09s;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; font-family:var(--mono)}
+/* position:relative so KaTeX's absolutely-positioned MathML is clipped by this
+   scroller instead of escaping it and widening the page */
+.tablewrap{overflow-x:auto; position:relative}
+.tablewrap table{min-width:560px}
+
+/* ---------- taxonomy grid ---------- */
+.gridwrap{display:grid; grid-template-columns:78px 1fr 1fr; gap:8px}
+.gridwrap .hd{font-family:var(--mono); font-size:.74rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700;
+  display:flex; align-items:flex-end; justify-content:center; padding-bottom:.25rem; text-align:center}
+.gridwrap .rh{font-family:var(--mono); font-size:.74rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700;
+  display:flex; align-items:center; justify-content:flex-end; text-align:right}
+.cell{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1);
+  padding:14px 12px; cursor:pointer; text-align:left; font-family:var(--font);
+  color:var(--ink-2); min-height:96px; display:flex; flex-direction:column; gap:.25rem}
+.cell strong{color:var(--ink-head); font-size:1.02rem}
+.cell small{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted); line-height:1.35}
+.cell[aria-pressed=true]{border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent)}
+.cell.empty{cursor:pointer; border-style:dashed; background:transparent}
+.cell.empty strong{color:var(--ink-muted); font-weight:400}
+.readout{display:flex; flex-direction:column; gap:12px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:.95rem; color:var(--ink-1); margin-top:.2rem}
+.ro .v.big{font-size:1.4rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.tagrow{display:flex; flex-wrap:wrap; gap:6px; margin-top:.35rem}
+.chip{font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; border-radius:999px; padding:.1rem .55rem; border:1px solid currentColor}
+.chip.ok{color:var(--good)} .chip.bad{color:var(--critical)} .chip.warn{color:var(--serious)}
+.chip.neutral{color:var(--ink-muted)}
+
+/* ---------- the allocator box ---------- */
+.boxgrid{display:grid; grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr); gap:22px; align-items:start}
+.boxpanel{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1);
+  padding:16px; box-shadow:var(--shadow)}
+.boxpanel svg{display:block; width:100%; height:auto; overflow:visible}
+.actions{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0}
+.btn.sm{padding:.3rem .7rem; font-size:.84rem}
+.btn.sm[disabled]{opacity:.42; cursor:not-allowed}
+.btn.sm[disabled]:hover{border-color:var(--ring); color:var(--ink-1)}
+.seg button[disabled]{opacity:.4; cursor:not-allowed}
+.probline{font-family:var(--mono); font-size:.84rem; color:var(--ink-2); margin:14px 0 0}
+.probline b{color:var(--ink-head)}
+.log{font-family:var(--mono); font-size:.78rem; line-height:1.6; background:var(--plane);
+  border:1px solid var(--grid); border-radius:3px; padding:10px 12px; margin-top:10px;
+  height:150px; overflow:auto; white-space:pre; position:relative}
+.log .in{color:var(--accent)}
+.log .yes{color:var(--good)}
+.log .no{color:var(--critical)}
+.log .cm{color:var(--ink-muted)}
+.tally{display:flex; flex-wrap:wrap; gap:4px 18px; font-family:var(--mono);
+  font-size:.8rem; color:var(--ink-2); margin-top:10px}
+.tally b{color:var(--ink-head)}
+.tally .cm{color:var(--ink-muted)}
+.factcards{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+  gap:14px; margin-top:22px}
+
+.beats{display:flex; flex-wrap:wrap; gap:6px; list-style:none; margin:16px 0 0; padding:0}
+.beats li{font-family:var(--mono); font-size:.72rem; letter-spacing:.03em;
+  color:var(--ink-muted); border:1px solid var(--ring); border-radius:999px; padding:.12rem .6rem}
+.beats li.done{color:var(--ink-2)}
+.beats li.on{color:#fff; background:var(--accent); border-color:var(--accent); font-weight:700}
+.caption{margin:12px 0 0; font-size:.95rem; color:var(--ink-2); min-height:5.2em}
+
+/* ---------- verdict banner ---------- */
+.verdict{border-radius:4px; padding:12px 14px; font-size:.9rem; border:1px solid; margin-top:14px}
+.verdict.ok{color:var(--good); border-color:var(--good)}
+.verdict.bad{color:var(--critical); border-color:var(--critical)}
+.verdict b{display:block; font-family:var(--mono); letter-spacing:.03em; text-transform:uppercase; font-size:.78rem}
+
+/* ---------- protocol steps ---------- */
+.steprow{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:14px}
+.stp{border:1px solid var(--ring); background:var(--surface-1); border-radius:3px;
+  padding:.5rem .4rem; cursor:pointer; text-align:center; font-size:.9rem;
+  font-family:var(--font); color:var(--ink-2); font-weight:700}
+.stp[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff}
+.stp[disabled]{opacity:.45; cursor:not-allowed}
+.stp small{display:block; font-family:var(--mono); font-size:.68rem; font-weight:400; opacity:.85}
+.stepbody{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1);
+  padding:18px; box-shadow:var(--shadow)}
+.stepbody h3{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+.stepbody ul{margin:.5rem 0 0; padding-left:1.15rem; color:var(--ink-2); font-size:.95rem}
+.stepbody li{margin-bottom:.35rem}
+.playrow{display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid);
+  font-size:.8rem; color:var(--ink-muted); text-align:right}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:18px}
+.shared{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); margin:0 0 14px}
+.shared b{color:var(--ink-1)}
+
+/* text-transform:uppercase would rewrite the glyphs KaTeX renders, so $r$ must not become $R$ */
+.eyebrow .katex, .ro .k .katex, .tile .k .katex, th .katex, .chip .katex{text-transform:none}
+
+/* KaTeX sets white-space:nowrap, so long display math has to scroll in its own box */
+.katex-display{overflow-x:auto; overflow-y:hidden; padding:2px 0 6px}
+.katex-display > .katex{max-width:none}
+.katex-src{max-width:100%}
+p .katex{overflow-wrap:break-word}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+}
+@media (max-width:900px){
+  .boxgrid{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:1.95rem}
+  .boxpanel{padding:13px}
+  .log{height:132px; font-size:.74rem}
+  .gridwrap{grid-template-columns:62px 1fr 1fr; gap:6px}
+  .cell{min-height:auto; padding:11px 10px}
+  .steprow{grid-template-columns:repeat(2,1fr)}
+  .ctl{min-width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#taxonomy">Taxonomy</a>
+    <a href="#threshold">Threshold</a>
+    <a href="#lra">Long-range</a>
+    <a href="#race">Chain race</a>
+    <a href="#cost">Cost</a>
+    <a href="#guarantees">Guarantees</a>
+    <a href="#attacks">Attacks</a>
+    <a href="#cite">BibTeX</a>
+  </nav>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <span class="venue">OPODIS 2022</span>
+  <h1>Modeling Resources in Permissionless Longest-chain Total-order Broadcast</h1>
+  <p class="sub">One abstraction &mdash; the <em>resource allocator</em> &mdash; for computation, stake and storage,
+  so that Proof-of-Work, Proof-of-Stake and Proof-of-Storage can be compared on the resource alone
+  rather than on their consensus rules.</p>
+  <p class="authors">
+    Sarah Azouvi<sup>1</sup>,
+    Christian Cachin<sup>2</sup>,
+    <span class="me">Duc V. Le</span><sup>2</sup>,
+    Marko Vukoli&#263;<sup>1</sup>,
+    Luca Zanolini<sup>2</sup>
+  </p>
+  <p class="affils">1 &mdash; Protocol Labs &nbsp;&middot;&nbsp; 2 &mdash; University of Bern</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/modeling-resources.pdf">[Paper PDF]</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+    <a class="btn" href="https://doi.org/10.4230/LIPIcs.OPODIS.2022.16">[DOI]</a>
+    <a class="btn" href="https://arxiv.org/abs/2211.12050">[arXiv:2211.12050]</a>
+  </div>
+</div></header>
+
+<section id="tiles"><div class="wrap">
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Taxonomy</div>
+      <div class="v">4 cells, 3 filled</div>
+      <p class="d">Resources split two ways &mdash; <em>virtual</em> or <em>external</em>, <em>burnable</em> or <em>reusable</em>.
+      Computation, stake and storage occupy three cells. The paper instantiates no allocator for virtual&#215;burnable.</p>
+      <p class="src">Def. 3.3 (Def. 4 in the linked arXiv version)</p>
+    </div>
+    <div class="tile">
+      <div class="k">Secure allocator</div>
+      <div class="v">5 properties</div>
+      <p class="d">Liveness, validity, use-once, unforgeability, honest-majority assignment. Meet all five and the
+      generic longest-chain algorithm implements total-order broadcast.</p>
+      <p class="src">Def. 4.1 &amp; Thm. 4.3 (Def. 7, Thm. 2 in arXiv)</p>
+    </div>
+    <div class="tile">
+      <div class="k">Chain-extension cost</div>
+      <div class="v">&#215;(t&#8322;&minus;t&#8321;+1)</div>
+      <p class="d">Over a window of <span class="katex-src">$t_2-t_1+1$</span> time steps with a constant budget, a burnable
+      resource costs that factor more than the bound on a reusable one &mdash; which is why the same attack is cheap on stake.</p>
+      <p class="src">Def. 5.5 &amp; Prop. 5.6 (Def. 13, Prop. 11 in arXiv)</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Same protocol, different resource, different attacks</h2>
+  <p class="lede">A permissionless blockchain has no membership list, so it cannot count votes. Instead it makes
+  writing rights scarce: you may append a block only if you can prove you hold some <em>resource</em>. Bitcoin uses
+  computation, Ouroboros Praos uses stake, Filecoin uses storage.</p>
+  <p class="lede">Each of these protocols has its own security proof, in its own model, under its own assumptions.
+  That makes them almost impossible to compare &mdash; and it leaves the interesting question unanswered. Proof-of-Stake
+  is vulnerable to long-range attacks and Proof-of-Work is not. Is that a fact about Ouroboros, or a fact about stake?</p>
+  <div class="callout">
+    <p style="margin:0">This paper fixes the consensus rule &mdash; one generic longest-chain, total-order-broadcast
+    algorithm &mdash; and varies only the resource underneath it, through an interface called a
+    <strong>resource allocator</strong>. Whatever differs is then attributable to the resource itself.</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>The interface</h3>
+      <p class="note" style="margin-bottom:.6rem">Two input events, two output events.</p>
+      <ul style="margin:0; padding-left:1.15rem; font-size:.95rem">
+        <li><code>RA-commit</code><span class="katex-src">$(p_i, \mathsf{st}, r)$</span> &mdash; pledge budget
+        <span class="katex-src">$r$</span> against chain state <span class="katex-src">$\mathsf{st}$</span>.</li>
+        <li><code>RA-assign</code><span class="katex-src">$(p_i, \mathsf{st}, r, \pi)$</span> &mdash; the allocator
+        answers with a commitment <span class="katex-src">$\pi$</span>, or with
+        <span class="katex-src">$\bot$</span>.</li>
+        <li><code>RA-validate</code> / <code>RA-is-committed</code> &mdash; anyone can re-check a
+        <span class="katex-src">$\pi$</span> carried in a block.</li>
+      </ul>
+      <p class="note" style="margin:.8rem 0 0">A block is <span class="katex-src">$B = (h, \overline{tx}, \pi, \sigma)$</span>:
+      parent hash, transactions, resource commitment, signature.</p>
+    </div>
+    <div class="card">
+      <h3>What it must guarantee</h3>
+      <p class="note" style="margin-bottom:.6rem">Total-order broadcast, with overwhelming probability.</p>
+      <ul style="margin:0; padding-left:1.15rem; font-size:.95rem">
+        <li><strong>Validity</strong> &mdash; a valid transaction broadcast by a correct process is eventually delivered.</li>
+        <li><strong>No duplication</strong> &mdash; no transaction is delivered twice.</li>
+        <li><strong>Agreement</strong> &mdash; if one correct process delivers it, all do.</li>
+        <li><strong>Total order</strong> &mdash; every correct process delivers in the same order.</li>
+      </ul>
+      <p class="note" style="margin:.8rem 0 0">Def. 2.1 (Def. 1 in arXiv). The long-range attack breaks the last one.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="taxonomy"><div class="wrap">
+  <p class="eyebrow">Interactive 1 &middot; Def. 3.3 &amp; Def. 4.1</p>
+  <h2>The allocator is a box &mdash; commit into it</h2>
+  <p class="lede">The paper's move is to replace &ldquo;Proof-of-Work&rdquo; and &ldquo;Proof-of-Stake&rdquo; with a single
+  interface. You hand a resource allocator a budget and a chain state; it hands back a commitment
+  <span class="katex-src">$\pi$</span> or <span class="katex-src">$\bot$</span>. Pick a resource, press Play, and watch
+  what actually travels on the wires &mdash; that is the whole of what distinguishes Proof-of-Work from Proof-of-Stake
+  in this model.</p>
+
+  <div class="boxgrid">
+    <div>
+      <p class="eyebrow" style="margin-bottom:.7rem">What goes in the box</p>
+      <div class="gridwrap">
+        <div></div>
+        <div class="hd">Burnable</div>
+        <div class="hd">Reusable</div>
+
+        <div class="rh">External</div>
+        <button class="cell" id="cellEB" aria-pressed="true">
+          <strong>Computation</strong>
+          <small>Proof-of-Work &middot; Nakamoto consensus</small>
+        </button>
+        <button class="cell" id="cellER" aria-pressed="false">
+          <strong>Storage</strong>
+          <small>Proof-of-Storage &middot; Filecoin</small>
+        </button>
+
+        <div class="rh">Virtual</div>
+        <button class="cell empty" id="cellVB" aria-pressed="false">
+          <strong>&mdash;</strong>
+          <small>no allocator instantiated</small>
+        </button>
+        <button class="cell" id="cellVR" aria-pressed="false">
+          <strong>Stake</strong>
+          <small>Proof-of-Stake &middot; Ouroboros Praos</small>
+        </button>
+      </div>
+      <p class="note" style="margin-top:12px">
+        <b>External</b>: the budget must be supplied from outside, and cannot be overstated.<br>
+        <b>Virtual</b>: the budget is read off the chain, via <span class="katex-src">$\mathsf{StateAlloc}(p_i, \mathcal{C})$</span>.<br>
+        <b>Burnable</b>: a step's budget is spent across that step's commits, <span class="katex-src">$\sum r_i \le \mathsf{Alloc}(p_i,t)$</span>.<br>
+        <b>Reusable</b>: the same budget drives unboundedly many commits per step.
+      </p>
+    </div>
+
+    <div class="boxpanel">
+      <div class="playrow" style="margin:0 0 12px">
+        <button class="btn sm primary" id="boxPlay">&#9654;&#65038; Play</button>
+        <button class="btn sm" id="boxStep">Step</button>
+        <div class="seg" role="group" aria-label="Chain state committed against">
+          <button id="atTip" aria-pressed="true">commit at the tip</button>
+          <button id="atH0" aria-pressed="false">commit at h&#8320;</button>
+        </div>
+      </div>
+      <svg id="boxSvg" role="img" aria-label="A process sending RA-commit into the resource allocator and receiving RA-assign back"></svg>
+      <ol class="beats" id="boxBeats"></ol>
+      <p class="caption" id="boxCaption"></p>
+    </div>
+  </div>
+
+  <div class="factcards" id="taxCards"></div>
+
+  <p class="note" style="margin-top:16px">
+    <b>Provenance.</b> The four events are Def. 3.2; the resource types are Def. 3.3; the five properties the box
+    enforces are Def. 4.1. The draw inside the box is the allocator's own: Lem. 4.4 describes
+    <span class="katex-src">$\mathsf{RA}_{\mathsf{pow}}$</span> as running <span class="katex-src">$r$</span> threads of a
+    &ldquo;biased coin with probability <span class="katex-src">$\varrho$</span>&rdquo;, and Def. 4.6 (arXiv Def. 10 for
+    storage) gives leader selection the same shape. <b>This is a walk-through, not a simulation</b> &mdash; the sequence
+    is fixed, and it shows one refused commit and one granted one rather than implying any particular rate. What changes
+    between the cells is what the interface carries: whether a budget travels on the wire at all, whether it comes back,
+    and whether the allocator has to reach into the chain to find it. Repeating a commit on a reusable resource returns
+    the same <span class="katex-src">$\pi$</span>, which is the use-once clause of Def. 4.1; the
+    <span class="katex-src">$h_0$</span> branch is step 2 of &sect;5.1.
+  </p>
+</div></section>
+
+<section id="threshold"><div class="wrap">
+  <p class="eyebrow">Interactive 2 &middot; Equation 1</p>
+  <h2>The one inequality that has to hold</h2>
+  <p class="lede">Every secure allocator must satisfy <em>honest-majority assignment</em>: the chance that some Byzantine
+  process wins a slot has to stay under a bound set by the honest chance and the network delay.</p>
+  <p class="lede" style="margin:0 0 .1rem"><span class="katex-src">$$p_{\mathcal{A}} \;&lt;\; \frac{1}{\Delta - 1 + 1/p_{\mathcal{H}}}$$</span></p>
+  <p class="lede" style="margin:0 0 1.3rem"><span class="katex-src">$$p_{\mathcal{H}} = 1-(1-\varrho)^{R-R_{\mathcal{A}}}
+  \qquad p_{\mathcal{A}} = 1-(1-\varrho)^{R_{\mathcal{A}}}$$</span></p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="rngR">Total resource budget <span class="katex-src">$R$</span> = <span class="val" id="valR">100</span></label>
+      <input type="range" id="rngR" min="10" max="200" step="1" value="100">
+    </div>
+    <div class="ctl">
+      <label for="rngRA">Adversarial budget <span class="katex-src">$R_{\mathcal{A}}$</span> = <span class="val" id="valRA">30</span></label>
+      <input type="range" id="rngRA" min="0" max="100" step="1" value="30">
+    </div>
+    <div class="ctl">
+      <label for="rngRho">Per-unit probability <span class="katex-src">$\varrho$</span> = <span class="val" id="valRho">0.0100</span></label>
+      <input type="range" id="rngRho" min="1" max="500" step="1" value="100">
+    </div>
+    <div class="ctl">
+      <label for="rngD">Network delay <span class="katex-src">$\Delta$</span> = <span class="val" id="valD">1</span></label>
+      <input type="range" id="rngD" min="1" max="10" step="1" value="1">
+    </div>
+  </div>
+
+  <div class="chart">
+    <svg id="chartT" role="img" aria-label="Adversarial assignment probability against the honest-majority bound, as the adversarial budget grows"></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>Honest <span class="katex-src">$p_{\mathcal{H}}$</span></li>
+      <li><span class="swatch" style="background:var(--s2)"></span>Adversarial <span class="katex-src">$p_{\mathcal{A}}$</span></li>
+      <li><span class="swatch dash" style="color:var(--critical)"></span>Bound <span class="katex-src">$1/(\Delta-1+1/p_{\mathcal{H}})$</span></li>
+    </ul>
+  </div>
+  <div class="verdict ok" id="thVerdict"><b id="thVerdictK">Secure</b><span id="thVerdictT"></span></div>
+
+  <details class="tbl"><summary>Table view &mdash; values at the current settings</summary>
+    <div class="tablewrap"><table id="thTable"></table></div>
+  </details>
+
+  <p class="note" style="margin-top:14px">
+    <b>Provenance.</b> The inequality is Equation&nbsp;1 in Def. 4.1, attributed there to Ga&#382;i et&nbsp;al. (CCS&nbsp;2020).
+    The closed forms for <span class="katex-src">$p_{\mathcal{H}}$</span> and <span class="katex-src">$p_{\mathcal{A}}$</span>
+    are from the Proof-of-Work proof (Lem. 4.4); the Proof-of-Stake proof (Lem. 4.8) gives the same pair, writing
+    <span class="katex-src">$p_{\mathcal{A}} \approx 1-(1-\varrho)^{R_{\mathcal{A}}}$</span> and noting that an adversary
+    committing to shorter chains could raise it slightly. The storage proof (arXiv Lem. 7) writes
+    <span class="katex-src">$p_{\mathcal{A}} \le 1-(1-\varrho)^{R_{\mathcal{A}}}$</span>, with equality only when Byzantine
+    processes commit their whole budget. Leader selection has the same shape
+    <span class="katex-src">$1-(1-\varrho)^{r_i}$</span> in all three allocators (Def. 4.6; arXiv Def. 10 for storage).
+    <b>The paper fixes no numeric values for <span class="katex-src">$R$</span>, <span class="katex-src">$R_{\mathcal{A}}$</span>,
+    <span class="katex-src">$\varrho$</span> or <span class="katex-src">$\Delta$</span></b> &mdash; the slider settings are
+    illustrative, only the formulas are the paper's.
+  </p>
+  <p class="note" style="margin-top:8px">At <span class="katex-src">$\Delta=1$</span> the bound collapses to
+  <span class="katex-src">$p_{\mathcal{A}} &lt; p_{\mathcal{H}}$</span> and the dashed line lies exactly on the blue one.</p>
+</div></section>
+
+<section id="lra"><div class="wrap">
+  <p class="eyebrow">Interactive 3 &middot; &sect;5.1</p>
+  <h2>The long-range attack, step by step</h2>
+  <p class="lede">A long-range attack corrupts processes that <em>used to</em> hold the resource. It works on stake and
+  fails on computation &mdash; and the framework says exactly where it fails. Switch the resource and walk the four steps.</p>
+
+  <div class="playrow">
+    <div class="seg" role="group" aria-label="Resource kind">
+      <button id="lraVirtual" aria-pressed="true">Virtual (stake)</button>
+      <button id="lraExternal" aria-pressed="false">External (computation)</button>
+    </div>
+    <span class="note" id="lraMode"></span>
+  </div>
+
+  <div class="steprow" id="lraSteps">
+    <button class="stp" data-s="0" aria-pressed="true">1<small>corrupt</small></button>
+    <button class="stp" data-s="1" aria-pressed="false">2<small>re-commit</small></button>
+    <button class="stp" data-s="2" aria-pressed="false">3<small>rewrite</small></button>
+    <button class="stp" data-s="3" aria-pressed="false">4<small>outgrow</small></button>
+  </div>
+
+  <div class="stepbody">
+    <h3><span id="lraTitle"></span><span class="chip" id="lraChip"></span></h3>
+    <p style="margin:.4rem 0 0" id="lraText"></p>
+    <ul id="lraDetail"></ul>
+  </div>
+
+  <h3 style="margin:26px 0 .4rem">Is a virtual-resource-shifting event happening?</h3>
+  <p class="lede" style="margin-bottom:1rem">Def. 5.1 needs two things at once: a set
+  <span class="katex-src">$\mathcal{P}_{\mathsf{maj}}$</span> that held the majority at an old height
+  <span class="katex-src">$h_0$</span>, and that holds almost nothing at the current height
+  <span class="katex-src">$h_1$</span>.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="rngH0">Budget of <span class="katex-src">$\mathcal{P}_{\mathsf{maj}}$</span> at <span class="katex-src">$h_0$</span> = <span class="val" id="valH0">80</span></label>
+      <input type="range" id="rngH0" min="0" max="200" step="1" value="80">
+    </div>
+    <div class="ctl">
+      <label for="rngH1">Budget of <span class="katex-src">$\mathcal{P}_{\mathsf{maj}}$</span> at <span class="katex-src">$h_1$</span> = <span class="val" id="valH1">10</span></label>
+      <input type="range" id="rngH1" min="0" max="200" step="1" value="10">
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="ro"><div class="k">Active at <span class="katex-src">$h_0$</span></div>
+      <div class="v" id="cond0"></div></div>
+    <div class="ro"><div class="k">Inactive at <span class="katex-src">$h_1$</span></div>
+      <div class="v" id="cond1"></div></div>
+  </div>
+  <div class="verdict bad" id="lraVerdict"><b id="lraVerdictK"></b><span id="lraVerdictT"></span></div>
+  <p class="note" style="margin-top:14px"><b>Provenance.</b> Steps are the four numbered items of &sect;5.1
+  (&sect;6.1 in arXiv); the two inequalities are Def. 5.1 (Def. 12 in arXiv); the conclusion is Thm. 5.4 (Thm. 10 in arXiv).
+  <span class="katex-src">$R$</span> and <span class="katex-src">$R_{\mathcal{A}}$</span> are taken from the sliders above.</p>
+</div></section>
+
+<section id="race"><div class="wrap">
+  <p class="eyebrow">Interactive 4 &middot; Lemma 5.2</p>
+  <h2>Run the race</h2>
+  <p class="lede">Once the shifting event has happened, the adversary rebuilding from
+  <span class="katex-src">$h_0$</span> holds what <span class="katex-src">$\mathcal{P}_{\mathsf{maj}}$</span> held back
+  then &mdash; strictly more than the honest processes hold now. The honest chain starts ahead by the fork depth. Press
+  Run and watch the two chains extend, one block at a time, each at its own probability per time step.</p>
+  <p class="shared">Using <b id="shR">R = 100</b>, <b id="shRA">R<sub>A</sub> = 30</b>, <b id="shRho">&#1009; = 0.0100</b>
+  from the threshold panel &mdash; change them there and the race resets.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="rngMaj">Budget rebuilt on <span class="katex-src">$\mathcal{C}^*$</span> = <span class="val" id="valMaj">85</span></label>
+      <input type="range" id="rngMaj" min="0" max="200" step="1" value="85">
+    </div>
+    <div class="ctl">
+      <label for="rngFork">Fork depth <span class="katex-src">$h_1-h_0$</span> (blocks) = <span class="val" id="valFork">40</span></label>
+      <input type="range" id="rngFork" min="0" max="200" step="1" value="40">
+    </div>
+    <div class="ctl">
+      <label for="rngEps">Chernoff slack <span class="katex-src">$\epsilon$</span> = <span class="val" id="valEps">0.10</span></label>
+      <input type="range" id="rngEps" min="1" max="60" step="1" value="10">
+    </div>
+  </div>
+
+  <div class="chart">
+    <div class="playrow">
+      <button class="btn sm primary" id="raceRun">&#9654;&#65038; Run</button>
+      <button class="btn sm" id="raceStep">Step 25</button>
+      <button class="btn sm" id="raceSkip">&#8677; To overtake</button>
+      <button class="btn sm" id="raceReset">&#8635; Reset</button>
+      <div class="seg" role="group" aria-label="Speed">
+        <button id="sp1" aria-pressed="true">1&#215;</button>
+        <button id="sp4" aria-pressed="false">4&#215;</button>
+        <button id="sp16" aria-pressed="false">16&#215;</button>
+      </div>
+      <span class="note" id="raceClock" style="margin:0">t = 0</span>
+    </div>
+    <svg id="raceSvg" role="img" aria-label="Two lanes of blocks: the honest chain and the adversarial chain, each extending over time"></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1); opacity:.4"></span>Honest blocks before the fork</li>
+      <li><span class="swatch" style="background:var(--s1)"></span>Honest chain <span class="katex-src">$\mathcal{C}$</span></li>
+      <li><span class="swatch" style="background:var(--s2)"></span>Adversarial chain <span class="katex-src">$\mathcal{C}^*$</span></li>
+      <li><span class="swatch dash" style="color:var(--ink-muted)"></span>Expected length, and the Chernoff edge</li>
+    </ul>
+  </div>
+  <div class="verdict bad" id="raceVerdict"><b id="raceVerdictK"></b><span id="raceVerdictT"></span></div>
+
+  <details class="tbl"><summary>Table view &mdash; expected lengths and Chernoff edges</summary>
+    <div class="tablewrap"><table id="raceTable"></table></div>
+  </details>
+
+  <p class="note" style="margin-top:14px">
+    <b>Provenance.</b> Each time step is a Poisson trial with <span class="katex-src">$\Pr[X_i=1]=p_{\mathcal{H}}$</span>
+    on the honest chain and <span class="katex-src">$p_{\mathcal{A}^*}$</span> on the adversarial one &mdash; the trials
+    the proof of Lem. 5.2 sums. <b>The race is simulated</b>: the blocks you see are real draws against those two
+    probabilities, so the run has variance and the overtake time moves. The dashed marks are the deterministic
+    <span class="katex-src">$p_{\mathcal{H}}t$</span> and <span class="katex-src">$p_{\mathcal{A}^*}t$</span> and the band
+    edges <span class="katex-src">$(1-\epsilon)p_{\mathcal{H}}t$</span>, <span class="katex-src">$(1+\epsilon)p_{\mathcal{A}^*}t$</span>,
+    whose failure probabilities the proof gives as <span class="katex-src">$\exp(-p_{\mathcal{H}}t\epsilon^2/2)$</span> and
+    <span class="katex-src">$\exp(-p_{\mathcal{A}^*}t\epsilon^2/3)$</span>. The expected crossing time
+    <span class="katex-src">$t^\star = (h_1-h_0)/(p_{\mathcal{A}^*}-p_{\mathcal{H}})$</span> is arithmetic on those two
+    rates; the paper itself only says &ldquo;eventually&rdquo;. The slider's lower stop,
+    <span class="katex-src">$R_{\mathsf{maj}} = R - R_{\mathcal{A}} + 1$</span>, is the smallest integer budget that
+    satisfies Def. 5.1's strict majority; it starts above that stop only so the two rates are far enough apart to see.
+  </p>
+  <div class="flag">
+    <p style="margin:0"><b>Sources disagree &mdash; flagged, not reconciled.</b> The proof of Lem. 5.2 calls
+    <span class="katex-src">$(1+\epsilon)\cdot p_{\mathcal{A}}\cdot t$</span> a &ldquo;lower bound&rdquo; on adversarial chain
+    growth, but pairs it with the exponent <span class="katex-src">$\epsilon^2/3$</span>, which is the standard Chernoff
+    <em>upper</em>-tail form (the honest case one sentence earlier uses <span class="katex-src">$\epsilon^2/2$</span>, the
+    lower-tail form). The lane marks place each expression exactly where the written factor puts it:
+    <span class="katex-src">$(1-\epsilon)$</span> behind the honest mean, <span class="katex-src">$(1+\epsilon)$</span> ahead
+    of the adversarial one. The wording is the same in the OPODIS and arXiv versions.</p>
+  </div>
+</div></section>
+
+<section id="cost"><div class="wrap">
+  <p class="eyebrow">Interactive 5 &middot; Def. 5.5 &amp; Prop. 5.6</p>
+  <h2>Extending a chain costs nothing if the resource comes back</h2>
+  <p class="lede">A burnable resource is spent every step you mine; a reusable one is not. Over a window of
+  <span class="katex-src">$t_2-t_1+1$</span> steps the first accumulates and the second does not &mdash; which is the whole
+  reason a private attack or a nothing-at-stake attack is cheap on stake and expensive on hashing.</p>
+  <p class="lede" style="margin:0 0 .1rem"><span class="katex-src">$$\mathrm{Cost}_{\mathsf{burn}}(p_i,t_1,t_2) = \sum_{t=t_1}^{t_2}\mathsf{Alloc}(p_i,t)$$</span></p>
+  <p class="lede" style="margin:0 0 1.3rem"><span class="katex-src">$$\mathrm{Cost}_{\mathsf{reuse}}(p_i,t_1,t_2) \;\le\; \max_{t\in[t_1,\dots,t_2]}\mathsf{Alloc}(p_i,t)$$</span></p>
+
+  <div class="playrow">
+    <div class="seg" role="group" aria-label="Budget profile">
+      <button id="pfFlat" aria-pressed="true">Constant</button>
+      <button id="pfGrow" aria-pressed="false">Growing</button>
+      <button id="pfSpike" aria-pressed="false">Single spike</button>
+    </div>
+    <span class="note" id="pfNote"></span>
+  </div>
+  <div class="controls">
+    <div class="ctl">
+      <label for="rngWin">Window length <span class="katex-src">$t_2-t_1+1$</span> = <span class="val" id="valWin">8</span> steps</label>
+      <input type="range" id="rngWin" min="1" max="12" step="1" value="8">
+    </div>
+    <div class="ctl">
+      <label for="rngBase">Base budget <span class="katex-src">$\mathsf{Alloc}$</span> = <span class="val" id="valBase">10</span></label>
+      <input type="range" id="rngBase" min="1" max="30" step="1" value="10">
+    </div>
+  </div>
+
+  <div class="chart">
+    <svg id="chartC" role="img" aria-label="Cumulative chain-extension cost for a burnable versus a reusable resource, by window length"></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>Burnable: <span class="katex-src">$\sum \mathsf{Alloc}$</span></li>
+      <li><span class="swatch" style="background:var(--s3)"></span>Reusable: bound <span class="katex-src">$\max \mathsf{Alloc}$</span></li>
+    </ul>
+  </div>
+  <div class="verdict ok" id="costVerdict"><b id="costVerdictK"></b><span id="costVerdictT"></span></div>
+
+  <details class="tbl"><summary>Table view &mdash; per-step budget and running cost</summary>
+    <div class="tablewrap"><table id="costTable"></table></div>
+  </details>
+
+  <p class="note" style="margin-top:14px">
+    <b>Provenance.</b> Both expressions are Def. 5.5 verbatim. The reusable side is an <em>upper bound</em> in the paper,
+    not an equality, and is drawn and labelled as a bound. Prop. 5.6 asserts strictness only for
+    <span class="katex-src">$t_2 > t_1$</span>; at a one-step window the two coincide, and the chart shows that rather than
+    hiding it. The budget profiles are illustrative &mdash; the paper leaves <span class="katex-src">$\mathsf{Alloc}$</span>
+    an arbitrary function.
+  </p>
+</div></section>
+
+<section id="guarantees"><div class="wrap">
+  <p class="eyebrow">Properties</p>
+  <h2>What a secure resource allocator has to provide</h2>
+  <p class="lede">Satisfy all five and the generic algorithm inherits safety and liveness, hence total-order broadcast
+  (Lem. 4.2, Thm. 4.3). Each column is the corresponding security proof.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr>
+      <th>Property</th><th>What it rules out</th>
+      <th>Proof-of-Work<br><span style="font-weight:400;text-transform:none">Lem. 4.4</span></th>
+      <th>Proof-of-Stake<br><span style="font-weight:400;text-transform:none">Lem. 4.8</span></th>
+      <th>Proof-of-Storage<br><span style="font-weight:400;text-transform:none">arXiv Lem. 7</span></th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Liveness</strong></td>
+        <td>A commit that is never answered.</td>
+        <td>Every <code>RA-commit</code> returns a nonce or <span class="katex-src">$\bot$</span> within the step.</td>
+        <td>Same, with <span class="katex-src">$r=\bot$</span> on the return &mdash; stake is virtual.</td>
+        <td>Same, with <span class="katex-src">$\bot$</span> also when the external resource verification fails (Alg. 4, L147).</td>
+      </tr>
+      <tr>
+        <td><strong>Validity</strong></td>
+        <td>A commitment nobody else can check.</td>
+        <td>Re-check <span class="katex-src">$H(h\|\overline{tx}\|\mathsf{nonce}) \le \varrho \cdot 2^{\lambda}$</span>.</td>
+        <td>Re-evaluate <span class="katex-src">$F$</span> on the slot's stored randomness <span class="katex-src">$\rho$</span>.</td>
+        <td>As PoS &mdash; re-evaluate <span class="katex-src">$F$</span> and check <span class="katex-src">$\pi \in T$</span>. <span class="katex-src">$E$</span> runs at commit time, not at validation.</td>
+      </tr>
+      <tr>
+        <td><strong>Use-once</strong></td>
+        <td>Splitting or replaying a budget to win more often (grinding).</td>
+        <td>Free &mdash; computation is burnable: <span class="katex-src">$1-(1-\varrho)^{r_1}(1-\varrho)^{r_2} = 1-(1-\varrho)^{r}$</span>.</td>
+        <td>Must be engineered: explicit slots (R1), leaders from the common prefix (R2), deterministic randomness (R3).</td>
+        <td>R1&ndash;R3 as PoS; the proof is the PoW argument again, on sectors instead of hashes. <span class="katex-src">$E$</span> is separate &mdash; it checks the pledge is real, not that it is used once.</td>
+      </tr>
+      <tr>
+        <td><strong>Unforgeability</strong></td>
+        <td>A commitment the allocator never issued.</td>
+        <td>Random oracle &mdash; no strategy beats querying <span class="katex-src">$H$</span>.</td>
+        <td>Commitments live in the allocator's set <span class="katex-src">$T$</span>; in practice VRF uniqueness or collision resistance.</td>
+        <td>As PoS.</td>
+      </tr>
+      <tr>
+        <td><strong>Honest-majority assignment</strong></td>
+        <td>Byzantine processes winning slots too often for the network delay.</td>
+        <td colspan="3" style="text-align:center"><span class="katex-src">$p_{\mathcal{A}} &lt; 1/(\Delta-1+1/p_{\mathcal{H}})$</span> &mdash; Eq. 1, identical in all three</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:12px">The use-once row is the load-bearing one: it is the single place where burnable
+  gets for free what reusable has to build, and every difference further down the page traces back to it.</p>
+</div></section>
+
+<section id="attacks"><div class="wrap">
+  <p class="eyebrow">Consequences</p>
+  <h2>Which resource each attack needs</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr>
+      <th>Attack</th><th>Needs</th><th>Why the resource decides it</th><th>Mitigation the paper cites</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Long-range</strong><br><span class="note">Lem. 5.2, Thm. 5.4</span></td>
+        <td><span class="chip bad">Virtual</span></td>
+        <td>The allocator reads the budget off the old chain state alone, so corrupting processes that are broke
+        <em>now</em> still buys their weight <em>then</em>. With an external resource, step 2 needs hardware the
+        adversary does not have.</td>
+        <td>Checkpointing; key-evolving cryptography; multiple resource types; chain-density rules instead of pure
+        longest-chain.</td>
+      </tr>
+      <tr>
+        <td><strong>Private / double-spend</strong><br><span class="note">&sect;5.2 (&sect;6.2 in arXiv)</span></td>
+        <td><span class="chip warn">Reusable</span></td>
+        <td>The win probability is the same either way; only the cost differs. On a burnable resource a lost race
+        burns everything spent; on a reusable one the loss is opportunity cost alone.</td>
+        <td>None specific &mdash; the disincentive <em>is</em> the burn.</td>
+      </tr>
+      <tr>
+        <td><strong>Resource-bleeding</strong><br><span class="note">&sect;6 discussion (&sect;7 in arXiv)</span></td>
+        <td><span class="chip warn">Reusable</span></td>
+        <td>The adversary keeps its weight on the honest chain so the difficulty never adjusts there, while on its private
+        chain the honest processes drop out of the power table. A burnable resource cannot be in two places at once.</td>
+        <td>Ouroboros Genesis' chain-density rule; for external resources, compare total committed power at the chain tips.</td>
+      </tr>
+      <tr>
+        <td><strong>Nothing-at-stake</strong><br><span class="note">&sect;6 discussion (&sect;7 in arXiv)</span></td>
+        <td><span class="chip warn">Reusable</span></td>
+        <td>The same commitment can extend every fork, because <code>RA-assign</code> hands the budget straight back.</td>
+        <td>Slashing a posted deposit on proof of misbehaviour &mdash; easy to detect, since the reuse is public.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:12px">Storage sits in the awkward middle: external, so long-range attacks fail against
+  it, but reusable, so the cost-based attacks stay cheap &mdash; though on an external resource they are far easier to spot,
+  because the adversarial chain visibly carries less committed power.</p>
+</div></section>
+
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Cite</p>
+  <h2>BibTeX</h2>
+<pre class="bib">@inproceedings{AzouviCLVZ22,
+  author    = {Sarah Azouvi and Christian Cachin and Duc V. Le and
+               Marko Vukoli\'{c} and Luca Zanolini},
+  title     = {Modeling Resources in Permissionless Longest-chain
+               Total-order Broadcast},
+  booktitle = {26th International Conference on Principles of
+               Distributed Systems (OPODIS 2022)},
+  series    = {Leibniz International Proceedings in Informatics (LIPIcs)},
+  volume    = {253},
+  pages     = {16:1--16:23},
+  publisher = {Schloss Dagstuhl -- Leibniz-Zentrum f\"{u}r Informatik},
+  year      = {2022},
+  doi       = {10.4230/LIPIcs.OPODIS.2022.16}
+}</pre>
+
+  <h3 style="margin-top:28px">Code and data</h3>
+  <p class="lede">The paper declares no supplementary material &mdash; its <code>\supplement</code> field is empty and it
+  reports no implementation, dataset or measurement. There is nothing to link, and every number on this page is computed
+  in the browser from the formulas cited beside it.</p>
+
+  <h3 style="margin-top:28px">Which version you are reading</h3>
+  <p class="lede">Section, definition and theorem numbers on this page are the <strong>OPODIS proceedings</strong> numbers,
+  with the linked PDF's numbers in parentheses where they differ. The linked PDF is the full arXiv version
+  (arXiv:2211.12050v1), which inserts the Proof-of-Storage allocator as its Section&nbsp;5 &mdash; so everything from the
+  security analysis onward shifts by one section, and its definitions and theorems are numbered in single running
+  sequences rather than per section.</p>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Item</th><th>OPODIS (this page)</th><th>arXiv PDF</th></tr></thead>
+    <tbody>
+      <tr><td>Security analysis</td><td class="num">&sect;5</td><td class="num">&sect;6</td></tr>
+      <tr><td>Types of resource</td><td class="num">Def. 3.3</td><td class="num">Def. 4</td></tr>
+      <tr><td>Secure allocator</td><td class="num">Def. 4.1</td><td class="num">Def. 7</td></tr>
+      <tr><td>Virtual-resource-shifting event</td><td class="num">Def. 5.1</td><td class="num">Def. 12</td></tr>
+      <tr><td>Long-range attack lemma</td><td class="num">Lem. 5.2</td><td class="num">Lem. 9</td></tr>
+      <tr><td>Total order is violated</td><td class="num">Thm. 5.4</td><td class="num">Thm. 10</td></tr>
+      <tr><td>Chain extension cost</td><td class="num">Def. 5.5</td><td class="num">Def. 13</td></tr>
+      <tr><td>Burn costs more than reuse</td><td class="num">Prop. 5.6</td><td class="num">Prop. 11</td></tr>
+      <tr><td>Proof-of-Storage allocator</td><td>not included (space)</td><td class="num">&sect;5, Alg. 4, Lem. 7</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div></section>
+
+<footer><div class="wrap">Interactive companion to a paper by Azouvi, Cachin, Le, Vukoli&#263; and Zanolini &mdash; OPODIS 2022.</div></footer>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* =====================================================================
+   helpers
+   ===================================================================== */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+function fx(v, d){ return v.toFixed(d === undefined ? 4 : d); }
+/* round an axis maximum up so the tick labels land on readable numbers */
+function niceMax(v, ticks){
+  if (!(v > 0)) return 1;
+  var raw = v / ticks;
+  var mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  var mult = [1, 2, 2.5, 5, 10];
+  for (var i = 0; i < mult.length; i++){
+    if (mag * mult[i] >= raw) return mag * mult[i] * ticks;
+  }
+  return v;
+}
+
+/* ---------- motion: one guarded tween for everything ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+}
+
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [
+      { left:'$$', right:'$$', display:true },
+      { left:'$',  right:'$',  display:false }
+    ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+}
+
+/* ---------- shared tooltip ---------- */
+var TIP = document.getElementById('tip');
+function showTip(e, html){
+  TIP.innerHTML = html; TIP.style.opacity = 1;
+  var x = e.clientX + 14, y = e.clientY + 14;
+  if (x + 265 > window.innerWidth) x = e.clientX - 265;
+  if (y + 90 > window.innerHeight) y = e.clientY - 90;
+  TIP.style.left = x + 'px'; TIP.style.top = y + 'px';
+}
+function hideTip(){ TIP.style.opacity = 0; }
+function hoverable(node, html){
+  node.addEventListener('mousemove', function(e){ showTip(e, html); });
+  node.addEventListener('mouseleave', hideTip);
+}
+function narrowNow(){ return window.innerWidth < 620; }
+
+/* =====================================================================
+   shared model state  (Lem. 4.4 / Lem. 4.8 closed forms)
+   ===================================================================== */
+var M = { R:100, RA:30, rho:0.01, D:1 };
+function pH(){ return 1 - Math.pow(1 - M.rho, M.R - M.RA); }
+function pA(){ return 1 - Math.pow(1 - M.rho, M.RA); }
+function bound(){ var h = pH(); return h <= 0 ? 0 : 1 / (M.D - 1 + 1 / h); }
+function pOf(r){ return 1 - Math.pow(1 - M.rho, Math.max(0, r)); }
+
+/* =====================================================================
+   Interactive 1 — the allocator as a box (Def. 3.2, Def. 3.3, Def. 4.1)
+   A walk-through, not a calculator: nothing here is typed in or sampled.
+   ===================================================================== */
+var TAXP = {
+  EB: { name:'Computation', alloc:'RA_pow',   virtual:false, burnable:true,
+        inside:['external \u00b7 burnable', 'Pow(): biased coins', 'one per unit of r'] },
+  ER: { name:'Storage',     alloc:'RA_space', virtual:false, burnable:false,
+        inside:['external \u00b7 reusable', 'F() leader selection', 'E() checks sectors'] },
+  VR: { name:'Stake',       alloc:'RA_stake', virtual:true,  burnable:false,
+        inside:['virtual \u00b7 reusable', 'F() on StateAlloc', 'R1 \u00b7 R2 \u00b7 R3'] },
+  VB: { name:'\u2014',     alloc:'\u2014',  virtual:true,  burnable:true, empty:true,
+        inside:['no allocator', 'instantiated here'] }
+};
+
+var TAX = {
+  EB: {
+    commit:'$r = \\mathsf{Alloc}(p_i,t)$ — the number of hash evaluations the hardware can do this step. It cannot be overstated.',
+    assign:'$r$ comes back at the end of the activation period, but the step it was spent in is over. Committing twice splits the budget: $\\sum r_i \\le \\mathsf{Alloc}(p_i,t)$.',
+    useonce:'Nothing. It is inherent: splitting $r$ into $r_1+r_2$ gives exactly $1-(1-\\varrho)^{r}$ either way (Lem. 4.4).',
+    attacks:'Private attack — but it is the expensive case: every block burns resource whether or not the fork wins.',
+    where:'§4.2, Alg. 2, Lem. 4.4, Thm. 4.5. Models Nakamoto consensus.'
+  },
+  ER: {
+    commit:'$r$ = the number of sectors pledged. External, so it must really exist — the allocator runs an external resource verification $E(r,r\';\\rho)$ alongside leader selection.',
+    assign:'$\\bot$ — the pledged sectors are not consumed, so nothing is returned to reclaim.',
+    useonce:'Built: explicit slots (R1), power table from the common prefix (R2), deterministic randomness (R3) — arXiv §5. The external verification $E$ is separate: it checks the pledged sectors exist, not that they are used once.',
+    attacks:'Private attack, resource-bleeding, nothing-at-stake — but not long-range, and a bleeding chain is detectable because it visibly carries less committed power.',
+    where:'arXiv §5, Alg. 4, Lem. 7, Thm. 8 — cut from the OPODIS version for space. Models Filecoin.'
+  },
+  VR: {
+    commit:'$r = \\bot$. The allocator does not need a budget from you at all — it reads $\\mathsf{StateAlloc}(p_i, \\mathcal{C})$ off the chain you committed to.',
+    assign:'$\\bot$. Stake is not consumed by winning a slot, so repeated commits in one step must be made to return the same $\\pi$.',
+    useonce:'Built: explicit slots (R1), leader set from the common prefix (R2), deterministic trustworthy randomness (R3) — otherwise an adversary grinds (§4.3).',
+    attacks:'Long-range, private attack, resource-bleeding, nothing-at-stake — the full set.',
+    where:'§4.3, Alg. 3, Lem. 4.8, Thm. 4.9. Models Ouroboros Praos.'
+  },
+  VB: {
+    commit:'—', assign:'—', useonce:'—', attacks:'—',
+    where:'The paper defines the four types independently but instantiates an allocator for only three of the combinations. A virtual resource that is destroyed by use would have to be spent on-chain, which the paper does not model.'
+  }
+};
+
+var BOX = { cell:'EB', at:'tip', i:0, beats:[], svg:null, geo:null, playing:false, timer:null, busy:false,
+            st:{ token:'r', dim:false, read:null, out1:null, out2:null, pair:'commit' } };
+
+/* ---------- geometry ---------- */
+function boxGeom(){
+  if (narrowNow()){
+    return { W:320, H:368, vertical:true,
+             a:{x:44,y:0,w:232,h:56}, ra:{x:16,y:108,w:288,h:140}, b:{x:44,y:300,w:232,h:60},
+             w1:{x1:160,y1:58,x2:160,y2:104}, w2:{x1:160,y1:250,x2:160,y2:296},
+             w3:{x1:160,y1:58,x2:160,y2:104}, w4:{x1:160,y1:250,x2:160,y2:296},
+             chain:null };
+  }
+  return { W:600, H:286, vertical:false,
+           a:{x:2,y:26,w:104,h:58}, a2:{x:2,y:118,w:104,h:58},
+           ra:{x:228,y:14,w:158,h:176},
+           b:{x:494,y:26,w:104,h:58}, b2:{x:494,y:118,w:104,h:58},
+           w1:{x1:110,y1:55,x2:224,y2:55},  w2:{x1:390,y1:55,x2:490,y2:55},
+           w3:{x1:110,y1:147,x2:224,y2:147}, w4:{x1:390,y1:147,x2:490,y2:147},
+           chain:{x:228,y:226,bw:19,gap:4,n:8,h:28} };
+}
+
+/* ---------- render ---------- */
+function drawBoxSvg(){
+  var svg = document.getElementById('boxSvg');
+  clear(svg);
+  BOX.svg = svg;
+  var g = boxGeom(); BOX.geo = g;
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var p = TAXP[BOX.cell], s = BOX.st;
+  var mono = css('--mono'), muted = css('--ink-muted'), ring = css('--ring');
+  var showValidate = (s.pair === 'validate');
+
+  function frame(r, stroke){
+    svg.appendChild(el('rect', { x:r.x, y:r.y, width:r.w, height:r.h, rx:5,
+      fill:css('--plane'), stroke:stroke || ring, 'stroke-width':1.4 }));
+  }
+  function wire(w, label, dim){
+    svg.appendChild(el('line', { x1:w.x1, y1:w.y1, x2:w.x2, y2:w.y2,
+      stroke:dim ? css('--grid') : css('--axis'), 'stroke-width':2 }));
+    var d = g.vertical
+      ? 'M' + (w.x2 - 5) + ' ' + (w.y2 - 8) + 'L' + w.x2 + ' ' + w.y2 + 'L' + (w.x2 + 5) + ' ' + (w.y2 - 8) + 'Z'
+      : 'M' + (w.x2 - 8) + ' ' + (w.y2 - 5) + 'L' + w.x2 + ' ' + w.y2 + 'L' + (w.x2 - 8) + ' ' + (w.y2 + 5) + 'Z';
+    svg.appendChild(el('path', { d:d, fill:dim ? css('--grid') : css('--axis') }));
+    if (g.vertical){
+      svg.appendChild(el('text', { x:w.x1 + 11, y:(w.y1 + w.y2) / 2 + 4, 'font-family':mono,
+        'font-size':11, fill:dim ? muted : css('--ink-1') }, label));
+    } else {
+      /* the longest label, RA-is-committed, has to fit inside its own wire */
+      svg.appendChild(el('text', { x:(w.x1 + w.x2) / 2, y:w.y1 - 11, 'text-anchor':'middle',
+        'font-family':mono, 'font-size':label.length > 12 ? 9.5 : 11,
+        fill:dim ? muted : css('--ink-1') }, label));
+    }
+  }
+  /* the process, and the budget it is holding */
+  function proc(r, name, tok){
+    frame(r);
+    svg.appendChild(el('text', { x:r.x + 11, y:r.y + 23, 'font-family':mono, 'font-size':13.5,
+      'font-weight':700, fill:css('--ink-head') }, name));
+    if (!tok) return;
+    var tw = 42, tx = r.x + r.w - tw - 10, ty = r.y + r.h / 2 - 12;
+    var fill = tok === '\u22a5' || tok === '\u2014' ? css('--plane') : css('--s4');
+    svg.appendChild(el('rect', { x:tx, y:ty, width:tw, height:24, rx:3, fill:fill,
+      stroke: fill === css('--plane') ? ring : 'none', 'stroke-width':1,
+      'stroke-dasharray': tok === '\u2014' ? '3 3' : null,
+      opacity: s.dim ? 0.28 : 1 }));
+    svg.appendChild(el('text', { x:tx + tw / 2, y:ty + 17, 'text-anchor':'middle',
+      'font-family':mono, 'font-size':13, fill: fill === css('--plane') ? muted : '#4a3600',
+      opacity: s.dim ? 0.35 : 1 }, tok));
+  }
+  /* the answer */
+  function outNode(r, glyph, sub, tint){
+    frame(r, tint);
+    svg.appendChild(el('text', { x:r.x + 14, y:r.y + r.h / 2 + 7, 'font-family':mono,
+      'font-size':glyph && glyph.length > 2 ? 15 : 22, 'font-weight':700,
+      fill:tint || muted }, glyph || '\u00b7'));
+    if (sub){
+      svg.appendChild(el('text', { x:r.x + r.w / 2, y:r.y + r.h - 9, 'text-anchor':'middle',
+        'font-family':mono, 'font-size':9.5, fill:muted }, sub));
+    }
+  }
+
+  if (g.vertical){
+    proc(g.a, showValidate ? 'p_j' : 'p_i', showValidate ? '\u03c0' : s.token);
+    wire(g.w1, showValidate ? 'RA-validate' : 'RA-commit');
+  } else {
+    proc(g.a, 'p_i', s.token);
+    proc(g.a2, 'p_j', showValidate ? '\u03c0' : null);
+    wire(g.w1, 'RA-commit', showValidate);
+    wire(g.w3, 'RA-validate', !showValidate);
+  }
+
+  /* the allocator */
+  var tint = p.empty ? muted : css('--accent');
+  var raRect = el('rect', { x:g.ra.x, y:g.ra.y, width:g.ra.w, height:g.ra.h, rx:6,
+    fill:css('--plane'), stroke:tint, 'stroke-width':1.4,
+    'stroke-dasharray': p.empty ? '5 4' : null });
+  svg.appendChild(raRect);
+  svg.appendChild(el('text', { x:g.ra.x + g.ra.w / 2, y:g.ra.y + 28, 'text-anchor':'middle',
+    'font-family':mono, 'font-size':15, 'font-weight':700, fill:tint }, p.alloc));
+  svg.appendChild(el('text', { x:g.ra.x + g.ra.w / 2, y:g.ra.y + 48, 'text-anchor':'middle',
+    'font-family':css('--font'), 'font-size':13, fill:css('--ink-head') }, p.name));
+  for (var i = 0; i < p.inside.length; i++){
+    svg.appendChild(el('text', { x:g.ra.x + g.ra.w / 2, y:g.ra.y + 74 + i * 16, 'text-anchor':'middle',
+      'font-family':mono, 'font-size':10, fill:muted }, p.inside[i]));
+  }
+  if (g.vertical && p.virtual && s.read){
+    svg.appendChild(el('text', { x:g.ra.x + g.ra.w / 2, y:g.ra.y + g.ra.h - 14, 'text-anchor':'middle',
+      'font-family':mono, 'font-size':9.5, fill:css('--s2') },
+      'reads StateAlloc(' + (s.read === 'h0' ? 'C[0:h\u2080]' : 'C') + ')'));
+  }
+
+  if (g.vertical){
+    wire(g.w2, showValidate ? 'RA-is-committed' : 'RA-assign');
+    if (showValidate) outNode(g.b, s.out2 === 'true' ? 'true' : s.out2 === 'false' ? 'false' : '',
+      null, s.out2 === 'true' ? css('--good') : s.out2 === 'false' ? css('--critical') : null);
+    else outNode(g.b, s.out1 === 'pi' ? '\u03c0' : s.out1 === 'bot' ? '\u22a5' : '',
+      s.out1 === 'pi' ? 'commitment' : s.out1 === 'bot' ? 'no commitment' : null,
+      s.out1 === 'pi' ? css('--good') : s.out1 === 'bot' ? css('--critical') : null);
+  } else {
+    wire(g.w2, 'RA-assign', showValidate);
+    wire(g.w4, 'RA-is-committed', !showValidate);
+    outNode(g.b, s.out1 === 'pi' ? '\u03c0' : s.out1 === 'bot' ? '\u22a5' : '',
+      s.out1 === 'pi' ? 'commitment' : s.out1 === 'bot' ? 'no commitment' : null,
+      s.out1 === 'pi' ? css('--good') : s.out1 === 'bot' ? css('--critical') : null);
+    outNode(g.b2, s.out2 === 'true' ? 'true' : s.out2 === 'false' ? 'false' : '', null,
+      s.out2 === 'true' ? css('--good') : s.out2 === 'false' ? css('--critical') : null);
+  }
+
+  /* the chain the commit names — only a virtual resource makes the allocator read it */
+  if (g.chain){
+    var c = g.chain, total = c.n * (c.bw + c.gap) - c.gap;
+    var x0 = g.ra.x + g.ra.w / 2 - total / 2;
+    svg.appendChild(el('text', { x:x0 - 10, y:c.y + 17, 'text-anchor':'end', 'font-family':mono,
+      'font-size':10.5, fill:muted }, 'C'));
+    for (var j = 0; j < c.n; j++){
+      var hot = (s.read === 'h0' && j === 2) || (s.read === 'tip' && j === c.n - 1);
+      svg.appendChild(el('rect', { x:x0 + j * (c.bw + c.gap), y:c.y, width:c.bw, height:c.h, rx:2,
+        fill: hot ? css('--s2') : css('--surface-1'), stroke: hot ? css('--s2') : ring,
+        'stroke-width':1 }));
+    }
+    svg.appendChild(el('text', { x:x0 + (c.n - 1) * (c.bw + c.gap) + c.bw / 2, y:c.y + c.h + 13,
+      'text-anchor':'middle', 'font-family':mono, 'font-size':10, fill:muted }, 'tip'));
+    svg.appendChild(el('text', { x:x0 + 2 * (c.bw + c.gap) + c.bw / 2, y:c.y + c.h + 13,
+      'text-anchor':'middle', 'font-family':mono, 'font-size':10, fill:muted }, 'h\u2080'));
+    if (s.read){
+      var tx2 = s.read === 'h0' ? x0 + 2 * (c.bw + c.gap) + c.bw / 2
+                                : x0 + (c.n - 1) * (c.bw + c.gap) + c.bw / 2;
+      svg.appendChild(el('path', { d:'M' + (g.ra.x + g.ra.w / 2) + ' ' + (g.ra.y + g.ra.h) +
+        'L' + (g.ra.x + g.ra.w / 2) + ' ' + (c.y - 14) + 'L' + tx2 + ' ' + (c.y - 14) +
+        'L' + tx2 + ' ' + (c.y - 3),
+        fill:'none', stroke:css('--s2'), 'stroke-width':1.4, 'stroke-dasharray':'4 3' }));
+      svg.appendChild(el('path', { d:'M' + (tx2 - 4) + ' ' + (c.y - 8) + 'L' + tx2 + ' ' + (c.y - 2) +
+        'L' + (tx2 + 4) + ' ' + (c.y - 8) + 'Z', fill:css('--s2') }));
+    }
+  }
+  BOX.raRect = raRect;
+}
+
+/* ---------- transient animation ---------- */
+function sendChip(wire, label, colour, done){
+  if (!BOX.svg){ done(); return; }
+  var w = Math.max(26, label.length * 7.2 + 14);
+  var grp = el('g', {});
+  grp.appendChild(el('rect', { x:-w / 2, y:-11, width:w, height:22, rx:4, fill:colour }));
+  grp.appendChild(el('text', { x:0, y:4.5, 'text-anchor':'middle', 'font-family':css('--mono'),
+    'font-size':11, 'font-weight':700, fill:'#ffffff' }, label));
+  BOX.svg.appendChild(grp);
+  tween(520, function(t){
+    grp.setAttribute('transform', 'translate(' + (wire.x1 + (wire.x2 - wire.x1) * t).toFixed(1) +
+      ',' + (wire.y1 + (wire.y2 - wire.y1) * t).toFixed(1) + ')');
+  }, function(){
+    if (grp.parentNode) grp.parentNode.removeChild(grp);
+    done();
+  });
+}
+function pulseBox(done){
+  var r = BOX.raRect;
+  if (!r){ done(); return; }
+  tween(420, function(t){ r.setAttribute('stroke-width', 1.4 + 2.6 * Math.sin(t * Math.PI)); },
+    function(){ r.setAttribute('stroke-width', 1.4); done(); });
+}
+
+/* ---------- the walk-through ---------- */
+function beat(tag, text, run){ return { tag:tag, text:text, run:run }; }
+function mut(fn){ return function(done){ fn(); drawBoxSvg(); done(); }; }
+
+function buildBeats(){
+  var p = TAXP[BOX.cell], s = BOX.st, h0 = (BOX.at === 'h0');
+  var G = function(){ return BOX.geo; };
+  var accent = css('--accent'), good = css('--good'), bad = css('--critical');
+  var B = [];
+  if (p.empty) return B;
+
+  function reset(tok){
+    return function(){ BOX.st = { token:tok, dim:false, read:null, out1:null, out2:null, pair:'commit' }; };
+  }
+  function commitBeat(tok, text, tag){
+    return beat(tag || 'RA-commit', text, function(done){
+      drawBoxSvg();
+      sendChip(G().w1, tok, accent, function(){ pulseBox(done); });
+    });
+  }
+  function assignBeat(kind, text){
+    return beat('RA-assign', text, function(done){
+      sendChip(G().w2, kind === 'pi' ? '\u03c0' : '\u22a5', kind === 'pi' ? good : bad, function(){
+        BOX.st.out1 = kind;
+        if (kind === 'bot' && p.burnable) BOX.st.dim = true;
+        drawBoxSvg(); done();
+      });
+    });
+  }
+  function validateBeats(){
+    return [
+      beat('RA-validate', 'Any other process can check the commitment without having produced it. '
+        + (BOX.cell === 'EB'
+          ? 'p_j recomputes the hash and compares it with the target.'
+          : 'p_j re-evaluates the leader selection on the stored randomness and looks \u03c0 up in the allocator\u2019s set T.'),
+        function(done){
+          BOX.st.pair = 'validate'; drawBoxSvg();
+          sendChip(G().w3, '\u03c0', accent, function(){ pulseBox(done); });
+        }),
+      beat('RA-is-committed', 'The allocator answers true \u2014 the same answer, for every process that asks. '
+        + 'That is the validity property, and it is what lets a block carry its own proof.',
+        function(done){
+          sendChip(G().w4, 'true', good, function(){ BOX.st.out2 = 'true'; drawBoxSvg(); done(); });
+        })
+    ];
+  }
+
+  /* the long-range branch: an external budget cannot be inherited by corrupting its owner */
+  if (h0 && !p.virtual){
+    B.push(beat('setup', 'The adversary has corrupted p_i and wants to rebuild the chain from the old height h\u2080. '
+      + 'But ' + p.name.toLowerCase() + ' is an external resource: the budget has to be supplied to the allocator, '
+      + 'and corrupting a process does not hand over its hardware.',
+      mut(function(){ BOX.st = { token:'\u2014', dim:false, read:null, out1:null, out2:null, pair:'commit' }; })));
+    B.push(commitBeat('\u2014', 'p_i commits against the old state \u2014 with nothing to commit. '
+      + 'There is no budget to put on the wire.'));
+    B.push(assignBeat('bot', 'So the allocator can only answer \u22a5. Step 2 of the long-range attack stops here, '
+      + 'and this is the whole reason the attack needs a virtual resource.'));
+    return B;
+  }
+
+  if (p.virtual){
+    B.push(beat('RA-commit', 'p_i commits \u22a5. Stake is virtual, so there is no budget to hand over \u2014 '
+      + 'the commit carries only the chain state it is made against.',
+      function(done){
+        BOX.st = { token:'\u22a5', dim:false, read:null, out1:null, out2:null, pair:'commit' };
+        drawBoxSvg();
+        sendChip(G().w1, '\u22a5', accent, done);
+      }));
+    B.push(beat('StateAlloc', h0
+      ? 'The allocator reads the budget off the state it was given \u2014 and that state is the old one, at h\u2080. '
+        + 'It weighs p_i by what it held back then, not by what it holds now.'
+      : 'The allocator reads the budget off the chain itself: StateAlloc at the tip. Nothing was supplied by p_i.',
+      function(done){
+        BOX.st.read = h0 ? 'h0' : 'tip'; drawBoxSvg(); pulseBox(done);
+      }));
+    B.push(assignBeat('pi', 'A commitment comes back. The budget field of RA-assign is \u22a5 as well, '
+      + 'because nothing was consumed \u2014 stake is reusable.'));
+    B.push(commitBeat('\u22a5', 'The very same stake can commit again, in the same step. Nothing stops it.'));
+    B.push(beat('RA-assign', 'Use-once (R1\u2013R3) makes the allocator answer with the same \u03c0 every time: '
+      + 'the slot and the common-prefix state fix the answer. Without that, repeating would be grinding.',
+      function(done){
+        sendChip(G().w2, '\u03c0', good, function(){ BOX.st.out1 = 'pi'; drawBoxSvg(); done(); });
+      }));
+    if (h0){
+      B.push(beat('long-range', 'That is step 2 of the long-range attack. A process that is broke today still '
+        + 'counts for what it held at h\u2080, so corrupting it buys the adversary weight it no longer owns.',
+        mut(function(){})));
+    }
+    return B.concat(validateBeats());
+  }
+
+  /* external resources */
+  if (p.burnable){
+    B.push(commitBeat('r', 'p_i commits its budget r. Computation is external, so the budget is physical \u2014 '
+      + 'r hash evaluations that the hardware can really do. It cannot be overstated.'));
+    B.push(beat('the draw', 'The allocator runs one biased coin per unit of budget. Most steps, none of them lands.',
+      function(done){ pulseBox(done); }));
+    B.push(assignBeat('bot', 'No commitment this step. The budget is gone all the same \u2014 that is what burnable '
+      + 'means, and it is why mining a losing fork costs something.'));
+    B.push(beat('RA-commit', 'A fresh time step brings a fresh budget, and a fresh set of coins.',
+      function(done){
+        BOX.st = { token:'r', dim:false, read:null, out1:null, out2:null, pair:'commit' };
+        drawBoxSvg();
+        sendChip(G().w1, 'r', accent, function(){ pulseBox(done); });
+      }));
+    B.push(assignBeat('pi', 'This time a coin lands: \u03c0 is the nonce that solved the puzzle. '
+      + 'The budget is returned with it, but the step it was spent in is over.'));
+    return B.concat(validateBeats());
+  }
+
+  B.push(commitBeat('r', 'p_i commits r sectors. Storage is external, so the sectors must really be there \u2014 '
+    + 'but unlike computation, using them does not consume them.'));
+  B.push(beat('F() and E()', 'The allocator does two things: leader selection on the power table, and an external '
+    + 'resource verification E() that checks the pledged sectors actually exist.',
+    function(done){ pulseBox(done); }));
+  B.push(assignBeat('pi', 'A commitment comes back, and the budget field is \u22a5 \u2014 nothing was burnt. '
+    + 'The sectors are still pledged.'));
+  B.push(commitBeat('r', 'So the same sectors can commit again, immediately.'));
+  B.push(beat('RA-assign', 'And use-once makes the answer identical. Storage is reusable like stake, but external '
+    + 'like computation \u2014 which is why long-range attacks miss it while the cost-based attacks do not.',
+    function(done){
+      sendChip(G().w2, '\u03c0', good, function(){ BOX.st.out1 = 'pi'; drawBoxSvg(); done(); });
+    }));
+  return B.concat(validateBeats());
+}
+
+/* ---------- driving it ---------- */
+function paintBeats(){
+  var n = document.getElementById('boxBeats'), h = '';
+  if (BOX.i < 0){
+    for (var q = 0; q < BOX.beats.length; q++) h += '<li>' + BOX.beats[q].tag + '</li>';
+    n.innerHTML = h || '<li>nothing to run</li>';
+    return;
+  }
+  for (var i = 0; i < BOX.beats.length; i++){
+    h += '<li class="' + (i === BOX.i ? 'on' : i < BOX.i ? 'done' : '') + '">' +
+         BOX.beats[i].tag + '</li>';
+  }
+  n.innerHTML = h || '<li class="on">nothing to run</li>';
+}
+function setCaption(t){ document.getElementById('boxCaption').textContent = t; }
+
+function runBeat(i){
+  if (!BOX.beats.length) return;
+  BOX.i = i; BOX.busy = true;
+  var b = BOX.beats[i];
+  paintBeats(); setCaption(b.text);
+  b.run(function(){
+    BOX.busy = false;
+    if (!BOX.playing) return;
+    BOX.timer = setTimeout(function(){ runBeat((i + 1) % BOX.beats.length); }, 1100);
+  });
+}
+function boxPlay(){
+  if (!BOX.beats.length) return;
+  BOX.playing = true;
+  document.getElementById('boxPlay').innerHTML = '\u23f8\ufe0e Pause';
+  if (!BOX.busy) runBeat((BOX.i + 1) % BOX.beats.length);
+}
+function boxPause(){
+  BOX.playing = false;
+  if (BOX.timer){ clearTimeout(BOX.timer); BOX.timer = null; }
+  document.getElementById('boxPlay').innerHTML = '\u25b6\ufe0e Play';
+}
+function boxRebuild(){
+  boxPause();
+  BOX.beats = buildBeats();
+  BOX.i = 0;
+  BOX.st = { token: TAXP[BOX.cell].virtual ? '\u22a5' : 'r',
+             dim:false, read:null, out1:null, out2:null, pair:'commit' };
+  BOX.i = -1;                      /* nothing has run yet; the first Step runs beat 0 */
+  drawBoxSvg(); paintBeats();
+  if (BOX.beats.length){
+    setCaption(BOX.beats[0].text);
+    ['boxPlay','boxStep'].forEach(function(id){ document.getElementById(id).removeAttribute('disabled'); });
+  } else {
+    setCaption('The paper defines the four resource types independently, but instantiates an allocator for only '
+      + 'three of the combinations. A virtual resource destroyed by use would have to be spent on-chain, '
+      + 'which it does not model \u2014 so there is nothing to run here.');
+    ['boxPlay','boxStep'].forEach(function(id){ document.getElementById(id).setAttribute('disabled', 'disabled'); });
+  }
+  var cards = ['EB','ER','VR','VB'];
+  for (var i = 0; i < cards.length; i++){
+    document.getElementById('cell' + cards[i]).setAttribute('aria-pressed',
+      cards[i] === BOX.cell ? 'true' : 'false');
+  }
+  document.getElementById('atTip').setAttribute('aria-pressed', BOX.at === 'tip' ? 'true' : 'false');
+  document.getElementById('atH0').setAttribute('aria-pressed', BOX.at === 'h0' ? 'true' : 'false');
+
+  var d = TAX[BOX.cell];
+  var rows = [
+    ['Budget $r$ in RA-commit', d.commit],
+    ['Budget returned by RA-assign', d.assign],
+    ['Use-once enforced by', d.useonce],
+    ['Exposed to', d.attacks],
+    ['In the paper', d.where]
+  ];
+  var h = '';
+  for (var k = 0; k < rows.length; k++){
+    h += '<div class="ro"><div class="k">' + rows[k][0] + '</div><div class="v">' +
+         rows[k][1].replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div></div>';
+  }
+  var cn = document.getElementById('taxCards');
+  cn.innerHTML = h;
+  katexRender(cn);
+}
+
+(function(){
+  ['EB','ER','VR','VB'].forEach(function(k){
+    document.getElementById('cell' + k).addEventListener('click', function(){
+      BOX.cell = k; boxRebuild();
+      var panel = document.querySelector('#taxonomy .boxpanel');
+      tween(240, function(t){ panel.style.opacity = 0.5 + 0.5 * t; }, function(){ panel.style.opacity = ''; });
+    });
+  });
+  document.getElementById('atTip').addEventListener('click', function(){ BOX.at = 'tip'; boxRebuild(); });
+  document.getElementById('atH0').addEventListener('click', function(){ BOX.at = 'h0'; boxRebuild(); });
+  document.getElementById('boxPlay').addEventListener('click', function(){
+    if (BOX.playing) boxPause(); else boxPlay();
+  });
+  document.getElementById('boxStep').addEventListener('click', function(){
+    boxPause();
+    if (BOX.busy) return;
+    runBeat((BOX.i + 1) % BOX.beats.length);
+  });
+  var rzB;
+  window.addEventListener('resize', function(){ clearTimeout(rzB); rzB = setTimeout(drawBoxSvg, 130); });
+  boxRebuild();
+})();
+
+/* =====================================================================
+   Interactive 2 — honest-majority assignment (Eq. 1)
+   ===================================================================== */
+var chartT = document.getElementById('chartT');
+var T_enter = false;
+
+function drawT(mode){
+  clear(chartT);
+  var narrow = narrowNow();
+  var W = narrow ? 360 : 900;
+  var padL = narrow ? 46 : 62, padR = narrow ? 58 : 118;
+  var padT = narrow ? 16 : 20, padB = narrow ? 40 : 42;
+  var H = narrow ? 268 : 330;
+  chartT.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - padL - padR, ih = H - padT - padB;
+
+  var N = M.R;
+  var xs = [], sH = [], sA = [], sB = [];
+  for (var i = 0; i <= N; i++){
+    var h = 1 - Math.pow(1 - M.rho, M.R - i);
+    var a = 1 - Math.pow(1 - M.rho, i);
+    xs.push(i); sH.push(h); sA.push(a);
+    sB.push(h <= 0 ? 0 : 1 / (M.D - 1 + 1 / h));
+  }
+  var ymax = Math.max.apply(null, sH.concat(sA).concat(sB));
+  ymax = Math.min(1, niceMax(Math.max(0.02, ymax * 1.06), 4));
+
+  function X(v){ return padL + (v / N) * iw; }
+  function Y(v){ return padT + ih - (v / ymax) * ih; }
+
+  /* grid + axes */
+  var ticks = 4, g;
+  for (var t = 0; t <= ticks; t++){
+    var yv = ymax * t / ticks;
+    g = el('line', { x1:padL, x2:padL + iw, y1:Y(yv), y2:Y(yv),
+      stroke: t === 0 ? css('--axis') : css('--grid'), 'stroke-width':1 });
+    chartT.appendChild(g);
+    chartT.appendChild(el('text', { x:padL - 7, y:Y(yv) + 4, 'text-anchor':'end',
+      'font-family':css('--mono'), 'font-size':narrow ? 10 : 11, fill:css('--ink-muted') }, fx(yv, 2)));
+  }
+  var xt = narrow ? 3 : 5;
+  for (var j = 0; j <= xt; j++){
+    var xv = Math.round(N * j / xt);
+    chartT.appendChild(el('text', { x:X(xv), y:padT + ih + 18, 'text-anchor':'middle',
+      'font-family':css('--mono'), 'font-size':narrow ? 10 : 11, fill:css('--ink-muted') }, xv));
+  }
+  chartT.appendChild(el('text', { x:padL + iw / 2, y:H - 6, 'text-anchor':'middle',
+    'font-family':css('--mono'), 'font-size':narrow ? 10 : 11, fill:css('--ink-muted') },
+    'adversarial budget R_A  (total R = ' + M.R + ')'));
+
+  function path(series){
+    var d = '';
+    for (var i = 0; i <= N; i++) d += (i ? 'L' : 'M') + X(i).toFixed(2) + ' ' + Y(series[i]).toFixed(2);
+    return d;
+  }
+  var pathB = el('path', { d:path(sB), fill:'none', stroke:css('--critical'),
+    'stroke-width':2, 'stroke-dasharray':'6 4', 'stroke-linejoin':'round' });
+  var pathH = el('path', { d:path(sH), fill:'none', stroke:css('--s1'),
+    'stroke-width':2, 'stroke-linejoin':'round' });
+  var pathA = el('path', { d:path(sA), fill:'none', stroke:css('--s2'),
+    'stroke-width':2, 'stroke-linejoin':'round' });
+  chartT.appendChild(pathB); chartT.appendChild(pathH); chartT.appendChild(pathA);
+
+  /* marker at the current R_A */
+  var cx = X(M.RA);
+  var vline = el('line', { x1:cx, x2:cx, y1:padT, y2:padT + ih,
+    stroke:css('--axis'), 'stroke-width':1, 'stroke-dasharray':'3 3' });
+  chartT.appendChild(vline);
+
+  var grp = el('g', {});
+  chartT.appendChild(grp);
+  function dot(v, color, label, dy){
+    var c = el('circle', { cx:cx, cy:Y(v), r:4.5, fill:color,
+      stroke:css('--surface-1'), 'stroke-width':2 });
+    grp.appendChild(c);
+    var tx = el('text', { x:cx + 9, y:Y(v) + dy, 'font-family':css('--mono'),
+      'font-size':narrow ? 10 : 11.5, fill:css('--ink-1'), 'text-anchor':'start' },
+      label + ' ' + fx(v));
+    if (cx + 9 + (narrow ? 74 : 92) > padL + iw + padR - 4){
+      tx.setAttribute('x', cx - 9); tx.setAttribute('text-anchor', 'end');
+    }
+    grp.appendChild(tx);
+    hoverable(c, '<b>' + label + '</b>R_A = ' + M.RA + '<br>value = ' + fx(v));
+  }
+  var vH = sH[M.RA], vA = sA[M.RA], vB = sB[M.RA];
+  dot(vH, css('--s1'), 'pH =', Math.abs(Y(vH) - Y(vB)) < 15 ? -11 : 4);
+  dot(vB, css('--critical'), 'bound =', 4);
+  dot(vA, css('--s2'), 'pA =', 4);
+
+  if (mode === 'enter' && !REDUCED){
+    [pathH, pathA, pathB].forEach(function(p, i){
+      var L;
+      try { L = p.getTotalLength(); } catch(e){ L = 0; }
+      if (!L) return;
+      p.setAttribute('stroke-dasharray', i === 2 ? L + ' ' + L : L);
+      p.setAttribute('stroke-dashoffset', L);
+      tween(720, function(q){ p.setAttribute('stroke-dashoffset', L * (1 - q)); }, function(){
+        if (i === 2) p.setAttribute('stroke-dasharray', '6 4'); else p.removeAttribute('stroke-dasharray');
+        p.removeAttribute('stroke-dashoffset');
+      });
+    });
+    grp.setAttribute('opacity', 0);
+    vline.setAttribute('opacity', 0);
+    tween(520, function(q){ grp.setAttribute('opacity', q); vline.setAttribute('opacity', q); },
+      function(){ grp.removeAttribute('opacity'); vline.removeAttribute('opacity'); });
+  }
+}
+
+function syncT(){
+  document.getElementById('valR').textContent = M.R;
+  document.getElementById('valRA').textContent = M.RA;
+  document.getElementById('valRho').textContent = fx(M.rho);
+  document.getElementById('valD').textContent = M.D;
+
+  var h = pH(), a = pA(), b = bound(), ok = a < b;
+  var v = document.getElementById('thVerdict');
+  v.className = 'verdict ' + (ok ? 'ok' : 'bad');
+  document.getElementById('thVerdictK').textContent = ok ? 'Equation 1 holds' : 'Equation 1 violated';
+  document.getElementById('thVerdictT').textContent = ok
+    ? 'pA = ' + fx(a) + ' < ' + fx(b) + '. The allocator can be secure at these parameters, and Theorem 4.3 gives '
+      + 'total-order broadcast with overwhelming probability.'
+    : 'pA = ' + fx(a) + ' is not below ' + fx(b) + '. Honest-majority assignment fails, so this is no longer a secure '
+      + 'allocator and the safety and liveness of Lemma 4.2 do not apply.';
+
+  var tbl = document.getElementById('thTable');
+  var rows = [
+    ['Total budget R', M.R],
+    ['Adversarial budget R_A', M.RA],
+    ['Honest budget R − R_A', M.R - M.RA],
+    ['Per-unit probability ϱ', fx(M.rho)],
+    ['Network delay Δ', M.D],
+    ['pH = 1−(1−ϱ)^(R−R_A)', fx(h)],
+    ['pA = 1−(1−ϱ)^(R_A)', fx(a)],
+    ['Bound 1/(Δ−1+1/pH)', fx(b)],
+    ['pA < bound', ok ? 'yes' : 'no']
+  ];
+  var html = '<thead><tr><th>Quantity</th><th class="num">Value</th></tr></thead><tbody>';
+  rows.forEach(function(r){ html += '<tr><td>' + r[0] + '</td><td class="num">' + r[1] + '</td></tr>'; });
+  tbl.innerHTML = html + '</tbody>';
+
+  document.getElementById('shR').textContent = 'R = ' + M.R;
+  document.getElementById('shRA').innerHTML = 'R<sub>A</sub> = ' + M.RA;
+  document.getElementById('shRho').textContent = 'ϱ = ' + fx(M.rho);
+
+  drawT('static');
+}
+
+(function(){
+  var rR = document.getElementById('rngR'), rRA = document.getElementById('rngRA');
+  var rRho = document.getElementById('rngRho'), rD = document.getElementById('rngD');
+  function pull(){
+    M.R = +rR.value;
+    rRA.max = M.R;
+    /* read the slider first — writing M.RA back into it here would discard the drag */
+    var ra = +rRA.value;
+    if (ra > M.R){ ra = M.R; rRA.value = ra; }
+    M.RA = ra;
+    M.rho = (+rRho.value) / 10000;
+    M.D = +rD.value;
+    clampMaj();
+    syncT(); syncLRA(); syncRace();
+  }
+  [rR, rRA, rRho, rD].forEach(function(r){
+    r.addEventListener('input', pull);
+    /* a throttled tab can starve the input stream, so settle on release too */
+    r.addEventListener('change', function(){ setTimeout(pull, 0); });
+  });
+})();
+
+/* =====================================================================
+   Interactive 3 — long-range attack walk-through (§5.1)
+   ===================================================================== */
+var LRA = { virtual:true, step:0 };
+var LRA_STEPS = [
+  {
+    t:'Corrupt the old majority',
+    v:'A virtual-resource-shifting event has put a set P_maj in the adversary’s reach: it held the majority at height h0 and holds almost nothing at h1. Corrupting processes costs budget from R_A, and by Definition 3.6 there is enough of it, because what they hold now is at most R_A.',
+    e:'The same step succeeds — corrupting an idle process costs the same whatever the resource is. Nothing has gone wrong yet.',
+    d:[
+      'Cost is drawn from the adversarial budget R_A (Def. 3.6).',
+      'P_maj are not attacked for what they own now, but for what they owned at h0.'
+    ],
+    dE:[
+      'Corruption itself is resource-agnostic.',
+      'The attack only diverges at the next step.'
+    ],
+    ok:true
+  },
+  {
+    t:'Re-commit the old state to the allocator',
+    v:'The adversary starts a fresh chain C* at height h0 and has every corrupted process RA-commit against the old state. A virtual resource needs no budget at commit time — r = ⊥ — so the allocator reads StateAlloc off C[0:h0] and hands out commitments at the old weight.',
+    e:'This is where it stops. An external resource must be supplied as input to RA-commit, and corrupting a process does not hand the adversary its hardware or its disks. The allocator has nothing to weigh, so it assigns ⊥.',
+    d:[
+      'RA-commit(·, ·, ⊥) is legal for a virtual resource by definition.',
+      'The allocator takes no input beyond the state of C[0:h0].',
+      'So commitments are assigned at the adversary’s h0 weight, with high probability.'
+    ],
+    dE:[
+      'Step 2 of §5.1 is exactly the step the paper says external resources block.',
+      'The budget r ≥ 0 has to be allocated externally to invoke RA-commit.',
+      'No hardware, no commitment — the fork never starts.'
+    ],
+    ok:false
+  },
+  {
+    t:'Rewrite history so nobody ever left',
+    v:'Releasing a virtual resource happens on-chain: in Proof-of-Stake, going inactive means spending your coins in a transaction. Writing C* itself, the adversary simply omits those transactions, so on the alternative chain P_maj never released anything and stays at full weight forever.',
+    e:'Unreachable — there is no C* to write.',
+    d:[
+      'The resource is defined by the chain state, and the adversary writes the chain state.',
+      'This is the self-reinforcing part: the weight that authorises the rewrite is itself a product of the rewrite.'
+    ],
+    dE:['Unreachable.'],
+    ok:false
+  },
+  {
+    t:'Outgrow the honest chain',
+    v:'On C* the adversary holds what P_maj held at h0 — strictly more than the honest processes hold now — so pA* > pH and C* grows strictly faster. There is also no network delay among the corrupted processes, so none of that growth is lost to forks. Eventually C* is longer, correct processes adopt it, and transactions already delivered k blocks deep get reordered: total order is violated (Thm. 5.4).',
+    e:'Unreachable.',
+    d:[
+      'pA* > 1−(1−ϱ)^(R−R_A) = pH, straight from the shifting event.',
+      'Δ = 1 is assumed between Byzantine processes, so no adversarial growth is discarded.',
+      'Even at equal weight the honest chain loses blocks to delay — see the remark after Lem. 5.2.'
+    ],
+    dE:['Unreachable.'],
+    ok:false
+  }
+];
+
+function syncLRA(){
+  var s = LRA_STEPS[LRA.step], virt = LRA.virtual;
+  document.getElementById('lraMode').textContent = virt
+    ? 'Stake: the allocator reads the budget off the chain.'
+    : 'Computation: the budget must be supplied from outside.';
+  document.getElementById('lraVirtual').setAttribute('aria-pressed', virt ? 'true' : 'false');
+  document.getElementById('lraExternal').setAttribute('aria-pressed', virt ? 'false' : 'true');
+
+  var btns = document.querySelectorAll('#lraSteps .stp');
+  Array.prototype.forEach.call(btns, function(b){
+    var i = +b.getAttribute('data-s');
+    b.setAttribute('aria-pressed', i === LRA.step ? 'true' : 'false');
+    if (!virt && i >= 2) b.setAttribute('disabled', 'disabled'); else b.removeAttribute('disabled');
+  });
+
+  document.getElementById('lraTitle').textContent = (LRA.step + 1) + '. ' + s.t;
+  var chip = document.getElementById('lraChip');
+  var blocked = !virt && !s.ok;
+  chip.className = 'chip ' + (blocked ? 'ok' : 'bad');
+  chip.textContent = blocked ? 'attack blocked' : 'attack proceeds';
+  document.getElementById('lraText').textContent = virt ? s.v : s.e;
+  var ul = document.getElementById('lraDetail');
+  ul.innerHTML = '';
+  (virt ? s.d : s.dE).forEach(function(x){
+    var li = document.createElement('li'); li.textContent = x; ul.appendChild(li);
+  });
+
+  var body = document.querySelector('#lra .stepbody');
+  tween(200, function(p){ body.style.opacity = 0.4 + 0.6 * p; }, function(){ body.style.opacity = ''; });
+
+  /* shifting-event check, Def. 5.1 */
+  var h0 = +document.getElementById('rngH0').value;
+  var h1 = +document.getElementById('rngH1').value;
+  document.getElementById('valH0').textContent = h0;
+  document.getElementById('valH1').textContent = h1;
+  var c0 = h0 > M.R - M.RA, c1 = h1 <= M.RA;
+  var e0 = document.getElementById('cond0'), e1 = document.getElementById('cond1');
+  e0.innerHTML = h0 + ' &gt; R − R_A = ' + (M.R - M.RA) + ' &nbsp;<span class="chip ' +
+    (c0 ? 'bad' : 'neutral') + '">' + (c0 ? 'holds' : 'fails') + '</span>';
+  e1.innerHTML = h1 + ' &le; R_A = ' + M.RA + ' &nbsp;<span class="chip ' +
+    (c1 ? 'bad' : 'neutral') + '">' + (c1 ? 'holds' : 'fails') + '</span>';
+
+  var v = document.getElementById('lraVerdict');
+  var both = c0 && c1;
+  v.className = 'verdict ' + (both && LRA.virtual ? 'bad' : 'ok');
+  if (both && LRA.virtual){
+    document.getElementById('lraVerdictK').textContent = 'Shifting event — total order breaks';
+    document.getElementById('lraVerdictT').textContent =
+      'Both conditions of Def. 5.1 hold, so by Lem. 5.2 the adversary eventually builds a chain longer than the honest '
+      + 'one, and by Thm. 5.4 the protocol no longer implements total-order broadcast.';
+  } else if (both){
+    document.getElementById('lraVerdictK').textContent = 'Shifting event — but the resource is external';
+    document.getElementById('lraVerdictT').textContent =
+      'Both conditions of Def. 5.1 hold, and it does not matter: without an external budget to feed RA-commit, the '
+      + 'adversary cannot get past step 2.';
+  } else {
+    document.getElementById('lraVerdictK').textContent = 'No shifting event';
+    document.getElementById('lraVerdictT').textContent =
+      'Def. 5.1 needs both conditions at once. ' +
+      (!c0 ? 'P_maj did not hold the majority at h0. ' : '') +
+      (!c1 ? 'P_maj still holds more than R_A at h1, so the adversary cannot afford to corrupt it.' : '');
+  }
+}
+
+(function(){
+  document.getElementById('lraVirtual').addEventListener('click', function(){ LRA.virtual = true; syncLRA(); });
+  document.getElementById('lraExternal').addEventListener('click', function(){
+    LRA.virtual = false; if (LRA.step >= 2) LRA.step = 1; syncLRA();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#lraSteps .stp'), function(b){
+    b.addEventListener('click', function(){
+      if (b.hasAttribute('disabled')) return;
+      LRA.step = +b.getAttribute('data-s'); syncLRA();
+    });
+  });
+  var rH0 = document.getElementById('rngH0'), rH1 = document.getElementById('rngH1');
+  [rH0, rH1].forEach(function(r){
+    r.addEventListener('input', syncLRA);
+    r.addEventListener('change', function(){ setTimeout(syncLRA, 0); });
+  });
+})();
+
+/* =====================================================================
+   Interactive 4 — the chain race, run as a race (Lem. 5.2)
+   ===================================================================== */
+var RACE = { maj:85, fork:40, eps:0.10, t:0, lenH:40, lenA:0,
+             running:false, speed:1, overtakeAt:null, raf:null, last:0, acc:0 };
+var raceSvg = document.getElementById('raceSvg');
+var RACE_TCAP = 6000;
+
+function clampMaj(){
+  var lo = Math.min(M.R, M.R - M.RA + 1);
+  var r = document.getElementById('rngMaj');
+  r.min = lo; r.max = M.R;
+  if (RACE.maj < lo) RACE.maj = lo;
+  if (RACE.maj > M.R) RACE.maj = M.R;
+  r.value = RACE.maj;
+}
+function pAstar(){ return pOf(RACE.maj); }
+function tStar(){ var d = pAstar() - pH(); return d > 0 ? RACE.fork / d : Infinity; }
+
+function raceStop(){
+  RACE.running = false;
+  if (RACE.raf){ cancelAnimationFrame(RACE.raf); RACE.raf = null; }
+  syncRaceUI();
+}
+function raceResetState(){
+  raceStop();
+  RACE.t = 0; RACE.lenH = RACE.fork; RACE.lenA = 0; RACE.overtakeAt = null;
+}
+function raceStepOnce(){
+  RACE.t++;
+  /* the Poisson trials the proof of Lem. 5.2 sums: Pr[X_i = 1] = p on each chain */
+  if (Math.random() < pH()) RACE.lenH++;
+  if (Math.random() < pAstar()) RACE.lenA++;
+  if (RACE.overtakeAt === null && RACE.lenA > RACE.lenH) RACE.overtakeAt = RACE.t;
+}
+function raceDone(){
+  return RACE.t >= RACE_TCAP || (RACE.overtakeAt !== null && RACE.t >= RACE.overtakeAt + 30);
+}
+function raceFrame(ts){
+  if (!RACE.running) return;
+  if (!RACE.last) RACE.last = ts;
+  var dt = Math.min(250, ts - RACE.last); RACE.last = ts;
+  RACE.acc += dt / 1000 * 26 * RACE.speed;
+  var whole = Math.floor(RACE.acc);
+  RACE.acc -= whole;
+  var n = Math.min(whole, 800);
+  for (var i = 0; i < n && !raceDone(); i++) raceStepOnce();
+  paintRace(1); syncRaceUI();
+  if (raceDone()) raceStop();
+  else RACE.raf = requestAnimationFrame(raceFrame);
+}
+function raceStart(){
+  if (RACE.running) return;
+  if (raceDone()) raceResetState();
+  if (REDUCED){ raceSkip(); return; }
+  RACE.running = true; RACE.last = 0; RACE.acc = 0;
+  RACE.raf = requestAnimationFrame(raceFrame);
+  syncRaceUI();
+}
+function raceAdvance(n){
+  raceStop();
+  for (var i = 0; i < n && !raceDone(); i++) raceStepOnce();
+  paintRace(1); syncRaceUI();
+}
+function raceSkip(){
+  raceStop();
+  var guard = 0;
+  while (!raceDone() && guard++ < RACE_TCAP) raceStepOnce();
+  paintRace(1); syncRaceUI();
+}
+
+/* ---------- the two lanes ---------- */
+function raceGeom(){
+  if (narrowNow()){
+    return { W:340, H:186, narrow:true, trackX:0, trackW:340,
+             lanes:[{ y:22, h:34, labelY:13 }, { y:104, h:34, labelY:95 }] };
+  }
+  return { W:900, H:212, narrow:false, trackX:112, trackW:692,
+           lanes:[{ y:40, h:38, labelY:0 }, { y:120, h:38, labelY:0 }] };
+}
+function paintRace(grow){
+  var k = (grow === undefined) ? 1 : grow;
+  clear(raceSvg);
+  var g = raceGeom();
+  raceSvg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var mono = css('--mono'), muted = css('--ink-muted');
+  var lenH = RACE.lenH * k, lenA = RACE.lenA * k, fork = RACE.fork * k;
+  var maxLen = Math.max(lenH, lenA, 8);
+  var span = maxLen * 1.06;
+  var bw = g.trackW / span;
+  var over = RACE.overtakeAt !== null;
+
+  function lane(idx, total, pre, colour, preColour, label, tint){
+    var L = g.lanes[idx];
+    if (g.narrow){
+      raceSvg.appendChild(el('text', { x:0, y:L.labelY, 'font-family':mono, 'font-size':11,
+        'font-weight':700, fill:tint }, label));
+      raceSvg.appendChild(el('text', { x:g.W, y:L.labelY, 'text-anchor':'end', 'font-family':mono,
+        'font-size':11, fill:css('--ink-1') }, Math.round(total) + ' blocks'));
+    } else {
+      raceSvg.appendChild(el('text', { x:0, y:L.y + 17, 'font-family':mono, 'font-size':12.5,
+        'font-weight':700, fill:tint }, label));
+      raceSvg.appendChild(el('text', { x:0, y:L.y + 33, 'font-family':mono, 'font-size':10.5,
+        fill:muted }, idx === 0 ? 'honest' : 'adversarial'));
+      raceSvg.appendChild(el('text', { x:g.trackX + g.trackW + 10, y:L.y + 25, 'font-family':mono,
+        'font-size':12.5, fill:css('--ink-1') }, Math.round(total) + ' blocks'));
+    }
+    raceSvg.appendChild(el('rect', { x:g.trackX, y:L.y, width:g.trackW, height:L.h, rx:3,
+      fill:css('--plane'), stroke:css('--grid'), 'stroke-width':1 }));
+
+    if (bw >= 3.2 && total <= 420){
+      for (var i = 0; i < Math.round(total); i++){
+        raceSvg.appendChild(el('rect', { x:g.trackX + i * bw + 0.5, y:L.y + 4,
+          width:Math.max(1.2, bw - 1.2), height:L.h - 8, rx:Math.min(2, bw / 3),
+          fill:i < pre ? preColour : colour }));
+      }
+    } else {
+      if (pre > 0){
+        raceSvg.appendChild(el('rect', { x:g.trackX, y:L.y + 4, width:pre * bw, height:L.h - 8,
+          rx:2, fill:preColour }));
+      }
+      raceSvg.appendChild(el('rect', { x:g.trackX + pre * bw, y:L.y + 4,
+        width:Math.max(0, (total - pre) * bw), height:L.h - 8, rx:2, fill:colour }));
+      var tick = Math.pow(10, Math.max(1, Math.ceil(Math.log10(Math.max(10, maxLen / 12)))));
+      for (var v = tick; v < total; v += tick){
+        raceSvg.appendChild(el('line', { x1:g.trackX + v * bw, x2:g.trackX + v * bw,
+          y1:L.y + 4, y2:L.y + L.h - 4, stroke:css('--plane'), 'stroke-width':1, opacity:.55 }));
+      }
+    }
+    /* tip marker */
+    if (total > 0){
+      raceSvg.appendChild(el('circle', { cx:g.trackX + total * bw, cy:L.y + L.h / 2, r:4,
+        fill:colour, stroke:css('--surface-1'), 'stroke-width':1.6 }));
+    }
+    return L;
+  }
+
+  var Lh = lane(0, lenH, fork, css('--s1'), 'rgba(42,120,214,.36)', 'C', css('--s1'));
+  var La = lane(1, lenA, 0, css('--s2'), css('--s2'), 'C*', css('--s2'));
+
+  /* deterministic reference marks from the proof of Lem. 5.2 */
+  function mark(L, blocks, label, dashed){
+    if (RACE.t === 0 || blocks <= 0) return;
+    var x = g.trackX + blocks * k * bw;
+    if (x > g.trackX + g.trackW) return;
+    raceSvg.appendChild(el('line', { x1:x, x2:x, y1:L.y - 5, y2:L.y + L.h + 5,
+      stroke:muted, 'stroke-width':1, 'stroke-dasharray': dashed ? '2 3' : '4 3' }));
+    if (!g.narrow){
+      raceSvg.appendChild(el('text', { x:x, y:L.y - 9, 'text-anchor':'middle', 'font-family':mono,
+        'font-size':9.5, fill:muted }, label));
+    }
+  }
+  var t = RACE.t, h = pH(), a = pAstar(), e = RACE.eps;
+  mark(Lh, RACE.fork + h * t, 'E|C|', false);
+  mark(Lh, RACE.fork + (1 - e) * h * t, '(1−ε)', true);
+  mark(La, a * t, 'E|C*|', false);
+  mark(La, (1 + e) * a * t, '(1+ε)', true);
+
+  if (over){
+    raceSvg.appendChild(el('rect', { x:g.trackX - 2, y:La.y - 2, width:g.trackW + 4,
+      height:La.h + 4, rx:4, fill:'none', stroke:css('--critical'), 'stroke-width':1.6 }));
+  }
+}
+
+function drawR(mode){
+  if (mode === 'enter' && !REDUCED){
+    tween(620, function(p){ paintRace(p); }, function(){ paintRace(1); });
+  } else {
+    paintRace(1);
+  }
+}
+
+function syncRaceUI(){
+  document.getElementById('raceClock').textContent =
+    't = ' + RACE.t + '  ·  |C| = ' + RACE.lenH + '  ·  |C*| = ' + RACE.lenA;
+  var run = document.getElementById('raceRun');
+  run.innerHTML = RACE.running ? '⏸︎ Pause' : '▶︎ Run';
+
+  var a = pAstar(), h = pH(), ts = tStar();
+  var v = document.getElementById('raceVerdict');
+  if (RACE.overtakeAt !== null){
+    v.className = 'verdict bad';
+    document.getElementById('raceVerdictK').textContent = 'C* overtook C at t = ' + RACE.overtakeAt;
+    document.getElementById('raceVerdictT').textContent =
+      'The adversarial chain is now the longest, so correct processes adopt it and transactions already delivered '
+      + 'k blocks deep in C are reordered — total order is violated (Thm. 5.4). On the mean rates this was due at '
+      + 't* ≈ ' + Math.ceil(ts) + '; this run got there at ' + RACE.overtakeAt
+      + ', because each step is a real coin flip.';
+  } else if (a > h){
+    v.className = 'verdict bad';
+    document.getElementById('raceVerdictK').textContent = 'C* is gaining';
+    document.getElementById('raceVerdictT').textContent =
+      'pA* = ' + fx(a) + ' > pH = ' + fx(h) + ', so C* gains ' + fx(a - h) + ' blocks per step on average. '
+      + 'C leads by ' + (RACE.lenH - RACE.lenA) + ' block' + (RACE.lenH - RACE.lenA === 1 ? '' : 's') + ' right now; '
+      + 'on the mean rates the overtake is due at t* ≈ ' + Math.ceil(ts) + '.';
+  } else {
+    v.className = 'verdict ok';
+    document.getElementById('raceVerdictK').textContent = 'C* never catches up';
+    document.getElementById('raceVerdictT').textContent =
+      'pA* = ' + fx(a) + ' is not above pH = ' + fx(h) + '. This is outside Def. 5.1 — a shifting event requires '
+      + 'P_maj to have held more than R − R_A = ' + (M.R - M.RA) + ' at h₀, which is what makes pA* > pH.';
+  }
+}
+
+function syncRace(){
+  clampMaj();
+  document.getElementById('valMaj').textContent = RACE.maj;
+  document.getElementById('valFork').textContent = RACE.fork;
+  document.getElementById('valEps').textContent = fx(RACE.eps, 2);
+  document.getElementById('rngFork').max = Math.max(1, M.R * 2);
+  document.getElementById('shR').textContent = 'R = ' + M.R;
+  document.getElementById('shRA').innerHTML = 'R<sub>A</sub> = ' + M.RA;
+  document.getElementById('shRho').textContent = 'ϱ = ' + fx(M.rho);
+
+  raceResetState();
+
+  var h = pH(), a = pAstar(), ts = tStar();
+  var tmax = isFinite(ts) ? niceMax(Math.max(20, ts * 1.6), 4) : 400;
+  tmax = Math.min(tmax, 4000);
+  var html = '<thead><tr><th class="num">t</th><th class="num">E|C|</th>'
+    + '<th class="num">C, (1−ε) edge</th><th class="num">E|C*|</th>'
+    + '<th class="num">C*, (1+ε) edge</th></tr></thead><tbody>';
+  for (var i = 0; i <= 5; i++){
+    var t = Math.round(tmax * i / 5);
+    html += '<tr><td class="num">' + t + '</td>'
+      + '<td class="num">' + (RACE.fork + h * t).toFixed(1) + '</td>'
+      + '<td class="num">' + (RACE.fork + (1 - RACE.eps) * h * t).toFixed(1) + '</td>'
+      + '<td class="num">' + (a * t).toFixed(1) + '</td>'
+      + '<td class="num">' + ((1 + RACE.eps) * a * t).toFixed(1) + '</td></tr>';
+  }
+  document.getElementById('raceTable').innerHTML = html + '</tbody>';
+
+  paintRace(1); syncRaceUI();
+}
+
+(function(){
+  var rM = document.getElementById('rngMaj'), rF = document.getElementById('rngFork'),
+      rE = document.getElementById('rngEps');
+  function pull(){
+    RACE.maj = +rM.value; RACE.fork = +rF.value; RACE.eps = (+rE.value) / 100;
+    syncRace();
+  }
+  [rM, rF, rE].forEach(function(r){
+    r.addEventListener('input', pull);
+    r.addEventListener('change', function(){ setTimeout(pull, 0); });
+  });
+  document.getElementById('raceRun').addEventListener('click', function(){
+    if (RACE.running) raceStop(); else raceStart();
+  });
+  document.getElementById('raceStep').addEventListener('click', function(){ raceAdvance(25); });
+  document.getElementById('raceSkip').addEventListener('click', raceSkip);
+  document.getElementById('raceReset').addEventListener('click', function(){
+    raceResetState(); paintRace(1); syncRaceUI();
+  });
+  var sp = { sp1:1, sp4:4, sp16:16 };
+  Object.keys(sp).forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(){
+      RACE.speed = sp[id];
+      Object.keys(sp).forEach(function(o){
+        document.getElementById(o).setAttribute('aria-pressed', o === id ? 'true' : 'false');
+      });
+    });
+  });
+})();
+
+/* =====================================================================
+   Interactive 5 — chain extension cost (Def. 5.5, Prop. 5.6)
+   ===================================================================== */
+var COST = { profile:'flat', win:8, base:10 };
+var chartC = document.getElementById('chartC');
+
+function allocAt(i){
+  /* i is 0-based inside the window */
+  if (COST.profile === 'flat') return COST.base;
+  if (COST.profile === 'grow') return COST.base + i;
+  return i === Math.floor((COST.win - 1) / 2) ? COST.base * 3 : COST.base;
+}
+function costsFor(n){
+  var sum = 0, mx = 0;
+  for (var i = 0; i < n; i++){ var v = allocAt(i); sum += v; if (v > mx) mx = v; }
+  return { sum:sum, max:mx };
+}
+
+function drawC(mode){
+  clear(chartC);
+  var narrow = narrowNow();
+  var W = narrow ? 360 : 900;
+  var padL = narrow ? 42 : 58, padR = narrow ? 12 : 22;
+  var padT = narrow ? 22 : 26, padB = narrow ? 42 : 44;
+  var H = narrow ? 280 : 340;
+  chartC.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - padL - padR, ih = H - padT - padB;
+
+  var N = COST.win;
+  var data = [];
+  for (var n = 1; n <= N; n++) data.push(costsFor(n));
+  var ymax = niceMax(Math.max(1, data[N - 1].sum) * 1.06, 4);
+
+  function Y(v){ return padT + ih - (v / ymax) * ih; }
+
+  var ticks = 4;
+  for (var i = 0; i <= ticks; i++){
+    var yv = ymax * i / ticks;
+    chartC.appendChild(el('line', { x1:padL, x2:padL + iw, y1:Y(yv), y2:Y(yv),
+      stroke: i === 0 ? css('--axis') : css('--grid'), 'stroke-width':1 }));
+    chartC.appendChild(el('text', { x:padL - 7, y:Y(yv) + 4, 'text-anchor':'end',
+      'font-family':css('--mono'), 'font-size':narrow ? 10 : 11, fill:css('--ink-muted') }, Math.round(yv)));
+  }
+  chartC.appendChild(el('text', { x:padL + iw / 2, y:H - 6, 'text-anchor':'middle',
+    'font-family':css('--mono'), 'font-size':narrow ? 10 : 11, fill:css('--ink-muted') },
+    'window length t₂ − t₁ + 1  (time steps)'));
+
+  var slot = iw / N;
+  var gap = 2;                       /* 2px surface gap between adjacent fills */
+  var bw = Math.max(3, (slot - 10 - gap) / 2);
+  var groups = [];
+
+  for (var k = 0; k < N; k++){
+    var x0 = padL + slot * k + 5;
+    var g = el('g', {});
+    chartC.appendChild(g);
+    groups.push(g);
+
+    var burnV = data[k].sum, reuseV = data[k].max;
+    var pair = [
+      { v:burnV, c:css('--s1'), x:x0, lab:'burnable' },
+      { v:reuseV, c:css('--s3'), x:x0 + bw + gap, lab:'reusable (bound)' }
+    ];
+    pair.forEach(function(p){
+      var hgt = Math.max(0, padT + ih - Y(p.v));
+      var r = el('rect', { x:p.x, y:Y(p.v), width:bw, height:hgt,
+        rx:Math.min(4, bw / 2), fill:p.c });
+      g.appendChild(r);
+      hoverable(r, '<b>' + p.lab + '</b>window = ' + (k + 1) + ' step' + (k ? 's' : '')
+        + '<br>cost = ' + p.v);
+    });
+
+    /* direct value labels — required relief for the palette contrast warning */
+    if (N <= 12){
+      var fs = narrow ? 9 : (N > 9 ? 9.5 : 10.5);
+      g.appendChild(el('text', { x:x0 + bw / 2, y:Y(burnV) - 5, 'text-anchor':'middle',
+        'font-family':css('--mono'), 'font-size':fs, fill:css('--ink-1') }, burnV));
+      g.appendChild(el('text', { x:x0 + bw + gap + bw / 2, y:Y(reuseV) - 5, 'text-anchor':'middle',
+        'font-family':css('--mono'), 'font-size':fs, fill:css('--ink-1') }, reuseV));
+    }
+    if (k === 0 || (k + 1) % (narrow ? 3 : 2) === 0 || k === N - 1){
+      chartC.appendChild(el('text', { x:x0 + bw + gap / 2, y:padT + ih + 18, 'text-anchor':'middle',
+        'font-family':css('--mono'), 'font-size':narrow ? 10 : 11, fill:css('--ink-muted') }, k + 1));
+    }
+  }
+
+  if (mode === 'enter' && !REDUCED){
+    groups.forEach(function(g, k){
+      var rects = g.querySelectorAll('rect');
+      var texts = g.querySelectorAll('text');
+      var tops = [], hs = [];
+      Array.prototype.forEach.call(rects, function(r){
+        tops.push(+r.getAttribute('y')); hs.push(+r.getAttribute('height'));
+      });
+      var base = padT + ih;
+      Array.prototype.forEach.call(rects, function(r, i){ r.setAttribute('y', base); r.setAttribute('height', 0); });
+      Array.prototype.forEach.call(texts, function(t){ t.setAttribute('opacity', 0); });
+      setTimeout(function(){
+        tween(560, function(p){
+          Array.prototype.forEach.call(rects, function(r, i){
+            r.setAttribute('height', hs[i] * p);
+            r.setAttribute('y', base - hs[i] * p);
+          });
+          Array.prototype.forEach.call(texts, function(t){ t.setAttribute('opacity', p); });
+        }, function(){
+          Array.prototype.forEach.call(texts, function(t){ t.removeAttribute('opacity'); });
+        });
+      }, k * 40);
+    });
+  }
+}
+
+function syncCost(){
+  document.getElementById('valWin').textContent = COST.win;
+  document.getElementById('valBase').textContent = COST.base;
+  document.getElementById('pfFlat').setAttribute('aria-pressed', COST.profile === 'flat' ? 'true' : 'false');
+  document.getElementById('pfGrow').setAttribute('aria-pressed', COST.profile === 'grow' ? 'true' : 'false');
+  document.getElementById('pfSpike').setAttribute('aria-pressed', COST.profile === 'spike' ? 'true' : 'false');
+  document.getElementById('pfNote').textContent =
+    COST.profile === 'flat' ? 'Alloc(p_i, t) is the same every step.'
+    : COST.profile === 'grow' ? 'Alloc(p_i, t) grows by 1 each step.'
+    : 'Alloc(p_i, t) is flat except for one step at 3× the base.';
+
+  var c = costsFor(COST.win);
+  var v = document.getElementById('costVerdict');
+  var strict = COST.win > 1;
+  v.className = 'verdict ' + (strict ? 'ok' : 'bad');
+  if (strict){
+    document.getElementById('costVerdictK').textContent = 'Prop. 5.6 applies';
+    document.getElementById('costVerdictT').textContent =
+      'Over ' + COST.win + ' steps the burnable resource costs ' + c.sum + ' against a reusable bound of '
+      + c.max + ' — a factor of ' + (c.sum / c.max).toFixed(2) + '. Winning the race is equally likely either way; '
+      + 'only the losing side of the bet differs.';
+  } else {
+    document.getElementById('costVerdictK').textContent = 'Outside Prop. 5.6';
+    document.getElementById('costVerdictT').textContent =
+      'At a one-step window t₂ = t₁, so the sum is the max and both costs are ' + c.sum
+      + '. Prop. 5.6 claims strict inequality only for t₂ > t₁, and this is the boundary case it excludes.';
+  }
+
+  var html = '<thead><tr><th class="num">Step</th><th class="num">Alloc(p_i, t)</th>'
+    + '<th class="num">Cost_burn (running sum)</th><th class="num">Cost_reuse bound (running max)</th></tr></thead><tbody>';
+  var s = 0, m = 0;
+  for (var i = 0; i < COST.win; i++){
+    var a = allocAt(i); s += a; if (a > m) m = a;
+    html += '<tr><td class="num">' + (i + 1) + '</td><td class="num">' + a + '</td><td class="num">'
+      + s + '</td><td class="num">' + m + '</td></tr>';
+  }
+  document.getElementById('costTable').innerHTML = html + '</tbody>';
+
+  drawC('static');
+}
+
+(function(){
+  var rW = document.getElementById('rngWin'), rB = document.getElementById('rngBase');
+  function pull(){ COST.win = +rW.value; COST.base = +rB.value; syncCost(); }
+  [rW, rB].forEach(function(r){
+    r.addEventListener('input', pull);
+    r.addEventListener('change', function(){ setTimeout(pull, 0); });
+  });
+  var map = { pfFlat:'flat', pfGrow:'grow', pfSpike:'spike' };
+  Object.keys(map).forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(){
+      COST.profile = map[id]; syncCost(); drawC('enter');
+    });
+  });
+})();
+
+/* =====================================================================
+   entrances — opacity via the guarded tween, never a CSS transition
+   ===================================================================== */
+function revealPrep(sec){
+  sec.style.opacity = '0';
+  sec.style.transform = 'translateY(16px)';
+  sec.setAttribute('data-rv', '1');
+}
+function revealRun(sec){
+  if (sec.getAttribute('data-rv') !== '1') return;
+  sec.setAttribute('data-rv', '2');
+  tween(560, function(p){
+    sec.style.opacity = String(p);
+    sec.style.transform = 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)';
+  }, function(){
+    sec.style.opacity = ''; sec.style.transform = '';
+    sec.setAttribute('data-rv', '3');
+  });
+}
+
+window.addEventListener('load', function(){ katexRender(document.body); });
+katexRender(document.body);
+
+clampMaj();
+syncT(); syncLRA(); syncRace(); syncCost();
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, revealPrep);
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);
+      revealRun(en.target);
+      var id = en.target.id;
+      if (id === 'threshold' && !T_enter){ T_enter = true; setTimeout(function(){ drawT('enter'); }, 160); }
+      else if (id === 'race'){ setTimeout(function(){ drawR('enter'); }, 160); }
+      else if (id === 'cost'){ setTimeout(function(){ drawC('enter'); }, 160); }
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+/* a resize repaints everything, but must never replay an entrance */
+var rzT;
+window.addEventListener('resize', function(){
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){ drawT('static'); drawR('static'); drawC('static'); }, 120);
+});
+</script>
+</body>
+</html>
