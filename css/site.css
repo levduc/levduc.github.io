@@ -1,0 +1,126 @@
+@import url("Typewriter/cmun-typewriter-variable.css");
+@import url("https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap");
+
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", Georgia, serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff;
+  --surface:#fafafa;
+  --ink:#333333;
+  --head:#333300;
+  --muted:#8a8a8a;
+  --rule:#e6e6e6;
+  --accent:#00008b;
+  --measure:72ch;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+
+body{
+  margin:0;
+  background:var(--plane);
+  color:var(--ink);
+  font-family:var(--font);
+  font-weight:400;
+  font-size:17px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:1000px; margin:0 auto; padding:0 20px}
+
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+
+h1,h2,h3{font-family:var(--font); color:var(--head); line-height:1.25; margin:0; font-weight:400}
+p{margin:0 0 1rem; max-width:var(--measure)}
+
+/* ---------------------------------------------------------------- nav */
+.nav{
+  position:sticky; top:0; z-index:40;
+  background:var(--plane);
+  border-bottom:1px solid var(--rule);
+}
+.nav .wrap{display:flex; align-items:center; gap:18px; height:46px}
+.nav .me{font-weight:700; white-space:nowrap}
+.nav ul{display:flex; gap:16px; margin:0; padding:0; list-style:none;
+  flex:1; overflow-x:auto; scrollbar-width:none}
+.nav ul::-webkit-scrollbar{display:none}
+.nav a{font-family:var(--mono); font-size:.86rem; color:var(--ink); white-space:nowrap}
+.nav a:hover{color:var(--accent)}
+
+/* ---------------------------------------------------------------- masthead */
+.masthead{padding:46px 0 34px}
+.masthead .row{display:flex; gap:34px; align-items:flex-start}
+.masthead .bio{flex:1; min-width:0}
+.masthead h1{font-size:2.5rem; margin:0 0 .15rem}
+.masthead .role{font-size:1.05rem; color:var(--ink); margin:0 0 .9rem}
+.masthead .meta{font-family:var(--mono); font-size:.88rem; color:var(--muted);
+  margin:0 0 1.1rem; display:flex; flex-wrap:wrap; gap:.25rem 1.1rem}
+.masthead .meta a{color:var(--accent)}
+.portrait{width:150px; height:150px; border-radius:50%; object-fit:cover; flex:none}
+.interests{font-family:var(--mono); font-size:.85rem; color:var(--muted);
+  border-left:2px solid var(--rule); padding-left:14px; margin:1.3rem 0 0}
+
+/* ---------------------------------------------------------------- sections */
+section{padding:38px 0; border-top:1px solid var(--rule)}
+.eyebrow{font-family:var(--mono); font-size:.78rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted); font-weight:700; margin:0 0 .35rem}
+section > .wrap > h2{font-size:1.6rem; margin:0 0 1.3rem}
+.section-note{font-size:.95rem; color:var(--muted); max-width:var(--measure); margin:-.9rem 0 1.4rem}
+
+/* ---------------------------------------------------------------- research */
+.area{margin-bottom:34px}
+.area:last-child{margin-bottom:0}
+.area h3{font-size:1.12rem; font-weight:700; margin:0 0 .15rem}
+.area h3 .count{font-family:var(--mono); font-size:.78rem; color:var(--muted);
+  font-weight:400; margin-left:.5rem; white-space:nowrap}
+.area .blurb{font-size:.92rem; color:var(--muted); margin:0 0 1rem; max-width:var(--measure)}
+
+.pub{display:grid; grid-template-columns:52px minmax(0,1fr); gap:0 16px;
+  padding:.62rem 0; border-top:1px solid var(--rule)}
+.pub:first-of-type{border-top:1px solid var(--rule)}
+.pub .yr{font-family:var(--mono); font-size:.84rem; color:var(--muted);
+  padding-top:.18rem; font-variant-numeric:tabular-nums}
+.pub .ttl{font-size:1rem; color:var(--head); margin:0}
+.pub .ttl a{color:var(--head)}
+.pub .ttl a:hover{color:var(--accent)}
+.pub .line{font-family:var(--mono); font-size:.82rem; color:var(--muted);
+  margin:.18rem 0 0; display:flex; flex-wrap:wrap; align-items:center; gap:.2rem .55rem}
+.pub .venue{color:var(--ink)}
+.pub .links a{font-family:var(--mono)}
+.pub .authors{font-size:.88rem; color:var(--muted); margin:.22rem 0 0; max-width:var(--measure)}
+.pub .authors strong{color:var(--ink); font-weight:700}
+.badge{font-family:var(--mono); font-size:.7rem; letter-spacing:.05em; text-transform:uppercase;
+  border:1px solid var(--muted); color:var(--muted); border-radius:3px; padding:0 .35rem}
+
+/* ---------------------------------------------------------------- simple lists */
+.rows{margin:0; padding:0; list-style:none}
+.rows li{display:grid; grid-template-columns:52px minmax(0,1fr); gap:0 16px;
+  padding:.6rem 0; border-top:1px solid var(--rule)}
+.rows li:first-child{border-top:1px solid var(--rule)}
+.rows .when{font-family:var(--mono); font-size:.84rem; color:var(--muted); padding-top:.1rem}
+/* rows that carry no date don't need the gutter */
+.rows.plain li{grid-template-columns:minmax(0,1fr)}
+.rows .what{margin:0; max-width:var(--measure); font-size:.97rem}
+.rows .what .sub{display:block; font-size:.88rem; color:var(--muted); margin-top:.12rem}
+.rows .what strong{color:var(--head)}
+
+/* ---------------------------------------------------------------- footer */
+footer{border-top:1px solid var(--rule); padding:20px 0 48px;
+  font-family:var(--mono); font-size:.78rem; color:var(--muted)}
+footer .wrap{display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap}
+
+/* ---------------------------------------------------------------- narrow */
+@media (max-width:760px){
+  body{font-size:16px}
+  .masthead{padding:32px 0 26px}
+  .masthead .row{flex-direction:column-reverse; gap:18px; align-items:flex-start}
+  .masthead h1{font-size:2rem}
+  .portrait{width:104px; height:104px}
+  .pub, .rows li{grid-template-columns:1fr; gap:0}
+  .pub .yr, .rows .when{padding:0 0 .18rem}
+}
