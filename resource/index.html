@@ -79,6 +79,28 @@ section:first-of-type{border-top:0}
 .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
 .btn.primary:hover{opacity:.88; color:#fff}
 
+.claims{display:grid; grid-template-columns:repeat(auto-fit,minmax(262px,1fr)); gap:14px}
+.claim{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px 20px}
+.claim .q{display:block; font-family:var(--mono); font-size:.8rem; letter-spacing:.03em;
+  text-transform:uppercase; color:var(--accent); font-weight:700; margin:0 0 .6rem; line-height:1.35}
+.claim p{font-size:.95rem; margin:0 0 .9rem; line-height:1.5}
+.claim .src{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted); margin:0}
+
+/* a statement quoted as the paper writes it, with a reading under it */
+.stmt{border:1px solid var(--ring); border-left:3px solid var(--ink-head); border-radius:4px;
+  background:var(--plane); padding:15px 17px; margin:20px 0 0}
+.stmt .lab{font-family:var(--mono); font-size:.76rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-head); font-weight:700; margin:0 0 .45rem}
+.stmt .lab span{color:var(--ink-muted); font-weight:400; text-transform:none; letter-spacing:0}
+.stmt .body{font-size:.95rem; color:var(--ink-1); margin:0; line-height:1.55}
+.stmt .body dl{margin:.55rem 0 0}
+.stmt .body dt{font-weight:700; margin:.45rem 0 .1rem}
+.stmt .body dd{margin:0}
+.stmt .read{margin:.85rem 0 0; font-size:.92rem; color:var(--ink-2);
+  padding-left:13px; border-left:2px solid var(--grid)}
+.stmt .read b{display:block; font-family:var(--mono); font-size:.74rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); margin-bottom:.15rem}
+
 /* ---------- stat tiles ---------- */
 .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
 .tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
@@ -180,6 +202,7 @@ td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; font-family:v
   font-size:.8rem; color:var(--ink-2); margin-top:10px}
 .tally b{color:var(--ink-head)}
 .tally .cm{color:var(--ink-muted)}
+.modelgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:18px; margin-bottom:22px}
 .factcards{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
   gap:14px; margin-top:22px}
 
@@ -253,7 +276,9 @@ p .katex{overflow-wrap:break-word}
 <div class="topbar"><div class="wrap">
   <a class="home" href="../">&larr; Duc V. Le</a>
   <nav>
+    <a href="#claims">Claim</a>
     <a href="#problem">Problem</a>
+    <a href="#model">Model</a>
     <a href="#taxonomy">Taxonomy</a>
     <a href="#threshold">Threshold</a>
     <a href="#lra">Long-range</a>
@@ -287,30 +312,34 @@ p .katex{overflow-wrap:break-word}
   </div>
 </div></header>
 
-<section id="tiles"><div class="wrap">
-  <div class="tiles">
-    <div class="tile">
-      <div class="k">Taxonomy</div>
-      <div class="v">4 cells, 3 filled</div>
-      <p class="d">Resources split two ways &mdash; <em>virtual</em> or <em>external</em>, <em>burnable</em> or <em>reusable</em>.
-      Computation, stake and storage occupy three cells. The paper instantiates no allocator for virtual&#215;burnable.</p>
-      <p class="src">Def. 3.3 (Def. 4 in the linked arXiv version)</p>
+<section id="claims"><div class="wrap">
+  <p class="eyebrow">The claim</p>
+  <p class="lede" style="margin-bottom:1.4rem">Fix the consensus rule &mdash; one generic longest-chain algorithm &mdash;
+  and vary only the resource underneath it. Three differences that were folk knowledge become consequences of two
+  yes/no questions about the resource: is it read off the chain, and does using it consume it?</p>
+  <div class="claims">
+    <div class="claim">
+      <span class="q">Virtual &rArr; history is rewritable</span>
+      <p>If the allocator determines a process's weight from the chain state alone, then corrupting processes that hold
+      nothing today buys the adversary the weight they held at an old height &mdash; and no external input is needed to
+      spend it again.</p>
+      <p class="src">Def. 5.1 &middot; Lem. 5.2 &middot; Thm. 5.4</p>
     </div>
-    <div class="tile">
-      <div class="k">Secure allocator</div>
-      <div class="v">5 properties</div>
-      <p class="d">Liveness, validity, use-once, unforgeability, honest-majority assignment. Meet all five and the
-      generic longest-chain algorithm implements total-order broadcast.</p>
-      <p class="src">Def. 4.1 &amp; Thm. 4.3 (Def. 7, Thm. 2 in arXiv)</p>
+    <div class="claim">
+      <span class="q">Reusable &rArr; extending is free</span>
+      <p>A budget that is returned can drive every fork at once. Only a resource that is consumed makes a losing fork
+      cost anything, which is what separates a cheap private attack from an expensive one.</p>
+      <p class="src">Def. 5.5 &middot; Prop. 5.6</p>
     </div>
-    <div class="tile">
-      <div class="k">Chain-extension cost</div>
-      <div class="v">&#215;(t&#8322;&minus;t&#8321;+1)</div>
-      <p class="d">Over a window of <span class="katex-src">$t_2-t_1+1$</span> time steps with a constant budget, a burnable
-      resource costs that factor more than the bound on a reusable one &mdash; which is why the same attack is cheap on stake.</p>
-      <p class="src">Def. 5.5 &amp; Prop. 5.6 (Def. 13, Prop. 11 in arXiv)</p>
+    <div class="claim">
+      <span class="q">External &amp; burnable &rArr; neither</span>
+      <p>Computation is the only cell where the budget must be supplied from outside <em>and</em> is spent by using it.
+      That pair, not anything about Bitcoin, is why Proof-of-Work escapes both attacks.</p>
+      <p class="src">&sect;4.2 &middot; &sect;5 &middot; &sect;6</p>
     </div>
   </div>
+  <p class="note" style="margin-top:16px">Everything below is the machinery behind those three lines: the interface that
+  makes the comparison possible, the model the theorems are stated in, and the statements themselves.</p>
 </div></section>
 
 <section id="problem"><div class="wrap">
@@ -355,6 +384,96 @@ p .katex{overflow-wrap:break-word}
       <p class="note" style="margin:.8rem 0 0">Def. 2.1 (Def. 1 in arXiv). The long-range attack breaks the last one.</p>
     </div>
   </div>
+</div></section>
+
+<section id="model"><div class="wrap">
+  <p class="eyebrow">The model &middot; &sect;2</p>
+  <h2>What a &ldquo;time step&rdquo; is, and what the adversary is allowed</h2>
+  <p class="lede">The theorems below are all statements about one execution model, so it is worth ten lines. Nothing here
+  is unusual &mdash; it is a synchronous, permissionless, Byzantine model with a random oracle &mdash; but the
+  theorems quantify over its pieces, and <span class="katex-src">$\Delta$</span> in particular shows up inside the
+  security bound.</p>
+
+  <div class="modelgrid">
+    <div class="card">
+      <h3>Time and processes</h3>
+      <p style="margin:0 0 .6rem">Execution proceeds in <b>time steps</b>, values in
+      <span class="katex-src">$\mathbb{N}$</span> starting at 0. At the beginning of a step a process is
+      <b>activated</b>, runs a deterministic program &mdash; including handling whatever messages arrived &mdash; and is
+      then deactivated; its activation period starts at <span class="katex-src">$t$</span> and ends before
+      <span class="katex-src">$t+1$</span>.</p>
+      <p style="margin:0">The system is <b>permissionless</b>: processes may join at any time.
+      <span class="katex-src">$\mathcal{P}_{\leq t}$</span> is the set that has participated before step
+      <span class="katex-src">$t$</span>, so <span class="katex-src">$\mathcal{P}_{\leq t} \subseteq \mathcal{P}_{\leq t'}$</span>
+      for <span class="katex-src">$t \leq t'$</span>.</p>
+    </div>
+    <div class="card">
+      <h3>Network</h3>
+      <p style="margin:0 0 .6rem">Authenticated point-to-point links, plus a <b>probabilistic broadcast</b>
+      (<code>gossip</code>): correct processes deliver with overwhelming probability, nothing is delivered twice, and the
+      network creates nothing.</p>
+      <p style="margin:0"><span class="katex-src">$\Delta \in \mathbb{N}$</span>, <span class="katex-src">$\Delta \geq 1$</span>,
+      is the <b>maximum</b> delay: a message broadcast at <span class="katex-src">$t$</span> has been delivered
+      everywhere by the beginning of <span class="katex-src">$t+\Delta$</span>. Because the model is discrete,
+      <span class="katex-src">$\Delta = 1$</span> is the fastest possible network, not a zero-delay one.</p>
+    </div>
+    <div class="card">
+      <h3>Cryptography</h3>
+      <p style="margin:0 0 .6rem">Signatures are <b>idealized</b>: <span class="katex-src">$\mathsf{verify}(p_i, m, \sigma)$</span>
+      returns true exactly when <span class="katex-src">$p_i$</span> actually signed
+      <span class="katex-src">$m$</span>. Hash functions are a <b>random oracle</b>
+      <span class="katex-src">$H: \{0,1\}^* \to \{0,1\}^{\lambda}$</span>.</p>
+      <p style="margin:0">Blocks are signed, which lets the paper drop coinbase transactions from the model:
+      a block is <span class="katex-src">$B = (h, \overline{tx}, \pi, \sigma_i)$</span> &mdash; parent hash,
+      transactions, resource commitment, signature.</p>
+    </div>
+    <div class="card">
+      <h3>Adversary</h3>
+      <p style="margin:0 0 .6rem">One probabilistic polynomial-time adversary <span class="katex-src">$\mathcal{A}$</span>
+      controls all Byzantine processes, which may deviate arbitrarily. Crashes are not modelled separately.</p>
+      <p style="margin:0">Its total budget is bounded: <span class="katex-src">$\sum_{p_i \in \mathcal{A}} \mathsf{Alloc}(p_i,t) \leq R_{\mathcal{A}}$</span>
+      at every step, and corrupting a process costs that process's budget out of
+      <span class="katex-src">$R_{\mathcal{A}}$</span> (Def. 3.6). Delay between Byzantine processes is
+      <span class="katex-src">$1$</span> &mdash; they never lose a block to the network.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:0 0 .5rem">One time step, from a correct process's side</h3>
+  <p class="lede" style="margin-bottom:1rem">This is the loop every theorem is about. The allocator answers inside the
+  activation period, and the block it enables only reaches everyone else <span class="katex-src">$\Delta$</span> steps
+  later &mdash; which is exactly why <span class="katex-src">$\Delta$</span> appears in Equation 1.</p>
+  <div class="chart">
+    <div class="playrow" style="margin:0 0 6px">
+      <button class="btn sm" id="tlReplay">&#8635; Replay</button>
+      <span class="note" id="tlNote" style="margin:0"></span>
+    </div>
+    <svg id="tlSvg" role="img" aria-label="One time step: activation, gossip-deliver, RA-commit, RA-assign, gossip-broadcast, and the delta-step delay before every correct process has the block"></svg>
+  </div>
+
+  <h3 style="margin:26px 0 .5rem">Notation</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Symbol</th><th>Means</th><th>Used by</th></tr></thead>
+    <tbody>
+      <tr><td class="num">$t$, $\Delta$</td><td>Time step; maximum network delay, $\Delta \geq 1$.</td><td>Eq. 1, Lem. 5.2</td></tr>
+      <tr><td class="num">$R$, $R_{\mathcal{A}}$</td><td>Total resource budget in the system; the bound on the adversary's share.</td><td>Def. 3.6, Eq. 1</td></tr>
+      <tr><td class="num">$\mathsf{Alloc}(p_i,t)$</td><td>The budget process $p_i$ holds at step $t$.</td><td>Def. 3.1, Def. 5.5</td></tr>
+      <tr><td class="num">$\mathsf{StateAlloc}(p_i,\mathcal{C})$</td><td>For a <em>virtual</em> resource, the budget read off the chain $\mathcal{C}$.</td><td>Def. 3.3, Def. 5.1</td></tr>
+      <tr><td class="num">$\varrho$</td><td>Probability of being assigned a commitment on one unit of budget.</td><td>Lem. 4.4, Def. 4.6</td></tr>
+      <tr><td class="num">$p_{\mathcal{H}}$, $p_{\mathcal{A}}$</td><td>Probability that at least one correct / Byzantine process is assigned a commitment in a step.</td><td>Def. 4.1, Eq. 1</td></tr>
+      <tr><td class="num">$\pi$</td><td>A resource commitment &mdash; the proof carried in a block.</td><td>Def. 3.2</td></tr>
+      <tr><td class="num">$\mathsf{st}$</td><td>Blockchain state; the paper sets $\mathsf{st} = \mathcal{C}$, and writes $\mathsf{st} = (\mathcal{C}, B)$ for &ldquo;$B$ appended to $\mathcal{C}$&rdquo;.</td><td>Def. 3.2</td></tr>
+      <tr><td class="num">$\mathbb{P}(\mathcal{C}, \overline{tx})$</td><td>Validation predicate, known locally to every process.</td><td>&sect;2.2, Alg. 1</td></tr>
+      <tr><td class="num">$k$</td><td>Common-prefix parameter: how deep a block must be before it is delivered.</td><td>Lem. 4.2, Thm. 5.4</td></tr>
+      <tr><td class="num">$\mathcal{C}[:-k]$, $\preceq$, $|\mathcal{C}|$</td><td>All but the last $k$ blocks; &ldquo;is a prefix of&rdquo;; chain length.</td><td>Lem. 4.2</td></tr>
+      <tr><td class="num">$\mathcal{P}_{\mathsf{maj}}$, $h_0$, $h_1$</td><td>The set that held the majority at height $h_0$ and almost nothing at $h_1 > h_0$.</td><td>Def. 5.1</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:12px"><b>&ldquo;With overwhelming probability&rdquo;</b> carries all the
+  probabilistic weight in these statements: the guarantees are not absolute, and the security parameter is
+  <span class="katex-src">$\lambda$</span>. Symbols and wording here are &sect;2 and &sect;3 of the paper
+  (&sect;2&ndash;&sect;3 in the arXiv version, where the definitions run in one sequence).</p>
 </div></section>
 
 <section id="taxonomy"><div class="wrap">
@@ -542,6 +661,35 @@ p .katex{overflow-wrap:break-word}
       <div class="v" id="cond1"></div></div>
   </div>
   <div class="verdict bad" id="lraVerdict"><b id="lraVerdictK"></b><span id="lraVerdictT"></span></div>
+  <div class="stmt">
+    <p class="lab">Definition 5.1 <span>(Virtual-Resource-Shifting Event) &mdash; Def. 12 in arXiv</span></p>
+    <p class="body">A <em>Virtual-Resource-Shifting Event</em> happens when there exist two values
+    <span class="katex-src">$h_0$</span>, <span class="katex-src">$h_1$</span>, and a set of processes
+    <span class="katex-src">$\mathcal{P}_{\mathsf{maj}}$</span> such that:</p>
+    <p class="body" style="margin-top:.5rem"><b>Active at <span class="katex-src">$h_0$</span>:</b> at height
+    <span class="katex-src">$h_0$</span>, processes in <span class="katex-src">$\mathcal{P}_{\mathsf{maj}}$</span>
+    control the majority of the total virtual resource, namely
+    <span class="katex-src">$\sum_{p_i \in \mathcal{P}_{\mathsf{maj}}} \mathsf{StateAlloc}(p_i, \mathcal{C}[0:h_0]) > R - R_{\mathcal{A}}$</span>.<br>
+    <b>Inactive at <span class="katex-src">$h_1$</span>:</b> at height <span class="katex-src">$h_1 > h_0$</span>,
+    they control less than the adversary's budget:
+    <span class="katex-src">$\sum_{p_i \in \mathcal{P}_{\mathsf{maj}}} \mathsf{StateAlloc}(p_i, \mathcal{C}[0:h_1]) \leq R_{\mathcal{A}}$</span>.</p>
+    <p class="read"><b>Plain reading</b>A group that used to own most of the stake has since sold nearly all of it. They
+    are worth corrupting precisely because they are now cheap, and they are useful precisely because the chain still
+    records what they once held.</p>
+  </div>
+
+  <div class="stmt">
+    <p class="lab">Lemma 5.2 <span>(Long-range Attack) &mdash; Lem. 9 in arXiv</span></p>
+    <p class="body">In a virtual-resource-based total-order broadcast (Algorithm 1), let
+    <span class="katex-src">$\mathcal{C}_{\mathsf{local}}$</span> be the longest chain maintained by a correct process;
+    if a virtual-resource-shifting event occurs, then an adversary can <em>eventually</em> form a valid chain
+    <span class="katex-src">$\mathcal{C}^*$</span> that is longer than
+    <span class="katex-src">$\mathcal{C}_{\mathsf{local}}$</span>.</p>
+    <p class="read"><b>Plain reading</b>The adversary does not need to out-compute anyone. It rebuilds from
+    <span class="katex-src">$h_0$</span> with borrowed weight that beats what the honest processes hold now, so its chain
+    grows faster and passing the honest chain is only a matter of waiting.</p>
+  </div>
+
   <p class="note" style="margin-top:14px"><b>Provenance.</b> Steps are the four numbered items of &sect;5.1
   (&sect;6.1 in arXiv); the two inequalities are Def. 5.1 (Def. 12 in arXiv); the conclusion is Thm. 5.4 (Thm. 10 in arXiv).
   <span class="katex-src">$R$</span> and <span class="katex-src">$R_{\mathcal{A}}$</span> are taken from the sliders above.</p>
@@ -594,6 +742,17 @@ p .katex{overflow-wrap:break-word}
     </ul>
   </div>
   <div class="verdict bad" id="raceVerdict"><b id="raceVerdictK"></b><span id="raceVerdictT"></span></div>
+
+  <div class="stmt">
+    <p class="lab">Theorem 5.4 <span>&mdash; Thm. 10 in arXiv</span></p>
+    <p class="body">If a virtual-resource-shifting event occurs, a total-order broadcast based on virtual resources
+    (Algorithm 1) does not implement total-order broadcast.</p>
+    <p class="read"><b>Plain reading</b>Once <span class="katex-src">$\mathcal{C}^*$</span> is longer, correct processes
+    adopt it. Transactions they had already delivered <span class="katex-src">$k$</span> blocks deep in the old chain are
+    now ordered differently, or not present at all &mdash; and a process joining later sees only the adversary's
+    version. The <em>total order</em> property of Def. 2.1 fails, so the protocol is no longer a total-order broadcast at
+    all. This is the paper's sharpest result: it is not a bound that degrades, it is an impossibility.</p>
+  </div>
 
   <details class="tbl"><summary>Table view &mdash; expected lengths and Chernoff edges</summary>
     <div class="tablewrap"><table id="raceTable"></table></div>
@@ -661,6 +820,18 @@ p .katex{overflow-wrap:break-word}
   </div>
   <div class="verdict ok" id="costVerdict"><b id="costVerdictK"></b><span id="costVerdictT"></span></div>
 
+  <div class="stmt">
+    <p class="lab">Proposition 5.6 <span>&mdash; Prop. 11 in arXiv</span></p>
+    <p class="body">For all time steps <span class="katex-src">$t_2 > t_1$</span> and a process
+    <span class="katex-src">$p_i$</span>, the cost of extending a valid chain with a burnable resource is strictly more
+    expensive than with a reusable resource, i.e.
+    <span class="katex-src">$\mathrm{Cost}_{\mathsf{burn}}(p_i,t_1,t_2) > \mathrm{Cost}_{\mathsf{reuse}}(p_i,t_1,t_2)$</span>.</p>
+    <p class="read"><b>Plain reading</b>Both sides win the race with the same probability; what differs is what a loss
+    costs. Under the paper's stated assumptions &mdash; that block creation carries a reward, and that acquiring either
+    resource costs the same &mdash; that gap is the entire disincentive against a private attack, and a reusable
+    resource does not have it.</p>
+  </div>
+
   <details class="tbl"><summary>Table view &mdash; per-step budget and running cost</summary>
     <div class="tablewrap"><table id="costTable"></table></div>
   </details>
@@ -724,6 +895,36 @@ p .katex{overflow-wrap:break-word}
     </tbody>
   </table>
   </div>
+  <div class="stmt">
+    <p class="lab">Lemma 4.2 <span>(Ga&#382;i et al., CCS 2020) &mdash; Lem. 1 in arXiv</span></p>
+    <p class="body">Algorithm 1 implemented with a secure resource allocator
+    <span class="katex-src">$\mathcal{RA}_{\mathsf{res}}$</span> satisfies:</p>
+    <div class="body"><dl>
+      <dt>Safety</dt>
+      <dd>For any time steps <span class="katex-src">$t_1 \leq t_2$</span>, a common prefix parameter
+      <span class="katex-src">$k$</span>, and any local chain maintained by a correct process, it holds that
+      <span class="katex-src">$\mathcal{C}^{t_1}_{\mathsf{local}}[:-k] \preceq \mathcal{C}^{t_2}_{\mathsf{local}}$</span>
+      with an overwhelming probability.</dd>
+      <dt>Liveness</dt>
+      <dd>For a parameter <span class="katex-src">$u$</span> and any time step <span class="katex-src">$t$</span>, there
+      is at least one new honest block in <span class="katex-src">$\mathcal{C}^{t+u}/\mathcal{C}^{t}$</span> with an
+      overwhelming probability.</dd>
+    </dl></div>
+    <p class="read"><b>Plain reading</b>Safety: whatever a correct process considered settled
+    <span class="katex-src">$k$</span> blocks back stays settled. Liveness: the chain keeps growing with honest blocks,
+    so nothing waits forever. Neither is claimed absolutely &mdash; both hold with overwhelming probability in
+    <span class="katex-src">$\lambda$</span>.</p>
+  </div>
+
+  <div class="stmt">
+    <p class="lab">Theorem 4.3 <span>&mdash; Thm. 2 in arXiv</span></p>
+    <p class="body">If <span class="katex-src">$\mathcal{RA}_{\mathsf{res}}$</span> is a secure resource allocator,
+    then Algorithm 1 implements total-order broadcast.</p>
+    <p class="read"><b>Plain reading</b>This is the hinge of the whole framework. Prove the five properties for your
+    allocator and you inherit a working blockchain &mdash; you never argue about consensus again, only about the
+    resource. The paper then does exactly that three times, for computation, stake and storage.</p>
+  </div>
+
   <p class="note" style="margin-top:12px">The use-once row is the load-bearing one: it is the single place where burnable
   gets for free what reusable has to build, and every difference further down the page traces back to it.</p>
 </div></section>
@@ -908,6 +1109,149 @@ function pH(){ return 1 - Math.pow(1 - M.rho, M.R - M.RA); }
 function pA(){ return 1 - Math.pow(1 - M.rho, M.RA); }
 function bound(){ var h = pH(); return h <= 0 ? 0 : 1 / (M.D - 1 + 1 / h); }
 function pOf(r){ return 1 - Math.pow(1 - M.rho, Math.max(0, r)); }
+
+/* =====================================================================
+   The model — one time step (§2), drawn once and replayable
+   ===================================================================== */
+var TL = { p:1 };
+function ramp(p, a, b){ return Math.max(0, Math.min(1, (p - a) / (b - a))); }
+
+function tlGeom(){
+  if (narrowNow()){
+    return { W:340, H:306, narrow:true,
+             band:{x:0,y:22,w:340,h:170},
+             ev:[{x:26,y:66},{x:26,y:98},{x:26,y:130},{x:26,y:162}],
+             axis:{y:236,x1:10,x2:330},
+             ticks:[{x:20,l:'t'},{x:110,l:'t+1'},{x:200,l:'t+Δ'},{x:300,l:'…'}],
+             hi:{x:20,w:90}, delta:{x1:20,x2:200,y:274} };
+  }
+  return { W:680, H:272, narrow:false,
+           band:{x:40,y:34,w:400,h:84},
+           ev:[{x:84,y:96},{x:190,y:96},{x:300,y:96},{x:388,y:96}],
+           axis:{y:192,x1:60,x2:640},
+           ticks:[{x:96,l:'t'},{x:216,l:'t+1'},{x:336,l:'t+2'},{x:456,l:'t+Δ'},{x:576,l:'…'}],
+           hi:{x:96,w:120}, delta:{x1:96,x2:456,y:236} };
+}
+/* the sub-labels sit side by side under the events, so they have to stay short */
+var TL_EV = [
+  { n:'1', l:'gossip-deliver',   s:'messages arrived' },
+  { n:'2', l:'RA-commit',        s:'pledge the budget' },
+  { n:'3', l:'RA-assign',        s:'end of activation' },
+  { n:'4', l:'gossip-broadcast', s:'block goes out' }
+];
+
+function drawTimeline(p){
+  var svg = document.getElementById('tlSvg');
+  if (!svg) return;
+  clear(svg);
+  var g = tlGeom();
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var mono = css('--mono'), muted = css('--ink-muted'), ink = css('--ink-1');
+
+  /* the activation period */
+  var oBand = ramp(p, 0, 0.14);
+  var band = el('g', { opacity:oBand });
+  svg.appendChild(band);
+  band.appendChild(el('rect', { x:g.band.x, y:g.band.y, width:g.band.w, height:g.band.h, rx:4,
+    fill:css('--surface-1'), stroke:css('--ring'), 'stroke-width':1 }));
+  band.appendChild(el('text', { x:g.band.x + 10, y:g.band.y + 16, 'font-family':mono,
+    'font-size':10, fill:muted }, 'activation period of p_i'));
+  if (!g.narrow){
+    band.appendChild(el('line', { x1:g.band.x + 16, y1:g.ev[0].y, x2:g.band.x + g.band.w - 12,
+      y2:g.ev[0].y, stroke:css('--axis'), 'stroke-width':2 }));
+  }
+
+  /* the four events, in order */
+  for (var i = 0; i < TL_EV.length; i++){
+    var o = ramp(p, 0.14 + i * 0.10, 0.14 + i * 0.10 + 0.12);
+    if (o <= 0) continue;
+    var e = g.ev[i], grp = el('g', { opacity:o });
+    svg.appendChild(grp);
+    grp.appendChild(el('circle', { cx:e.x, cy:e.y, r:9, fill:css('--accent') }));
+    grp.appendChild(el('text', { x:e.x, y:e.y + 4, 'text-anchor':'middle', 'font-family':mono,
+      'font-size':11, 'font-weight':700, fill:'#ffffff' }, TL_EV[i].n));
+    if (g.narrow){
+      grp.appendChild(el('text', { x:e.x + 18, y:e.y - 1, 'font-family':mono, 'font-size':11,
+        fill:ink }, TL_EV[i].l));
+      grp.appendChild(el('text', { x:e.x + 18, y:e.y + 12, 'font-family':mono, 'font-size':9,
+        fill:muted }, TL_EV[i].s));
+    } else {
+      grp.appendChild(el('text', { x:e.x, y:e.y - 22, 'text-anchor':'middle', 'font-family':mono,
+        'font-size':10, fill:ink }, TL_EV[i].l));
+      grp.appendChild(el('text', { x:e.x, y:e.y + 22, 'text-anchor':'middle', 'font-family':mono,
+        'font-size':8.5, fill:muted }, TL_EV[i].s));
+    }
+  }
+
+  /* the zoom guides tying the band to step t */
+  if (!g.narrow){
+    var oG = ramp(p, 0.56, 0.70);
+    if (oG > 0){
+      var gg = el('g', { opacity:oG * 0.85 });
+      svg.appendChild(gg);
+      gg.appendChild(el('line', { x1:g.band.x, y1:g.band.y + g.band.h, x2:g.hi.x,
+        y2:g.axis.y - 6, stroke:css('--axis'), 'stroke-width':1, 'stroke-dasharray':'3 3' }));
+      gg.appendChild(el('line', { x1:g.band.x + g.band.w, y1:g.band.y + g.band.h,
+        x2:g.hi.x + g.hi.w, y2:g.axis.y - 6, stroke:css('--axis'), 'stroke-width':1,
+        'stroke-dasharray':'3 3' }));
+    }
+  }
+
+  /* the step axis */
+  var oA = ramp(p, 0.60, 0.76);
+  if (oA > 0){
+    var ax = el('g', { opacity:oA });
+    svg.appendChild(ax);
+    ax.appendChild(el('rect', { x:g.hi.x, y:g.axis.y - 6, width:g.hi.w, height:12, rx:2,
+      fill:css('--accent'), opacity:0.16 }));
+    ax.appendChild(el('line', { x1:g.axis.x1, y1:g.axis.y, x2:g.axis.x2, y2:g.axis.y,
+      stroke:css('--axis'), 'stroke-width':2 }));
+    for (var j = 0; j < g.ticks.length; j++){
+      var tk = g.ticks[j], last = (tk.l.indexOf('Δ') >= 0);
+      ax.appendChild(el('line', { x1:tk.x, y1:g.axis.y - 5, x2:tk.x, y2:g.axis.y + 5,
+        stroke:last ? css('--s2') : css('--axis'), 'stroke-width':last ? 2 : 1.5 }));
+      ax.appendChild(el('text', { x:tk.x, y:g.axis.y + 19, 'text-anchor':'middle',
+        'font-family':mono, 'font-size':10.5, fill:last ? css('--s2') : muted }, tk.l));
+    }
+  }
+
+  /* how long before every correct process has the block */
+  var oD = ramp(p, 0.76, 1);
+  if (oD > 0){
+    var dl = el('g', { opacity:oD });
+    svg.appendChild(dl);
+    var y = g.delta.y, x1 = g.delta.x1, x2 = g.delta.x2;
+    dl.appendChild(el('line', { x1:x1, y1:y, x2:x2, y2:y, stroke:css('--s2'), 'stroke-width':1.6 }));
+    dl.appendChild(el('path', { d:'M' + (x1 + 7) + ' ' + (y - 4) + 'L' + x1 + ' ' + y + 'L' + (x1 + 7) + ' ' + (y + 4) + 'Z',
+      fill:css('--s2') }));
+    dl.appendChild(el('path', { d:'M' + (x2 - 7) + ' ' + (y - 4) + 'L' + x2 + ' ' + y + 'L' + (x2 - 7) + ' ' + (y + 4) + 'Z',
+      fill:css('--s2') }));
+    dl.appendChild(el('text', { x:(x1 + x2) / 2, y:y - 7, 'text-anchor':'middle', 'font-family':mono,
+      'font-size':10.5, 'font-weight':700, fill:css('--s2') }, '≤ Δ'));
+    if (!g.narrow){
+      dl.appendChild(el('text', { x:x2 + 12, y:y + 4, 'font-family':mono, 'font-size':10,
+        fill:muted }, 'every correct process has the block'));
+    }
+  }
+}
+
+function tlPlay(){
+  if (TL.running) return;
+  TL.running = true;
+  tween(1900, function(t){ TL.p = t; drawTimeline(t); },
+    function(){ TL.p = 1; drawTimeline(1); TL.running = false; });
+}
+(function(){
+  var btn = document.getElementById('tlReplay');
+  if (btn) btn.addEventListener('click', tlPlay);
+  var n = document.getElementById('tlNote');
+  if (n) n.textContent = 'Δ ≥ 1, so at Δ = 1 the block is delivered by the start of the next step.';
+  drawTimeline(1);
+  var rzT2;
+  window.addEventListener('resize', function(){
+    clearTimeout(rzT2); rzT2 = setTimeout(function(){ drawTimeline(TL.p); }, 130);
+  });
+})();
 
 /* =====================================================================
    Interactive 1 — the allocator as a box (Def. 3.2, Def. 3.3, Def. 4.1)
@@ -2144,7 +2488,8 @@ if (hasIO){
       io.unobserve(en.target);
       revealRun(en.target);
       var id = en.target.id;
-      if (id === 'threshold' && !T_enter){ T_enter = true; setTimeout(function(){ drawT('enter'); }, 160); }
+      if (id === 'model'){ setTimeout(function(){ TL.p = 0; drawTimeline(0); tlPlay(); }, 140); }
+      else if (id === 'threshold' && !T_enter){ T_enter = true; setTimeout(function(){ drawT('enter'); }, 160); }
       else if (id === 'race'){ setTimeout(function(){ drawR('enter'); }, 160); }
       else if (id === 'cost'){ setTimeout(function(){ drawC('enter'); }, 160); }
     });

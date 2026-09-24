@@ -119,6 +119,12 @@ input[type=range]{width:100%; accent-color:var(--accent); height:22px}
   box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
 .tip b{display:block; margin-bottom:.15rem}
 
+.claim{display:flex; flex-direction:column}
+.claim .d{margin:.35rem 0 .6rem}
+.claim .see{margin-top:auto; font-family:var(--mono); font-size:.86rem}
+.guessbox{display:flex; flex-direction:column; gap:10px}
+.guessrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.guessrow .who{font-family:var(--mono); font-size:.86rem; min-width:7.5em}
 /* ---------- read-outs ---------- */
 .rogrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:14px}
 .ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--surface-1)}
@@ -176,15 +182,13 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
 <div class="topbar"><div class="wrap">
   <a class="home" href="../">&larr; Duc V. Le</a>
   <nav aria-label="Sections">
-    <a href="#problem">Problem</a>
-    <a href="#pdag">PDAG</a>
+    <a href="#hook">Puzzle</a>
+    <a href="#pdag">Why</a>
     <a href="#core">Untraceability</a>
-    <a href="#score">Unlinkability</a>
-    <a href="#coinjoin">Coinjoin</a>
-    <a href="#chains">Monero vs Zcash</a>
-    <a href="#guarantees">Guarantees</a>
-    <a href="#heuristics">Heuristics</a>
-    <a href="#source">Source notes</a>
+    <a href="#coinjoin">Unlinkability</a>
+    <a href="#chains">Four systems</a>
+    <a href="#next">Next</a>
+    <a href="#score">Appendix</a>
     <a href="#cite">Cite</a>
   </nav>
 </div></div>
@@ -193,7 +197,7 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
 <header class="hero"><div class="wrap">
   <span class="venue">FC 2024</span>
   <h1>A Transaction-Level Model for Blockchain Privacy</h1>
-  <p class="sub">One graph model, the <em>PDAG</em>, gives untraceability and unlinkability a single, consistent definition. The model is then used to compare Coinjoin, Tornado Cash, Monero and Zcash.</p>
+  <p class="sub">A privacy coin tells you your payment is hidden among 16. Among how many is it <em>really</em> hidden? We build one graph model, the <em>PDAG</em>, that makes this question precise. With it, we put Coinjoin, Tornado Cash, Monero and Zcash side by side.</p>
   <p class="authors">
     François-Xavier Wicht<sup>1</sup>, Zhipeng Wang<sup>2</sup>, <span class="me">Duc V. Le</span><sup>3</sup>, Christian Cachin<sup>1</sup>
   </p>
@@ -205,38 +209,39 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
   <p class="note" style="margin:14px 0 0">The PDF is the full version (<a href="https://eprint.iacr.org/2023/1902">Cryptology ePrint Archive 2023/1902</a>, 11 December 2023). Every figure, definition, lemma and equation number on this page follows that version.</p>
 </div></header>
 
-<!-- ============ TILES ============ -->
-<section id="tldr"><div class="wrap">
-  <p class="eyebrow">In three numbers</p>
-  <h2>What the model delivers</h2>
-  <div class="tiles" style="margin-top:14px">
-    <div class="tile"><div class="k">Monero ring</div><div class="v" data-count="16">16</div>
-      <p class="d">Monero from v0.18.0.0 is $16$-untraceable, provided its bipartite graph $G^*$ equals its core (Lemma 6).</p></div>
-    <div class="tile"><div class="k">Linking relations</div><div class="v" data-count="10">10</div>
-      <p class="d">Linking heuristics from the literature, written as inferred relations $\tilde L$ in one notation (Eqs. 1–10).</p></div>
-    <div class="tile"><div class="k">Systems modelled</div><div class="v" data-count="4">4</div>
-      <p class="d">Coinjoin and Tornado Cash (add-ons), Monero and Zcash (privacy-preserving chains), all in one graph (§4).</p></div>
+<!-- ============ HOOK ============ -->
+<section id="hook"><div class="wrap">
+  <p class="eyebrow">1 · The puzzle</p>
+  <h2>Three private transactions. Can you trace them?</h2>
+  <p class="lede">Each transaction below hides the coin it really spent among decoys. From the outside you only see which coins it <em>might</em> have spent: $w_1$ and $w_2$ each point at two, and $w_3$ at three. That makes their anonymity sets 2, 2 and 3. Pick the coin you think each one spent, then reveal.</p>
+  <div class="split">
+    <div class="chart"><svg id="hookSvg" role="img" aria-label="Three transactions and their candidate coins"></svg>
+      <ul class="legend" id="hookLegend"></ul></div>
+    <div>
+      <div id="hookGuess" class="guessbox"></div>
+      <div class="btns" style="margin-top:12px">
+        <button class="btn primary" type="button" id="hookReveal">Reveal</button>
+        <button class="btn" type="button" id="hookReset">Start over</button>
+      </div>
+      <div class="tscroll"><table class="data" id="hookTable"></table></div>
+    </div>
   </div>
-</div></section>
+  <p class="callout" id="hookPunch" style="opacity:0">Whatever $w_1$ and $w_2$ spent, between them they used up $s_1$ and $s_2$. Every transaction spends at least one coin, and no coin is spent twice. That leaves $w_3$ exactly one option, $s_3$. <strong>The anonymity set said 3. The true count is 1.</strong> The rest of this post builds a definition of untraceability that catches this.</p>
+  <p class="note" style="margin-top:10px">This is Figure 3 of the paper. Its ground truth is the matching $M_1$. The other matching, $M_2$, is equally consistent with what the adversary sees, so no one can do better than a coin flip on $w_1$ and $w_2$.</p>
 
-<!-- ============ PROBLEM ============ -->
-<section id="problem"><div class="wrap">
-  <p class="eyebrow">The problem</p>
-  <h2>Everyone says "untraceable". Nobody means the same thing.</h2>
-  <p class="lede">Bitcoin and Ethereum show every sender, recipient and amount. The protections built on top take very different routes. Coinjoin merges many users' coins into one transaction. Tornado Cash uses zero-knowledge proofs to separate deposits from withdrawals. Monero hides the real input among decoys with ring signatures. Zcash hides it in a shielded pool. Each line of research uses its own model and notation, so they are hard to compare.</p>
-  <p class="lede">The paper asks three questions. How do these mechanisms compare? Which structures in a ledger protect privacy, and which break it? What forms does privacy take in a blockchain? To answer them, it extends the <em>Transaction DAG</em> (TDAG) of Cachin et al. into the <strong>PDAG</strong>, then defines two notions on that one graph:</p>
-  <div class="tiles" style="margin-top:6px">
-    <div class="tile"><div class="k">Untraceability</div><p class="d" style="margin-top:.35rem">Can the adversary tell <em>which input</em> a transaction really spent? The input states it cannot tell apart form the <em>untraceability set</em>. A transaction is $k$-untraceable if that set has $k\ge 2$ members after the graph is pruned to its core (Def. 6).</p></div>
-    <div class="tile"><div class="k">Unlinkability</div><p class="d" style="margin-top:.35rem">Can the adversary tell <em>which states belong together</em>? It groups states with an inferred relation $\tilde L$. The <em>unlinkability score</em> $u$ measures how far that grouping is from the true relation $L$ (Def. 10).</p></div>
+  <h3 style="margin-top:34px">What this post shows</h3>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile claim"><div class="k">Claim 1</div><p class="d"><strong>Anonymity sets overstate untraceability.</strong> Count only the candidates that survive pruning to the graph's core. A set of 3 can hide nothing (Defs. 5–7).</p><a class="see" href="#core">See it &rarr;</a></div>
+    <div class="tile claim"><div class="k">Claim 2</div><p class="d"><strong>Hiding the coin and hiding the owner are different properties.</strong> Coinjoin and Tornado Cash give unlinkability, but no untraceability at all (§4.1).</p><a class="see" href="#coinjoin">See it &rarr;</a></div>
+    <div class="tile claim"><div class="k">Claim 3</div><p class="d"><strong>One notation fits four systems.</strong> Their guarantees line up in one table. For example, Monero's rings of 16 give 16-untraceability when its graph equals its core (Lemma 6).</p><a class="see" href="#guarantees">See it &rarr;</a></div>
   </div>
-  <p class="note" style="margin-top:14px">Adversary model (§3.1): passive, computationally unbounded, idealised cryptography, and focused on the transaction layer. It only observes and records transactions.</p>
 </div></section>
 
 <!-- ============ 1. PDAG ============ -->
 <section id="pdag"><div class="wrap">
-  <p class="eyebrow">Interactive 1 · Figure 2</p>
-  <h2>Anatomy of a PDAG, and what the adversary sees</h2>
-  <p class="lede">A PDAG has <strong>states</strong> ($\bigcirc$, coins), <strong>witnesses</strong> ($\Box$, one per transaction) and <strong>nullifiers</strong> ($\Diamond$). Nullifiers are Monero key images, Zcash nullifiers or Tornado withdrawal commitments; they block double-spends. The paper adds <em>masking edges</em> to the TDAG: a masking edge consumes a state, but to everyone except the author it looks like an observing edge. Switch to the adversary's view and every masking edge disappears into the ambiguous ones.</p>
+  <p class="eyebrow">2 · Why did that happen? · Figure 2</p>
+  <h2>A picture in which spending can hide</h2>
+  <p class="lede">To reason about the puzzle, we need a picture of transactions in which a spend can be hidden. We start from the Transaction DAG of Cachin et al. Coins are <strong>states</strong> ($\bigcirc$), each transaction has one <strong>witness</strong> ($\Box$), and edges say whether a state is consumed, only read (observed), or produced. We add two things. A <em>masking edge</em> consumes a state, but to everyone except its author it looks like a mere read. <strong>Nullifiers</strong> ($\Diamond$) stop the same coin from being spent twice; in practice they are Monero key images, Zcash nullifiers and Tornado Cash withdrawal commitments. Switch to the adversary's view, and every masking edge blends into the ambiguous ones.</p>
   <div class="controls">
     <div class="ctl" style="flex:0 1 auto"><span class="lbl">View</span>
       <div class="seg" id="pdagView"><button type="button" aria-pressed="true" data-v="truth">Ground truth</button><button type="button" aria-pressed="false" data-v="adv">Adversary's view</button></div></div>
@@ -247,14 +252,14 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
     <ul class="legend" id="pdagLegend"></ul></div>
   <div class="rogrid" id="pdagRO"></div>
   <details class="tbl"><summary>Table view — every edge of Figure 2</summary><div class="tscroll"><table class="data" id="pdagTable"></table></div></details>
-  <p class="note" style="margin-top:12px">Graph reproduced from <code>figures/pdag_example.tex</code> (Figure 2). Transaction descriptions follow §2.4.</p>
+  <p class="note" style="margin-top:12px">Graph reproduced from <code>figures/pdag_example.tex</code> (Figure 2). Transaction descriptions follow §2.4. The adversary throughout (§3.1) is passive and computationally unbounded, works with idealised cryptography, and only observes and records transactions.</p>
 </div></section>
 
 <!-- ============ 2. CORE ============ -->
 <section id="core"><div class="wrap">
-  <p class="eyebrow">Interactive 2 · Figure 3 · Definitions 5–7</p>
-  <h2>Untraceability: prune to the core, then count</h2>
-  <p class="lede">The adversary keeps only the regular transactions and their inputs, which gives a bipartite graph $G^*$ of states and witnesses (§3.2). Every witness consumes at least one state, so the real spends form a <em>maximum matching</em>. Any edge that belongs to <em>no</em> maximum matching cannot be the real spend. Pruning those edges leaves the Dulmage–Mendelsohn <strong>core</strong>, the union of all maximum matchings (Def. 5). A transaction is $k$-untraceable when $k\ge2$ of its edges survive in the core. A PDAG is only as untraceable as its weakest transaction (Def. 7).</p>
+  <p class="eyebrow">3 · The definition that falls out · Definitions 5–7</p>
+  <h2>Prune first, then count</h2>
+  <p class="lede">The puzzle generalises. Keep only the ordinary transactions and their candidate coins, and you get a bipartite graph $G^*$. The real spends form a <em>maximum matching</em>, so any edge that lies in no maximum matching can be thrown away. What remains is the Dulmage–Mendelsohn <strong>core</strong> (Def. 5). A transaction is $k$-untraceable when $k\ge 2$ of its edges survive (Def. 6), and a whole ledger is only as untraceable as its weakest transaction (Def. 7). Edit the graph and watch which edges survive the pruning.</p>
   <div class="split">
     <div>
       <div class="controls" style="margin-bottom:10px">
@@ -275,13 +280,90 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
       <div class="rogrid" id="coreRO" style="grid-template-columns:1fr"></div>
     </div>
   </div>
-  <p class="callout">With the paper's graph, the two maximum matchings are $M_1$ and $M_2$ (§3.2). Neither uses $s_1\to w_3$ or $s_2\to w_3$, so the core drops both, and $w_3$ is left with a single edge: <strong>traceable</strong>. The graph <em>looks</em> 2- and 3-untraceable, but the PDAG gives no untraceability at all.</p>
+  <p class="callout">Start from the paper's graph and switch to step 2: $w_3$ is left with a single edge, which is the puzzle from the top of the page. Here the pruning is computed by listing every matching, so it works for any graph you build.</p>
   <p class="note" style="margin-top:10px">Computed live by listing every matching of the 3×3 graph. The paper's case reproduces the core stated in §3.2: $\{s_1w_1, s_2w_2, s_3w_3, s_1w_2, s_2w_1\}$.</p>
+</div></section>
+
+<!-- ============ 4. COINJOIN ============ -->
+<section id="coinjoin"><div class="wrap">
+  <p class="eyebrow">4 · Hiding the coin is not hiding the owner · Figure 6 · Lemma 1</p>
+  <h2>Coinjoin: every spend in plain sight, owners blurred</h2>
+  <p class="lede">Untraceability asks <em>which coin</em> a transaction spent. Unlinkability asks <em>which coins belong to the same person</em>, which is a different question. Bitcoin analysts link coins with the multi-input heuristic (Eq. 1): every input of a transaction has one owner. Coinjoin breaks that on purpose. In Figure 6, three users merge 7 inputs. Every spend is visible, so there is no untraceability at all, yet the adversary's "one owner" guess is wrong. The unlinkability score (Def. 10) measures how wrong. <strong>Click an input to change its owner.</strong></p>
+  <div class="btns" style="margin-bottom:12px">
+    <button class="btn" type="button" id="cjPaper">Paper's Figure 6 (2 + 2 + 3)</button>
+    <button class="btn" type="button" id="cjSolo">One owner (no Coinjoin)</button>
+    <button class="btn" type="button" id="cjSpread">Seven owners</button>
+  </div>
+  <div class="split">
+    <div class="chart"><svg id="cjGraph" role="img" aria-label="Coinjoin transaction with seven inputs"></svg>
+      <ul class="legend" id="cjLegend"></ul></div>
+    <div class="chart"><svg id="cjBars" role="img" aria-label="Per-input unlinkability score"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--ink-muted)"></span>bar = (A), per input, coloured by owner</li>
+        <li><span class="swatch" style="background:#dcdcdc"></span>Lemma 1 range</li>
+        <li><span class="swatch" style="background:var(--ink-1); height:2px"></span>(B), whole class</li>
+      </ul></div>
+  </div>
+  <div class="rogrid" id="cjRO"></div>
+  <details class="tbl"><summary>Table view — score of every input</summary><div class="tscroll"><table class="data" id="cjTable"></table></div></details>
+  <p class="note" style="margin-top:12px">The paper's split reproduces its stated scores: $\frac{10}{21}$ for the four inputs of the two 2-address users, and $\frac{6}{21}$ for the three inputs of the 3-address user (§4.1.1). Lemma 1 bounds a Coinjoin with at least two owners between $\binom{|S_I|-|U|}{2}/\binom{|S_I|}{2}$ and $\binom{|S_I|-|u|}{2}/\binom{|S_I|}{2}$, where $U$ is the largest owner class and $u$ the smallest. The bars use the formula of Def. 10, and the dashed line applies its wording to the whole class. The two differ; <a href="#score">Appendix A</a> compares them.</p>
+</div></section>
+
+<!-- ============ 5. CHAINS ============ -->
+<section id="chains"><div class="wrap">
+  <p class="eyebrow">5 · Four systems, one alphabet · Figures 8 and 9</p>
+  <h2>Monero and Zcash, drawn the same way</h2>
+  <p class="lede">Now we can put real systems into the same picture. Monero and Zcash both hide the spent coin behind masking edges and stop double-spends with nullifiers. They differ in <em>who</em> ends up in the untraceability set. A Monero ring signature names its decoys explicitly, with 16 ring members since v0.18.0.0. A Zcash shielded spend names none, so the set is implicitly every earlier state in the pool. Step through each chain's sample run from the paper.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Chain</span>
+      <div class="seg" id="chainPick"><button type="button" aria-pressed="true" data-v="monero">Monero · Fig. 8</button><button type="button" aria-pressed="false" data-v="zcash">Zcash · Fig. 9</button></div></div>
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">View</span>
+      <div class="seg" id="chainView"><button type="button" aria-pressed="true" data-v="truth">Ground truth</button><button type="button" aria-pressed="false" data-v="adv">Adversary's view</button></div></div>
+    <div class="ctl"><span class="lbl">Transaction</span><div class="chips" id="chainTx"></div></div>
+  </div>
+  <div class="chart"><svg id="chainSvg" role="img" aria-label="Sample execution graph"></svg>
+    <ul class="legend" id="chainLegend"></ul></div>
+  <div class="rogrid" id="chainRO"></div>
+  <details class="tbl"><summary>Table view — every edge of the selected figure</summary><div class="tscroll"><table class="data" id="chainTable"></table></div></details>
+  <p class="note" style="margin-top:12px">Graphs reproduced from <code>figures/pdag_monero_h2.tex</code> (Figure 8) and <code>figures/pdag_zcash_all_min.tex</code> (Figure 9). Grey areas are the shielded pool, drawn exactly as in the figure source. The sample runs are toy-sized. The protocol-scale guarantees are the ones in the "At protocol scale" card.</p>
+</div></section>
+
+<!-- ============ GUARANTEES ============ -->
+<section id="guarantees"><div class="wrap">
+  <p class="eyebrow">5 · The payoff</p>
+  <h2>Four systems, one table</h2>
+  <p class="lede">Before the PDAG, each of these systems came with its own model and its own meaning of "private". Written in one notation, their guarantees can finally be compared.</p>
+  <div class="tscroll"><table class="data">
+    <thead><tr><th>System</th><th>Untraceability</th><th>Unlinkability</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Coinjoin</strong><br><span class="badge">add-on, Bitcoin</span></td><td><span class="no">✕ None</span>: consumption stays visible</td><td>Under the multi-input relation (Eq. 1), the score lies in the Lemma 1 range, set by the largest and smallest owner classes</td><td class="badge">§4.1.1 · Lemma 1</td></tr>
+      <tr><td><strong>Tornado Cash</strong><br><span class="badge">add-on, Ethereum</span></td><td><span class="no">✕ None</span>: consumption stays visible</td><td>Address reuse gives a score of $0$. Otherwise the score is fixed by the heuristic, Eqs. 4–7: $\frac{2}{3}$, $1$, $\frac{12-l(l-1)}{12}$, or the Lemma 5 expression (all "or linkable")</td><td class="badge">§4.1.2 · Lemmas 2–5</td></tr>
+      <tr><td><strong>Monero</strong><br><span class="badge">v0.18.0.0, ring size 16</span></td><td><span class="yes">✓ $16$-untraceable</span> if $G^*=\mathbf{core}(G^*)$</td><td>One-time addresses, so no two states share an address. The multi-output heuristic (Eq. 8) gives "linkable or $1$"</td><td class="badge">§4.2 · Lemmas 6–7</td></tr>
+      <tr><td><strong>Zcash</strong> transparent pool</td><td><span class="no">✕ None</span></td><td>—</td><td class="badge">§4.3</td></tr>
+      <tr><td><strong>Zcash</strong> shielded pool</td><td><span class="yes">✓ $p$-untraceable</span> if $G^*=\mathbf{core}(G^*)$, where $p=\min|\{s\mid s\prec w\}|$ over witnesses $w$</td><td>Leaks through contact with the transparent pool: round-trip transactions (Eq. 9, Lemma 9) and mining-pool payouts (Eq. 10, a score of $1$ outside the pool)</td><td class="badge">§4.3 · Lemmas 8–10</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:10px">"Linkable" means the heuristic was right and the score is $0$. The paper states the Tornado Cash, Monero and Zcash scores under the Def. 10 wording, reading (B) in <a href="#score">Appendix A</a>.</p>
+</div></section>
+
+<!-- ============ NEXT ============ -->
+<section id="next"><div class="wrap">
+  <p class="eyebrow">6 · Where this goes next · §5</p>
+  <h2>From "who could have spent it" to "how likely"</h2>
+  <p class="lede">Everything so far is deterministic: an edge is either a candidate or it is not. Real adversaries also have side information, such as timing, amounts, or a machine-learning model. Section 5 of the paper sketches the probabilistic version. Each edge $e$ of $G^*$ gets a weight $\omega(e)\in[0,1]$, the probability that the state was consumed by that witness, and the weights of each witness sum to 1. The adversary then guesses by weight. Below, the core of the puzzle graph has exactly two maximum matchings left, so a single number sets every weight: the adversary's belief that $M_1$, not $M_2$, is the true one.</p>
+  <div class="controls"><div class="ctl"><label for="extIn">Adversary's belief that $M_1$ is true, $p$: <span class="val" id="extVal">0.50</span></label>
+    <input type="range" id="extIn" min="0" max="1" step="0.01" value="0.5"></div></div>
+  <div class="split">
+    <div class="chart"><svg id="extSvg" role="img" aria-label="Weighted core of the puzzle graph"></svg>
+      <ul class="legend"><li><span class="swatch" style="background:var(--s1)"></span>edge width and label = weight $\omega(e)$</li></ul></div>
+    <div class="tscroll"><table class="data" id="extTable"></table></div>
+  </div>
+  <p class="note" style="margin-top:12px">This is an illustration of the extension. The paper defines $\omega$ and stops there; it does not analyse weighted untraceability. The link between the weights ($p$ for $M_1$'s edges, $1-p$ for $M_2$'s) follows only from this core having exactly those two maximum matchings.</p>
 </div></section>
 
 <!-- ============ 3. SCORE ============ -->
 <section id="score"><div class="wrap">
-  <p class="eyebrow">Interactive 3 · Definition 10 · Lemmas 2–4, 7</p>
+  <p class="eyebrow">Appendix A · Definition 10 · Lemmas 2–4, 7</p>
   <h2>The unlinkability score, and the paper's two readings of it</h2>
   <p class="lede">The adversary puts $n$ states into one class $[s]_{\tilde L}$. In this calculator, $l$ of them form a single group that truly belongs together, and the other $n-l$ are unrelated singletons. Definition 10 describes the score in words as <em>"the ratio of the number of unlinked pairs to all possible pairs"</em>. Its formula, however, counts only the pairs <em>inside</em> $[s]_{\tilde L}\setminus[s]_L$. The two agree in some places and not in others. The paper's worked values also split between them, so this calculator shows both: (A) is the formula for a member of the group, and (B) is the wording applied to the whole class.</p>
   <div class="controls">
@@ -303,72 +385,11 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
     <p class="note" style="margin-top:8px">(A) $=\binom{|[s]_{\tilde L}\setminus[s]_L|}{2}\big/\binom{|[s]_{\tilde L}|}{2}$, as written in Def. 10. (B) $=\big(\binom{n}{2}-p\big)/\binom{n}{2}$ over the whole class, where $p$ is the number of truly linked pairs: the Def. 10 wording, and the form used in the proofs of Lemmas 2, 4 and 7. Where the two kinds of state differ, (A) is given for both. $[s]_L$ always contains $s$, because $L$ is an equivalence relation (Def. 8). Fractions are left unreduced, as in the paper.</p></details>
 </div></section>
 
-<!-- ============ 4. COINJOIN ============ -->
-<section id="coinjoin"><div class="wrap">
-  <p class="eyebrow">Interactive 4 · Figure 6 · Lemma 1</p>
-  <h2>Coinjoin: beat the multi-input heuristic</h2>
-  <p class="lede">The multi-input heuristic (Eq. 1) assumes every input of a transaction has the same owner. Coinjoin breaks that assumption. In Figure 6, three users merge 7 inputs into one transaction, so the adversary's class is all 7 inputs. Each state's score depends only on how many of the 7 its owner holds. <strong>Click an input to change its owner.</strong></p>
-  <div class="btns" style="margin-bottom:12px">
-    <button class="btn" type="button" id="cjPaper">Paper's Figure 6 (2 + 2 + 3)</button>
-    <button class="btn" type="button" id="cjSolo">One owner (no Coinjoin)</button>
-    <button class="btn" type="button" id="cjSpread">Seven owners</button>
-  </div>
-  <div class="split">
-    <div class="chart"><svg id="cjGraph" role="img" aria-label="Coinjoin transaction with seven inputs"></svg>
-      <ul class="legend" id="cjLegend"></ul></div>
-    <div class="chart"><svg id="cjBars" role="img" aria-label="Per-input unlinkability score"></svg>
-      <ul class="legend">
-        <li><span class="swatch" style="background:var(--ink-muted)"></span>bar = (A), per input, coloured by owner</li>
-        <li><span class="swatch" style="background:#dcdcdc"></span>Lemma 1 range</li>
-        <li><span class="swatch" style="background:var(--ink-1); height:2px"></span>(B), whole class</li>
-      </ul></div>
-  </div>
-  <div class="rogrid" id="cjRO"></div>
-  <details class="tbl"><summary>Table view — score of every input</summary><div class="tscroll"><table class="data" id="cjTable"></table></div></details>
-  <p class="note" style="margin-top:12px">The paper's split reproduces its stated scores: $\frac{10}{21}$ for the four inputs of the two 2-address users, and $\frac{6}{21}$ for the three inputs of the 3-address user (§4.1.1). Lemma 1 bounds a Coinjoin with at least two owners between $\binom{|S_I|-|U|}{2}/\binom{|S_I|}{2}$ and $\binom{|S_I|-|u|}{2}/\binom{|S_I|}{2}$, where $U$ is the largest owner class and $u$ the smallest.</p>
-</div></section>
-
-<!-- ============ 5. CHAINS ============ -->
-<section id="chains"><div class="wrap">
-  <p class="eyebrow">Interactive 5 · Figures 8 and 9 · Lemmas 6 and 8</p>
-  <h2>Monero vs Zcash: where the decoys come from</h2>
-  <p class="lede">Both chains hide the spent input behind masking edges and stop double-spends with nullifiers. They differ in <em>who</em> ends up in the untraceability set. A Monero ring signature names its decoys explicitly: 16 ring members since v0.18.0.0. A Zcash shielded spend names none, so the set is implicitly every earlier state in the pool. Step through each chain's sample run from the paper.</p>
-  <div class="controls">
-    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Chain</span>
-      <div class="seg" id="chainPick"><button type="button" aria-pressed="true" data-v="monero">Monero · Fig. 8</button><button type="button" aria-pressed="false" data-v="zcash">Zcash · Fig. 9</button></div></div>
-    <div class="ctl" style="flex:0 1 auto"><span class="lbl">View</span>
-      <div class="seg" id="chainView"><button type="button" aria-pressed="true" data-v="truth">Ground truth</button><button type="button" aria-pressed="false" data-v="adv">Adversary's view</button></div></div>
-    <div class="ctl"><span class="lbl">Transaction</span><div class="chips" id="chainTx"></div></div>
-  </div>
-  <div class="chart"><svg id="chainSvg" role="img" aria-label="Sample execution graph"></svg>
-    <ul class="legend" id="chainLegend"></ul></div>
-  <div class="rogrid" id="chainRO"></div>
-  <details class="tbl"><summary>Table view — every edge of the selected figure</summary><div class="tscroll"><table class="data" id="chainTable"></table></div></details>
-  <p class="note" style="margin-top:12px">Graphs reproduced from <code>figures/pdag_monero_h2.tex</code> (Figure 8) and <code>figures/pdag_zcash_all_min.tex</code> (Figure 9). Grey areas are the shielded pool, drawn exactly as in the figure source. The sample runs are toy-sized. The protocol-scale guarantees are the ones in the "At protocol scale" card.</p>
-</div></section>
-
-<!-- ============ GUARANTEES ============ -->
-<section id="guarantees"><div class="wrap">
-  <p class="eyebrow">Properties</p>
-  <h2>What each system guarantees, in the paper's terms</h2>
-  <div class="tscroll"><table class="data">
-    <thead><tr><th>System</th><th>Untraceability</th><th>Unlinkability</th><th>Where</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Coinjoin</strong><br><span class="badge">add-on, Bitcoin</span></td><td><span class="no">✕ None</span>: consumption stays visible</td><td>Under the multi-input relation (Eq. 1), the score lies in the Lemma 1 range, set by the largest and smallest owner classes</td><td class="badge">§4.1.1 · Lemma 1</td></tr>
-      <tr><td><strong>Tornado Cash</strong><br><span class="badge">add-on, Ethereum</span></td><td><span class="no">✕ None</span>: consumption stays visible</td><td>Address reuse gives a score of $0$. Otherwise the score is fixed by the heuristic, Eqs. 4–7: $\frac{2}{3}$, $1$, $\frac{12-l(l-1)}{12}$, or the Lemma 5 expression (all "or linkable")</td><td class="badge">§4.1.2 · Lemmas 2–5</td></tr>
-      <tr><td><strong>Monero</strong><br><span class="badge">v0.18.0.0, ring size 16</span></td><td><span class="yes">✓ $16$-untraceable</span> if $G^*=\mathbf{core}(G^*)$</td><td>One-time addresses, so no two states share an address. The multi-output heuristic (Eq. 8) gives "linkable or $1$"</td><td class="badge">§4.2 · Lemmas 6–7</td></tr>
-      <tr><td><strong>Zcash</strong> transparent pool</td><td><span class="no">✕ None</span></td><td>—</td><td class="badge">§4.3</td></tr>
-      <tr><td><strong>Zcash</strong> shielded pool</td><td><span class="yes">✓ $p$-untraceable</span> if $G^*=\mathbf{core}(G^*)$, where $p=\min|\{s\mid s\prec w\}|$ over witnesses $w$</td><td>Leaks through contact with the transparent pool: round-trip transactions (Eq. 9, Lemma 9) and mining-pool payouts (Eq. 10, a score of $1$ outside the pool)</td><td class="badge">§4.3 · Lemmas 8–10</td></tr>
-    </tbody>
-  </table></div>
-  <p class="note" style="margin-top:10px">"Linkable" means the heuristic was right and the score is $0$. The paper states the Tornado Cash, Monero and Zcash scores under the Def. 10 wording, reading (B) above; see <a href="#source">source notes</a>.</p>
-</div></section>
-
 <!-- ============ HEURISTICS ============ -->
 <section id="heuristics"><div class="wrap">
-  <p class="eyebrow">Results</p>
+  <p class="eyebrow">Appendix B · the catalogue</p>
   <h2>Ten numbered linking relations, one notation</h2>
-  <p class="lede">This is a formal-model paper, so it has no measurements or benchmarks. Its main result is this catalogue: heuristics from Bitcoin, Tornado Cash, Monero and Zcash research, each rewritten as an inferred linking relation $\tilde L$ on the PDAG, with the score each one leaves.</p>
+  <p class="lede">For readers who want the details: heuristics from Bitcoin, Tornado Cash, Monero and Zcash research, each rewritten as an inferred linking relation $\tilde L$ on the PDAG, with the score each one leaves.</p>
   <div class="tscroll"><table class="data">
     <thead><tr><th class="num">Eq.</th><th>Heuristic</th><th>System</th><th>From</th><th>Score it leaves</th></tr></thead>
     <tbody>
@@ -385,23 +406,7 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
       <tr><td class="num">10</td><td>Mining-pool payout: a $z\to t$ transaction with over 100 outputs, one of them a known pool</td><td>Zcash</td><td>Kappos et al.</td><td>$1$ for non-miners (Lemma 10)</td></tr>
     </tbody>
   </table></div>
-  <p class="note" style="margin-top:10px">Address reuse has no equation number, because it uses the address relation $A$ directly rather than a new $\tilde L$. Equation numbers are from <code>main.aux</code> of the ePrint build. Expressions are copied as printed in the paper, including Lemma 5's denominator (see source notes). "Maximal extractable privacy" (§3.3): the largest score a relation $\tilde L$ allows, i.e. what a user can gain by deliberately mixing unlinked states into a transaction that the heuristic misreads.</p>
-</div></section>
-
-<!-- ============ SOURCE NOTES ============ -->
-<section id="source"><div class="wrap">
-  <p class="eyebrow">Provenance</p>
-  <h2>Where the paper disagrees with itself</h2>
-  <p class="lede">This page shows these issues as the paper states them instead of silently choosing one version. They appear in the ePrint text that the PDF links to.</p>
-  <ol class="issues">
-    <li><strong>Two readings of the unlinkability score.</strong> The words of Def. 10 ("unlinked pairs to all possible pairs") and its formula $\binom{|[s]_{\tilde L}\setminus[s]_L|}{2}/\binom{|[s]_{\tilde L}|}{2}$ disagree. Because $[s]_L\ni s$, the formula gives $0$ for any state that shares a class of two with one unrelated state, and the text says such a state should score $1$. The Coinjoin example, Lemma 1 and Lemma 9 follow the formula. The motivating example in §3.3 and the proofs of Lemmas 2, 3, 4, 7 and 10 follow the wording. Even the wording is used two ways. Lemma 2 scores the unlinked $s_w$ by the pairs of the whole class, including the $s_d$–$s_f$ pair, which does not involve $s_w$. Lemma 4 instead defines $l$ from $s$ itself, $l=|[s]_L\cap[s]_{\tilde L}|$. <a href="#score">Interactive 3</a> puts both readings next to each other.</li>
-    <li><strong>Lemma 5</strong> divides by $\binom{2l}{l}$, while every other score divides by a count of pairs, $\binom{\cdot}{2}$. It also subtracts a single $\binom{l}{2}$, although its proof describes two disjoint classes of size $l$. The two denominators agree only at $l=2$. The expression is reproduced here as printed.</li>
-    <li><strong>Coinjoin example (§4.1.1).</strong> The text lists the adversary's class as $\{s_1,\dots,s_6\}$ and numbers scores $u_1\dots u_6$. Figure 6 and the denominator $21=\binom{7}{2}$ both use 7 inputs, $s_0\dots s_6$. Interactive 4 uses the 7 inputs of Figure 6.</li>
-    <li><strong>Tornado Cash (§4.1.2).</strong> The text calls the deposit "$T_{w_1}$". Figure 7a and the rest of the paragraph call it $T_{w_0}$.</li>
-    <li><strong>Zcash (§4.3).</strong> The text sends $T_{w_4}$ to "shielded $s_{10}$ and transparent $s_8$, $s_{10}$". In Figure 9, $s_{10}$ sits inside the shielded area and $s_8$, $s_9$ sit outside. Interactive 5 follows the figure.</li>
-    <li><strong>Figure 3 text</strong> says "$1\le i\le 2$" for three transactions $T^*_{w_1},T^*_{w_2},T^*_{w_3}$.</li>
-  </ol>
-  <p class="note">The FC 2024 camera-ready (<code>lncs/</code> in the source repo) is a shorter version with different numbering. It keeps the same Def. 10 formula.</p>
+  <p class="note" style="margin-top:10px">Address reuse has no equation number, because it uses the address relation $A$ directly rather than a new $\tilde L$. Equation numbers are from <code>main.aux</code> of the ePrint build. Expressions are copied as printed in the paper, including Lemma 5's denominator. "Maximal extractable privacy" (§3.3): the largest score a relation $\tilde L$ allows, i.e. what a user can gain by deliberately mixing unlinked states into a transaction that the heuristic misreads.</p>
 </div></section>
 
 <!-- ============ CITE ============ -->
@@ -481,14 +486,14 @@ function settle(key){ if (ANIMS[key]){ ANIMS[key].finish(); delete ANIMS[key]; }
 function lerp(a, b, p){ return a + (b - a) * p; }
 
 /* animate a set of [node, attr, target] triples from their current value */
-function animateAttrs(key, list, ms){
+function animateAttrs(key, list, ms, done){
   var from = list.map(function(t){
     var v = parseFloat(t[0].getAttribute(t[1]));
     return isNaN(v) ? (t[1] === 'opacity' ? 1 : 0) : v;
   });
   return run(key, ms, function(p){
     list.forEach(function(t, i){ t[0].setAttribute(t[1], lerp(from[i], t[2], p)); });
-  });
+  }, done);
 }
 
 /* tooltip */
@@ -973,6 +978,177 @@ function coreApply(ms){
     '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--ink-muted') + '" stroke-width="1.3" stroke-dasharray="5 4"/></svg>pruned: in no maximum matching</li>';
 })();
 
+
+/* =======================================================================
+   The puzzle (hook) — Figure 3 from the adversary's side
+   ===================================================================== */
+var hookGuess = {}, hookStage = 0, hookDom = null;
+function bipPos(W, H){
+  var xs = W < 360 ? 36 : 52, xw = W - (W < 360 ? 96 : 80), y0 = 42, gap = (H - 84) / 2, pos = {};
+  CORE_S.forEach(function(s, i){ pos[s] = [xs, y0 + i * gap]; });
+  CORE_W.forEach(function(w, i){ pos[w] = [xw, y0 + i * gap]; });
+  return pos;
+}
+function bipNodes(svg, pos, leftLab, rightLab){
+  var plane = css('--plane'), ink = css('--ink-1'), mut = css('--ink-muted');
+  svg.appendChild(el('text', { x:pos.s1[0], y:16, 'text-anchor':'middle', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, leftLab));
+  svg.appendChild(el('text', { x:pos.w1[0], y:16, 'text-anchor':'middle', 'font-size':11, fill:mut, 'font-family':'Ubuntu Mono, monospace' }, rightLab));
+  CORE_S.concat(CORE_W).forEach(function(id){
+    var q = pos[id], g = el('g', {});
+    if (id.charAt(0) === 's') g.appendChild(el('circle', { cx:q[0], cy:q[1], r:14, fill:plane, stroke:ink, 'stroke-width':1.4 }));
+    else g.appendChild(el('rect', { x:q[0] - 13, y:q[1] - 13, width:26, height:26, fill:plane, stroke:ink, 'stroke-width':1.4 }));
+    nodeLabel(g, id, q[0], q[1], 13);
+    svg.appendChild(g);
+  });
+}
+function drawHook(){
+  var svg = $('hookSvg'); clear(svg);
+  var narrow = isNarrow(), W = narrow ? 300 : 420, H = narrow ? 230 : 250;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  defsArrows(svg);
+  var pos = bipPos(W, H), eg = el('g', {}); svg.appendChild(eg);
+  hookDom = { edges:{}, side:{} };
+  Object.keys(PAPER_E).forEach(function(k){
+    var s = k.slice(0, 2), w = k.slice(2);
+    var geo = { s:[pos[s][0] + 15, pos[s][1]], t:[pos[w][0] - 15, pos[w][1]] };
+    geo.c = [(geo.s[0] + geo.t[0]) / 2, (geo.s[1] + geo.t[1]) / 2];
+    var g = el('g', { opacity:1 });
+    var guess = el('path', { d:smoothPath(geo), stroke:css('--accent'), 'stroke-width':6, 'stroke-linecap':'round', fill:'none', opacity:0 });
+    var cut = el('path', { d:smoothPath(geo), stroke:css('--ink-muted'), 'stroke-width':1.3, 'stroke-dasharray':'5 4', fill:'none', opacity:0 });
+    var dot = el('path', Object.assign(edgeStroke(svg, 'O'), { d:smoothPath(geo) }));
+    var wave = el('path', Object.assign(edgeStroke(svg, 'M'), { d:wavyPath(geo), opacity:0 }));
+    g.appendChild(guess); g.appendChild(cut); g.appendChild(dot); g.appendChild(wave);
+    eg.appendChild(g);
+    hookDom.edges[k] = { g:g, guess:guess, cut:cut, dot:dot, wave:wave };
+  });
+  bipNodes(svg, pos, 'coins', 'transactions');
+  CORE_W.forEach(function(w){
+    var t = el('text', { x:pos[w][0] + 20, y:pos[w][1] + 4, 'font-size':12, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace' }, '');
+    svg.appendChild(t); hookDom.side[w] = t;
+  });
+  var lg = $('hookLegend');
+  lg.innerHTML = '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--s3') + '" stroke-width="2.2" stroke-dasharray="1.5 4" stroke-linecap="round"/></svg>might have spent</li>' +
+    '<li><svg width="24" height="16" aria-hidden="true"><line x1="3" y1="8" x2="19" y2="8" stroke="' + css('--accent') + '" stroke-width="6" stroke-linecap="round" opacity=".3"/></svg>your guess</li>' +
+    '<li><svg width="24" height="16" aria-hidden="true"><line x1="1" y1="8" x2="21" y2="8" stroke="' + css('--ink-muted') + '" stroke-width="1.3" stroke-dasharray="5 4"/></svg>impossible</li>' +
+    '<li><svg width="24" height="16" aria-hidden="true"><path d="M1,8 q2.5,-5 5,0 t5,0 t5,0 t5,0" fill="none" stroke="' + css('--s2') + '" stroke-width="1.8"/></svg>what was really spent</li>';
+}
+function hookCands(w){ return CORE_S.filter(function(s){ return PAPER_E[s + w]; }); }
+function hookApply(ms, done){
+  var R = coreOf(PAPER_E), list = [];
+  Object.keys(PAPER_E).forEach(function(k){
+    var d = hookDom.edges[k], s = k.slice(0, 2), w = k.slice(2);
+    var pruned = hookStage >= 1 && !R.core[k], truth = hookStage >= 2 && TRUTH_M1[k];
+    list.push([d.dot, 'opacity', pruned || truth ? 0 : 1]);
+    list.push([d.cut, 'opacity', pruned ? 0.6 : 0]);
+    list.push([d.wave, 'opacity', truth ? 1 : 0]);
+    list.push([d.guess, 'opacity', hookGuess[w] === s ? 0.3 : 0]);
+  });
+  animateAttrs('hook-op', list, ms, done);
+  CORE_W.forEach(function(w){
+    var n = hookCands(w).length, m = hookCands(w).filter(function(s){ return R.core[s + w]; }).length;
+    hookDom.side[w].textContent = hookStage >= 1 ? 'really ' + m : 'set of ' + n;
+  });
+  var head = '<thead><tr><th>Tx</th><th class="num">Looks like</th><th class="num">After pruning</th><th>Your guess</th>' + (hookStage >= 2 ? '<th>Spent</th>' : '') + '</tr></thead><tbody>';
+  var rows = CORE_W.map(function(w){
+    var n = hookCands(w).length, m = hookCands(w).filter(function(s){ return R.core[s + w]; }).length;
+    var truth = Object.keys(TRUTH_M1).filter(function(k){ return k.slice(2) === w; })[0].slice(0, 2);
+    var g = hookGuess[w], mark = '';
+    if (hookStage >= 2 && g) mark = g === truth ? ' <span class="yes">✓</span>' : (w === 'w3' ? ' <span class="no">✕</span>' : ' <span class="no">✕</span> <span class="badge">a coin flip — $M_2$ fits too</span>');
+    return '<tr><td>$' + texId(w) + '$</td><td class="num">1 in ' + n + '</td><td class="num">' + (hookStage >= 1 ? (m === 1 ? '<span class="no">1 in 1</span>' : '1 in ' + m) : '?') + '</td><td>' + (g ? '$' + texId(g) + '$' : '—') + mark + '</td>' +
+      (hookStage >= 2 ? '<td>$' + texId(truth) + '$</td>' : '') + '</tr>';
+  }).join('');
+  setMath($('hookTable'), head + rows + '</tbody>');
+  $('hookReveal').disabled = hookStage > 0;
+  var punch = $('hookPunch'), target = hookStage >= 2 ? 1 : 0, from = parseFloat(punch.style.opacity) || 0;
+  run('hook-punch', ms, function(p){ punch.style.opacity = lerp(from, target, p); });
+}
+(function(){
+  var box = $('hookGuess');
+  CORE_W.forEach(function(w){
+    var row = document.createElement('div'); row.className = 'guessrow';
+    row.innerHTML = '<span class="who">$' + texId(w) + '$ spent:</span>';
+    var chips = document.createElement('div'); chips.className = 'chips';
+    hookCands(w).forEach(function(s){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'chipbtn';
+      b.setAttribute('data-s', s); b.textContent = '$' + texId(s) + '$';
+      b.addEventListener('click', function(){
+        hookGuess[w] = s;
+        pressOnly(chips, function(c){ return c.getAttribute('data-s') === s; });
+        hookApply(300);
+      });
+      chips.appendChild(b);
+    });
+    row.appendChild(chips); box.appendChild(row);
+  });
+  katexRender(box);
+  $('hookReveal').addEventListener('click', function(){
+    hookStage = 1;
+    hookApply(800, function(){ hookStage = 2; hookApply(600); });
+  });
+  $('hookReset').addEventListener('click', function(){
+    settle('hook-op'); hookStage = 0; hookGuess = {};
+    Array.prototype.forEach.call(box.querySelectorAll('.chipbtn'), function(c){ c.setAttribute('aria-pressed', 'false'); });
+    hookApply(400);
+  });
+})();
+
+/* =======================================================================
+   Where this goes next — weighted edges (§5), on the puzzle's core
+   ===================================================================== */
+var extP = 0.5, extShown = 0.5, extDom = null;
+function extWeights(p){
+  var c = coreOf(PAPER_E).core, wts = {};
+  Object.keys(c).forEach(function(k){ wts[k] = TRUTH_M1[k] ? p : 1 - p; });
+  wts.s3w3 = 1;               /* s3 -> w3 is in both maximum matchings */
+  return wts;
+}
+function drawExt(){
+  var svg = $('extSvg'); clear(svg);
+  var narrow = isNarrow(), W = narrow ? 300 : 420, H = narrow ? 230 : 250;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var pos = bipPos(W, H), eg = el('g', {}); svg.appendChild(eg);
+  extDom = {};
+  Object.keys(extWeights(0.5)).forEach(function(k){
+    var s = k.slice(0, 2), w = k.slice(2);
+    var a = [pos[s][0] + 15, pos[s][1]], b = [pos[w][0] - 15, pos[w][1]];
+    var line = el('line', { x1:a[0], y1:a[1], x2:b[0], y2:b[1], stroke:css('--s1'), 'stroke-linecap':'round' });
+    var t = 0.27, lx = a[0] + (b[0] - a[0]) * t, ly = a[1] + (b[1] - a[1]) * t - 7;
+    var lab = el('text', { x:lx, y:ly, 'text-anchor':'middle', 'font-size':11.5, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace', 'font-weight':700,
+      stroke:css('--surface-1'), 'stroke-width':3, 'paint-order':'stroke' }, '');
+    eg.appendChild(line); eg.appendChild(lab);
+    extDom[k] = { line:line, lab:lab };
+  });
+  bipNodes(svg, pos, 'coins', 'transactions');
+  paintExt(extShown);
+}
+function paintExt(p){
+  var wts = extWeights(p);
+  Object.keys(extDom).forEach(function(k){
+    var v = wts[k];
+    extDom[k].line.setAttribute('stroke-width', (0.8 + 6 * v).toFixed(2));
+    extDom[k].line.setAttribute('opacity', (0.2 + 0.8 * v).toFixed(3));
+    extDom[k].lab.textContent = v.toFixed(2);
+  });
+}
+function extTable(){
+  var p = extP, best = function(a, b, pa){ return pa > 0.5 ? a : (pa < 0.5 ? b : null); };
+  var rows = [
+    ['w1', best('s1', 's2', p), Math.max(p, 1 - p)],
+    ['w2', best('s2', 's1', p), Math.max(p, 1 - p)],
+    ['w3', 's3', 1]
+  ];
+  setMath($('extTable'), '<thead><tr><th>Tx</th><th>Best guess</th><th class="num">Chance it is right</th></tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr><td>$' + texId(r[0]) + '$</td><td>' + (r[1] ? '$' + texId(r[1]) + '$' : 'a tie') + '</td><td class="num">' + r[2].toFixed(2) + '</td></tr>'; }).join('') +
+    '</tbody>');
+}
+function extSet(v, ms){
+  extP = v; $('extVal').textContent = v.toFixed(2); extTable();
+  var from = extShown;
+  run('ext', ms, function(q){ extShown = lerp(from, extP, q); paintExt(extShown); });
+}
+$('extIn').addEventListener('input', function(){ extSet(+this.value, 220); });
+$('extIn').addEventListener('change', function(){ settle('ext'); });
+
 /* =======================================================================
    Interactive 3 — unlinkability score, both readings
    ===================================================================== */
@@ -1366,20 +1542,22 @@ $('copyBib').addEventListener('click', function(){
 function drawAllStatic(){
   drawGraph($('pdagSvg'), FIG2, pdagPick); animateAttrs('pdag-op', graphTargets(FIG2, pdagState.view, pdagState.sel), 0);
   drawCore(); coreApply(0);
+  drawHook(); hookApply(0);
+  drawExt();
   drawScore(false);
   drawCjGraph(); drawCjBars(); cjShown = null; cjApply(0);
   chainDraw(false);
 }
 drawAllStatic();
-pdagApply(0); chainApply(0); scoreSet(scoreN, scoreL, 0);
+pdagApply(0); chainApply(0); scoreSet(scoreN, scoreL, 0); extTable();
 
 var ENTER = {
-  tldr: function(){
-    Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
-      var to = +n.getAttribute('data-count');
-      tween(900, function(p){ n.textContent = Math.round(to * p); });
-    });
+  hook: function(){
+    Object.keys(hookDom.edges).forEach(function(k){ hookDom.edges[k].g.setAttribute('opacity', 0); });
+    var gs = Object.keys(hookDom.edges).map(function(k){ return hookDom.edges[k].g; });
+    run('hook-enter', 800, function(p){ gs.forEach(function(g, i){ g.setAttribute('opacity', Math.max(0, Math.min(1, p * 1.8 - i * 0.12))); }); });
   },
+  next: function(){ var from = 0.5; extShown = 1; run('ext', 900, function(q){ extShown = lerp(1, extP, q); paintExt(extShown); }); },
   pdag: function(){ FIG2.after = function(){ pdagApply(300); }; graphEnter(FIG2, 1000); },
   core: function(){
     CORE_S.forEach(function(s){ CORE_W.forEach(function(w){ coreDom.edges[s + w].g.setAttribute('opacity', 0); }); });
