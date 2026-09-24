@@ -187,7 +187,6 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
     <a href="#fairness">Fairness</a>
     <a href="#guarantees">Guarantees</a>
     <a href="#results">Results</a>
-    <a href="#provenance">Provenance</a>
     <a href="#cite">Cite</a>
   </nav>
 </div></div>
@@ -230,7 +229,7 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
     <div class="tile">
       <div class="k">Per deposit, largest queue</div>
       <div class="v">≈<span data-count="146">146</span>K gas</div>
-      <p class="d">Nearly the same at every tree depth from 10 to 30 (Fig.&nbsp;10). The text places this at $l=128$; the figure's label sits at $l=256$ — see <a href="#provenance">provenance</a>.</p>
+      <p class="d">Nearly the same at every tree depth from 10 to 30 (Fig.&nbsp;10). The text places this at $l=128$; the figure's label sits at $l=256$.</p>
     </div>
   </div>
 </div></section>
@@ -449,7 +448,7 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
 
   <h3 style="margin-top:26px">Average gas per deposit (Figs. 10 and 11)</h3>
   <div class="tscroll"><table id="resTable"></table></div>
-  <p class="note">Recovered from figure geometry, nearest 1K gas (see provenance). The text reports the VC deposit that updates the root at approximately 436K gas.</p>
+  <p class="note">Recovered from figure geometry, nearest 1K gas (see the note under the gas chart). The text reports the VC deposit that updates the root at approximately 436K gas.</p>
 
   <h3 style="margin-top:26px">Contract deployment (Fig. 8)</h3>
   <div class="tscroll"><table>
@@ -469,21 +468,6 @@ footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; c
       <tr><td>Recent-root list size $k$</td><td class="num">100</td><td>vs. more than 26,000 deposits in each ETH pool</td></tr>
     </tbody>
   </table></div>
-</div></section>
-
-<!-- ============ PROVENANCE ============ -->
-<section id="provenance"><div class="wrap">
-  <p class="eyebrow">Provenance</p>
-  <h2>Where the paper disagrees with itself</h2>
-  <p class="lede">Each chart above reproduces its source faithfully. Where two places in the paper give different numbers, both are shown and flagged here rather than silently reconciled.</p>
-  <ol class="prov">
-    <li><b>Finalisation time, formula vs. figure.</b> §7.2 gives $\mathbb{E}_{final}=(l-1)\Delta/2$, but every point in Fig.&nbsp;9 equals $l\cdot\Delta\cdot12\,$s — the time to fill the whole queue, roughly twice the formula for large $l$. The waiting-time chart plots both.</li>
-    <li><b>$gas_{update}$ in the fairness example.</b> §7.3 computes $2^5\times1.78\times10^5=5.69M$ gas for “depth 20 (cf. Fig. 10)”. Fig.&nbsp;10's $d=20$, $l=32$ point is ≈164K; ≈178K is the $d=30$ point. With 164K the example becomes ≈5.25M gas and ≈0.16 ETH instead of 0.17 ETH. The arithmetic of §7.3 itself is correct.</li>
-    <li><b>Largest queue size.</b> §7.1 lists $l\in\{2,\dots,128\}$ and reports “around 146K” at $l=128$. Figs.&nbsp;10–11 plot eight sizes up to $2^8=256$, and the “146k” label sits at 256. At 128 the recovered values range from ≈145K ($d=10$) to ≈152K ($d=30$).</li>
-    <li><b>VC saving ratio.</b> §7.4 states a saving ratio of $\frac{1M}{436K\cdot l}=\frac{2.29}{l}$ for a queue of size $l$. Fig.&nbsp;11 shows the MPB+VC per-client cost at $l=2$ as ≈273K gas, about 4.1× below Tornado Cash's 1,111,030, whereas $2.29/l$ gives 1.15 at $l=2$ and less than 1 from $l=4$. The formula is quoted, not used.</li>
-    <li><b>Figure numbering.</b> Figure numbers on this page follow the full version (the linked PDF, also ePrint 2023/1222). The AFT proceedings version omits the VC setup pseudocode (Fig.&nbsp;6 here), so its later figures are numbered one lower — Fig.&nbsp;10 here is Fig.&nbsp;9 there.</li>
-    <li><b>Chart data.</b> No notebook or raw data ships with the paper. Values in the gas and deployment charts were recovered from the vector coordinates of the figure PDFs; values stated in prose are used verbatim.</li>
-  </ol>
 </div></section>
 
 <!-- ============ CITE ============ -->
