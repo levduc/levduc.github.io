@@ -589,10 +589,46 @@ p .katex{overflow-wrap:break-word}
     <ul class="legend">
       <li><span class="swatch" style="background:var(--s1)"></span>Honest <span class="katex-src">$p_{\mathcal{H}}$</span></li>
       <li><span class="swatch" style="background:var(--s2)"></span>Adversarial <span class="katex-src">$p_{\mathcal{A}}$</span></li>
-      <li><span class="swatch dash" style="color:var(--critical)"></span>Bound <span class="katex-src">$1/(\Delta-1+1/p_{\mathcal{H}})$</span></li>
+      <li><span class="swatch dash" style="color:var(--critical)"></span>Bound <span class="katex-src">$1/(\Delta-1+1/p_{\mathcal{H}})$</span> &mdash; honest rate after the delay discount</li>
     </ul>
   </div>
   <div class="verdict ok" id="thVerdict"><b id="thVerdictK">Secure</b><span id="thVerdictT"></span></div>
+
+  <h3 style="margin:28px 0 .5rem">Why <span class="katex-src">$\Delta$</span> sits inside the bound</h3>
+  <p class="lede">The condition is not <span class="katex-src">$p_{\mathcal{A}} &lt; p_{\mathcal{H}}$</span>. A correct
+  process that wins a slot still has to tell everyone, and that takes up to <span class="katex-src">$\Delta$</span>
+  steps &mdash; during which another correct process, still working from the old tip, can win a slot too and build a
+  block that will be thrown away. Byzantine processes have no such loss: the model gives them delay
+  <span class="katex-src">$1$</span> among themselves, so everything they produce counts.</p>
+  <p class="lede" style="margin-bottom:1.1rem">Below, <b>both sides win slots at exactly the same steps</b>. Only
+  survival differs. Move the <span class="katex-src">$\Delta$</span> slider above and watch the honest side lose
+  blocks.</p>
+
+  <div class="chart">
+    <svg id="dlSvg" role="img" aria-label="The same pattern of won slots on the honest and Byzantine sides; honest blocks produced while a previous block is still propagating are discarded, Byzantine blocks are not"></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>Counts &mdash; extends the chain</li>
+      <li><span class="swatch" style="background:var(--surface-1); border:1px dashed var(--ink-muted)"></span>Discarded &mdash; built on a tip that was already stale</li>
+      <li><span class="swatch" style="background:var(--s1); opacity:.16"></span>Still propagating</li>
+    </ul>
+  </div>
+  <p class="note" id="dlRead" style="margin-top:12px"></p>
+
+  <div class="stmt">
+    <p class="lab">Remark 5.3 <span>&mdash; Rem. 4 in arXiv</span></p>
+    <p class="body">Also, if we assume a <span class="katex-src">$\Delta > 1$</span> network delay between correct
+    processes, there will [be] a non-zero probability that a fork can happen, and honest blocks can get discarded due to
+    the network delay. On the other hand, we also assume a perfect synchrony (<span class="katex-src">$\Delta = 1$</span>)
+    between Byzantine processes; therefore, there is no loss in the malicious growth rate. Therefore, even when correct
+    processes and Byzantine processes control the same amount of resources on both chains, due to network delay, the
+    chain growth rate of <span class="katex-src">$\mathcal{C}^*$</span> can still be higher than the chain growth rate of
+    the honest chain <span class="katex-src">$\mathcal{C}_{\mathsf{local}}$</span>.</p>
+    <p class="read"><b>Plain reading</b>This is the asymmetry the diagram shows, stated by the paper. Equal resources do
+    not mean equal chain growth, because only one side pays for propagation. It is also why the long-range attack does
+    not need <span class="katex-src">$p_{\mathcal{A}^*}$</span> to be much bigger than
+    <span class="katex-src">$p_{\mathcal{H}}$</span> &mdash; merely bigger is enough, and delay widens the real gap
+    further.</p>
+  </div>
 
   <details class="tbl"><summary>Table view &mdash; values at the current settings</summary>
     <div class="tablewrap"><table id="thTable"></table></div>
@@ -611,8 +647,13 @@ p .katex{overflow-wrap:break-word}
     <span class="katex-src">$\varrho$</span> or <span class="katex-src">$\Delta$</span></b> &mdash; the slider settings are
     illustrative, only the formulas are the paper's.
   </p>
-  <p class="note" style="margin-top:8px">At <span class="katex-src">$\Delta=1$</span> the bound collapses to
-  <span class="katex-src">$p_{\mathcal{A}} &lt; p_{\mathcal{H}}$</span> and the dashed line lies exactly on the blue one.</p>
+  <p class="note" style="margin-top:8px">The bound is <span class="katex-src">$p_{\mathcal{H}}$</span> written as a
+  discount: <span class="katex-src">$\frac{1}{\Delta-1+1/p_{\mathcal{H}}} = \frac{p_{\mathcal{H}}}{1+(\Delta-1)p_{\mathcal{H}}}$</span>.
+  At <span class="katex-src">$\Delta=1$</span> the discount vanishes, the condition is just
+  <span class="katex-src">$p_{\mathcal{A}} &lt; p_{\mathcal{H}}$</span>, and the dashed line lies exactly on the blue
+  one. Every step of <span class="katex-src">$\Delta$</span> above 1 pulls it further down &mdash; &sect;4.1 says
+  Equation 1 &ldquo;takes into account that honest blocks may get discarded due to the network delay
+  <span class="katex-src">$\Delta$</span>&rdquo;.</p>
 </div></section>
 
 <section id="lra"><div class="wrap">
@@ -1985,10 +2026,20 @@ function drawT(mode){
     grp.appendChild(tx);
     hoverable(c, '<b>' + label + '</b>R_A = ' + M.RA + '<br>value = ' + fx(v));
   }
+  /* any two of the three can land on the same y, so stack the labels apart */
   var vH = sH[M.RA], vA = sA[M.RA], vB = sB[M.RA];
-  dot(vH, css('--s1'), 'pH =', Math.abs(Y(vH) - Y(vB)) < 15 ? -11 : 4);
-  dot(vB, css('--critical'), 'bound =', 4);
-  dot(vA, css('--s2'), 'pA =', 4);
+  var items = [
+    { v:vH, c:css('--s1'), l:'pH =' },
+    { v:vB, c:css('--critical'), l:'bound =' },
+    { v:vA, c:css('--s2'), l:'pA =' }
+  ].sort(function(x, y){ return Y(x.v) - Y(y.v); });
+  var lastLabelY = -1e9;
+  for (var m = 0; m < items.length; m++){
+    var yv = Y(items[m].v);
+    var ly = Math.max(yv + 4, lastLabelY + 13);
+    lastLabelY = ly;
+    dot(items[m].v, items[m].c, items[m].l, ly - yv);
+  }
 
   if (mode === 'enter' && !REDUCED){
     [pathH, pathA, pathB].forEach(function(p, i){
@@ -2007,6 +2058,115 @@ function drawT(mode){
     tween(520, function(q){ grp.setAttribute('opacity', q); vline.setAttribute('opacity', q); },
       function(){ grp.removeAttribute('opacity'); vline.removeAttribute('opacity'); });
   }
+}
+
+
+/* ---------------------------------------------------------------------
+   Why Delta is inside Equation 1: the same won slots, different survival.
+   Honest blocks produced while a previous one is still in flight are
+   discarded (§4.1, Rem. 5.3); Byzantine processes have delay 1, so none are.
+   --------------------------------------------------------------------- */
+var DL_SLOTS = [1, 2, 3, 5, 6, 8, 9, 11];   /* fixed and illustrative, identical on both sides */
+var DL_STEPS = 12;
+
+/* a block survives unless a previous surviving block is still propagating */
+function dlSurvivors(delay){
+  var keep = [], lastKept = -Infinity;
+  for (var i = 0; i < DL_SLOTS.length; i++){
+    var sN = DL_SLOTS[i];
+    var ok = (sN >= lastKept + delay);
+    keep.push(ok);
+    if (ok) lastKept = sN;
+  }
+  return keep;
+}
+function dlGeom(){
+  if (narrowNow()){
+    /* the survivor count sits to the right of the lane, so the lane has to stop short */
+    return { W:340, H:216, narrow:true, x0:7, dx:(288 - 7) / (DL_STEPS - 1), bw:13,
+             lanes:[{ y:40, h:30, t:16 }, { y:124, h:30, t:100 }], axisY:184 };
+  }
+  return { W:700, H:238, narrow:false, x0:120, dx:(638 - 120) / (DL_STEPS - 1), bw:26,
+           lanes:[{ y:46, h:40, t:34 }, { y:136, h:40, t:124 }], axisY:212 };
+}
+function drawDelta(){
+  var svg = document.getElementById('dlSvg');
+  if (!svg) return;
+  clear(svg);
+  var g = dlGeom();
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var mono = css('--mono'), muted = css('--ink-muted');
+  var X = function(k){ return g.x0 + k * g.dx; };
+
+  function lane(idx, delay, title, sub, colour){
+    var L = g.lanes[idx], keep = dlSurvivors(delay), kept = 0;
+    svg.appendChild(el('text', { x:g.narrow ? g.x0 : 0, y:L.t, 'font-family':mono,
+      'font-size':g.narrow ? 10.5 : 11.5, 'font-weight':700, fill:colour }, title));
+    svg.appendChild(el('text', { x:g.narrow ? g.x0 : 0, y:L.t + (g.narrow ? 13 : 14),
+      'font-family':mono, 'font-size':9.5, fill:muted }, sub));
+    /* the lane itself */
+    svg.appendChild(el('line', { x1:X(0) - g.bw / 2, y1:L.y + L.h / 2, x2:X(DL_STEPS - 1) + g.bw / 2,
+      y2:L.y + L.h / 2, stroke:css('--grid'), 'stroke-width':1.5 }));
+
+    var lastKept = -Infinity;
+    for (var i = 0; i < DL_SLOTS.length; i++){
+      var sN = DL_SLOTS[i], x = X(sN), ok = keep[i];
+      if (ok){
+        /* how long this block is still in flight */
+        if (delay > 1){
+          var span = Math.min(X(sN + delay - 1), X(DL_STEPS - 1)) - x;
+          svg.appendChild(el('rect', { x:x, y:L.y, width:Math.max(0, span), height:L.h, rx:2,
+            fill:colour, opacity:0.16 }));
+        }
+        svg.appendChild(el('rect', { x:x - g.bw / 2, y:L.y + 5, width:g.bw, height:L.h - 10, rx:2,
+          fill:colour }));
+        kept++;
+        lastKept = sN;
+      } else {
+        svg.appendChild(el('rect', { x:x - g.bw / 2, y:L.y + 5, width:g.bw, height:L.h - 10, rx:2,
+          fill:css('--surface-1'), stroke:muted, 'stroke-width':1, 'stroke-dasharray':'2 2' }));
+        svg.appendChild(el('line', { x1:x - g.bw / 2 + 2, y1:L.y + L.h - 7, x2:x + g.bw / 2 - 2,
+          y2:L.y + 7, stroke:muted, 'stroke-width':1 }));
+      }
+    }
+    svg.appendChild(el('text', { x:X(DL_STEPS - 1) + g.bw / 2 + 8, y:L.y + L.h / 2 + 4,
+      'font-family':mono, 'font-size':g.narrow ? 9.5 : 11, fill:css('--ink-1') },
+      kept + '/' + DL_SLOTS.length));
+    return kept;
+  }
+
+  var keptH = lane(0, Math.max(1, M.D), 'correct processes',
+    'a block is in flight for Δ steps', css('--s1'));
+  var keptA = lane(1, 1, 'Byzantine processes',
+    'delay 1 — nothing is ever in flight', css('--s2'));
+
+  /* the shared step axis */
+  svg.appendChild(el('line', { x1:X(0) - g.bw / 2, y1:g.axisY, x2:X(DL_STEPS - 1) + g.bw / 2,
+    y2:g.axisY, stroke:css('--axis'), 'stroke-width':1.5 }));
+  for (var k = 0; k < DL_STEPS; k++){
+    var every = g.narrow ? 3 : 2;
+    if (k % every) continue;
+    svg.appendChild(el('line', { x1:X(k), y1:g.axisY - 4, x2:X(k), y2:g.axisY + 4,
+      stroke:css('--axis'), 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:X(k), y:g.axisY + 17, 'text-anchor':'middle',
+      'font-family':mono, 'font-size':9.5, fill:muted }, 't+' + k));
+  }
+  return { keptH:keptH, keptA:keptA };
+}
+function syncDelta(){
+  var r = drawDelta();
+  var n = document.getElementById('dlRead');
+  if (!n || !r) return;
+  var h = pH(), b = bound();
+  n.innerHTML = M.D === 1
+    ? 'At <b>Δ = 1</b> nothing is ever in flight, so both sides keep all ' + DL_SLOTS.length
+      + ' blocks and the bound is just p<sub>H</sub> = <b>' + fx(h) + '</b>.'
+    : 'At <b>Δ = ' + M.D + '</b> the correct processes keep <b>' + r.keptH + ' of ' + DL_SLOTS.length
+      + '</b> of the slots they won; the Byzantine processes keep <b>all ' + r.keptA + '</b>. '
+      + 'The paper prices that loss into the bound: p<sub>H</sub> = ' + fx(h)
+      + ' raw, but only <b>' + fx(b) + '</b> after the discount — and that smaller number is what p<sub>A</sub> '
+      + 'must stay under. <span class="cm">(The pattern of won slots is fixed and illustrative; the formula, not this '
+      + 'count, is the paper’s accounting.)</span>';
 }
 
 function syncT(){
@@ -2046,6 +2206,7 @@ function syncT(){
   document.getElementById('shRho').textContent = 'ϱ = ' + fx(M.rho);
 
   drawT('static');
+  syncDelta();
 }
 
 (function(){
@@ -2718,7 +2879,7 @@ if (hasIO){
 var rzT;
 window.addEventListener('resize', function(){
   clearTimeout(rzT);
-  rzT = setTimeout(function(){ drawT('static'); drawR('static'); drawC('static'); }, 120);
+  rzT = setTimeout(function(){ drawT('static'); drawR('static'); drawC('static'); drawDelta(); }, 120);
 });
 </script>
 </body>
