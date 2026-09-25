@@ -112,7 +112,20 @@ code,.mono{font-family:var(--mono); font-size:.9em}
   border-radius:3px; padding:.05rem .4rem; cursor:pointer; color:var(--accent)}
 .atag:hover{border-color:var(--accent)}
 .atag.none{color:var(--ink-muted); cursor:default; border-style:dashed}
-.arrowsep{display:none}
+.vtag{font-family:var(--mono); font-size:.74rem; color:var(--ink-2); border:1px solid var(--ring); background:var(--plane);
+  border-radius:3px; padding:.05rem .4rem; white-space:nowrap}
+.vtag::before{content:"\201C"} .vtag::after{content:"\201D"}
+.item .meta{display:flex; flex-wrap:wrap; gap:5px; align-items:center}
+.version{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); margin:.9rem 0 0}
+/* reader's view */
+.rv-cols{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px}
+.rv-col{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; overflow:hidden}
+.rv-col .bar{height:4px}
+.rv-col h3{font-size:1rem; padding:10px 14px 6px; margin:0}
+.rv-col ul{list-style:none; margin:0; padding:0 14px 10px}
+.rv-col li{padding:8px 0; border-top:1px solid var(--grid); font-size:.9rem; line-height:1.45}
+.rv-col li .meta{display:block; margin-top:.3rem; font-family:var(--mono); font-size:.76rem; color:var(--ink-muted)}
+.rv-col .none{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); padding:8px 0; border-top:1px solid var(--grid)}
 
 /* ---------- controls ---------- */
 .controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:center; margin:0 0 14px}
@@ -185,7 +198,8 @@ code,.mono{font-family:var(--mono); font-size:.9em}
 /* ---------- tables ---------- */
 details.tbl{margin-top:14px}
 details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
-.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+.tscroll{position:relative; overflow-x:auto; -webkit-overflow-scrolling:touch}
+.k .katex{text-transform:none}
 table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
 th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
 th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
@@ -210,7 +224,7 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
 @media (max-width:760px){
   body{font-size:16px}
   .hero h1{font-size:2rem}
-  .three,.phases,.detail-grid,.sizegrid,.rec,.flag,.tblgrid{grid-template-columns:1fr}
+  .three,.phases,.detail-grid,.sizegrid,.rec,.flag,.tblgrid,.rv-cols{grid-template-columns:1fr}
   .mit{grid-template-columns:1fr}
   .chart{padding:12px 10px 10px}
   .seg{flex-wrap:wrap}
@@ -229,6 +243,7 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
     <a href="#attacks">Attacks</a>
     <a href="#sizes">Signatures</a>
     <a href="#exposure">Exposure</a>
+    <a href="#foryou">For you</a>
     <a href="#recovery">Recovery</a>
     <a href="#tables">Tables</a>
     <a href="#cite">Cite</a>
@@ -239,7 +254,7 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
 <header class="hero"><div class="wrap">
   <span class="venue">Circle Whitepaper 2026</span>
   <h1>Circle's Post-Quantum Security Roadmap</h1>
-  <p class="sub">Securing blockchains, smart contracts, and digital assets for the quantum era: a three-phase plan (Now, Transition, Switch) that protects privacy first, gives developers a post-quantum signature verifier on Arc, and keeps a path to recover funds once classical signatures are cut off.</p>
+  <p class="sub">Securing blockchains, smart contracts, and digital assets for the quantum era: a three-phase plan (Now, Transition, Switch) that protects privacy first, plans a post-quantum signature verifier for Arc's smart contracts, and works toward recovering funds frozen when classical signatures are cut off.</p>
   <p class="authors">
     Mira Belenkiy<sup>1</sup>, <span class="me">Duc V. Le</span><sup>1</sup>, Gordon Liao<sup>1</sup>,
     Vipin Singh Sehrawat<sup>1</sup>, Dragos Rotaru<sup>1</sup>, Sergey Gorbunov<sup>1</sup>,
@@ -251,6 +266,7 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
     <a class="btn" href="#cite">[BibTeX]</a>
     <span class="aimark">AI-generated page<a href="#ai-note" aria-label="About this page">*</a></span>
   </div>
+  <p class="version">Version: the linked PDF, built 2026-05-14. Section, table and figure numbers follow it.</p>
 </div></header>
 
 <!-- ============ TILES ============ -->
@@ -303,7 +319,7 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
 <section id="roadmap"><div class="wrap">
   <p class="eyebrow">The roadmap</p>
   <h2>Three phases: Now, Transition, Switch</h2>
-  <p class="lede">The phases follow urgency. Privacy protections ship first, signature and consensus changes follow as post-quantum infrastructure matures, and a hard cutoff comes only once recovery paths exist. The paper gives no calendar dates for Circle's phases; the binding external deadlines it cites fall in 2030 and 2035 (Table 3). Tags name the attacks each item counters in Table 4; click one to open it below.</p>
+  <p class="lede">The phases follow urgency. Privacy protections ship first, signature and consensus changes follow as post-quantum infrastructure matures, and a hard cutoff comes only once recovery paths exist. The paper gives no calendar dates for Circle's phases; the binding external deadlines it cites fall in 2030 and 2035 (Table 3). Quoted tags are the paper's own verb for each item, so you can tell a commitment from an option. Blue tags name the attacks each item counters in Table 4; click one to open it below.</p>
   <div class="phases" id="phases"></div>
 </div></section>
 
@@ -397,16 +413,30 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
   </div>
 </div></section>
 
+<!-- ============ FOR YOU ============ -->
+<section id="foryou"><div class="wrap">
+  <p class="eyebrow">Interactive · reader's view</p>
+  <h2>What the plan means for you</h2>
+  <p class="lede">The paper is organized by phase, not by reader. Pick who you are to see what it says about your part in each phase. The grouping is ours; every entry paraphrases the cited section and keeps the paper's verb. Where an entry describes Circle's own plan, it is shown as a pattern you could follow.</p>
+  <div class="controls">
+    <div><span class="ctl-l">I am</span>
+      <div class="seg" id="personaSeg" role="group" aria-label="Reader"></div>
+    </div>
+  </div>
+  <div class="rv-cols" id="rvCols"></div>
+  <p class="note" style="margin-top:12px">A dash means the paper gives this reader nothing specific in that phase.</p>
+</div></section>
+
 <!-- ============ RECOVERY ============ -->
 <section id="recovery"><div class="wrap">
   <p class="eyebrow">Switch · §5.1–5.3</p>
   <h2>A freeze is not a forfeit</h2>
-  <p class="lede">At the Switch, Arc and USDC contracts reject ECDSA-signed transactions and funds in unmigrated accounts are frozen. The paper treats this as a protective control against quantum-enabled theft, not a finding that the holder has abandoned the asset. Where it is technically feasible and legally supportable, frozen assets should stay recoverable if entitlement can be shown with reliable evidence.</p>
+  <p class="lede">At the Switch, Arc and USDC contracts will reject ECDSA-signed transactions, and assets in unmigrated accounts will be frozen. The paper treats this as a protective control against quantum-enabled theft, not a finding that the holder has abandoned the asset. Where it is technically feasible and legally supportable, frozen assets should stay recoverable if entitlement can be shown with reliable evidence.</p>
   <div class="rec">
-    <div class="card"><h3>Move to Arc</h3><p>Copy frozen USDC contracts from non-compliant chains to Arc and manage recovery there. Before a CRQC exists, the copy can allow automatic withdrawal to a post-quantum account with a verified signature.</p></div>
+    <div class="card"><h3>Move to Arc</h3><p>Circle may move a copy of frozen USDC contracts from non-compliant chains to Arc and manage recovery there. Before a CRQC exists, the copy can be configured to allow automatic withdrawal to a post-quantum account with a verified signature.</p></div>
     <div class="card"><h3>Seed-phrase proofs</h3><p>Prove knowledge of the BIP-39 seed rather than the signing key: a practical ZK circuit exists for SLIP-0010 (Baldimtsi et al.), and a zk-STARK circuit has been proposed for BIP-32 (Osuntokun).</p></div>
-    <div class="card"><h3>TEE-attested recovery</h3><p>A private contract in Arc's privacy layer checks the seed inside the enclave and issues an attested claim authorizing migration. The seed never leaves the enclave and the attestation is verifiable on-chain.</p></div>
-    <div class="card"><h3>Off-chain evidence</h3><p>Customer records, custodial or exchange attestations, legal process, or estate documents, in limited circumstances. For self-custodied EOAs, KYC alone may not establish who controls an address.</p></div>
+    <div class="card"><h3>TEE-attested recovery</h3><p>A TEE can automate recovery: a token issuer can deploy a private contract in Arc's privacy layer that checks the seed inside the enclave, and the privacy layer issues an attested claim authorizing migration. The seed never leaves the enclave and the attestation is verifiable on-chain.</p></div>
+    <div class="card"><h3>Off-chain evidence</h3><p>Circle will assess whether an off-chain process could support recovery in limited circumstances, using e.g. customer records, custodial or exchange attestations, legal process, or estate documents. For self-custodied EOAs, KYC alone may not establish who controls an address.</p></div>
   </div>
   <div class="flag">
     <div class="card">
@@ -457,13 +487,13 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
         <tbody>
           <tr><td>Enclave communication</td><td>TLS 1.3, X25519MLKEM768</td><td>Hybrid, NIST level 3</td></tr>
           <tr><td>Transaction &amp; memo encryption</td><td>HPKE with X-Wing</td><td>Hybrid, NIST level 3</td></tr>
-          <tr><td>Signature precompile</td><td>SLH-DSA-SHA2-128s</td><td>Hash-based, level 1; SHA2 because the EVM has a SHA2 precompile</td></tr>
+          <tr><td>Signature precompile (will deploy)</td><td>SLH-DSA-SHA2-128s</td><td>Hash-based, level 1; SHA2 because the EVM has a SHA2 precompile</td></tr>
           <tr><td>Privacy-layer state at rest</td><td>AES-256-GCM-SIV, keys via HKDF-SHA-256</td><td>Symmetric</td></tr>
-          <tr><td>Native tx signatures</td><td>ECDSA</td><td>Unchanged until the Switch</td></tr>
+          <tr><td>Native tx signatures</td><td>ECDSA</td><td>Will remain ECDSA-only &ldquo;for the near future&rdquo; (§3.1)</td></tr>
           <tr><td>Consensus signatures</td><td>to be chosen</td><td>Awaiting an aggregate alternative to BLS (§5.1)</td></tr>
         </tbody>
       </table></div>
-      <p class="cap">Sources: §1 (Algorithm Choices), §3.1, §3.3, §5.1. A hybrid stays secure while either its classical or its post-quantum half does.</p>
+      <p class="cap">Sources: §1 (Algorithm Choices), §3.1, §3.3, §5.1. The consensus scheme &ldquo;has not yet been selected&rdquo;. A hybrid stays secure while either its classical or its post-quantum half does.</p>
     </div>
   </div>
 
@@ -513,20 +543,6 @@ footer .ai{font-family:var(--mono); border:1px solid var(--ring); background:var
   </div>
 </div></section>
 
-<!-- ============ PROVENANCE ============ -->
-<section id="provenance"><div class="wrap">
-  <p class="eyebrow">Provenance</p>
-  <h2>Where the paper's own sources differ</h2>
-  <p class="lede">This page reproduces each source as written rather than reconciling them.</p>
-  <ol class="provlist">
-    <li><strong>A4 has three names.</strong> &ldquo;History Rewrite&rdquo; in the §2.3 text, &ldquo;Long-range&rdquo; in Figure 1 and Table 4, and &ldquo;Long-range / posterior&rdquo; in Table 2.</li>
-    <li><strong>A1 timing.</strong> Figure 1 annotates at-rest forgery with &ldquo;hours–days&rdquo;; Table 2 lists its time constraint as &ldquo;Offline&rdquo;.</li>
-    <li><strong>A2 placement.</strong> Figure 1 draws retroactive privacy loss at the validator (consensus) stage; §2.3 and Table 2 list it under the Application layer.</li>
-    <li><strong>A4 Transition countermeasure.</strong> Table 4 says &ldquo;PoW / social checkpointing (§4.7)&rdquo;; the text of §4.7 describes a &ldquo;post-quantum secured checkpoint of block state&rdquo; and does not mention PoW or social checkpointing.</li>
-    <li><strong>A6 Transition countermeasure.</strong> Table 4 cites &ldquo;TLS PQ upgrade (§4.6)&rdquo;; §4.6 covers libp2p and does not discuss TLS.</li>
-  </ol>
-</div></section>
-
 <!-- ============ CITE ============ -->
 <section id="cite"><div class="wrap">
   <p class="eyebrow">Cite</p>
@@ -569,7 +585,9 @@ function $(id){ return document.getElementById(id); }
 var REDUCED = false;
 try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
 function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
-function tween(ms, step, done){
+var TW = {};                                   /* keyed tweens: a new one on the same key cancels the old one */
+function tween(ms, step, done, key){
+  if (key && TW[key]){ TW[key](); delete TW[key]; }
   if (REDUCED || ms <= 0){ step(1); if (done) done(); return function(){}; }
   var t0 = null, finished = false;
   function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
@@ -584,7 +602,9 @@ function tween(ms, step, done){
   requestAnimationFrame(frame);
   /* force-settle if requestAnimationFrame is starved (throttled tab) */
   setTimeout(finish, ms + 150);
-  return function cancel(){ finished = true; };
+  function cancel(){ finished = true; }
+  if (key) TW[key] = cancel;
+  return cancel;
 }
 function lerp(a, b, t){ return a + (b - a) * t; }
 
@@ -650,24 +670,24 @@ function byId(id){ for (var i = 0; i < ATTACKS.length; i++) if (ATTACKS[i].id ==
 /* roadmap items (§3–§5); tags from Table 4 rows that cite the section */
 var ROADMAP = [
   { k:'Section 3', t:'Quantum Ready Now', d:'Protect privacy against harvest-now-decrypt-later and let USDC users start moving to post-quantum wallets.', items:[
-    { t:'SLH-DSA-SHA2-128s precompile', s:'§3.1', d:'Smart accounts verify post-quantum signatures on-chain. Aptos has proposed the same scheme (<a href="https://github.com/aptos-foundation/AIPs/blob/main/aips/aip-137-post-quantum-aptos-accounts-via-slh-dsa-sha2-128s.md">AIP-137</a>).', a:['A1'] },
-    { t:'Encrypted memos', s:'§3.2', d:'An SDK to encrypt memos with X-Wing HPKE, at 1,136 extra bytes each.', a:['A2'] },
-    { t:'Private TEE (privacy layer)', s:'§3.3', d:'Transactions, contract state, and traces stay encrypted; decryption only inside AWS Nitro enclaves.', a:['A1','A2','A6','A7'] },
-    { t:'Account migration options', s:'§3.4', d:'ERC-4337 accounts (§3.4.1), hash-and-rotate (§3.4.2), dual key derivation (§3.4.3), a PQ public-key registry (§3.4.4), frame transactions / EIP-8141 (§3.4.5).', a:['A1','A7'] }
+    { t:'SLH-DSA-SHA2-128s precompile', s:'§3.1', v:'will deploy', q:'Arc will deploy a precompiled post-quantum signature verifier on mainnet (§3.1)', d:'Smart accounts verify post-quantum signatures on-chain. Aptos has proposed the same scheme (<a href="https://github.com/aptos-foundation/AIPs/blob/main/aips/aip-137-post-quantum-aptos-accounts-via-slh-dsa-sha2-128s.md">AIP-137</a>).', a:['A1'] },
+    { t:'Encrypted memos', s:'§3.2', v:'will provide', q:'Circle will provide developers with an SDK (§3.2)', d:'An SDK to encrypt memos with X-Wing HPKE, at 1,136 extra bytes each.', a:['A2'] },
+    { t:'Private TEE (privacy layer)', s:'§3.3', v:'provides', q:'Arc\'s privacy layer provides a confidential execution environment (§3.3)', d:'Transactions, contract state, and traces stay encrypted; decryption only inside AWS Nitro enclaves.', a:['A1','A2','A6','A7'] },
+    { t:'Account migration options', s:'§3.4', v:'can', q:'Arc users can still begin to migrate their accounts (§3.4)', d:'ERC-4337 accounts (§3.4.1), hash-and-rotate (§3.4.2), dual key derivation (§3.4.3), a PQ public-key registry (§3.4.4), frame transactions / EIP-8141 (§3.4.5).', a:['A1','A7'] }
   ]},
   { k:'Section 4', t:'Transition', d:'Run in hybrid mode while the rest of the ecosystem catches up; design for a fast switchover.', items:[
-    { t:'Cold storage to multisig', s:'§4.1', d:'On-chain multisig contracts that can mix signature schemes across chains. Threshold/MPC signing is judged too costly for now.', a:['A1'] },
-    { t:'USDC dual-mode contracts', s:'§4.2', d:'Upgradeable proxies accept classical and post-quantum signatures, with a switch to disable classical ones without another upgrade.', a:['A1'] },
-    { t:'Fixing ecrecover', s:'§4.3', d:'A hardfork routes <code>ecrecover</code> to an <code>ECRecoverOverride</code> contract; $v = 29$ selects the post-quantum path, keeping the ABI for immutable contracts.', a:['A1'] },
-    { t:'Encrypted mempool', s:'§4.4', d:'Under investigation: hide payloads even from validators until ordering.', a:['A6','A7'] },
-    { t:'Key management & inventory', s:'§4.5', d:'Inventory the stack, assess vendors, rotate keys in order: if $A$ protects $B$ protects $C$, rotate $A$ first.', a:['A1','A2'] },
-    { t:'libp2p', s:'§4.6', d:'Replace X25519 and Ed25519 in the networking stack once post-quantum support lands.', a:['A5','A6'] },
-    { t:'Chain history integrity', s:'§4.7', d:'Post-quantum validator signatures plus a post-quantum secured checkpoint.', a:['A4'] }
+    { t:'Cold storage to multisig', s:'§4.1', v:'plans to', q:'Circle plans to migrate cold storage funds to multi-signature smart contracts (§4.1)', d:'On-chain multisig contracts that can mix signature schemes across chains. Threshold/MPC signing is judged too costly for now.', a:['A1'] },
+    { t:'USDC dual-mode contracts', s:'§4.2', v:'will operate', q:'upgraded contracts will operate in a dual mode (§4.2)', d:'Upgradeable proxies accept classical and post-quantum signatures, with a switch to disable classical ones without another upgrade.', a:['A1'] },
+    { t:'Fixing ecrecover', s:'§4.3', v:'one promising option', q:'One promising option is to deploy a modified version of ecrecover (§4.3)', d:'A hardfork would route <code>ecrecover</code> to an <code>ECRecoverOverride</code> contract, where $v = 29$ selects the post-quantum path and the ABI stays unchanged for immutable contracts.', a:['A1'] },
+    { t:'Encrypted mempool', s:'§4.4', v:'is investigating', q:'Circle is investigating options for offering an encrypted mempool (§4.4)', d:'Under investigation: hide payloads even from validators until ordering.', a:['A6','A7'] },
+    { t:'Key management & inventory', s:'§4.5', v:'will need to', q:'During the transition, Circle will need to … (§4.5)', d:'Inventory the stack, assess vendors, rotate keys in order: if $A$ protects $B$ protects $C$, rotate $A$ first.', a:['A1','A2'] },
+    { t:'libp2p', s:'§4.6', v:'under active exploration', q:'libp2p: support for post-quantum algorithms is under active exploration (§4.6)', d:'A quantum-risk dependency for Arc: it uses X25519 and Ed25519. The paper states no Circle action beyond noting libp2p\'s own exploration.', a:['A5','A6'] },
+    { t:'Chain history integrity', s:'§4.7', v:'the solution is', q:'The solution is two-fold (§4.7)', d:'Post-quantum validator signatures plus a post-quantum secured checkpoint.', a:['A4'] }
   ]},
   { k:'Section 5', t:'Switch', d:'Leave classical cryptography, with ample notice and ecosystem coordination.', items:[
-    { t:'Hard switch', s:'§5.1', d:'Reject ECDSA transactions, make <code>ecrecover</code> post-quantum only, upgrade consensus signatures, finish infrastructure; possibly delist USDC from chains that lack protections.', a:['A1','A3','A4','A7'] },
-    { t:'Account recovery', s:'§5.2', d:'Move to Arc, seed-phrase proofs, TEE-attested recovery, off-chain evidence.', a:['A1'] },
-    { t:'Policy implications', s:'§5.3', d:'Guidance on notice, evidence, and unclaimed assets; escheat as the closest legal analogue.', a:[] }
+    { t:'Hard switch', s:'§5.1', v:'will / may', q:'Arc and USDC smart contracts will reject transactions signed with ECDSA; Circle may need to consider withdrawing support (§5.1)', d:'Will reject ECDSA transactions, move <code>ecrecover</code> to post-quantum only, upgrade consensus signatures, and finish infrastructure; may withdraw USDC support from chains that lack protections.', a:['A1','A3','A4','A7'] },
+    { t:'Account recovery', s:'§5.2', v:'may be used', q:'technical approaches that may be used to rescue funds (§5.2)', d:'Move to Arc, seed-phrase proofs, TEE-attested recovery, off-chain evidence.', a:['A1'] },
+    { t:'Policy implications', s:'§5.3', v:'we encourage', q:'We encourage regulators and lawmakers to provide clear guidance (§5.3)', d:'Asks for guidance on notice, evidence, and unclaimed assets; names escheat as the closest legal analogue.', a:[] }
   ]}
 ];
 
@@ -685,7 +705,7 @@ function buildRoadmap(){
       var tags = it.a.length ? it.a.map(function(id){
         return '<button class="atag" data-a="' + id + '" data-p="' + pi + '" title="' + byId(id).name + '">' + id + '</button>';
       }).join('') : '<span class="atag none">no Table 4 row</span>';
-      d.innerHTML = '<span class="it">' + it.t + '</span><span class="sec">' + it.s + '</span><p>' + it.d + '</p><div class="tags">' + tags + '</div>';
+      d.innerHTML = '<span class="it">' + it.t + '</span><span class="sec">' + it.s + '</span><p>' + it.d + '</p><div class="tags"><span class="vtag" title="' + it.q.replace(/"/g, '&quot;') + '">' + it.v + '</span>' + tags + '</div>';
       col.appendChild(d);
     });
     host.appendChild(col);
@@ -702,7 +722,7 @@ function enterRoadmap(){
   Array.prototype.forEach.call(items, function(n, i){
     n.style.opacity = 0; n.style.transform = 'translateY(14px)';
     setTimeout(function(){
-      tween(520, function(p){ n.style.opacity = p; n.style.transform = 'translateY(' + (14 * (1 - p)) + 'px)'; });
+      tween(520, function(p){ n.style.opacity = p; n.style.transform = 'translateY(' + (14 * (1 - p)) + 'px)'; }, null, 'phase' + i);
     }, i * 140);
   });
 }
@@ -827,7 +847,6 @@ function drawLifecycle(){
 }
 
 function covered(a, p){ return a.first >= 0 && a.first <= p; }
-var chipCancel = null;
 function paintChips(animate){
   var n = 0;
   ATTACKS.forEach(function(a){
@@ -839,13 +858,12 @@ function paintChips(animate){
     c.line.setAttribute('stroke', a.id === selected ? css('--accent') : css('--axis'));
     c.line.setAttribute('stroke-width', a.id === selected ? 2 : 1.5);
   });
-  if (chipCancel) chipCancel();
-  chipCancel = tween(animate ? 420 : 0, function(t){
+  tween(animate ? 420 : 0, function(t){
     ATTACKS.forEach(function(a){ var c = chipNodes[a.id]; if (!c) return; c.v = lerp(c.from, c.target, t); c.on.setAttribute('opacity', c.v); });
-  });
+  }, null, 'chips');
   paintMeter(n, animate);
 }
-var meterFrom = 0, meterCancel = null;
+var meterFrom = 0;
 function paintMeter(n, animate){
   var m = $('meter');
   if (!m.children.length) for (var i = 0; i < 7; i++) m.appendChild(document.createElement('span'));
@@ -858,10 +876,9 @@ function paintMeter(n, animate){
     s.title = a.id + (cov ? ' — first countered in ' + PH[a.first] : ' — no countermeasure yet');
   });
   var from = meterFrom; meterFrom = n;
-  if (meterCancel) meterCancel();
-  meterCancel = tween(animate ? 420 : 0, function(t){
+  tween(animate ? 420 : 0, function(t){
     $('count').innerHTML = '<b>' + Math.round(lerp(from, n, t)) + '</b> of 7 attacks have a countermeasure listed by the end of <b style="font-size:1em">' + PH[phase] + '</b>';
-  });
+  }, null, 'meter');
 }
 
 function setPhase(p, animate){
@@ -886,7 +903,7 @@ function renderDetail(animate){
     '<div class="mit">' + cols + '</div>' +
     (a.prov ? '<div class="prov"><b>Provenance.</b> ' + a.prov + '</div>' : '') +
     '</div></div>';
-  if (animate){ d.style.opacity = 0; tween(260, function(p){ d.style.opacity = p; }); }
+  if (animate){ d.style.opacity = 0; tween(260, function(p){ d.style.opacity = p; }, null, 'detail'); }
 }
 
 function buildT4(){
@@ -961,7 +978,7 @@ function growSizes(mode){
   sigBars.forEach(function(b, k){
     var from = mode === 'enter' ? 0 : (mode === 'static' ? b.full : b.w);
     if (mode === 'static'){ placeBar(b, b.full); return; }
-    setTimeout(function(){ tween(mode === 'enter' ? 900 : 480, function(t){ placeBar(b, lerp(from, b.full, t)); }); }, mode === 'enter' ? k * 110 : 0);
+    setTimeout(function(){ tween(mode === 'enter' ? 900 : 480, function(t){ placeBar(b, lerp(from, b.full, t)); }, null, 'bar' + b.i); }, mode === 'enter' ? k * 110 : 0);
   });
 }
 function rescale(){
@@ -982,7 +999,7 @@ function setSig(i){
     '<div class="ro"><div class="k">' + s.basis + '</div><p class="s" style="margin:0">' + s.std + '</p></div>';
   if (i !== 0 && !REDUCED){
     var v = $('sizeV'), pre = s.k === 'Falcon' ? '~' : '';
-    tween(520, function(t){ v.textContent = pre + fmt(lerp(0, s.b, t)) + ' B'; });
+    tween(520, function(t){ v.textContent = pre + fmt(lerp(0, s.b, t)) + ' B'; }, null, 'sizeV');
   }
 }
 function buildSizeUI(){
@@ -1014,7 +1031,7 @@ var LANES = [
 ];
 /* schematic time units: three transactions; b = broadcast, o = ordering, i = inclusion */
 var TXS = [ { b: 14, o: 17, i: 19 }, { b: 44, o: 47, i: 49 }, { b: 74, o: 77, i: 79 } ];
-var expParts = [], expProg = 1, expCancel = null;
+var expParts = [], expProg = 1;
 
 function drawExposure(progress){
   var host = $('expchart'); host.innerHTML = '';
@@ -1098,8 +1115,65 @@ function setExposure(T){                       /* T in 0..1: sweep through schem
 }
 function L_w(r, x, w){ r.setAttribute('x', x); r.setAttribute('width', Math.max(0, w)); }
 function playExposure(){
-  if (expCancel) expCancel();
-  expCancel = tween(1800, function(t){ setExposure(t); });
+  tween(1800, function(t){ setExposure(t); }, null, 'exp');
+}
+
+/* =======================================================================
+   5. Reader's view — grouping ours; every entry cites its section and keeps the verb
+   ===================================================================== */
+var PERSONAS = [
+  { k:'holder', n:'Account holder', cols:[
+    [ ['Move funds to an ERC-4337 smart account that checks an SLH-DSA-SHA2-128s signature in <code>validateUserOp</code>.', '§3.4.1', 'can'],
+      ['Use hash-and-rotate so each public key is exposed only between broadcast and inclusion.', '§3.4.2', 'can'],
+      ['Bind a post-quantum public key to your address in an on-chain registry before a CRQC exists.', '§3.4.4', 'can'] ],
+    [ ['If the <code>ecrecover</code> override is adopted, register your public key and signatures so permit-style signatures keep working.', '§4.3', 'will be able to (under one promising option)'] ],
+    [ ['ECDSA-signed transactions will be rejected on Arc and by USDC contracts; assets in unmigrated accounts will be frozen for user protection.', '§5.1', 'will'],
+      ['Recovery routes: pre-registered keys or dual-key seeds, seed-phrase proofs, TEE-attested recovery, off-chain evidence.', '§5.2', 'may be used'] ] ] },
+  { k:'wallet', n:'Wallet provider', cols:[
+    [ ['Derive both an ECDSA key and a post-quantum key from the same BIP-39 mnemonic, so accounts are quantum-ready by default.', '§3.4.3', 'can'],
+      ['For hash-and-rotate, avoid BIP-32/BIP-44 derivation from signing scalars; alternatives such as SLIP-0010 are better suited.', '§3.4.2', 'better suited'],
+      ['Arc keeps native transaction signatures on ECDSA partly so hardware wallets can support whatever scheme is picked.', '§3.1', 'will remain'] ],
+    [],
+    [ ['Seed-phrase recovery proves knowledge of the BIP-39 seed, not the signing key: a ZK circuit for SLIP-0010, a proposed zk-STARK circuit for BIP-32.', '§5.2', 'may be used'] ] ] },
+  { k:'dev', n:'Contract developer', cols:[
+    [ ['Verify SLH-DSA-SHA2-128s signatures through Arc\'s precompile once it is on mainnet.', '§3.1', 'will deploy'],
+      ['Encrypt memos with X-Wing HPKE through Circle\'s SDK, at 1,136 extra bytes per memo.', '§3.2', 'will provide'],
+      ['Deploy a standard ERC-20 inside the privacy layer to get a confidential token without modification.', '§3.3', 'provides'] ],
+    [ ['Upgradeable contracts can follow USDC: dual mode, plus a switch that disables classical signatures without another upgrade.', '§4.2', 'will operate'],
+      ['Immutable contracts that call <code>ecrecover</code> depend on a protocol-level fix such as <code>ECRecoverOverride</code>.', '§4.3', 'one promising option'] ],
+    [ ['Arc will move <code>ecrecover</code> to post-quantum-only mode; this may break existing contracts, with primary responsibility for remediation resting with contract owners.', '§5.1', 'will'] ] ] },
+  { k:'validator', n:'Validator / node', cols:[
+    [],
+    [ ['libp2p (X25519, Ed25519) is a quantum-risk dependency; its 2025 report says post-quantum support is under active exploration.', '§4.6', 'under active exploration'],
+      ['Upgrade validators to post-quantum signatures and create a post-quantum secured checkpoint of block state.', '§4.7', 'the solution is'] ],
+    [ ['Arc will upgrade validator signatures to a post-quantum scheme, pending an aggregate alternative to BLS; the upgrade should affect only validators.', '§5.1', 'will'] ] ] },
+  { k:'enterprise', n:'Enterprise / custodian', cols:[
+    [ ['Do not export an HSM key to sign post-quantum on an ordinary CPU; press the HSM vendor for audited post-quantum support instead.', '§1', 'we recommend'] ],
+    [ ['Inventory the cryptographic stack, assess cloud and vendor readiness, and rotate keys in dependency order: if $A$ protects $B$, rotate $A$ first.', '§4.5', 'will need to'],
+      ['Move cold storage to on-chain multisig contracts that can mix signature schemes across chains.', '§4.1', 'plans to'] ],
+    [ ['Complete the infrastructure migration and rotate any remaining at-risk keys.', '§5.1', 'will'] ] ] }
+];
+var persona = 0;
+function renderPersona(animate){
+  var P = PERSONAS[persona], host = $('rvCols');
+  Array.prototype.forEach.call(document.querySelectorAll('#personaSeg button'), function(b, i){ b.setAttribute('aria-pressed', i === persona ? 'true' : 'false'); });
+  host.innerHTML = P.cols.map(function(list, i){
+    var body = list.length ? '<ul>' + list.map(function(e){
+      return '<li>' + e[0] + '<span class="meta">' + e[1] + ' · <span class="vtag">' + e[2] + '</span></span></li>';
+    }).join('') + '</ul>' : '<ul><li class="none">&mdash;</li></ul>';
+    return '<div class="rv-col" data-n="' + list.length + '"><div class="bar" style="background:var(' + PHC[i] + ')"></div><h3>' + PH[i] + '</h3>' + body + '</div>';
+  }).join('');
+  katexRender(host);
+  Array.prototype.forEach.call(host.children, function(c, i){
+    if (!animate || REDUCED){ c.style.opacity = 1; c.style.transform = ''; return; }
+    c.style.opacity = 0; c.style.transform = 'translateY(10px)';
+    setTimeout(function(){ tween(380, function(p){ c.style.opacity = p; c.style.transform = p >= 1 ? '' : 'translateY(' + (10 * (1 - p)) + 'px)'; }, null, 'rv' + i); }, i * 90);
+  });
+}
+function buildPersonaUI(){
+  var seg = $('personaSeg');
+  seg.innerHTML = PERSONAS.map(function(P, i){ return '<button data-i="' + i + '" aria-pressed="' + (i === persona) + '">' + P.n + '</button>'; }).join('');
+  seg.addEventListener('click', function(ev){ var b = ev.target.closest('button'); if (!b) return; persona = +b.getAttribute('data-i'); renderPersona(true); });
 }
 
 /* =======================================================================
@@ -1108,7 +1182,7 @@ function playExposure(){
 function countTiles(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
     var to = +n.getAttribute('data-count');
-    tween(900, function(t){ n.textContent = fmt(lerp(0, to, t)); });
+    tween(900, function(t){ n.textContent = fmt(lerp(0, to, t)); }, null, 'count');
   });
 }
 $('copyBib').addEventListener('click', function(){
@@ -1136,7 +1210,7 @@ $('clockSeg').addEventListener('click', function(ev){
 $('replay').addEventListener('click', function(){ setExposure(0); playExposure(); });
 
 var hasIO = ('IntersectionObserver' in window) && !REDUCED;
-buildRoadmap(); buildT4(); buildSizeUI();
+buildRoadmap(); buildT4(); buildSizeUI(); buildPersonaUI(); renderPersona(false);
 drawLifecycle(); renderDetail(false);
 drawSizes(hasIO ? 'hidden' : 'static'); setSig(sigSel);
 drawExposure(hasIO ? 0 : 1);
@@ -1148,13 +1222,14 @@ if (hasIO){
     entries.forEach(function(en){
       if (!en.isIntersecting) return;
       var s = en.target; io.unobserve(s);
-      tween(550, function(p){ s.style.opacity = p; s.style.transform = p >= 1 ? '' : 'translateY(' + (16 * (1 - p)) + 'px)'; });
+      tween(550, function(p){ s.style.opacity = p; s.style.transform = p >= 1 ? '' : 'translateY(' + (16 * (1 - p)) + 'px)'; }, null, 'sec:' + s.id);
       var id = s.id;
       if (id === 'numbers') setTimeout(countTiles, 120);
       else if (id === 'roadmap') enterRoadmap();
       else if (id === 'attacks') setTimeout(function(){ ATTACKS.forEach(function(a){ chipNodes[a.id].v = 0; chipNodes[a.id].on.setAttribute('opacity', 0); }); meterFrom = 0; paintChips(true); }, 160);
       else if (id === 'sizes') setTimeout(function(){ sigEntered = true; growSizes('enter'); }, 180);
       else if (id === 'exposure') setTimeout(playExposure, 200);
+      else if (id === 'foryou') renderPersona(true);
     });
   }, { threshold: 0.08, rootMargin: '0px 0px -5% 0px' });
   Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
@@ -1168,7 +1243,7 @@ window.addEventListener('resize', function(){
   rzT = setTimeout(function(){
     drawLifecycle();
     drawSizes(sigEntered ? 'static' : 'hidden');
-    if (expCancel) expCancel();
+    if (TW.exp){ TW.exp(); delete TW.exp; }
     drawExposure(1);
   }, 120);
 });
