@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Learning with AI</title>
+<meta name="description" content="AI-assisted study notes by Duc V. Le: companion guides and interactive pages that walk through published papers section by section. Not peer-reviewed.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<style>
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --ring:rgba(0,0,0,.13);
+  --accent:#00008b; --warn-bg:#fff8e6; --warn-rule:#c98a00;
+}
+*{box-sizing:border-box}
+html{background:var(--plane)}
+body{margin:0; background:var(--plane); color:var(--ink-1); font-family:var(--font); font-weight:300;
+  font-size:17px; line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+p{margin:0 0 1rem}
+.mono{font-family:var(--mono)}
+
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar .here{font-family:var(--mono); font-size:.86rem; color:var(--ink-muted)}
+
+.hero{padding:52px 0 26px}
+.hero h1{font-size:2.6rem; font-weight:400}
+.hero .sub{font-size:1.1rem; margin:.7rem 0 0; max-width:66ch}
+
+.notice{border-left:3px solid var(--warn-rule); background:var(--warn-bg); padding:14px 18px;
+  border-radius:0 4px 4px 0; margin:0 0 34px; max-width:78ch}
+.notice .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase;
+  font-weight:700; color:#7a5400; margin:0 0 .35rem}
+.notice p{margin:0 0 .5rem; font-size:.95rem}
+.notice p:last-child{margin:0}
+
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700; margin:0 0 .8rem}
+.cards{display:grid; gap:16px; padding-bottom:56px}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px 20px}
+.card h3{font-size:1.25rem; font-weight:700; margin:0 0 .3rem}
+.card .src{font-size:.95rem; margin:0 0 .6rem}
+.card .meta{display:flex; flex-wrap:wrap; gap:6px 14px; font-family:var(--mono); font-size:.82rem;
+  color:var(--ink-muted); margin:0 0 .8rem}
+.card .desc{font-size:.95rem; margin:0 0 .9rem; max-width:80ch}
+.badge{display:inline-block; font-family:var(--mono); font-size:.75rem; font-weight:700; letter-spacing:.05em;
+  text-transform:uppercase; border:1px solid currentColor; border-radius:3px; padding:0 .45rem}
+.badge.done{color:#0a7a0a} .badge.wip{color:#9a6700}
+.links{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; font-family:var(--mono); border:1px solid var(--ring);
+  background:var(--plane); color:var(--ink-1); padding:.3rem .75rem; border-radius:3px; font-size:.88rem}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn.off{color:var(--ink-muted); border-style:dashed; cursor:default}
+.btn.off:hover{border-color:var(--ring); color:var(--ink-muted)}
+
+footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--mono); font-size:.8rem; color:var(--ink-muted)}
+@media (max-width:480px){ .hero h1{font-size:2rem} }
+</style>
+</head>
+<body>
+
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <span class="here">/ learning with AI</span>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>Learning with AI</h1>
+    <p class="sub">Study notes I make while learning topics outside my own research: companion guides and interactive pages that walk through a published paper, section by section.</p>
+  </div>
+
+  <aside class="notice" role="note">
+    <p class="k">AI-assisted &middot; not peer-reviewed</p>
+    <p>Everything on these pages was produced with an AI assistant (Claude) as part of my own learning. The notes follow the source papers closely, and numbers and examples were checked against them, but they have <strong>not</strong> been reviewed by experts and may contain mistakes.</p>
+    <p>Please don&rsquo;t cite these pages or rely on them for anything important. The original papers are the authority.</p>
+  </aside>
+
+  <p class="eyebrow">Topics</p>
+  <div class="cards">
+
+    <!-- To add a topic: copy one <article class="card"> block, put the page at learning/<slug>/. -->
+    <article class="card" id="lattice">
+      <h3>Learning Lattice Cryptography</h3>
+      <p class="src">Companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; version last updated June 18, 2025).</p>
+      <div class="meta">
+        <span><span class="badge done">guide done</span></span>
+        <span><span class="badge wip">interactive page in progress</span></span>
+        <span>covers Sections 2&ndash;5</span>
+      </div>
+      <p class="desc">LWE encryption, the geometry of lattices and SIS, polynomial rings, the NTT, Kyber and the Fujisaki&ndash;Okamoto transform, then &Sigma;-protocols, rejection sampling and Dilithium. Every step the paper skips is spelled out, with toy examples.</p>
+      <div class="links">
+        <span class="btn off" title="coming soon">[learn &mdash; coming soon]</span>
+        <a class="btn primary" href="lattice/guide.pdf">[guide pdf]</a>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+<footer><div class="wrap">AI-assisted study notes by Duc V. Le. Not peer-reviewed.</div></footer>
+</body>
+</html>
