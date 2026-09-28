@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BlindPerm</title>
+<meta name="description" content="OPODIS 2025. BlindPerm pairs an encrypted mempool with a random permutation of each committed block, cutting simulated MEV on a year of Ethereum data from 443,866.13 ETH to 634.88 ETH.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots 1-3, validated all-pairs against #fafafa (aqua needs labels + table) */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:20px}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono); font-size:.92em; white-space:nowrap}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50;
+  background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.75rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:default; border-color:var(--ring); color:var(--ink-muted)}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .v small{font-size:.55em; font-weight:400; color:var(--ink-muted)}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin-bottom:18px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:210px; flex:1}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.seg button:disabled{opacity:.4; cursor:default}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:14px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono);
+  font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .09s;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px; left:0; top:0}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.hl td{background:var(--surface-1); font-weight:700}
+.mark{font-family:var(--mono); font-weight:700; white-space:nowrap}
+.mark.yes{color:var(--good)} .mark.part{color:#9a6a00} .mark.no{color:var(--critical)} .mark.na{color:var(--ink-muted)}
+.mark .ic{display:inline-block; width:1.1em}
+
+/* ---------- block strips (dilemma, permute) ---------- */
+.block{position:relative; height:58px; margin:6px 0 4px}
+.txc{position:absolute; top:0; height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border:1.5px solid var(--ink-2); border-radius:4px; background:var(--plane);
+  font-family:var(--mono); font-size:.88rem; color:var(--ink-1); line-height:1.1}
+.txc small{font-size:.66rem; color:var(--ink-muted)}
+.txc.atk{border-color:var(--s2); background:repeating-linear-gradient(135deg, rgba(235,104,52,.20) 0 5px, var(--plane) 5px 10px); font-weight:700}
+.txc.vic{border-style:dashed; font-weight:700}
+.txc.enc{background:repeating-linear-gradient(45deg, rgba(42,120,214,.12) 0 5px, var(--plane) 5px 10px); border-color:var(--s1)}
+.txc.hot{box-shadow:0 0 0 2px var(--accent)}
+.idxrow{position:relative; height:16px}
+.idxrow span{position:absolute; top:0; font-family:var(--mono); font-size:.7rem; color:var(--ink-muted); text-align:center}
+
+.outgrid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:14px}
+.oc{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1); padding:10px 12px}
+.oc .k{font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.oc .n{font-size:1.45rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.oc .d{font-size:.8rem; color:var(--ink-2); margin:0; line-height:1.35}
+.oc.on{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+.verdict{border-radius:4px; padding:12px 14px; font-size:.9rem; border:1px solid; margin-top:12px; background:var(--plane)}
+.verdict.ok{border-color:var(--good)} .verdict.bad{border-color:var(--critical)} .verdict.warn{border-color:#c98500}
+.verdict .vh{display:flex; align-items:center; gap:.5rem; font-family:var(--mono); font-weight:700; font-size:.84rem; margin-bottom:.2rem}
+.verdict.ok .vh{color:var(--good)} .verdict.bad .vh{color:var(--critical)} .verdict.warn .vh{color:#9a6a00}
+.verdict p{margin:0; font-size:.9rem}
+
+/* ---------- protocol walk ---------- */
+.stagebar{display:grid; grid-template-columns:repeat(4,1fr); gap:6px}
+.stg{border:1px solid var(--ring); background:var(--surface-1); border-radius:3px;
+  padding:.5rem .4rem; cursor:pointer; text-align:center; font-size:.9rem;
+  font-family:var(--font); color:var(--ink-2); font-weight:700}
+.stg[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff}
+.stg small{display:block; font-family:var(--mono); font-size:.7rem; font-weight:400; opacity:.85}
+.stagebody{margin-top:14px; border:1px solid var(--ring); border-radius:4px;
+  background:var(--surface-1); padding:18px; box-shadow:var(--shadow)}
+.stagebody h3{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+.chip{font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; border-radius:999px; padding:.1rem .55rem; border:1px solid currentColor; color:var(--ink-muted)}
+.stagebody p{font-size:.95rem; margin:.4rem 0 0}
+.playrow{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 12px}
+
+/* ---------- seed demo ---------- */
+.seedgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:22px; align-items:start}
+.keyrow{display:flex; align-items:center; gap:.6rem; padding:.35rem 0; border-bottom:1px solid var(--grid);
+  font-family:var(--mono); font-size:.9rem}
+.keyrow .who{flex:1; color:var(--ink-2)}
+.keyrow .kv{font-variant-numeric:tabular-nums; letter-spacing:.04em}
+.keyrow.sum{border-bottom:0; border-top:2px solid var(--ink-2); font-weight:700; padding-top:.5rem}
+.tag{font-family:var(--mono); font-size:.7rem; font-weight:700; border-radius:3px; padding:.05rem .4rem; border:1px solid}
+.tag.h{color:var(--good); border-color:var(--good)} .tag.a{color:var(--critical); border-color:var(--critical)}
+.swaplog{font-family:var(--mono); font-size:.8rem; color:var(--ink-2); max-height:176px; overflow-y:auto;
+  border:1px solid var(--grid); border-radius:3px; padding:6px 8px; background:var(--plane); margin-top:10px}
+.swaplog div{padding:1px 0}
+.swaplog .cur{color:var(--accent); font-weight:700}
+
+/* ---------- win explorer ---------- */
+.gauge{height:14px; border-radius:3px; background:var(--grid); overflow:hidden; margin:.3rem 0 .2rem}
+.gauge i{display:block; height:100%; width:0; background:var(--accent); border-radius:3px}
+.formula{font-size:1.05rem; margin:.3rem 0 .8rem}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--plane)}
+.ro .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.6rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.wingrid{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:22px; align-items:start}
+
+/* ---------- figures ---------- */
+.figs{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:16px}
+figure{margin:0; background:var(--plane); border:1px solid var(--ring); border-radius:4px; padding:10px}
+figure img{display:block; width:100%; height:auto}
+figcaption{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted); margin-top:6px; line-height:1.4}
+figure.wide{grid-column:1 / -1; justify-self:center; width:calc(50% - 8px)}
+@media (max-width:760px){ figure.wide{width:100%} }
+.prov{border-left:3px solid var(--serious); padding:.2rem 0 .2rem 14px; margin:18px 0 0; max-width:78ch}
+.prov p{font-size:.92rem; margin:0 0 .5rem}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:74ch}
+.twocol{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid);
+  font-size:.8rem; color:var(--ink-muted); text-align:right}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2.1rem}
+  .seedgrid,.wingrid,.twocol,.figs{grid-template-columns:1fr}
+  .outgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stagebar{grid-template-columns:repeat(2,1fr)}
+  .seg{flex-wrap:wrap; max-width:100%}
+  .seg button{flex:1 1 auto; border-bottom:1px solid var(--ring)}
+  .controls .ctl{flex:1 1 100% !important; min-width:0}
+  .txc{font-size:.74rem}
+}
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .tip{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#dilemma">Dilemma</a>
+    <a href="#protocol">Protocol</a>
+    <a href="#seed">Seed</a>
+    <a href="#win">Pr[win]</a>
+    <a href="#totals">Totals</a>
+    <a href="#guarantees">Guarantees</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">OPODIS 2025 · LIPIcs 361</span>
+  <h1>BlindPerm: Efficient MEV Mitigation with an Encrypted Mempool and Permutation</h1>
+  <p class="sub">An encrypted mempool hides <em>what</em> a transaction says until it is committed. BlindPerm then randomly shuffles <em>where</em> each transaction lands, using a seed nobody can predict before the commit. With users contributing that seed, the shuffle costs essentially nothing beyond the encrypted mempool itself.</p>
+  <p class="authors">
+    Alireza Kavousi<sup>1</sup>, <span class="me">Duc V. Le</span><sup>2</sup>,
+    Philipp Jovanovic<sup>1</sup>, George Danezis<sup>3,1</sup>
+  </p>
+  <p class="affils"><sup>1</sup>University College London &nbsp;·&nbsp; <sup>2</sup>Visa Research, Palo Alto &nbsp;·&nbsp; <sup>3</sup>Mysten Labs, London</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/blindperm.pdf">Paper (PDF)</a>
+    <a class="btn" href="#cite">BibTeX</a>
+    <a class="btn" href="https://eprint.iacr.org/2023/1061">ePrint 2023/1061 (earlier version)</a>
+  </div>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section id="numbers"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What a shuffle does to a year of Ethereum MEV</h2>
+  <p class="lede">The authors replayed Ethereum blocks from August 2021 to July 2022, found sandwich attacks and arbitrage with the heuristics of Qin et al., and measured how much of that revenue would have survived a random permutation of each block. Each run was repeated 10 times with independent random seeds and the results averaged.</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Perfect sandwich attacks</div>
+      <div class="v">1.74 <small>ETH</small></div>
+      <p class="d">left after permuting each block, down from <strong>31,749.59 ETH</strong> historically. The paper calls this “almost a complete mitigation.”</p>
+    </div>
+    <div class="tile">
+      <div class="k">Sandwiches, worst case</div>
+      <div class="v">4,837.54 <small>ETH</small></div>
+      <p class="d">left even when a sandwich still pays with other transactions between its legs. The paper puts this at “almost 85%” mitigation.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Arbitrage + sandwich, BlindPerm</div>
+      <div class="v">634.88 <small>ETH</small></div>
+      <p class="d">left under BlindPerm, down from <strong>443,866.13 ETH</strong> historically (Figure 4 of the paper).</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Hiding the contents is not enough</h2>
+  <p class="lede">Maximal extractable value (MEV) is the profit a block producer or searcher can make by including, excluding or reordering transactions. The usual defence is an <strong>encrypted mempool</strong>: transactions stay encrypted until the block is committed, so nobody can front-run what they cannot read. The paper points out two gaps.</p>
+  <div class="twocol">
+    <div class="callout"><p><strong>The block producer still picks the order.</strong> A front-running arbitrage does not need to read anyone’s transaction; it only needs the latest chain state and the top slot of the block. Picture a popular NFT drop: the producer puts its own purchase first, whatever everyone else’s transactions say.</p></div>
+    <div class="callout"><p><strong>Metadata leaks.</strong> An encrypted transaction still reveals its submission time and sender address, and that can be enough to aim a sandwich at it.</p></div>
+  </div>
+  <p class="lede">The observation behind BlindPerm: blind ordering works because it makes the final order <em>independent of the contents</em>. A random permutation of the committed block also makes the final order independent of the <em>committed</em> order, and so of whatever order the producer chose. Figure 1 of the paper shows the three strategies that make the most money in practice.</p>
+  <div class="chart" id="figOne" role="img" aria-label="Redrawn Figure 1: front-running arbitrage takes the first slot; back-running arbitrage sits right after the victim; a sandwich wraps the victim with a buy before and a sell after."></div>
+  <p class="note" style="margin-top:8px">Redrawn after Figure 1. Hatched = the attacker’s transaction, dashed = the (potential) victim that creates the opportunity.</p>
+</div></section>
+
+<!-- ============ DILEMMA ============ -->
+<section id="dilemma"><div class="wrap">
+  <p class="eyebrow">Interactive · §3 of the paper</p>
+  <h2>The sandwich dilemma</h2>
+  <p class="lede">A sandwich needs three transactions in one exact order: the attacker’s buy, the victim, the attacker’s sell. Shuffle the committed block and the attacker loses control of that order. Sometimes the sandwich survives. Sometimes the sell runs <em>before</em> the buy and the attacker takes a loss. In the paper’s words, a shuffle can “turn a definite profit into a possible loss.”</p>
+  <div class="card">
+    <div class="playrow">
+      <button class="btn primary" id="dShuffle">Shuffle the block</button>
+      <button class="btn" id="dMany">Shuffle 1,000×</button>
+      <button class="btn" id="dReset">Leader’s order</button>
+      <span class="note" id="dSeed"></span>
+    </div>
+    <div class="block" id="dBlock" aria-live="polite"></div>
+    <div class="idxrow" id="dIdx"></div>
+    <div class="verdict ok" id="dVerdict"><div class="vh" id="dVh"></div><p id="dVp"></p></div>
+    <div class="outgrid" id="dOut"></div>
+    <p class="note" style="margin-top:10px">Each shuffle runs the paper’s <code>Permute</code> (Appendix A: Fisher–Yates driven by Knuth–Yao sampling) on a fresh random seed. The counts are tallied live in your browser; they are not results from the paper.</p>
+  </div>
+</div></section>
+
+<!-- ============ PROTOCOL ============ -->
+<section id="protocol"><div class="wrap">
+  <p class="eyebrow">Interactive · §3.1, §4.1, §4.2 and §5 of the paper</p>
+  <h2>Walk the protocol</h2>
+  <p class="lede">All three variants run on a BFT committee of $n \ge 3f+1$ validators, at most $f$ of them corrupt. The key idea: the seed that drives the shuffle is computed only <strong>after</strong> the block is committed, so the leader has already fixed the block by the time the randomness exists. Pick a variant, step through it, then break it.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:2"><span class="lbl">Variant</span>
+      <div class="seg" id="pVar">
+        <button data-v="warm" aria-pressed="false">Warm-up: permute only</button>
+        <button data-v="val" aria-pressed="false">BlindPerm: validators’ seed</button>
+        <button data-v="usr" aria-pressed="true">BlindPerm: users’ seed</button>
+      </div>
+    </div>
+    <div class="ctl" style="flex:2"><span class="lbl">What goes wrong?</span>
+      <div class="seg" id="pFail">
+        <button data-f="none" aria-pressed="true">Nothing</button>
+        <button data-f="reorder" aria-pressed="false">Leader reorders late</button>
+        <button data-f="shares" aria-pressed="false">Only $2f$ shares</button>
+        <button data-f="plain" aria-pressed="false">Public mempool</button>
+        <button data-f="noenc" aria-pressed="false">No encrypted tx</button>
+      </div>
+    </div>
+  </div>
+  <div class="playrow">
+    <button class="btn primary" id="pPlay">Play all four steps</button>
+    <span class="note">n = 4 validators, f = 1: every threshold step needs 2f + 1 = 3 valid contributions.</span>
+  </div>
+  <div class="stagebar" id="pSteps">
+    <button class="stg" data-s="0" aria-pressed="true">1<small>Submission</small></button>
+    <button class="stg" data-s="1" aria-pressed="false">2<small>Commit</small></button>
+    <button class="stg" data-s="2" aria-pressed="false">3<small>Seed</small></button>
+    <button class="stg" data-s="3" aria-pressed="false">4<small>Execution</small></button>
+  </div>
+  <div class="chart" style="margin-top:14px" id="pDiagram" role="img" aria-label="Protocol diagram: users submit transactions, the leader's block is committed, validators contribute shares toward the seed, and the permuted block is executed."></div>
+  <div class="stagebody" id="pBody"><h3 id="pTitle"></h3><p id="pText"></p></div>
+  <div class="verdict ok" id="pVerdict"><div class="vh" id="pVh"></div><p id="pVp"></p></div>
+</div></section>
+
+<!-- ============ SEED ============ -->
+<section id="seed"><div class="wrap">
+  <p class="eyebrow">Interactive · §4.2 and Appendix A of the paper</p>
+  <h2>A seed for free: XOR the keys you already recovered</h2>
+  <p class="lede">In the users’-seed construction, each user encrypts under a fresh symmetric <code>tx-key</code> and secret-shares that key to the validators with PVSS. Once the block is committed, the validators reconstruct every key to decrypt, and the seed is simply $\text{seed}_r = \text{tx-key}_1 \oplus \dots \oplus \text{tx-key}_k$. No extra signature and no extra round. And a single honest, non-colluding key makes the seed uniformly random.</p>
+  <div class="seedgrid">
+    <div class="card">
+      <h3>Round $r$: four encrypted transactions</h3>
+      <div id="kList"></div>
+      <div class="btns" style="margin-top:12px">
+        <button class="btn" id="kAim">Adversary aims at a seed</button>
+        <button class="btn primary" id="kCommit">Commit block &amp; reconstruct</button>
+        <button class="btn" id="kNew">New round</button>
+      </div>
+      <div class="verdict warn" id="kVerdict"><div class="vh" id="kVh"></div><p id="kVp"></p></div>
+      <p class="note" style="margin-top:10px">Keys are cut to 32 bits so they fit on screen; real ones are full-length symmetric keys. The permutation reads its random bits from SHA-256(seed ‖ counter), a stand-in for the PRG in the paper’s footnote 4.</p>
+    </div>
+    <div class="card">
+      <h3><code>Permute</code>$(\text{seed}_r, B_r)$</h3>
+      <p class="note" style="margin:0 0 6px">Algorithm 1, Appendix A: for $i = \ell$ down to 2, draw $j$ uniformly from $\{1,\dots,i\}$ with Knuth–Yao, then swap $a_i$ and $a_j$.</p>
+      <div class="block" id="pmBlock"></div>
+      <div class="idxrow" id="pmIdx"></div>
+      <div class="swaplog" id="pmLog"><div class="note">Commit the block to derive the seed and run the shuffle.</div></div>
+      <p class="note" style="margin-top:8px" id="pmBits"></p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ WIN ============ -->
+<section id="win"><div class="wrap">
+  <p class="eyebrow">Interactive · the paper’s §6 cost model</p>
+  <h2>How the simulation weighs a surviving attack</h2>
+  <p class="lede">The simulation doesn’t just count wins and losses. When an attack might still pay after the shuffle, it weights the attack by a probability that depends on where the key transactions sit and on the block size $|B|$. The paper observed an average of <strong>231</strong> transactions per block, with a minimum of <strong>3</strong> and a maximum of <strong>1386</strong>. The block-size control snaps to those three values.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:2"><span class="lbl">Strategy</span>
+      <div class="seg" id="wMode">
+        <button data-m="sw" aria-pressed="true">Imperfect sandwich</button>
+        <button data-m="fr" aria-pressed="false">Front-run arbitrage</button>
+        <button data-m="br" aria-pressed="false">Back-run arbitrage</button>
+      </div>
+    </div>
+    <div class="ctl" style="flex:1"><span class="lbl">Block size $|B|$</span>
+      <div class="seg" id="wB">
+        <button data-b="3" aria-pressed="false">3 (min)</button>
+        <button data-b="231" aria-pressed="true">231 (avg)</button>
+        <button data-b="1386" aria-pressed="false">1386 (max)</button>
+      </div>
+    </div>
+  </div>
+  <div class="wingrid">
+    <div class="chart">
+      <div class="formula" id="wFormula"></div>
+      <div class="controls" style="margin-bottom:6px">
+        <div class="ctl"><label for="wI"><span id="wIL">i</span> = <span class="val" id="wIV"></span></label><input type="range" id="wI" min="1" max="231" value="40"></div>
+        <div class="ctl"><label for="wJ"><span id="wJL">j</span> = <span class="val" id="wJV"></span></label><input type="range" id="wJ" min="1" max="231" value="160"></div>
+      </div>
+      <div id="wStrip"></div>
+      <p class="note" id="wDef" style="margin:8px 0 0"></p>
+    </div>
+    <div class="readout" style="display:flex; flex-direction:column; gap:12px">
+      <div class="ro"><div class="k" id="wRK">Pr[win]</div><div class="v" id="wRV">0</div>
+        <div class="gauge"><i id="wG"></i></div><div class="note" id="wRN"></div></div>
+      <div class="ro"><div class="k">This strategy in the paper</div>
+        <div class="note" id="wPaper" style="color:var(--ink-2); font-size:.86rem"></div></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ TOTALS ============ -->
+<section id="totals"><div class="wrap">
+  <p class="eyebrow">Interactive · totals stated in §6 of the paper</p>
+  <h2>Historical MEV against MEV after the shuffle</h2>
+  <p class="lede">Every bar below is a total stated in the text of §6, covering August 2021 to July 2022. The permutation rows shuffle blocks whose contents were public. The last row is BlindPerm: an encrypted mempool plus the permutation. On a linear scale, back-running arbitrage dwarfs everything else.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto; min-width:0"><span class="lbl">Scale</span>
+      <div class="seg" id="tScale">
+        <button data-s="log" aria-pressed="true">Log</button>
+        <button data-s="lin" aria-pressed="false">Linear</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart">
+    <div id="tChart" role="img" aria-label="Grouped bars: historical MEV against MEV after permutation or BlindPerm, per strategy, in ETH."></div>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s2)"></span>Historical MEV</li>
+      <li><span class="swatch" style="background:var(--s3)"></span>After random permutation</li>
+      <li><span class="swatch" style="background:var(--s1)"></span>Under BlindPerm</li>
+    </ul>
+    <details class="tbl"><summary>Show as a table</summary><div class="tscroll" id="tTable"></div></details>
+  </div>
+  <p class="note" style="margin-top:10px">The paper does not compare encryption alone with BlindPerm, because the permutation adds almost nothing to the cost of an encrypted mempool. So there is no “encryption only” bar.</p>
+</div></section>
+
+<!-- ============ GUARANTEES ============ -->
+<section id="guarantees"><div class="wrap">
+  <p class="eyebrow">Guarantees</p>
+  <h2>Two layers that cover each other’s gaps</h2>
+  <p class="lede">From the paper: “transaction permutation shifts sandwich attacks from being riskless to being risky, and transaction blinding shifts censorship from being optional to being all-or-nothing.” Each cell below paraphrases what the paper says about that combination.</p>
+  <div class="tscroll"><table id="gMatrix">
+    <thead><tr><th>Threat</th><th>Encryption only</th><th>Permutation only</th><th>BlindPerm</th></tr></thead>
+    <tbody>
+      <tr><td>Producer takes the top slot (front-running arbitrage)</td>
+        <td><span class="mark no"><span class="ic">✗</span>open</span><br><span class="note">needs only the latest state (§3)</span></td>
+        <td><span class="mark part"><span class="ic">◐</span>reduced</span><br><span class="note">1,483.18 → 780.74 ETH</span></td>
+        <td><span class="mark part"><span class="ic">◐</span>reduced</span><br><span class="note">permutation layer</span></td></tr>
+      <tr><td>Sandwich attacks</td>
+        <td><span class="mark part"><span class="ic">◐</span>mitigated</span><br><span class="note">content-dependent (§6); metadata may still leak</span></td>
+        <td><span class="mark part"><span class="ic">◐</span>made risky</span><br><span class="note">31,749.59 → 1.74 ETH (perfect)</span></td>
+        <td><span class="mark yes"><span class="ic">✓</span>both layers</span></td></tr>
+      <tr><td>Back-running a visible trade</td>
+        <td><span class="mark part"><span class="ic">◐</span>mitigated</span><br><span class="note">content-dependent (§6); metadata may still leak</span></td>
+        <td><span class="mark part"><span class="ic">◐</span>reduced</span><br><span class="note">410,112.07 → 133,613.02 ETH</span></td>
+        <td><span class="mark yes"><span class="ic">✓</span>both layers</span></td></tr>
+      <tr><td>Metadata leakage (timing, address)</td>
+        <td><span class="mark no"><span class="ic">✗</span>leaks</span></td>
+        <td><span class="mark na"><span class="ic">–</span>contents public anyway</span></td>
+        <td><span class="mark part"><span class="ic">◐</span>role reduced</span><br><span class="note">shuffle limits what a leak buys</span></td></tr>
+      <tr><td>Censoring, dependent transactions, mempool spam</td>
+        <td><span class="mark yes"><span class="ic">✓</span>mitigated</span></td>
+        <td><span class="mark no"><span class="ic">✗</span>not enough</span><br><span class="note">shuffle loses effect (§4)</span></td>
+        <td><span class="mark yes"><span class="ic">✓</span>all-or-nothing</span></td></tr>
+      <tr><td>Producer fills the block with its own tx, or includes only one</td>
+        <td><span class="mark no"><span class="ic">✗</span></span></td>
+        <td><span class="mark no"><span class="ic">✗</span></span></td>
+        <td><span class="mark no"><span class="ic">✗</span>limitation</span><br><span class="note">producer gives up a large portion of its fees (§1)</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:30px">What the lemmas promise</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>Warm-up (Lemma 1)</th><th>BlindPerm (Lemma 2)</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Every honest validator applies the same permutation</td><td><span class="mark yes">✓</span></td><td><span class="mark yes">✓</span></td><td>BFT finality, plus a unique threshold BLS signature or the same recovered keys</td></tr>
+      <tr><td>Seed unpredictable to the leader before commit</td><td><span class="mark yes">✓</span></td><td><span class="mark yes">✓</span></td><td>the seed needs $2f+1$ contributions made after the commit</td></tr>
+      <tr><td>Seed unbiasable</td><td><span class="mark yes">✓</span></td><td><span class="mark yes">✓</span></td><td>at most $f$ faulty validators; in the users’ variant, one non-colluding user makes it uniform</td></tr>
+      <tr><td>Contents hidden until committed</td><td><span class="mark no">✗</span></td><td><span class="mark yes">✓</span></td><td>threshold encryption, or PVSS-shared <code>tx-key</code></td></tr>
+      <tr><td>Guaranteed decryption after commit</td><td><span class="mark na">–</span></td><td><span class="mark yes">✓</span></td><td>the decryption threshold equals the consensus threshold</td></tr>
+      <tr><td>Corruption threshold</td><td class="mono">f &lt; n/3</td><td class="mono">f &lt; n/3</td><td>partial synchrony, optimal resilience</td></tr>
+      <tr><td>Extra work to get the seed</td><td>one threshold signature per view</td><td>validators’ variant: one threshold signature; users’ variant: essentially none</td><td>XOR of keys already recovered for decryption</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured</p>
+  <h2>Simulation results</h2>
+  <p class="lede">A local simulation on Ethereum data crawled through an Erigon archive node, from August 2021 to July 2022. No transactions were broadcast. Real MEV extractors might adapt to the new mechanism, which could change the numbers.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Strategy</th><th>Figure</th><th class="num">Historical (ETH)</th><th class="num">After (ETH)</th><th>Paper’s wording</th><th class="num">Reduction, computed</th></tr></thead>
+    <tbody id="rBody"></tbody>
+  </table></div>
+  <p class="note" style="margin-top:8px">“Reduction, computed” is $1 - \text{after}/\text{historical}$, calculated on this page from the paper’s two totals. It is not a number stated in the paper.</p>
+
+  <div class="prov">
+    <p class="eyebrow" style="color:var(--serious)">Provenance notes</p>
+    <p><strong>The BlindPerm baseline does not equal the sum of its parts.</strong> The paper’s historical total for Figure 4 (arbitrage and sandwich attacks) is <strong>443,866.13 ETH</strong>. Adding the three historical totals it reports separately (sandwich 31,749.59 + front-running arbitrage 1,483.18 + back-running arbitrage 410,112.07) gives <strong>443,344.84 ETH</strong>, which is 521.29 ETH less. Both numbers appear here exactly as the paper states them. The paper does not explain the gap.</p>
+    <p><strong>“Almost 50%” is 47.36%.</strong> For front-running arbitrage, 780.74 of 1,483.18 ETH remains, a 47.36% reduction. The paper describes this as “almost 50%,” in line with the expectation that a lone extractor’s chance is roughly halved.</p>
+    <p><strong>Monthly values.</strong> The monthly bars below are the paper’s own figures, pixel-identical to the images in the linked PDF. The underlying monthly values were not released as data, so this page charts only the totals stated in the text. All five figures use a log-scale y-axis.</p>
+  </div>
+
+  <div class="figs">
+    <figure><img src="fig/sandwich-normal.png" alt="Monthly MEV from perfect sandwich attacks, historical against under permutation, log scale." loading="lazy" width="1200" height="649"><figcaption>Figure 2 (left): perfect sandwich attacks, with a random permutation on the block.</figcaption></figure>
+    <figure><img src="fig/sandwich-worst.png" alt="Monthly MEV from imperfect sandwich attacks, historical against under permutation, log scale." loading="lazy" width="1200" height="659"><figcaption>Figure 2 (right): imperfect sandwich attacks, worst case.</figcaption></figure>
+    <figure><img src="fig/front.png" alt="Monthly MEV from front-running arbitrage, historical against under permutation, log scale." loading="lazy" width="1200" height="659"><figcaption>Figure 3 (left): front-running arbitrage.</figcaption></figure>
+    <figure><img src="fig/backrun-arb.png" alt="Monthly MEV from back-running arbitrage, historical against under permutation, log scale." loading="lazy" width="1200" height="659"><figcaption>Figure 3 (right): back-running arbitrage.</figcaption></figure>
+    <figure class="wide"><img src="fig/allmev.png" alt="Monthly MEV from arbitrage and sandwich attacks, historical against under BlindPerm, log scale." loading="lazy" width="1200" height="697"><figcaption>Figure 4: arbitrage and sandwich attacks under BlindPerm.</figcaption></figure>
+  </div>
+</div></section>
+
+<!-- ============ BEYOND ============ -->
+<section id="beyond"><div class="wrap">
+  <p class="eyebrow">Beyond BFT committees</p>
+  <h2>Extensions and limits</h2>
+  <div class="twocol">
+    <div>
+      <h3>A single sequencer (Appendix C)</h3>
+      <p>Layer-2 rollups often have one sequencer instead of a committee. The sequencer commits to its ciphertexts $S = (c_1,\dots,c_n)$ as a Merkle root, then must publish a permuted order anyone can check. Appendix C sketches two ways:</p>
+      <p><strong>A: deterministic shuffle.</strong> After the commitment, public randomness $R$ is revealed. $\pi = \texttt{Permute}(R, n)$ fixes the order, and anyone can verify it against the root with Merkle proofs. Only hashes are involved.</p>
+      <p><strong>B: zero-knowledge shuffle.</strong> The sequencer re-encrypts and permutes the ciphertexts, and proves with a SNARK that the mapping is a bijection over correct re-encryptions. The ciphertexts become unlinkable, and verification time does not depend on $n$.</p>
+    </div>
+    <div>
+      <h3>Longest-chain chains (§7)</h3>
+      <p>In proof-of-work, the seed can be the winning nonce together with the transactions’ Merkle root. A miner who reorders the block after seeing the seed has to solve the puzzle again.</p>
+      <h3 style="margin-top:18px">Limitations (§1)</h3>
+      <p>A producer can still sidestep the shuffle by including only one transaction, or by flooding the block with its own. Either way it gives up a large portion of its transaction fees, though its MEV revenue can still be higher. The threshold setup is also a hurdle when many parties join and leave; silent-setup threshold schemes are one direction the paper points to.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{kavousi2025blindperm,
+  title     = {{BlindPerm}: Efficient {MEV} Mitigation with an Encrypted
+               Mempool and Permutation},
+  author    = {Kavousi, Alireza and Le, Duc V. and Jovanovic, Philipp and
+               Danezis, George},
+  booktitle = {29th International Conference on Principles of Distributed
+               Systems (OPODIS 2025)},
+  editor    = {Arusoaie, Andrei and Onica, Emanuel and Spear, Michael and
+               Tucci-Piergiovanni, Sara},
+  series    = {Leibniz International Proceedings in Informatics (LIPIcs)},
+  volume    = {361},
+  pages     = {36:1--36:21},
+  publisher = {Schloss Dagstuhl -- Leibniz-Zentrum f{\"u}r Informatik},
+  year      = {2025},
+  doi       = {10.4230/LIPIcs.OPODIS.2025.36}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Code and data.</strong> The paper does not release code or simulation data. It says only that the Ethereum data was crawled through an <a href="https://github.com/ledgerwatch/erigon">Erigon</a> archive node, and that sandwich and arbitrage detection follows the heuristics of Qin et al. (reproduced in its Appendix B).</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">BlindPerm · OPODIS 2025 · University College London, Visa Research, Mysten Labs.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function $(id){ return document.getElementById(id); }
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function isNarrow(){ return window.innerWidth < 620; }
+
+/* ---------- motion helpers: every animation goes through tween ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function easeInOut(p){ return p < .5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2; }
+function tween(ms, step, done, ease){
+  ease = ease || easeOut;
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return { stop:function(){} }; }
+  var t0 = null, finished = false, stopped = false;
+  function finish(){ if (finished || stopped) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished || stopped) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(ease(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+  return { stop:function(){ stopped = true; } };
+}
+function fmt2(n){ return n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+function hex8(n){ return ('00000000' + (n >>> 0).toString(16)).slice(-8); }
+function rand32(){
+  var a = new Uint32Array(1);
+  try { crypto.getRandomValues(a); } catch(e){ a[0] = Math.floor(Math.random() * 4294967296); }
+  return a[0];
+}
+
+/* tooltip */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html;
+  tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = Math.max(4, y) + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+/* =======================================================================
+   SHA-256 (synchronous) - used only as the demo PRG for Permute.
+   ===================================================================== */
+var SHA_K = [], SHA_H = [];
+(function(){
+  function frac(x){ return ((x - Math.floor(x)) * 4294967296) >>> 0; }
+  var n = 2, c = 0;
+  while (c < 64){
+    var prime = true;
+    for (var d = 2; d * d <= n; d++) if (n % d === 0){ prime = false; break; }
+    if (prime){ if (c < 8) SHA_H[c] = frac(Math.pow(n, 1/2)); SHA_K[c] = frac(Math.pow(n, 1/3)); c++; }
+    n++;
+  }
+})();
+function sha256(bytes){
+  var l = bytes.length, bitLen = l * 8;
+  var padLen = ((l + 9 + 63) >> 6) << 6;
+  var m = new Uint8Array(padLen); m.set(bytes); m[l] = 0x80;
+  var dv = new DataView(m.buffer);
+  dv.setUint32(padLen - 4, bitLen >>> 0); dv.setUint32(padLen - 8, Math.floor(bitLen / 4294967296));
+  var H = SHA_H.slice(), w = new Array(64);
+  function rotr(x, k){ return (x >>> k) | (x << (32 - k)); }
+  for (var off = 0; off < padLen; off += 64){
+    for (var t = 0; t < 16; t++) w[t] = dv.getUint32(off + 4 * t);
+    for (t = 16; t < 64; t++){
+      var s0 = rotr(w[t-15], 7) ^ rotr(w[t-15], 18) ^ (w[t-15] >>> 3);
+      var s1 = rotr(w[t-2], 17) ^ rotr(w[t-2], 19) ^ (w[t-2] >>> 10);
+      w[t] = (w[t-16] + s0 + w[t-7] + s1) | 0;
+    }
+    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (t = 0; t < 64; t++){
+      var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (h + S1 + ch + SHA_K[t] + w[t]) | 0;
+      var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      var mj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + mj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  var out = new Uint8Array(32), odv = new DataView(out.buffer);
+  for (var i = 0; i < 8; i++) odv.setUint32(4 * i, H[i] >>> 0);
+  return out;
+}
+/* bit stream: SHA-256(seed || counter), bits read most-significant first */
+function bitStream(seed32){
+  var ctr = 0, buf = null, pos = 256, used = 0;
+  return {
+    bit: function(){
+      if (pos >= 256){
+        var inp = new Uint8Array(8), dv = new DataView(inp.buffer);
+        dv.setUint32(0, seed32 >>> 0); dv.setUint32(4, ctr++);
+        buf = sha256(inp); pos = 0;
+      }
+      var b = (buf[pos >> 3] >> (7 - (pos & 7))) & 1; pos++; used++;
+      return b;
+    },
+    used: function(){ return used; }
+  };
+}
+/* Algorithm 1 (Appendix A): Fisher-Yates with Knuth-Yao sampling, 1-indexed */
+function knuthYao(l, rb){
+  var u = 1, x = 0;
+  while (true){
+    while (u < l){ u = 2 * u; x = 2 * x + rb.bit(); }
+    var d = u - l;
+    if (x >= d) return x - d;
+    u = d;
+  }
+}
+function permute(seed32, arr){
+  var a = arr.slice(), rb = bitStream(seed32), swaps = [];
+  for (var i = a.length; i >= 2; i--){
+    var before = rb.used();
+    var j = knuthYao(i, rb) + 1;
+    swaps.push({ i:i, j:j, bits:rb.used() - before });
+    var tmp = a[i-1]; a[i-1] = a[j-1]; a[j-1] = tmp;
+  }
+  return { out:a, swaps:swaps, bits:rb.used() };
+}
+
+/* =======================================================================
+   Figure 1 redraw
+   ===================================================================== */
+function drawFigOne(){
+  var host = $('figOne'); host.innerHTML = '';
+  var narrow = isNarrow();
+  var W = narrow ? 340 : 900, H = narrow ? 300 : 300;
+  var svg = el('svg', { viewBox:'0 0 ' + W + ' ' + H });
+  var defs = el('defs', {});
+  var pat = el('pattern', { id:'hatchA', width:8, height:8, patternUnits:'userSpaceOnUse', patternTransform:'rotate(135)' });
+  pat.appendChild(el('rect', { width:8, height:8, fill:css('--plane') }));
+  pat.appendChild(el('rect', { width:3.5, height:8, fill:css('--s2'), opacity:.55 }));
+  defs.appendChild(pat); svg.appendChild(defs);
+  var cols = [
+    { t:'Front-running', sub:'arbitrage', atk:[0], vic:[] },
+    { t:'Back-running', sub:'arbitrage', atk:[2], vic:[1] },
+    { t:'Sandwich', sub:'', atk:[1,3], vic:[2] }
+  ];
+  var colW = narrow ? 100 : 230, gapX = (W - 3 * colW) / 4;
+  var fs = narrow ? 12 : 15, boxH = narrow ? 30 : 34, boxGap = narrow ? 8 : 10, top = narrow ? 58 : 60;
+  var labels = ['tx₁','tx₂','tx₃','tx₄','⋮','txₖ'];
+  var nodes = [];
+  cols.forEach(function(c, ci){
+    var x = gapX + ci * (colW + gapX);
+    svg.appendChild(el('text', { x:x + colW/2, y:narrow ? 20 : 24, 'text-anchor':'middle', 'font-size':fs + 1, 'font-weight':700, fill:css('--ink-head'), 'font-family':'inherit' }, c.t));
+    if (c.sub) svg.appendChild(el('text', { x:x + colW/2, y:narrow ? 36 : 42, 'text-anchor':'middle', 'font-size':fs - 2, fill:css('--ink-muted'), 'font-family':'var(--mono)' }, c.sub));
+    svg.appendChild(el('rect', { x:x, y:top - 10, width:colW, height:H - top, rx:4, fill:css('--surface-1'), stroke:css('--axis') }));
+    labels.forEach(function(lb, ri){
+      var y = top + ri * (boxH + boxGap);
+      if (lb === '⋮'){ svg.appendChild(el('text', { x:x + colW/2, y:y + boxH/2 + 5, 'text-anchor':'middle', 'font-size':fs + 4, fill:css('--ink-muted') }, '⋮')); return; }
+      var isA = c.atk.indexOf(ri) >= 0, isV = c.vic.indexOf(ri) >= 0;
+      var g = el('g', {});
+      g.appendChild(el('rect', { x:x + 12, y:y, width:colW - 24, height:boxH, rx:4,
+        fill:isA ? 'url(#hatchA)' : css('--plane'), stroke:isA ? css('--s2') : css('--ink-2'),
+        'stroke-width':isA ? 2.2 : 1.3, 'stroke-dasharray':isV ? '5 4' : null }));
+      g.appendChild(el('text', { x:x + colW/2, y:y + boxH/2 + 5, 'text-anchor':'middle', 'font-size':fs, 'font-weight':isA || isV ? 700 : 400,
+        fill:css('--ink-1'), 'font-family':'var(--mono)' }, lb + (isA ? (narrow ? ' atk' : '  attacker') : isV ? (narrow ? ' vic' : '  victim') : '')));
+      svg.appendChild(g); nodes.push(g);
+    });
+  });
+  host.appendChild(svg);
+  return nodes;
+}
+function enterFigOne(nodes){
+  nodes.forEach(function(g, k){
+    g.setAttribute('opacity', 0);
+    setTimeout(function(){ tween(380, function(p){ g.setAttribute('opacity', p); }); }, 40 * k);
+  });
+}
+
+/* =======================================================================
+   Interactive 1: the sandwich dilemma
+   ===================================================================== */
+var D_TX = [
+  { id:'t1', l:'tx', c:'' }, { id:'A1', l:'A-buy', c:'atk', s:'front' }, { id:'V', l:'V', c:'vic', s:'victim' },
+  { id:'A2', l:'A-sell', c:'atk', s:'back' }, { id:'t2', l:'tx', c:'' }, { id:'t3', l:'tx', c:'' },
+  { id:'t4', l:'tx', c:'' }, { id:'t5', l:'tx', c:'' }
+];
+var dOrder = D_TX.map(function(t){ return t.id; });
+var dCells = {}, dCounts = { perfect:0, imperfect:0, loss:0, none:0 }, dLast = 'perfect', dTw = null;
+var D_OUT = [
+  { k:'perfect', t:'Perfect sandwich', d:'buy, victim, sell back to back: still profitable' },
+  { k:'imperfect', t:'Loose sandwich', d:'right order, with others in between: may still pay' },
+  { k:'loss', t:'Sell before buy', d:'back-run lands first: possible loss for the attacker' },
+  { k:'none', t:'Victim outside', d:'victim not between the legs: no sandwich' }
+];
+function dClassify(order){
+  var a = order.indexOf('A1'), v = order.indexOf('V'), b = order.indexOf('A2');
+  if (b < a) return 'loss';
+  if (a < v && v < b) return (v === a + 1 && b === v + 1) ? 'perfect' : 'imperfect';
+  return 'none';
+}
+function dBuild(){
+  var blk = $('dBlock'); blk.innerHTML = ''; dCells = {};
+  D_TX.forEach(function(t){
+    var d = document.createElement('div');
+    d.className = 'txc ' + t.c;
+    d.innerHTML = t.l + (t.s ? '<small>' + t.s + '</small>' : '');
+    blk.appendChild(d); dCells[t.id] = d;
+  });
+  var idx = $('dIdx'); idx.innerHTML = '';
+  for (var i = 0; i < D_TX.length; i++){ var s = document.createElement('span'); s.textContent = i + 1; idx.appendChild(s); }
+  dOutBuild(); dLayout(false);
+}
+function slotGeom(host, n){
+  var W = host.clientWidth || 600, gap = W < 420 ? 4 : 8;
+  var cw = (W - gap * (n - 1)) / n;
+  return { cw:cw, gap:gap };
+}
+function dLayout(animate){
+  var blk = $('dBlock'), n = dOrder.length, g = slotGeom(blk, n);
+  var spans = $('dIdx').children;
+  for (var i = 0; i < n; i++){ spans[i].style.left = (i * (g.cw + g.gap)) + 'px'; spans[i].style.width = g.cw + 'px'; }
+  var from = {}, to = {};
+  dOrder.forEach(function(id, k){
+    var c = dCells[id]; c.style.width = g.cw + 'px';
+    from[id] = parseFloat(c.dataset.x || (k * (g.cw + g.gap)));
+    to[id] = k * (g.cw + g.gap);
+  });
+  if (dTw) dTw.stop();
+  function set(p){
+    dOrder.forEach(function(id){
+      var x = from[id] + (to[id] - from[id]) * p, c = dCells[id];
+      c.style.left = x + 'px'; c.dataset.x = x;
+      c.style.top = (animate ? -10 * Math.sin(Math.PI * p) : 0) + 'px';
+    });
+  }
+  if (!animate){ set(1); return; }
+  dTw = tween(620, set, null, easeInOut);
+}
+function dOutBuild(){
+  var g = $('dOut'); g.innerHTML = '';
+  D_OUT.forEach(function(o){
+    var d = document.createElement('div'); d.className = 'oc'; d.id = 'dO_' + o.k;
+    d.innerHTML = '<div class="k">' + o.t + '</div><div class="n" id="dN_' + o.k + '">0</div><p class="d">' + o.d + '</p>';
+    g.appendChild(d);
+  });
+}
+function dPaint(){
+  var total = dCounts.perfect + dCounts.imperfect + dCounts.loss + dCounts.none;
+  D_OUT.forEach(function(o){
+    $('dN_' + o.k).textContent = dCounts[o.k].toLocaleString('en-US') + (total ? ' / ' + total.toLocaleString('en-US') : '');
+    $('dO_' + o.k).classList.toggle('on', o.k === dLast);
+  });
+  var v = $('dVerdict'), h = $('dVh'), p = $('dVp');
+  var msg = {
+    perfect:['bad','Leader’s order: a perfect sandwich','This is the order the attacker wanted. Without a shuffle, the profit is certain.'],
+    imperfect:['warn','The sandwich survives, loosely','Buy before victim before sell, but with other transactions in between. The paper’s worst case still counts this as profitable.'],
+    loss:['ok','Back-run before front-run','The attacker’s sell executes before its buy. This is the paper’s example of a certain profit turning into a possible loss.'],
+    none:['ok','The victim escaped','The victim is not between the attacker’s two legs, so there is no sandwich this time.']
+  };
+  var m = msg[dLast];
+  if (dLast === 'perfect' && total > 0) m = ['bad','Shuffle landed on a perfect sandwich','This time the permutation happened to keep all three back to back.'];
+  v.className = 'verdict ' + m[0]; h.textContent = m[1]; p.textContent = m[2];
+}
+function dShuffle(n){
+  var last = null;
+  for (var k = 0; k < n; k++){
+    var seed = rand32();
+    var r = permute(seed, D_TX.map(function(t){ return t.id; }));
+    dCounts[dClassify(r.out)]++;
+    last = { seed:seed, out:r.out };
+  }
+  dOrder = last.out; dLast = dClassify(dOrder);
+  $('dSeed').textContent = 'seed = 0x' + hex8(last.seed);
+  dLayout(true); dPaint();
+}
+$('dShuffle').addEventListener('click', function(){ dShuffle(1); });
+$('dMany').addEventListener('click', function(){ dShuffle(1000); });
+$('dReset').addEventListener('click', function(){
+  dOrder = D_TX.map(function(t){ return t.id; }); dLast = 'perfect';
+  dCounts = { perfect:0, imperfect:0, loss:0, none:0 };
+  $('dSeed').textContent = ''; dLayout(true); dPaint();
+});
+
+/* =======================================================================
+   Interactive 2: protocol walk
+   ===================================================================== */
+var P = { v:'usr', s:0, f:'none' };
+var P_TEXT = {
+  warm:[
+    ['Submission', 'Each user broadcasts a plaintext transaction to the $n \\ge 3f+1$ validators.'],
+    ['Committing to the total ordering', 'In view $r$, the leader proposes block $B_r$ from the mempool, and the committee commits it. From here on the block’s contents and order are final.'],
+    ['Deriving the seed', 'Only now does each validator send a partial threshold BLS signature on the view number, $H(r)^{sk_i}$. Any $2f+1$ valid shares combine to $\\sigma_r = H(r)^{sk}$, and $\\text{seed}_r = H(\\sigma_r)$. The signature is unique, so every honest validator gets the same seed.'],
+    ['Execution', 'Every validator runs $\\texttt{Permute}(\\text{seed}_r, B_r)$ locally and executes the permuted block $B_r\'$.']
+  ],
+  val:[
+    ['Submission', 'Each user encrypts under the committee’s public key, $\\mathsf{TE.Enc}(pk, tx)$, and broadcasts the ciphertext $c$.'],
+    ['Committing to the total ordering', 'The leader proposes a block of ciphertexts, which gets committed. The leader fixed the order without seeing a single payload.'],
+    ['Decryption and deriving the seed', 'After the commit, each validator sends a decryption share $\\mathsf{TE.Pardec}(sk_i, c)$ for every committed transaction, plus a partial signature $\\mathsf{TS.Parsign}(sk_i, r)$ toward the seed. With $2f+1$ valid shares of each, anyone can decrypt and derive $\\text{seed}_r$.'],
+    ['Execution', 'Every validator runs $\\texttt{Permute}(\\text{seed}_r, B_r)$ and executes $B_r\'$.']
+  ],
+  usr:[
+    ['Submission', 'Each user picks a random symmetric $\\text{tx-key}$, encrypts the transaction with it, and shares the key to the validators with $\\mathsf{PVSS.Share}$.'],
+    ['Committing to the total ordering', 'The leader proposes a block of ciphertexts whose sharing has completed, and the block gets committed.'],
+    ['Decryption and deriving the seed', 'Validators publish decrypted shares. With $2f+1$ of them, each $\\text{tx-key}$ is recovered by Lagrange interpolation and its transaction decrypted. Then $\\text{seed}_r = \\text{tx-key}_1 \\oplus \\dots \\oplus \\text{tx-key}_k$. There is no signature to compute: the keys are already in hand.'],
+    ['Execution', 'Every validator runs $\\texttt{Permute}(\\text{seed}_r, B_r)$ and executes $B_r\'$.']
+  ]
+};
+var P_FAIL = {
+  none:{ c:'ok', h:'All good', p:{
+    warm:'The seed exists only after the commit, so the leader cannot predict the shuffle. But the mempool is public, so the leader can still read every transaction (see “Public mempool”).',
+    val:'Contents stay hidden until the commit, and the seed arrives only after it. Decryption and the seed are released together.',
+    usr:'Contents stay hidden until the commit, and the seed comes for free from the recovered keys. One honest user’s key makes it uniform.' } },
+  reorder:{ c:'ok', h:'Blocked: the order is already final', p:{
+    warm:'The permutation applies to a block that BFT finality has already committed. A leader who dislikes the shuffle cannot swap in another block, and the seed, a unique signature on the view number, cannot be re-rolled.',
+    val:'The seed is released only after the commit, and it is unique. Seeing it too late to act is the whole point of the design.',
+    usr:'The keys, and so the seed, are recovered only after the commit. By then every key in the block is fixed, and the leader cannot swap transactions to steer the XOR.' } },
+  shares:{ c:'warn', h:'Wait: not enough shares yet', p:{
+    warm:'With only $2f$ partial signatures, nobody can form $\\sigma_r$. With at most $f$ faulty validators, the remaining honest shares eventually arrive (liveness).',
+    val:'Neither decryption nor the seed completes with $2f$ shares. The decryption threshold equals the consensus threshold, so honest validators’ shares eventually arrive.',
+    usr:'No $\\text{tx-key}$ can be recovered from $2f$ decrypted shares. Once the $(2f{+}1)$-th valid share arrives, every key opens at once.' } },
+  plain:{ c:'bad', h:'Open: a permutation alone is not enough', p:{
+    warm:'With a public mempool, an attacker can read pending transactions, add dependent ones, flood the block, or censor a victim. Each raises its odds against the shuffle. This is why §4 adds an encrypted mempool.',
+    val:'This variant has no public mempool: every transaction is encrypted until the commit.',
+    usr:'This variant has no public mempool: only ciphertexts and PVSS shares circulate before the commit.' } },
+  noenc:{ c:'bad', h:'Caveat: no encrypted transaction, no seed', p:{
+    warm:'This applies only to the users’ seed with selective encryption (§5).',
+    val:'This applies only to the users’ seed with selective encryption (§5). Here the validators produce the seed themselves.',
+    usr:'With selective encryption, only MEV-prone transactions are encrypted. If the block contains none, there are no keys to XOR and no seed. The producer can then put its own transaction wherever it likes, as in §3. If even one encrypted victim is included, the seed is secure again.' } }
+};
+function pApplicable(f, v){
+  if (f === 'plain') return v === 'warm';
+  if (f === 'noenc') return v === 'usr';
+  return true;
+}
+var pTw = null, pPlaying = false;
+function drawProto(animate){
+  var host = $('pDiagram'); host.innerHTML = '';
+  var narrow = isNarrow();
+  var W = narrow ? 340 : 900, H = narrow ? 446 : 196;
+  var svg = el('svg', { viewBox:'0 0 ' + W + ' ' + H });
+  var ink = css('--ink-1'), muted = css('--ink-muted'), accent = css('--accent'), s1 = css('--s1'), good = css('--good'), crit = css('--critical');
+  var enc = P.v !== 'warm', f = P.f, s = P.s;
+  var noEnc = (f === 'noenc' && P.v === 'usr');
+  var fs = narrow ? 11.5 : 12.5;
+  function box(x, y, w, h, title, active){
+    svg.appendChild(el('rect', { x:x, y:y, width:w, height:h, rx:5, fill:css('--plane'), stroke:active ? accent : css('--axis'), 'stroke-width':active ? 2 : 1 }));
+    svg.appendChild(el('text', { x:x + 8, y:y + 16, 'font-size':fs, 'font-weight':700, fill:active ? accent : muted, 'font-family':'var(--mono)' }, title));
+  }
+  function arrow(x1, y1, x2, y2, on){
+    var ln = el('line', { x1:x1, y1:y1, x2:x2, y2:y2, stroke:on ? accent : css('--axis'), 'stroke-width':on ? 2 : 1.2, 'marker-end':on ? 'url(#arOn)' : 'url(#arOff)' });
+    svg.appendChild(ln); return ln;
+  }
+  var defs = el('defs', {});
+  [['arOn', accent], ['arOff', css('--axis')]].forEach(function(m){
+    var mk = el('marker', { id:m[0], viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:6, markerHeight:6, orient:'auto-start-reverse' });
+    mk.appendChild(el('path', { d:'M0,0 L10,5 L0,10 z', fill:m[1] })); defs.appendChild(mk);
+  });
+  svg.appendChild(defs);
+  var L; /* layout */
+  if (!narrow){
+    L = { users:[10, 12, 150, 170], block:[200, 12, 190, 170], comm:[440, 12, 170, 170], seed:[650, 12, 240, 70], perm:[650, 97, 240, 85] };
+  } else {
+    L = { users:[10, 8, 320, 62], block:[10, 94, 320, 70], comm:[10, 188, 320, 84], seed:[10, 296, 320, 50], perm:[10, 368, 320, 72] };
+  }
+  box(L.users[0], L.users[1], L.users[2], L.users[3], 'users', s === 0);
+  box(L.block[0], L.block[1], L.block[2], L.block[3], 'block B_r' + (s >= 1 ? ' ✓ committed' : ''), s === 1);
+  box(L.comm[0], L.comm[1], L.comm[2], L.comm[3], 'validators', s === 2);
+  box(L.seed[0], L.seed[1], L.seed[2], L.seed[3], 'seed_r', s === 2);
+  box(L.perm[0], L.perm[1], L.perm[2], L.perm[3], "executed B_r'", s === 3);
+  /* transactions: five, encrypted or not */
+  var txEnc = [true, true, true, true, true];
+  if (!enc) txEnc = [false, false, false, false, false];
+  if (noEnc) txEnc = [false, false, false, false, false];
+  var nTx = 5;
+  function txRow(bx, order, opened, dim){
+    var x0 = bx[0] + 10, y0 = bx[1] + (narrow ? 24 : 28), avail = bx[2] - 20;
+    var w = narrow ? (avail - 4 * 6) / 5 : (bx === L.users ? avail : (avail - 4 * 6) / 5);
+    var vertical = !narrow && bx === L.users;
+    var out = [];
+    order.forEach(function(t, k){
+      var x = vertical ? x0 : x0 + k * (w + 6), y = vertical ? y0 + k * 27 : y0;
+      var hgt = vertical ? 22 : (narrow ? 30 : 34);
+      var isEnc = txEnc[t] && !opened;
+      var g = el('g', { opacity:dim ? .35 : 1 });
+      g.appendChild(el('rect', { x:x, y:y, width:w, height:hgt, rx:3, fill:isEnc ? 'url(#hatchE)' : css('--plane'), stroke:isEnc ? s1 : css('--ink-2'), 'stroke-width':1.3 }));
+      g.appendChild(el('text', { x:x + w/2, y:y + hgt/2 + 4, 'text-anchor':'middle', 'font-size':fs - 1, fill:ink, 'font-family':'var(--mono)' },
+        (isEnc ? 'c' : 'tx') + (t + 1)));
+      svg.appendChild(g); out.push({ g:g, x:x });
+    });
+    return out;
+  }
+  var pat = el('pattern', { id:'hatchE', width:8, height:8, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)' });
+  pat.appendChild(el('rect', { width:8, height:8, fill:css('--plane') }));
+  pat.appendChild(el('rect', { width:3, height:8, fill:s1, opacity:.22 }));
+  defs.appendChild(pat);
+  var base = [0, 1, 2, 3, 4];
+  txRow(L.users, base, false, s !== 0);
+  if (s >= 1) txRow(L.block, base, s >= 2 && f !== 'shares', s === 3);
+  /* validators */
+  var need = 3, got = (s >= 2 && !noEnc) ? (f === 'shares' ? 2 : 3) : 0;
+  var cx0 = L.comm[0] + (narrow ? 40 : 30), cy = L.comm[1] + (narrow ? 50 : 70);
+  var dots = [];
+  for (var i = 0; i < 4; i++){
+    var x = narrow ? cx0 + i * 70 : cx0 + (i % 2) * 90 + 10, y = narrow ? cy : cy + Math.floor(i / 2) * 60;
+    var on = i < got;
+    var c = el('circle', { cx:x, cy:y, r:narrow ? 12 : 15, fill:on ? accent : css('--plane'), stroke:i === 3 && f === 'shares' && s >= 2 ? crit : accent, 'stroke-width':1.5, 'stroke-dasharray':i === 3 && f === 'shares' && s >= 2 ? '3 3' : null });
+    svg.appendChild(c); dots.push(c);
+    svg.appendChild(el('text', { x:x, y:y + (narrow ? 26 : 30), 'text-anchor':'middle', 'font-size':fs - 2, fill:muted, 'font-family':'var(--mono)' }, 'v' + (i + 1)));
+  }
+  svg.appendChild(el('text', { x:L.comm[0] + L.comm[2] - 8, y:L.comm[1] + 16, 'text-anchor':'end', 'font-size':fs - 1, fill:got >= need ? good : muted, 'font-family':'var(--mono)', 'font-weight':700 }, noEnc && s >= 2 ? 'nothing to decrypt' : got + ' / ' + need + ' shares'));
+  /* seed */
+  var seedTxt = '—', seedCol = muted;
+  if (s >= 2){
+    if (f === 'shares'){ seedTxt = 'waiting for share 3'; seedCol = css('--serious'); }
+    else if (noEnc){ seedTxt = 'none: no tx-key to XOR'; seedCol = crit; }
+    else if (P.v === 'usr'){ seedTxt = 'tx-key₁ ⊕ … ⊕ tx-key₅'; seedCol = good; }
+    else { seedTxt = 'H(σ_r), σ_r = H(r)^sk'; seedCol = good; }
+  }
+  svg.appendChild(el('text', { x:L.seed[0] + 10, y:L.seed[1] + (narrow ? 38 : 48), 'font-size':fs + 1, fill:seedCol, 'font-weight':700, 'font-family':'var(--mono)' }, seedTxt));
+  /* execution */
+  var permOrder = [3, 0, 4, 1, 2];
+  var permOK = s >= 3 && f !== 'shares' && !noEnc;
+  var permRow = null;
+  if (s >= 3){
+    if (permOK) permRow = txRow(L.perm, permOrder, true, false);
+    else {
+      var why = f === 'shares' ? 'blocked until the seed exists' : 'no seed, so producer’s order';
+      if (noEnc) txRow(L.perm, base, true, false);
+      else svg.appendChild(el('text', { x:L.perm[0] + 10, y:L.perm[1] + (narrow ? 38 : 50), 'font-size':fs, fill:css('--serious'), 'font-family':'var(--mono)' }, why));
+      if (noEnc) svg.appendChild(el('text', { x:L.perm[0] + 10, y:L.perm[1] + L.perm[3] - (narrow ? 4 : 8), 'font-size':fs - 1.5, fill:crit, 'font-family':'var(--mono)', 'font-weight':700 }, why));
+    }
+  }
+  /* arrows */
+  if (!narrow){
+    arrow(L.users[0] + L.users[2], 97, L.block[0] - 4, 97, s === 1);
+    arrow(L.block[0] + L.block[2], 97, L.comm[0] - 4, 97, s === 2);
+    arrow(L.comm[0] + L.comm[2], 47, L.seed[0] - 4, 47, s === 2);
+    arrow(L.seed[0] + 120, L.seed[1] + L.seed[3], L.seed[0] + 120, L.perm[1] - 4, s === 3);
+  } else {
+    arrow(170, L.users[1] + L.users[3], 170, L.block[1] - 4, s === 1);
+    arrow(170, L.block[1] + L.block[3], 170, L.comm[1] - 4, s === 2);
+    arrow(170, L.comm[1] + L.comm[3], 170, L.seed[1] - 4, s === 2);
+    arrow(170, L.seed[1] + L.seed[3], 170, L.perm[1] - 4, s === 3);
+  }
+  host.appendChild(svg);
+  /* motion: shares light up one by one; permuted tx slide into place */
+  if (animate && s === 2 && got > 0){
+    dots.forEach(function(d, k){ if (k < got){ d.setAttribute('fill', css('--plane'));
+      setTimeout(function(){ tween(260, function(p){ d.setAttribute('fill-opacity', p); d.setAttribute('fill', accent); }); }, 160 * k); } });
+  }
+  if (animate && permRow){
+    var baseX = L.perm[0] + 10, w = narrow ? (L.perm[2] - 20 - 24) / 5 : (L.perm[2] - 20 - 24) / 5;
+    permRow.forEach(function(r, k){
+      var startX = baseX + permOrder[k] * (w + 6), dx = startX - r.x;
+      r.g.setAttribute('transform', 'translate(' + dx + ',0)');
+      tween(700, function(p){ r.g.setAttribute('transform', 'translate(' + (dx * (1 - p)) + ',' + (-8 * Math.sin(Math.PI * p)) + ')'); }, null, easeInOut);
+    });
+  }
+}
+function renderProto(animate){
+  Array.prototype.forEach.call($('pVar').children, function(b){ b.setAttribute('aria-pressed', b.dataset.v === P.v); });
+  Array.prototype.forEach.call($('pFail').children, function(b){
+    b.setAttribute('aria-pressed', b.dataset.f === P.f);
+    b.disabled = !pApplicable(b.dataset.f, P.v);
+  });
+  Array.prototype.forEach.call($('pSteps').children, function(b){ b.setAttribute('aria-pressed', +b.dataset.s === P.s); });
+  var t = P_TEXT[P.v][P.s];
+  $('pTitle').innerHTML = 'Step ' + (P.s + 1) + ': ' + t[0] + ' <span class="chip">' + ({ warm:'§3.1', val:'§4.1', usr:'§4.2' })[P.v] + '</span>';
+  $('pText').innerHTML = t[1];
+  var fv = P_FAIL[P.f];
+  var cls = fv.c;
+  if (!pApplicable(P.f, P.v)) cls = 'ok';
+  $('pVerdict').className = 'verdict ' + cls;
+  $('pVh').textContent = fv.h; $('pVp').innerHTML = fv.p[P.v];
+  katexRender($('pBody')); katexRender($('pVerdict'));
+  drawProto(animate);
+}
+$('pVar').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return;
+  P.v = b.dataset.v; if (!pApplicable(P.f, P.v)) P.f = 'none'; renderProto(true); });
+$('pFail').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b || b.disabled) return;
+  P.f = b.dataset.f;
+  /* jump to the step where this failure shows up */
+  var at = { none:P.s, reorder:3, shares:2, noenc:2, plain:0 };
+  P.s = at[P.f]; renderProto(true); });
+$('pSteps').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; P.s = +b.dataset.s; renderProto(true); });
+$('pPlay').addEventListener('click', function(){
+  if (pPlaying) return; pPlaying = true; P.s = 0; renderProto(true);
+  var k = 0;
+  (function next(){ k++; if (k > 3){ pPlaying = false; return; }
+    setTimeout(function(){ P.s = k; renderProto(true); next(); }, REDUCED ? 0 : 1300); })();
+});
+
+/* =======================================================================
+   Interactive 3: XOR seed + Permute
+   ===================================================================== */
+var K = null, pmTw = null, pmTimer = null;
+function kNewRound(){
+  K = { keys:[rand32(), rand32(), rand32(), rand32()], aimed:false, target:null, committed:false, guess:null };
+  if (pmTimer){ clearTimeout(pmTimer); pmTimer = null; }
+  pmOrder = PM_TX.slice(); pmLayout(false);
+  $('pmLog').innerHTML = '<div class="note">Commit the block to derive the seed and run the shuffle.</div>';
+  $('pmBits').textContent = '';
+  kPaint();
+}
+function kSeed(){ return (K.keys[0] ^ K.keys[1] ^ K.keys[2] ^ K.keys[3]) >>> 0; }
+function kPaint(){
+  var list = $('kList'), h = '';
+  var who = ['user 1', 'user 2', 'user 3', 'user 4'];
+  K.keys.forEach(function(k, i){
+    var honest = i === 0;
+    var shown = honest && !K.committed ? '•••••••• <span class="note">PVSS-shared, sealed</span>' : '0x' + hex8(k);
+    h += '<div class="keyrow"><span class="who">' + who[i] + ' ' + (honest ? '<span class="tag h">honest</span>' : '<span class="tag a">adversary</span>') +
+      '</span><span class="kv">tx-key = ' + shown + '</span></div>';
+  });
+  h += '<div class="keyrow sum"><span class="who">seed_r = ⊕ of all keys</span><span class="kv">' + (K.committed ? '0x' + hex8(kSeed()) : 'not yet computable') + '</span></div>';
+  list.innerHTML = h;
+  var v = $('kVerdict');
+  if (!K.committed && !K.aimed){ v.className = 'verdict warn'; $('kVh').textContent = 'Before commit'; $('kVp').textContent = 'The adversary controls three of the four keys and the leader’s slot. It knows everything except the honest key, which stays secret-shared until the block is committed.'; }
+  else if (!K.committed){ v.className = 'verdict warn'; $('kVh').textContent = 'The adversary picked its keys'; $('kVp').textContent = 'It wants seed 0x' + hex8(K.target) + ', which would put its own transaction first. So it chose its three keys to cancel its best guess of the honest key, 0x' + hex8(K.guess) + '.'; }
+  else {
+    var hit = K.aimed && kSeed() === K.target;
+    v.className = 'verdict ' + (hit ? 'bad' : 'ok');
+    $('kVh').textContent = K.aimed ? (hit ? 'Target hit (a 1-in-2³² guess)' : 'Target missed') : 'Seed derived';
+    $('kVp').textContent = K.aimed
+      ? 'The honest key turned out to be 0x' + hex8(K.keys[0]) + '. XOR-ing it in scrambles whatever the adversary chose, so the seed is uniform over all values.'
+      : 'Recovered from 2f + 1 decrypted shares after the commit. No threshold signature was needed.';
+  }
+  $('kAim').disabled = K.committed || K.aimed;
+  $('kCommit').disabled = K.committed;
+}
+$('kAim').addEventListener('click', function(){
+  K.target = 0; /* the adversary wants a specific seed; any fixed target works */
+  /* search for a seed that puts the adversary's tx (A) first after Permute */
+  for (var cand = 0; cand < 5000; cand++){ if (permute(cand, PM_TX).out[0] === 'A'){ K.target = cand; break; } }
+  K.guess = rand32();
+  K.keys[1] = rand32(); K.keys[2] = rand32();
+  K.keys[3] = (K.target ^ K.guess ^ K.keys[1] ^ K.keys[2]) >>> 0;
+  K.aimed = true; kPaint();
+});
+$('kCommit').addEventListener('click', function(){ K.committed = true; kPaint(); pmRun(kSeed()); });
+$('kNew').addEventListener('click', kNewRound);
+
+var PM_TX = ['A', 'u1', 'u2', 'u3', 'b1', 'b2', 'b3', 'b4'];
+var PM_LBL = { A:'adv', u1:'u1', u2:'u2', u3:'u3', b1:'tx', b2:'tx', b3:'tx', b4:'tx' };
+var pmOrder = PM_TX.slice(), pmCells = {};
+function pmBuild(){
+  var blk = $('pmBlock'); blk.innerHTML = ''; pmCells = {};
+  PM_TX.forEach(function(id){
+    var d = document.createElement('div');
+    d.className = 'txc ' + (id === 'A' ? 'atk' : 'enc');
+    d.innerHTML = PM_LBL[id] + '<small>' + (id === 'A' ? 'wants #1' : 'enc') + '</small>';
+    blk.appendChild(d); pmCells[id] = d;
+  });
+  var idx = $('pmIdx'); idx.innerHTML = '';
+  for (var i = 0; i < PM_TX.length; i++){ var s = document.createElement('span'); s.textContent = 'a' + (i + 1); idx.appendChild(s); }
+  pmLayout(false);
+}
+function pmLayout(animate, hot){
+  var blk = $('pmBlock'), n = pmOrder.length, g = slotGeom(blk, n);
+  var spans = $('pmIdx').children;
+  for (var i = 0; i < n; i++){ spans[i].style.left = (i * (g.cw + g.gap)) + 'px'; spans[i].style.width = g.cw + 'px'; }
+  var from = {}, to = {};
+  pmOrder.forEach(function(id, k){
+    var c = pmCells[id]; c.style.width = g.cw + 'px';
+    from[id] = parseFloat(c.dataset.x || (k * (g.cw + g.gap)));
+    to[id] = k * (g.cw + g.gap);
+    c.classList.toggle('hot', !!hot && hot.indexOf(k) >= 0);
+  });
+  if (pmTw) pmTw.stop();
+  function set(p){
+    pmOrder.forEach(function(id){
+      var x = from[id] + (to[id] - from[id]) * p, c = pmCells[id];
+      c.style.left = x + 'px'; c.dataset.x = x;
+      c.style.top = (animate && from[id] !== to[id] ? -10 * Math.sin(Math.PI * p) : 0) + 'px';
+    });
+  }
+  if (!animate){ set(1); return; }
+  pmTw = tween(360, set, null, easeInOut);
+}
+function pmRun(seed){
+  pmOrder = PM_TX.slice(); pmLayout(false);
+  var r = permute(seed, PM_TX), log = $('pmLog');
+  log.innerHTML = '<div class="note">seed = 0x' + hex8(seed) + '</div>';
+  var a = PM_TX.slice(), k = 0;
+  function stepSwap(){
+    if (k >= r.swaps.length){
+      Array.prototype.forEach.call(log.children, function(d){ d.classList.remove('cur'); });
+      var pos = a.indexOf('A') + 1;
+      $('pmBits').textContent = 'Used ' + r.bits + ' random bits for ' + r.swaps.length + ' swaps. The adversary’s transaction ended up at a' + pos + (pos === 1 ? ': the top slot, by chance.' : ', not the top slot it wanted.');
+      pmLayout(false); return;
+    }
+    var sw = r.swaps[k];
+    var tmp = a[sw.i-1]; a[sw.i-1] = a[sw.j-1]; a[sw.j-1] = tmp;
+    pmOrder = a.slice();
+    Array.prototype.forEach.call(log.children, function(d){ d.classList.remove('cur'); });
+    var line = document.createElement('div'); line.className = 'cur';
+    line.textContent = 'i = ' + sw.i + ': Knuth–Yao gave j = ' + sw.j + ' (' + sw.bits + ' bits), swap a' + sw.i + ' ↔ a' + sw.j;
+    log.appendChild(line); log.scrollTop = log.scrollHeight;
+    pmLayout(true, [sw.i - 1, sw.j - 1]);
+    k++;
+    pmTimer = setTimeout(stepSwap, REDUCED ? 0 : 520);
+  }
+  if (pmTimer) clearTimeout(pmTimer);
+  if (REDUCED){ while (k < r.swaps.length) stepSwap(); stepSwap(); }
+  else pmTimer = setTimeout(stepSwap, 250);
+}
+
+/* =======================================================================
+   Interactive 4: Pr[win] explorer (paper §6)
+   ===================================================================== */
+var WIN = { m:'sw', B:231, i:40, j:160 };
+var W_META = {
+  sw:{ k:'Pr[win]', il:'front-run position i', jl:'back-run position j',
+    f:'$\\Pr[\\mathsf{win}] = \\dfrac{|i-j|}{|B|}$ if $i \\le j$',
+    def:'The paper’s worst-case imperfect sandwich: if the front-run still comes before the back-run, the attack wins when the victim lands between them, with probability $|i-j|/|B|$.',
+    paper:'31,749.59 ETH historically → <strong>4,837.54 ETH</strong> after permutation (“almost 85%”). Averaged over 10 random-seed runs.' },
+  fr:{ k:'Profit weight (at most)', il:'original position i', jl:'position after shuffle j',
+    f:'weight $= 1$ if $j \\le i$, else at most $1 - \\dfrac{|i-j|}{|B|}$',
+    def:'A front-running arbitrage pays if it still executes at or above its original slot. Otherwise the paper weights it by $1 - |i-j|/|B|$, assuming only one competing arbitrage in the block (a worst case).',
+    paper:'1,483.18 ETH historically → <strong>780.74 ETH</strong> after permutation (“almost 50%”; computed: 47.36%).' },
+  br:{ k:'Profit weight (at most)', il:'victim position i', jl:'arbitrage position j',
+    f:'weight at most $1 - \\dfrac{|i-j|}{|B|}$ if $i \\le j$',
+    def:'The paper assumes the back-run sat right after its victim in the original block. After the shuffle, it can still profit only if it executes after the victim, with weight $1 - |i-j|/|B|$.',
+    paper:'410,112.07 ETH historically → <strong>133,613.02 ETH</strong> after permutation (“almost 67%”).' }
+};
+function winValue(){
+  var i = WIN.i, j = WIN.j, B = WIN.B, d = Math.abs(i - j) / B;
+  if (WIN.m === 'sw') return i <= j ? { v:d, why:i <= j ? 'front-run before back-run' : '' } : { v:0, why:'back-run lands first: no win' };
+  if (WIN.m === 'fr') return j <= i ? { v:1, why:'still at or above its original slot' } : { v:1 - d, why:'pushed down the block' };
+  return i <= j ? { v:1 - d, why:'executes after its victim' } : { v:0, why:'executes before its victim: nothing to back-run' };
+}
+var wPrev = 0, wTw = null;
+function drawStrip(){
+  var host = $('wStrip'); host.innerHTML = '';
+  var narrow = isNarrow();
+  var W = narrow ? 320 : 600, H = narrow ? 104 : 108, x0 = 8, x1 = W - 8, y = 34, h = 22;
+  var svg = el('svg', { viewBox:'0 0 ' + W + ' ' + H });
+  var B = WIN.B, span = (x1 - x0);
+  function px(k){ return x0 + (k - 0.5) / B * span; }
+  svg.appendChild(el('rect', { x:x0, y:y, width:span, height:h, rx:3, fill:css('--plane'), stroke:css('--axis') }));
+  if (B <= 60){ for (var k = 1; k < B; k++) svg.appendChild(el('line', { x1:x0 + k / B * span, x2:x0 + k / B * span, y1:y, y2:y + h, stroke:css('--grid') })); }
+  var lo = Math.min(WIN.i, WIN.j), hi = Math.max(WIN.i, WIN.j);
+  var band = el('rect', { x:px(lo), y:y, width:Math.max(1.5, px(hi) - px(lo)), height:h, fill:css('--accent'), opacity:.14 });
+  svg.appendChild(band);
+  function marker(k, lbl, col, up){
+    var x = px(k);
+    svg.appendChild(el('line', { x1:x, x2:x, y1:y - 6, y2:y + h + 6, stroke:col, 'stroke-width':2.5, 'stroke-linecap':'round' }));
+    svg.appendChild(el('circle', { cx:x, cy:up ? y - 10 : y + h + 10, r:4.5, fill:col, stroke:css('--plane'), 'stroke-width':2 }));
+    var tx = Math.min(Math.max(x, 24), W - 24);
+    svg.appendChild(el('text', { x:tx, y:up ? y - 18 : y + h + 26, 'text-anchor':'middle', 'font-size':narrow ? 10 : 11.5, fill:css('--ink-1'), 'font-family':'var(--mono)', 'font-weight':700 }, lbl));
+  }
+  marker(WIN.i, 'i = ' + WIN.i, css('--s2'), true);
+  marker(WIN.j, 'j = ' + WIN.j, css('--s1'), false);
+  svg.appendChild(el('text', { x:x0, y:H - 2, 'font-size':narrow ? 9.5 : 10.5, fill:css('--ink-muted'), 'font-family':'var(--mono)' }, 'slot 1'));
+  svg.appendChild(el('text', { x:x1, y:H - 2, 'text-anchor':'end', 'font-size':narrow ? 9.5 : 10.5, fill:css('--ink-muted'), 'font-family':'var(--mono)' }, 'slot ' + B + ' = |B|'));
+  host.appendChild(svg);
+}
+function renderWin(animate){
+  var m = W_META[WIN.m];
+  Array.prototype.forEach.call($('wMode').children, function(b){ b.setAttribute('aria-pressed', b.dataset.m === WIN.m); });
+  Array.prototype.forEach.call($('wB').children, function(b){ b.setAttribute('aria-pressed', +b.dataset.b === WIN.B); });
+  $('wI').max = WIN.B; $('wJ').max = WIN.B; $('wI').value = WIN.i; $('wJ').value = WIN.j;
+  $('wIL').textContent = m.il; $('wJL').textContent = m.jl;
+  $('wIV').textContent = WIN.i; $('wJV').textContent = WIN.j;
+  $('wRK').textContent = m.k;
+  var r = winValue();
+  $('wRN').textContent = r.why;
+  $('wPaper').innerHTML = m.paper;
+  drawStrip();
+  var from = wPrev, to = r.v; wPrev = to;
+  if (wTw) wTw.stop();
+  function set(p){ var v = from + (to - from) * p; $('wRV').textContent = v.toFixed(4); $('wG').style.width = (v * 100) + '%'; }
+  if (animate) wTw = tween(380, set); else set(1);
+}
+function renderWinText(){
+  var m = W_META[WIN.m];
+  $('wFormula').innerHTML = m.f; $('wDef').innerHTML = m.def;
+  katexRender($('wFormula')); katexRender($('wDef'));
+}
+$('wMode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; WIN.m = b.dataset.m; renderWinText(); renderWin(true); });
+$('wB').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return;
+  var nb = +b.dataset.b, old = WIN.B;
+  WIN.i = Math.max(1, Math.min(nb, Math.round(WIN.i / old * nb)));
+  WIN.j = Math.max(1, Math.min(nb, Math.round(WIN.j / old * nb)));
+  WIN.B = nb; renderWin(true); });
+$('wI').addEventListener('input', function(){ WIN.i = +this.value; renderWin(false); });
+$('wJ').addEventListener('input', function(){ WIN.j = +this.value; renderWin(false); });
+$('wI').addEventListener('change', function(){ WIN.i = +this.value; renderWin(false); });
+$('wJ').addEventListener('change', function(){ WIN.j = +this.value; renderWin(false); });
+
+/* =======================================================================
+   Totals chart: every number is quoted from §6 of the paper.
+   ===================================================================== */
+var TOT = [
+  { name:'Perfect sandwich', short:'Perfect sandw.', fig:'Fig. 2 (left)', hist:31749.59, after:1.74, kind:'perm', words:'almost a complete mitigation' },
+  { name:'Imperfect sandwich (worst case)', short:'Imperfect sandw.', fig:'Fig. 2 (right)', hist:31749.59, after:4837.54, kind:'perm', words:'almost 85%' },
+  { name:'Front-running arbitrage', short:'Front-run arb.', fig:'Fig. 3 (left)', hist:1483.18, after:780.74, kind:'perm', words:'almost 50%' },
+  { name:'Back-running arbitrage', short:'Back-run arb.', fig:'Fig. 3 (right)', hist:410112.07, after:133613.02, kind:'perm', words:'almost 67%' },
+  { name:'Arbitrage + sandwich', short:'All (BlindPerm)', fig:'Fig. 4', hist:443866.13, after:634.88, kind:'bp', words:'(no percentage given)' }
+];
+var tScale = 'log', tEntered = false, tBars = [];
+function tX(v, scale, x0, w){
+  if (scale === 'log'){ var lo = 0, hi = 6; return x0 + (Math.log10(Math.max(v, 1)) - lo) / (hi - lo) * w; }
+  return x0 + v / 450000 * w;
+}
+function fmtAxis(v){ return v >= 1e6 ? '1M' : v >= 1000 ? (v / 1000) + 'k' : String(v); }
+function drawTotals(mode){
+  var host = $('tChart'); host.innerHTML = '';
+  var narrow = isNarrow();
+  var W = narrow ? 340 : 900, padL = narrow ? 92 : 210, padR = narrow ? 70 : 110, padT = 26, rowH = narrow ? 58 : 60, bh = narrow ? 17 : 19, gap = 2;
+  var H = padT + TOT.length * rowH + 20;
+  var svg = el('svg', { viewBox:'0 0 ' + W + ' ' + H });
+  var x0 = padL, w = W - padL - padR;
+  var muted = css('--ink-muted'), grid = css('--grid');
+  var ticks = tScale === 'log' ? [1, 10, 100, 1000, 10000, 100000, 1000000] : [0, 100000, 200000, 300000, 400000];
+  ticks.forEach(function(t, k){
+    if (narrow && tScale === 'log' && k % 2 === 1) return;
+    var x = tX(t, tScale, x0, w);
+    svg.appendChild(el('line', { x1:x, x2:x, y1:padT - 4, y2:H - 18, stroke:grid }));
+    svg.appendChild(el('text', { x:x, y:padT - 10, 'text-anchor':'middle', 'font-size':narrow ? 9.5 : 11, fill:muted, 'font-family':'var(--mono)' }, fmtAxis(t)));
+  });
+  svg.appendChild(el('text', { x:x0 + w, y:H - 2, 'text-anchor':'end', 'font-size':narrow ? 9.5 : 11, fill:muted, 'font-family':'var(--mono)' },
+    'ETH, ' + (tScale === 'log' ? 'log scale' : 'linear scale')));
+  tBars = [];
+  var base = tX(tScale === 'log' ? 1 : 0, tScale, x0, w);
+  TOT.forEach(function(r, i){
+    var y = padT + i * rowH + 6;
+    svg.appendChild(el('text', { x:padL - 10, y:y + bh + 3, 'text-anchor':'end', 'font-size':narrow ? 10.5 : 13, fill:css('--ink-1'), 'font-family':'inherit', 'font-weight':r.kind === 'bp' ? 700 : 400 }, narrow ? r.short : r.name));
+    [['hist', css('--s2'), 'Historical'], ['after', r.kind === 'bp' ? css('--s1') : css('--s3'), r.kind === 'bp' ? 'Under BlindPerm' : 'After permutation']].forEach(function(s, k){
+      var v = r[s[0]], yy = y + k * (bh + gap), xe = tX(v, tScale, x0, w), full = Math.max(xe - base, 3);
+      var rect = el('rect', { x:base, y:yy, height:bh, rx:2, fill:s[1] });
+      var lbl = el('text', { y:yy + bh - 4.5, 'font-size':narrow ? 10 : 12, fill:css('--ink-1'), 'font-family':'var(--mono)' }, fmt2(v));
+      var hit = el('rect', { x:x0, y:yy - 1, width:w + padR, height:bh + 2, fill:'transparent' });
+      hit.addEventListener('mousemove', function(e){ showTip(e, '<b>' + r.name + '</b>' + s[2] + ': ' + fmt2(v) + ' ETH<br><span style="color:var(--ink-muted)">' + r.fig + ', §6</span>'); });
+      hit.addEventListener('mouseleave', hideTip);
+      svg.appendChild(rect); svg.appendChild(lbl); svg.appendChild(hit);
+      tBars.push({ rect:rect, lbl:lbl, full:full, base:base });
+    });
+  });
+  svg.appendChild(el('line', { x1:base, x2:base, y1:padT - 4, y2:H - 18, stroke:css('--axis') }));
+  host.appendChild(svg);
+  function set(p){
+    tBars.forEach(function(b){ var ww = Math.max(b.full * p, 0.01); b.rect.setAttribute('width', ww); b.lbl.setAttribute('x', b.base + ww + 6); });
+  }
+  if (mode === 'hidden'){ set(0); tBars.forEach(function(b){ b.lbl.setAttribute('opacity', 0); }); return; }
+  if (mode === 'enter'){
+    tBars.forEach(function(b){ b.lbl.setAttribute('opacity', 0); });
+    tween(1100, function(p){ set(p); tBars.forEach(function(b){ b.lbl.setAttribute('opacity', Math.min(1, p * 1.4)); }); });
+    return;
+  }
+  set(1);
+}
+function rescaleTotals(){
+  var old = tBars.map(function(b){ return +b.rect.getAttribute('width'); });
+  drawTotals('static');
+  var target = tBars.map(function(b){ return +b.rect.getAttribute('width'); });
+  tween(650, function(p){
+    tBars.forEach(function(b, k){ var ww = old[k] + (target[k] - old[k]) * p; b.rect.setAttribute('width', ww); b.lbl.setAttribute('x', b.base + ww + 6); });
+  }, null, easeInOut);
+}
+$('tScale').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b || b.dataset.s === tScale) return;
+  tScale = b.dataset.s;
+  Array.prototype.forEach.call($('tScale').children, function(x){ x.setAttribute('aria-pressed', x.dataset.s === tScale); });
+  rescaleTotals(); });
+function buildTables(){
+  var h = '<table><thead><tr><th>Strategy</th><th class="num">Historical (ETH)</th><th class="num">After (ETH)</th><th>Mechanism</th></tr></thead><tbody>';
+  TOT.forEach(function(r){ h += '<tr' + (r.kind === 'bp' ? ' class="hl"' : '') + '><td>' + r.name + '</td><td class="num">' + fmt2(r.hist) + '</td><td class="num">' + fmt2(r.after) + '</td><td>' + (r.kind === 'bp' ? 'BlindPerm' : 'random permutation') + '</td></tr>'; });
+  $('tTable').innerHTML = h + '</tbody></table>';
+  var b = '';
+  TOT.forEach(function(r){
+    b += '<tr' + (r.kind === 'bp' ? ' class="hl"' : '') + '><td>' + r.name + (r.kind === 'bp' ? ' (BlindPerm)' : '') + '</td><td class="mono">' + r.fig + '</td><td class="num">' + fmt2(r.hist) + '</td><td class="num">' + fmt2(r.after) +
+      '</td><td>' + r.words + '</td><td class="num">' + ((1 - r.after / r.hist) * 100).toFixed(2) + '%</td></tr>';
+  });
+  $('rBody').innerHTML = b;
+}
+
+/* ---------- copy bibtex ---------- */
+$('copyBib').addEventListener('click', function(){
+  var t = $('bibtex').textContent, b = this;
+  function done(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1400); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   KaTeX + boot
+   ===================================================================== */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+}
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+var figNodes = drawFigOne();
+dBuild(); dPaint();
+pmBuild(); kNewRound();
+renderProto(false);
+renderWinText(); renderWin(false);
+buildTables();
+drawTotals(hasIO ? 'hidden' : 'static');
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(550, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      if (sec.id === 'problem') enterFigOne(figNodes);
+      else if (sec.id === 'totals') setTimeout(function(){ tEntered = true; drawTotals('enter'); }, 150);
+      else if (sec.id === 'protocol') setTimeout(function(){ renderProto(true); }, 150);
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+} else { tEntered = true; }
+
+/* a resize repaints everything, but never replays an entrance */
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){
+    if (window.innerWidth === lastW) return; lastW = window.innerWidth;
+    drawFigOne(); dLayout(false); pmLayout(false); drawProto(false); drawStrip();
+    drawTotals(tEntered ? 'static' : 'hidden');
+  }, 120);
+});
+</script>
+</body>
+</html>
