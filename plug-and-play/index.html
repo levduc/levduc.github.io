@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plug-and-Play Long-Range Defense</title>
+<meta name="description" content="ESORICS 2024 — Defending proof-of-stake blockchains against long-range attacks with external timestamp servers and Insertable Proofs of Sequential Work, without any fork.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono); font-size:.85rem}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:72ch}
+.warnbox{border:1px solid var(--serious); border-left-width:4px; border-radius:4px;
+  background:var(--surface-1); padding:12px 14px; margin:14px 0 0; font-size:.9rem}
+.warnbox b{color:var(--ink-head)}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.5rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn[disabled]{opacity:.45; cursor:default}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head)}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin-bottom:18px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:210px; flex:1}
+.ctl label{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px; overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:14px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.line{height:3px; border-radius:2px}
+.swatch.dia{width:9px; height:9px; transform:rotate(45deg); border-radius:1px; background:transparent; border:2px solid var(--ink-1)}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .09s;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- readouts ---------- */
+.readrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-top:14px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:10px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.4rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro .s{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted)}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; max-width:100%}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+td.c,th.c{text-align:center}
+tr.hl td{background:var(--surface-1); font-weight:700}
+.yes{color:var(--good); font-weight:700}
+.no{color:var(--critical); font-weight:700}
+.na{color:var(--ink-muted); font-family:var(--mono)}
+th.us,td.us{background:#f1f1fb}
+
+/* ---------- stages ---------- */
+.playrow{display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:0 0 12px}
+.stagebar{display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:14px}
+.stg{border:1px solid var(--ring); background:var(--surface-1); border-radius:3px;
+  padding:.45rem .3rem; cursor:pointer; text-align:center; font-size:.86rem;
+  font-family:var(--font); color:var(--ink-2); font-weight:700}
+.stg[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff}
+.stg small{display:block; font-family:var(--mono); font-size:.68rem; font-weight:400; opacity:.85}
+.stagebody{margin-top:14px; border:1px solid var(--ring); border-radius:4px;
+  background:var(--surface-1); padding:16px 18px; box-shadow:var(--shadow)}
+.stagebody h3{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+.stagebody p:last-child{margin-bottom:0}
+.chip{font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; border-radius:999px; padding:.1rem .55rem; border:1px solid currentColor}
+.chip.ok{color:var(--good)} .chip.bad{color:var(--critical)} .chip.mute{color:var(--ink-muted)}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+ol.prov{margin:.4rem 0 0; padding-left:1.2rem; font-size:.92rem}
+ol.prov li{margin-bottom:.6rem}
+svg text{font-family:var(--mono)}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:1.9rem}
+  .stagebar{grid-template-columns:repeat(3,1fr)}
+  .controls .ctl{flex:1 1 100% !important; min-width:0}
+  .chart{padding:12px 10px 10px}
+}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} .tip{transition:none} }
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#attack">Attack</a>
+    <a href="#skiplist">InPoSW</a>
+    <a href="#window">Security</a>
+    <a href="#cost">Costs</a>
+    <a href="#props">Properties</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">ESORICS 2024</span>
+  <h1>A Plug-and-Play Long-Range Defense System for Proof-of-Stake Blockchains</h1>
+  <p class="sub">External servers timestamp every finalized checkpoint into one ever-running sequential computation. A new client that is shown two valid-looking histories picks the one that was timestamped first. There's no soft or hard fork, and one honest server is enough.</p>
+  <p class="authors">
+    Lucien K. L. Ng<sup>1*</sup>, Panagiotis Chatzigiannis<sup>2</sup>, <span class="me">Duc V. Le</span><sup>2</sup>,
+    Mohsen Minaei<sup>2</sup>, Ranjit Kumaresan<sup>2</sup>, Mahdi Zamani<sup>2</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Georgia Institute of Technology &nbsp;·&nbsp; <sup>2</sup>Visa Research &nbsp;·&nbsp; <sup>*</sup>Part of this work was done while Lucien K. L. Ng was an intern at Visa Research.</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/long-range.pdf">Paper (PDF)</a>
+    <a class="btn" href="#cite">BibTeX</a>
+  </div>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section id="tldr"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What the defense buys</h2>
+  <p class="lede">All figures come from the paper's Ethereum-based estimates in §6. They are estimates from concrete parameters, not measurements of a deployment.</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Protection window</div>
+      <div class="v"><span id="tileYears">&gt;10</span> years</div>
+      <p class="d">Up from 189 days, if an adversary evaluates the VDF at most 5% faster than an honest server. At 1% faster it is more than 51 years (Theorem 2).</p>
+    </div>
+    <div class="tile">
+      <div class="k">Worst-case proof after 10 years</div>
+      <div class="v">&asymp;20 KB</div>
+      <p class="d">vs. &asymp;337 MB for graph-labeling PoSW (SNACKs), per the §6 text. Fig. 7 plots &asymp;7.9 KB for this point; <a href="#provenance">see the provenance note</a>.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Trust assumption</div>
+      <div class="v">1 honest server</div>
+      <p class="d">Out of however many the client contacts. The PoS consensus protocol is unchanged, so no fork is needed to deploy it.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Old keys can rewrite old history</h2>
+  <p class="lede">In a proof-of-stake chain, validators sign blocks with keys backed by stake. Once validators exit and withdraw, their old signing keys can no longer be slashed, but they still verify for the epochs where they held stake. An attacker who buys enough exited keys can sign a <em>competing</em> history from some past epoch onward. Every rule a new client checks (valid transactions, valid consensus signatures) passes on both chains, so the client cannot tell which is real. That opens the door to double-spending. This is the <strong>long-range attack</strong>.</p>
+  <div class="callout">
+    <p style="margin:0">Today's remedy is <strong>checkpoints</strong> published on bulletin boards and block explorers, which a new client must trust. That is centralisation and a single point of failure. <strong>Key rotation</strong> needs a hard fork, and it assumes validators delete old keys they could instead sell. Lewis-Pye and Roughgarden proved that PoS cannot avoid long-range attacks without a time-dependent primitive such as a VDF or ephemeral keys.</p>
+  </div>
+  <p>This paper adds that time-dependent primitive <em>outside</em> the chain. Independent servers timestamp each finalized checkpoint as it is emitted, using a new primitive called <strong>Insertable Proof of Sequential Work</strong> ($\mathsf{InPoSW}$). An attacker who forks the past later cannot produce an <em>older</em> timestamp for the fork than the honest server already holds. To win, the attacker would have had to start timestamping around the moment the authentic checkpoint appeared, and at that point they did not yet have the keys.</p>
+</div></section>
+
+<!-- ============ ATTACK STEP-THROUGH ============ -->
+<section id="attack"><div class="wrap">
+  <p class="eyebrow">Interactive · Figures 1 and 2 of the paper</p>
+  <h2>Walk a long-range attack</h2>
+  <p class="lede">Step through what the servers and a freshly booted light client do. Switch the defense off to see why published checkpoints alone leave the client stuck.</p>
+  <div class="playrow">
+    <div class="seg" role="group" aria-label="Defense" id="defSeg">
+      <button type="button" aria-pressed="true" data-on="1">Timestamp servers on</button>
+      <button type="button" aria-pressed="false" data-on="0">Checkpoints only</button>
+    </div>
+    <button class="btn" type="button" id="stPrev">&larr; Back</button>
+    <button class="btn" type="button" id="stNext">Next &rarr;</button>
+  </div>
+  <div class="stagebar" id="stageBar"></div>
+  <div class="chart"><svg id="atkSvg" role="img" aria-labelledby="atkTitle"><title id="atkTitle">Honest chain, attacker fork, and the timestamps the client compares</title></svg></div>
+  <div class="stagebody" id="stageBody" aria-live="polite"></div>
+</div></section>
+
+<!-- ============ SKIP-LIST InPoSW ============ -->
+<section id="skiplist"><div class="wrap">
+  <p class="eyebrow">Interactive · Figures 3–5 of the paper</p>
+  <h2>Inside $\mathsf{InPoSW}$: VDFs arranged like a skip list</h2>
+  <p class="lede">A single VDF only accepts data when it <em>starts</em>, so timestamping each checkpoint with its own VDF costs work linear in the number of checkpoints. Graph-labeling PoSW (SNACKs) accepts data mid-run, but its proofs grow linearly with elapsed time. $\mathsf{InPoSW}$ runs VDFs of length $\Delta_T\cdot 2^i$ side by side. At each step $N$ it starts a new level-$i$ VDF for every $i$ with $2^i \mid N$, and each new VDF takes a vector commitment of the outputs that just finished together with the new data. To prove that data $x_t$ went in at step $t$, the prover sends only the VDFs on the shortest chain from $t$ to now.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="nRange">Steps elapsed $N$ (each step is $\Delta_T$) <span class="val" id="nVal">27</span></label>
+      <input type="range" id="nRange" min="2" max="32" step="1" value="27">
+    </div>
+    <div class="ctl">
+      <label for="tRange">Checkpoint $x_t$ inserted at step $t$ <span class="val" id="tVal">5</span></label>
+      <input type="range" id="tRange" min="0" max="26" step="1" value="5">
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="slSvg" role="img" aria-labelledby="slTitle"><title id="slTitle">Skip-list arrangement of VDF evaluations with the verification path highlighted</title></svg>
+    <ul class="legend">
+      <li><span class="swatch line" style="background:var(--ink-muted)"></span>finished VDF</li>
+      <li><span class="swatch line" style="height:2px;background:repeating-linear-gradient(90deg,var(--ink-muted) 0 2px,transparent 2px 5px)"></span>still running</li>
+      <li><span class="swatch line" style="background:var(--s3);height:5px"></span>on the proof path</li>
+      <li><span class="swatch" style="background:var(--s2)"></span>inserted checkpoint $x_t$</li>
+    </ul>
+  </div>
+  <div class="readrow">
+    <div class="ro"><div class="k">VDF proofs sent</div><div class="v" id="roPath">–</div><div class="s">shortest chain from $t$ to $N$</div></div>
+    <div class="ro"><div class="k">Bound, Fig. 5</div><div class="v" id="roBound">–</div><div class="s">$\le 2\log_2 N$ VDF proofs</div></div>
+    <div class="ro"><div class="k">Sequential work proven</div><div class="v" id="roAge">–</div><div class="s">$x_t$ was inserted $(N-t)\cdot\Delta_T$ ago</div></div>
+  </div>
+  <p class="note" style="margin-top:14px">Level-$i$ VDFs start at every multiple of $2^i$, as in the paper's evaluation algorithm (Fig. 4). The highlighted chain splits $[t, N]$ into the fewest aligned intervals. That is the "shortest path" in the Fig. 3 caption. With §6's parameters ($\Delta_T \approx 3.6$ minutes), ten years is $10 \cdot 365.25 \cdot 24 \cdot 60 / 3.6 \approx 1.46$ million steps by our arithmetic, and the paper says $\approx 20$ VDF instances then run in parallel.</p>
+  <div class="warnbox" id="fig5note"><b>A note on Fig. 5 as typeset.</b> The verifier loop in Fig. 5 sets $z = 2^{\lfloor\log_2 t\rfloor}$ and takes the lowest set bit of $j$ while $j &gt; z$. Run literally, that loop can step past $t$. For example, with $N = 2$ and $t = 1$ it picks the level-1 VDF covering $[0,2]$, which starts before $x_1$ was inserted. This widget draws the aligned shortest path that the Fig. 3 caption and the completeness proof describe. The $\le 2\log_2 N$ bound holds for it. By our own exhaustive check (not in the paper), it never needs more than 18 proofs for any $N \le 1024$.</div>
+</div></section>
+
+<!-- ============ SECURITY WINDOW ============ -->
+<section id="window"><div class="wrap">
+  <p class="eyebrow">Interactive · Theorem 2 and §6</p>
+  <h2>How long the past stays safe</h2>
+  <p class="lede">Suppose the chain has <em>$T_\Pi$-uncorrupted finality</em>: nobody can gather enough keys to fork a checkpoint until $T_\Pi$ after it is emitted. On Ethereum, §6 puts this at <strong>at least 189 days</strong>, the estimated time for $\ge 33\%$ of validators to withdraw. The attacker therefore starts at least $T_\Pi$ behind the honest server. The VDF has $(1-\epsilon)$-sequentiality, meaning an adversary evaluates it at most a fraction $\epsilon$ faster. Under that assumption the attacker never catches up until time $T_\Pi\cdot(1/\epsilon).$</p>
+  <div class="controls">
+    <div class="ctl">
+      <label for="epsRange">Adversary's VDF speed-up $\epsilon$ <span class="val" id="epsVal">5%</span></label>
+      <input type="range" id="epsRange" min="1" max="10" step="0.5" value="5">
+    </div>
+    <div class="ctl" style="flex:0 0 auto; min-width:0">
+      <label id="epsPresetLbl">Paper's values</label>
+      <div class="seg" role="group" aria-labelledby="epsPresetLbl" id="epsSeg">
+        <button type="button" data-e="5" aria-pressed="true">5%</button>
+        <button type="button" data-e="1" aria-pressed="false">1%</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="winSvg" role="img" aria-labelledby="winTitle"><title id="winTitle">Protected period without and with the defense, in years</title></svg>
+  </div>
+  <div class="readrow">
+    <div class="ro"><div class="k">Without the defense</div><div class="v">189 days</div><div class="s">$T_\Pi$ for Ethereum, §6</div></div>
+    <div class="ro"><div class="k">With InPoSW timestamps</div><div class="v" id="roWin">–</div><div class="s" id="roWinS">$T_\Pi\cdot(1/\epsilon)$</div></div>
+  </div>
+  <p class="note" style="margin-top:14px">The paper states two cases: $\epsilon = 5\%$ gives $189\cdot 20$ days, "${>}10$ years", and $\epsilon = 1\%$ gives "${>}51$ years". The 5% case is motivated by the VDF Alliance FPGA competition, where the winner and the runner-up differed by ${<}4.5\%$. Other slider values apply the same Theorem 2 formula; the paper does not discuss them.</p>
+</div></section>
+
+<!-- ============ COSTS ============ -->
+<section id="cost"><div class="wrap">
+  <p class="eyebrow">Interactive · Figures 6 and 7 of the paper</p>
+  <h2>Prover storage and proof size over ten years</h2>
+  <p class="lede">These are the paper's estimates for graph-labeling PoSW (SNACKs, instantiated with RandomX) and $\mathsf{InPoSW}$ (instantiated with Wesolowski's VDF), using the parameters in the <a href="#results">results table</a>. Drag the slider or hover over the chart. The y-axis is log-scale, and each gridline is a factor of ten.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 0 auto; min-width:0">
+      <label id="metricLbl">Metric</label>
+      <div class="seg" role="group" aria-labelledby="metricLbl" id="metricSeg">
+        <button type="button" data-m="storage" aria-pressed="true">Prover storage (Fig. 6)</button>
+        <button type="button" data-m="proof" aria-pressed="false">Proof size (Fig. 7)</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="yrRange">Elapsed time <span class="val" id="yrVal">10.0 years</span></label>
+      <input type="range" id="yrRange" min="0" max="99" step="1" value="99">
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="costSvg" role="img" aria-labelledby="costTitle"><title id="costTitle">Estimated cost of SNACKs vs InPoSW over elapsed years, log scale</title></svg>
+    <ul class="legend">
+      <li><span class="swatch line" style="background:var(--s1)"></span>Graph-labeling PoSW (SNACKs)</li>
+      <li><span class="swatch line" style="background:var(--s2)"></span>$\mathsf{InPoSW}$ (this work)</li>
+      <li><span class="swatch dia"></span>value stated in the §6 text (10 years)</li>
+    </ul>
+  </div>
+  <div class="readrow">
+    <div class="ro"><div class="k">SNACKs</div><div class="v" id="roSn">–</div><div class="s" id="roSnS">&nbsp;</div></div>
+    <div class="ro"><div class="k">InPoSW</div><div class="v" id="roUs">–</div><div class="s" id="roUsS">&nbsp;</div></div>
+    <div class="ro"><div class="k">Reduction (plotted curves)</div><div class="v" id="roRatio">–</div><div class="s" id="roRatioS">&nbsp;</div></div>
+  </div>
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll"><table id="costTable"></table></div>
+  </details>
+  <div class="warnbox"><b>The figure and the text disagree for $\mathsf{InPoSW}$.</b> At 10 years the plotted $\mathsf{InPoSW}$ curves end at &asymp;240 GB of storage and &asymp;7.9 KB of proof. The §6 text says &asymp;546 GB and &asymp;20 KB, and its "${>}22\times$" and "${>}17969\times$" reductions follow from the text's values. The SNACKs curves agree with the text (&asymp;12 TB, &asymp;337 MB). This page plots both sources and does not pick one. Curve values were read from the vector source of Figs. 6–7 (100 points per series, 4 significant figures); see <a href="#provenance">provenance</a>.</div>
+</div></section>
+
+<!-- ============ PROPERTIES ============ -->
+<section id="props"><div class="wrap">
+  <p class="eyebrow">Guarantees · Table 2 of the paper</p>
+  <h2>How it compares with other long-range defenses</h2>
+  <div class="tscroll"><table id="propTable">
+    <thead><tr><th></th><th class="c">Winkle</th><th class="c">Solana</th><th class="c">SNACK</th><th class="c">Babylon / Pikachu</th><th class="c">Minotaur</th><th class="c">ETH's Finality Gadgets</th><th class="c">PoSAT</th><th class="c us">This work</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note" style="margin-top:10px">Reproduced cell by cell from Table 2, including its N/A entries. ✓ = yes, ✗ = no.</p>
+
+  <h3 style="margin-top:28px">What the construction is proven to give</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>Statement in the paper</th></tr></thead>
+    <tbody>
+      <tr><td>Complete, sound, succinct</td><td>Theorem 1: the $\mathsf{InPoSW}$ construction of Figs. 4–5 is complete, sound and succinct (proof in the appendix).</td></tr>
+      <tr><td>Extended finality</td><td>Theorem 2: a chain with $T_\Pi$-uncorrupted finality, combined with the bootstrap protocol using a VDF with $(1-\epsilon)\cdot T$-sequentiality, achieves $T_\Pi\cdot(1/\epsilon)$-extended finality against long-range attacks.</td></tr>
+      <tr><td>Honest-minority servers</td><td>The client is protected as long as at least one server it contacts is honest.</td></tr>
+      <tr><td>Consensus-agnostic</td><td>Works with any PoS chain that emits finalized checkpoints, independent of the block-selection rule (e.g. GHOST, Ouroboros).</td></tr>
+      <tr><td>Non-interactive proofs</td><td>$\mathsf{InPoSW}.\mathsf{Ver}$ is non-interactive, so the bootstrap protocol is non-interactive if the bisection game is.</td></tr>
+      <tr><td>Consistent with the impossibility result</td><td>The VDF is the time-dependent primitive that Lewis-Pye and Roughgarden show is necessary.</td></tr>
+      <tr><td>Easy server maintenance</td><td>At a step $2^i$ the server can migrate hardware by moving one succinct vector commitment. Graph-labeling PoSW would need the whole graph moved.</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Estimated, not measured</p>
+  <h2>Cost analysis</h2>
+  <p class="lede">The paper estimates costs analytically, with Ethereum as the reference chain. There is no implementation benchmark.</p>
+
+  <h3 style="margin-top:22px">Asymptotic cost (Table 1)</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>PoSW scheme</th><th>Prover storage</th><th>Proof size</th></tr></thead>
+    <tbody>
+      <tr><td>GL-PoSW (SNACKs)</td><td>$O(N\cdot\Delta_T\cdot\lambda_H)$</td><td>$O(N\cdot\log^2(N\cdot\Delta_T)\cdot\lambda_H)$</td></tr>
+      <tr><td>$\mathsf{InPoSW}$, black-box VDF</td><td>$O(N\cdot(\Delta_T\cdot\lambda_{\mathsf{VDF}}\cdot\log N + \mathrm{poly}(\lambda_{\mathsf{VDF}},\log N\Delta_T)))$</td><td>$O(\log N\cdot(\mathrm{poly}(\lambda_{\mathsf{VDF}},\log N\Delta_T)+\lambda_H\cdot\log\log N))$</td></tr>
+      <tr class="hl"><td>$\mathsf{InPoSW}$, Wesolowski VDF</td><td>$O(\log N\cdot(N\cdot(\lambda_{\mathsf{VDF}}+\lambda_H)+\sqrt{N\cdot\Delta_T}\cdot\lambda_{\mathsf{VDF}}))$</td><td>$O(\log N\cdot(\lambda_{\mathsf{VDF}}+\lambda_H\cdot\log\log N))$</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">$N$ is the number of evaluations, $\Delta_T$ the interval between insertions, and $\lambda_H,\lambda_{\mathsf{VDF}}$ the security parameters of the hash and the VDF. Verification computation roughly tracks proof size.</p>
+
+  <h3 style="margin-top:26px">Concrete parameters (§6)</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Parameter</th><th>Value</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Insertion interval $\Delta_T$</td><td class="num">&asymp; 3.6 min</td><td>Estimated time for $2^{33}$ squarings (best VDF Alliance FPGA figures). Ethereum emits a finality checkpoint about every 6 minutes.</td></tr>
+      <tr><td>$\lambda_{\mathsf{VDF}}$</td><td class="num">2048</td><td>As suggested for Wesolowski's VDF</td></tr>
+      <tr><td>$\lambda_H$</td><td class="num">256</td><td>As in most blockchain systems</td></tr>
+      <tr><td>SNACKs hash</td><td class="num">RandomX</td><td>ASIC-resistant, with a low hash rate (&asymp;1300 sequential hashes/s on the best-known CPU), which favours SNACKs</td></tr>
+      <tr><td>SNACKs soundness $\epsilon$</td><td class="num">$2^{-40}$</td><td></td></tr>
+      <tr><td>Uncorrupted finality $T_\Pi$</td><td class="num">&ge; 189 days</td><td>Estimated time for $\ge 33\%$ of Ethereum validators to withdraw</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:26px">After ten years of operation</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Quantity</th><th class="num">§6 text</th><th class="num">Figs. 6–7 curve</th></tr></thead>
+    <tbody>
+      <tr><td>SNACKs prover storage</td><td class="num">&asymp; 12 TB</td><td class="num">&asymp; 12,570 GB</td></tr>
+      <tr><td>$\mathsf{InPoSW}$ prover storage</td><td class="num">&asymp; 546 GB</td><td class="num">&asymp; 240.0 GB</td></tr>
+      <tr><td>Storage reduction</td><td class="num">${>}22\times$</td><td class="num">&asymp; 52&times;</td></tr>
+      <tr><td>SNACKs worst-case proof</td><td class="num">&asymp; 337 MB</td><td class="num">&asymp; 344,900 KB</td></tr>
+      <tr><td>$\mathsf{InPoSW}$ worst-case proof</td><td class="num">&asymp; 20 KB</td><td class="num">&asymp; 7.875 KB</td></tr>
+      <tr><td>Proof-size reduction</td><td class="num">${>}17969\times$ (text) · ${>}17900\times$ (caption)</td><td class="num">&asymp; 43,797&times;</td></tr>
+      <tr><td>Parallel VDF instances</td><td class="num">&asymp; 20</td><td class="num">–</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Curve-derived ratios are the ratio of the plotted values and appear nowhere in the paper. The paper says the ≈20 VDF proofs verify "with a mobile device in a few seconds", and that ≈20 processors for evaluation are "well within the reach of GPUs or FPGA".</p>
+
+  <h3 id="provenance" style="margin-top:26px">Provenance and disagreements</h3>
+  <ol class="prov">
+    <li><strong>Figs. 6–7 vs. §6 text ($\mathsf{InPoSW}$).</strong> The curves end at &asymp;240 GB and &asymp;7.875 KB. The text states &asymp;546 GB and &asymp;20 KB. The text's reductions (${>}22\times$, ${>}17969\times$) match its own values against the SNACKs endpoints. The SNACKs curves agree with the text. No plotting notebook is in the paper's source, so the curves were read from the matplotlib vector output that the PDF embeds, and the page shows both.</li>
+    <li><strong>${>}17900\times$ vs. ${>}17969\times$.</strong> Fig. 7's caption and §6's body text give different proof-size reductions.</li>
+    <li><strong>Fig. 7 axis label.</strong> The y-axis reads "Prover Size (KB)", but the caption and text describe the worst-case <em>proof</em> size.</li>
+    <li><strong>${>}22\times$ from rounded values.</strong> $12\,\text{TB}/546\,\text{GB} = 21.98$ if the rounded numbers are divided directly. The claim relies on the unrounded SNACKs value (&asymp;12,570 GB on the curve).</li>
+    <li><strong>Fig. 5 loop.</strong> See <a href="#fig5note">the note under the skip-list widget</a>.</li>
+  </ol>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{ng2024plug,
+  title     = {A Plug-and-Play Long-Range Defense System for
+               Proof-of-Stake Blockchains},
+  author    = {Ng, Lucien K. L. and Chatzigiannis, Panagiotis and Le, Duc V. and
+               Minaei, Mohsen and Kumaresan, Ranjit and Zamani, Mahdi},
+  booktitle = {European Symposium on Research in Computer Security (ESORICS)},
+  year      = {2024}
+}</pre>
+  <div class="btns"><button class="btn" type="button" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Code.</strong> The paper has no code or data availability statement and links no implementation. Its results are analytical estimates. The linked PDF is the full version of the ESORICS 2024 paper.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">A Plug-and-Play Long-Range Defense System for Proof-of-Stake Blockchains · ESORICS 2024 · Georgia Institute of Technology, Visa Research.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function clear(svg){ while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild); }
+function narrow(){ return window.innerWidth < 620; }
+
+/* ---------- motion: every animation goes through tween ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+}
+function drawOn(lineEl, ms, delay){
+  if (REDUCED) return;
+  var L;
+  try { L = lineEl.getTotalLength(); } catch(e){ return; }
+  if (!L) return;
+  lineEl.setAttribute('stroke-dasharray', L);
+  lineEl.setAttribute('stroke-dashoffset', L);
+  setTimeout(function(){
+    tween(ms, function(p){ lineEl.setAttribute('stroke-dashoffset', L * (1 - p)); },
+      function(){ lineEl.removeAttribute('stroke-dasharray'); lineEl.removeAttribute('stroke-dashoffset'); });
+  }, delay || 0);
+}
+function fadeIn(node, ms, delay){
+  if (REDUCED) return;
+  node.setAttribute('opacity', 0);
+  setTimeout(function(){ tween(ms, function(p){ node.setAttribute('opacity', p); },
+    function(){ node.removeAttribute('opacity'); }); }, delay || 0);
+}
+
+/* tooltip */
+var tipEl = document.getElementById('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = Math.max(4, y) + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+}
+function fmt(n, d){ return n.toLocaleString('en-US', { minimumFractionDigits:d||0, maximumFractionDigits:d||0 }); }
+
+/* =======================================================================
+   1. Attack step-through
+   ===================================================================== */
+var STAGES = [
+  { t:'Timestamp', s:'servers' },
+  { t:'Keys leak', s:'≥ T_Π later' },
+  { t:'Fork', s:'from the past' },
+  { t:'Client syncs', s:'two heads' },
+  { t:'Bisection', s:'find the split' },
+  { t:'Decide', s:'compare ages' }
+];
+var stage = 0, defenseOn = true;
+
+function stageText(){
+  var on = defenseOn;
+  var T = [
+    { h:'Servers timestamp every finalized checkpoint', chip:null,
+      b:'<p>Each epoch the chain emits a finalized checkpoint (on Ethereum, the last block signed by a 2/3 majority). ' + (on
+        ? 'Each server hashes the checkpoint and <em>inserts</em> it into its single, ever-running $\\mathsf{InPoSW}$ evaluation. That is the tick under each block. One instance covers every checkpoint, so the server pays for one sequential computation.'
+        : 'With checkpoints only, the checkpoints are posted to bulletin boards and block explorers, and nobody records <em>when</em> each one appeared in a way a client can verify.') + '</p>' },
+    { h:'Validators exit; their old keys go up for sale', chip:null,
+      b:'<p>The validators who signed epoch 4 withdraw their stake. Their keys can no longer be slashed, but they still verify for epoch 4. Gathering enough of them (≥ 1/3 of the stake) takes time. On Ethereum, §6 estimates <strong>at least 189 days</strong>. That period is $T_\\Pi$, the <em>uncorrupted finality</em>.</p>' },
+    { h:'The attacker signs a competing history', chip:null,
+      b:'<p>With the old keys the attacker produces a fork from epoch 4 onward. Every block on it has valid transactions and valid PoS signatures. ' + (on
+        ? 'The attacker also runs $\\mathsf{InPoSW}$ on the fork, but can only begin now, $\\ge T_\\Pi$ after the real checkpoint 4 was emitted and timestamped.'
+        : 'Nothing about the fork reveals that it was made years later.') + '</p>' },
+    { h:'A new light client asks for the current state', chip:null,
+      b:'<p>A client booting from genesis contacts several servers. At least one is honest, and one here is the attacker. It receives two different commitments to the chain\'s current state.</p>' },
+    { h:'Bisection finds the first checkpoint where they differ', chip:null,
+      b:'<p>The client runs a bisection game with both servers to find the latest common prefix (checkpoint 3). An invalid chain would be caught here. A long-range fork is <em>valid</em>, though, so the client now holds two legitimate-looking checkpoints for epoch 4.</p>' },
+    on
+      ? { h:'The client keeps the checkpoint that was timestamped first', chip:'<span class="chip ok">honest chain accepted</span>',
+          b:'<p>Both servers send an $\\mathsf{InPoSW}$ proof for their epoch-4 checkpoint, showing how long ago it was inserted. That is $O(\\log N)$ VDF proofs, KB-size in §6. The honest proof shows sequential work since epoch 4 was emitted. The attacker\'s shows only the work since it got the keys. The client accepts the chain with a valid proof and <strong>more sequential work</strong>. To beat this, the attacker would have needed the fork ready when the real checkpoint appeared, before the keys were for sale.</p>' }
+      : { h:'The client has no way to decide', chip:'<span class="chip bad">undecidable</span>',
+          b:'<p>Both epoch-4 checkpoints pass every PoS rule, and neither carries verifiable evidence of <em>when</em> it was made. The client must trust whoever publishes checkpoints, which is exactly the centralisation and single point of failure the paper sets out to remove. Lewis-Pye and Roughgarden show that no PoS rule alone can fix this without a time-dependent primitive.</p>' }
+  ];
+  return T[stage];
+}
+
+(function buildStageBar(){
+  var bar = document.getElementById('stageBar');
+  STAGES.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'stg';
+    b.innerHTML = (i+1) + '. ' + s.t + '<small>' + s.s + '</small>';
+    b.addEventListener('click', function(){ setStage(i); });
+    bar.appendChild(b);
+  });
+})();
+function setStage(i){ stage = Math.max(0, Math.min(STAGES.length - 1, i)); renderStage(true); }
+document.getElementById('stPrev').addEventListener('click', function(){ setStage(stage - 1); });
+document.getElementById('stNext').addEventListener('click', function(){ setStage(stage + 1); });
+Array.prototype.forEach.call(document.querySelectorAll('#defSeg button'), function(b){
+  b.addEventListener('click', function(){
+    defenseOn = b.getAttribute('data-on') === '1';
+    Array.prototype.forEach.call(document.querySelectorAll('#defSeg button'), function(c){ c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+    renderStage(true);
+  });
+});
+
+var prevStage = -1;
+function renderStage(animate){
+  Array.prototype.forEach.call(document.getElementById('stageBar').children, function(c, j){
+    c.setAttribute('aria-pressed', j === stage ? 'true' : 'false');
+  });
+  document.getElementById('stPrev').disabled = stage === 0;
+  document.getElementById('stNext').disabled = stage === STAGES.length - 1;
+  var st = stageText();
+  var body = document.getElementById('stageBody');
+  body.innerHTML = '<h3>' + st.h + (st.chip ? ' ' + st.chip : '') + '</h3>' + st.b;
+  katexRender(body);
+  drawAttack(animate && stage !== prevStage);
+  prevStage = stage;
+}
+
+function drawAttack(animate){
+  var svg = document.getElementById('atkSvg'); clear(svg);
+  var nar = narrow();
+  var W = nar ? 380 : 900, H = nar ? 318 : 300;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var n = nar ? 6 : 8, forkAt = 3, keysAt = n - 2;
+  var x0 = nar ? 58 : 118, x1 = W - (nar ? 34 : 60);
+  var step = (x1 - x0) / n, bw = Math.min(56, step * .72), bh = 28;
+  var yH = nar ? 44 : 50, yA = nar ? 118 : 122, yT = nar ? 244 : 236;
+  var ink = css('--ink-1'), mut = css('--ink-muted'), s1 = css('--s1'), s2 = css('--s2'), s3 = css('--s3'), gridc = css('--axis');
+  var fresh = [];
+  function bx(i){ return x0 + i * step + (step - bw) / 2; }
+  function cx(i){ return x0 + i * step + step / 2; }
+
+  /* row labels */
+  svg.appendChild(el('text', { x: nar ? 4 : 8, y: yH + bh/2 + 4, 'font-size': nar ? 11 : 12, fill: mut }, nar ? 'honest' : 'Honest chain'));
+  if (stage >= 2) svg.appendChild(el('text', { x: nar ? 4 : 8, y: yA + bh/2 + 4, 'font-size': nar ? 11 : 12, fill: s2 }, nar ? 'fork' : 'Attacker fork'));
+
+  /* honest chain */
+  for (var i = 0; i < n; i++){
+    if (i > 0) svg.appendChild(el('line', { x1: bx(i-1) + bw, y1: yH + bh/2, x2: bx(i), y2: yH + bh/2, stroke: gridc, 'stroke-width': 2 }));
+    var hl = stage >= 4 && i === forkAt - 1, diff = stage >= 4 && i === forkAt;
+    svg.appendChild(el('rect', { x: bx(i), y: yH, width: bw, height: bh, rx: 4, fill: css('--plane'),
+      stroke: diff ? s1 : (hl ? css('--accent') : ink), 'stroke-width': diff || hl ? 2.5 : 1.2 }));
+    svg.appendChild(el('text', { x: cx(i), y: yH + bh/2 + 4, 'text-anchor': 'middle', 'font-size': nar ? 11 : 13, fill: ink }, 'c' + (i+1)));
+  }
+  if (stage >= 4){
+    svg.appendChild(el('text', { x: cx(forkAt - 1), y: yH - 8, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: css('--accent') }, nar ? 'prefix' : 'common prefix'));
+    svg.appendChild(el('text', { x: cx(forkAt), y: yH - 8, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: s1 }, nar ? 'split' : 'first split'));
+  }
+
+  /* keys leak */
+  if (stage >= 1){
+    var g = el('g', {});
+    g.appendChild(el('text', { x: cx(forkAt), y: yH + bh + 18, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: css('--critical') }, stage === 1 ? 'signers exit' : 'old keys'));
+    svg.appendChild(g); if (animate && stage === 1) fresh.push(g);
+  }
+
+  /* fork */
+  if (stage >= 2){
+    var gf = el('g', {});
+    gf.appendChild(el('path', { d: 'M' + (bx(forkAt-1) + bw) + ',' + (yH + bh/2) + ' C' + (bx(forkAt) - 6) + ',' + (yH + bh/2) + ' ' + (bx(forkAt) - 24) + ',' + (yA + bh/2) + ' ' + bx(forkAt) + ',' + (yA + bh/2),
+      fill: 'none', stroke: s2, 'stroke-width': 2 }));
+    for (var k = forkAt; k < n; k++){
+      if (k > forkAt) gf.appendChild(el('line', { x1: bx(k-1) + bw, y1: yA + bh/2, x2: bx(k), y2: yA + bh/2, stroke: s2, 'stroke-width': 2 }));
+      var d = stage >= 4 && k === forkAt;
+      gf.appendChild(el('rect', { x: bx(k), y: yA, width: bw, height: bh, rx: 4, fill: css('--plane'), stroke: s2, 'stroke-width': d ? 2.5 : 1.4, 'stroke-dasharray': d ? null : '4 3' }));
+      gf.appendChild(el('text', { x: cx(k), y: yA + bh/2 + 4, 'text-anchor': 'middle', 'font-size': nar ? 11 : 13, fill: ink }, 'c' + (k+1) + "'"));
+    }
+    svg.appendChild(gf); if (animate && stage === 2) fresh.push(gf);
+  }
+
+  /* client */
+  if (stage >= 3){
+    var gc = el('g', {});
+    var cxC = nar ? W/2 : x1, cyC = yA + bh + 26;
+    gc.appendChild(el('text', { x: cxC, y: cyC, 'text-anchor': nar ? 'middle' : 'end', 'font-size': nar ? 11 : 12, fill: ink },
+      stage === 3 ? 'light client: two different heads (c' + n + ', c' + n + "')" : (stage === 4 ? 'bisection → split at c' + (forkAt+1) + " vs c" + (forkAt+1) + "'" : (defenseOn ? 'client keeps the older timestamp → honest' : 'client cannot tell c' + (forkAt+1) + " from c" + (forkAt+1) + "'"))));
+    svg.appendChild(gc); if (animate && stage >= 3) fresh.push(gc);
+  }
+
+  /* time axis */
+  var now = x1;
+  svg.appendChild(el('line', { x1: x0, y1: yT, x2: now, y2: yT, stroke: gridc, 'stroke-width': 1.5 }));
+  svg.appendChild(el('path', { d: 'M' + (now - 6) + ',' + (yT - 4) + ' L' + now + ',' + yT + ' L' + (now - 6) + ',' + (yT + 4), fill: 'none', stroke: gridc, 'stroke-width': 1.5 }));
+  svg.appendChild(el('text', { x: now, y: yT + (nar ? 46 : 30), 'text-anchor': 'end', 'font-size': nar ? 10 : 11, fill: mut }, 'real time → now'));
+  svg.appendChild(el('text', { x: nar ? 4 : 8, y: yT + 4, 'font-size': nar ? 11 : 12, fill: mut }, defenseOn ? (nar ? 'InPoSW' : 'InPoSW insert') : (nar ? 'time' : 'Real time')));
+
+  if (defenseOn){
+    for (var h = 0; h < n; h++){
+      svg.appendChild(el('line', { x1: cx(h), y1: yT - 7, x2: cx(h), y2: yT + 7, stroke: s1, 'stroke-width': 2 }));
+      svg.appendChild(el('line', { x1: cx(h), y1: yH + bh + (h === forkAt && stage >= 1 ? 24 : 4), x2: cx(h), y2: yT - 9, stroke: s1, 'stroke-width': 1, 'stroke-dasharray': '2 3', opacity: .55 }));
+    }
+    if (stage >= 2){
+      var ga = el('g', {});
+      var ax0 = cx(keysAt) - step * .3;
+      for (var a = forkAt; a < n; a++){
+        var ax = ax0 + (a - forkAt) * ((now - 16 - ax0) / (n - forkAt));
+        ga.appendChild(el('line', { x1: ax, y1: yT - 7, x2: ax, y2: yT + 7, stroke: s2, 'stroke-width': 2 }));
+      }
+      svg.appendChild(ga); if (animate && stage === 2) fresh.push(ga);
+    }
+  }
+  if (stage >= 1){
+    var gb = el('g', {});
+    var bxA = cx(forkAt), bxB = cx(keysAt) - step * .3, by = yT + 16;
+    gb.appendChild(el('path', { d: 'M' + bxA + ',' + (by - 4) + ' L' + bxA + ',' + by + ' L' + bxB + ',' + by + ' L' + bxB + ',' + (by - 4), fill: 'none', stroke: css('--critical'), 'stroke-width': 1.3 }));
+    gb.appendChild(el('text', { x: (bxA + bxB) / 2, y: by + 13, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: css('--critical') }, nar ? '≥ T_Π (189 d)' : '≥ T_Π: keys obtainable (≥ 189 days on Ethereum)'));
+    svg.appendChild(gb); if (animate && stage === 1) fresh.push(gb);
+  }
+
+  /* age bars at the decision */
+  if (stage >= 5 && defenseOn){
+    var gd = el('g', {});
+    var yb1 = yT - 44, yb2 = yT - 30;
+    var hon = el('rect', { x: cx(forkAt), y: yb1, width: now - cx(forkAt), height: 9, rx: 3, fill: s1 });
+    var atkX = cx(keysAt) - step * .3;
+    var att = el('rect', { x: atkX, y: yb2, width: now - atkX, height: 9, rx: 3, fill: s2 });
+    gd.appendChild(hon); gd.appendChild(att);
+    gd.appendChild(el('text', { x: cx(forkAt) - 6, y: yb1 + 8, 'text-anchor': 'end', 'font-size': nar ? 10 : 11, fill: ink }, 'age c' + (forkAt+1)));
+    gd.appendChild(el('text', { x: atkX - 6, y: yb2 + 8, 'text-anchor': 'end', 'font-size': nar ? 10 : 11, fill: ink }, 'age c' + (forkAt+1) + "'"));
+    svg.appendChild(gd);
+    if (animate && !REDUCED){
+      var w1 = now - cx(forkAt), w2 = now - atkX;
+      hon.setAttribute('width', 0); att.setAttribute('width', 0);
+      tween(700, function(p){ hon.setAttribute('width', w1 * p); att.setAttribute('width', w2 * p); });
+    }
+  }
+  fresh.forEach(function(g, j){ fadeIn(g, 420, j * 90); });
+}
+
+/* =======================================================================
+   2. Skip-list InPoSW
+   ===================================================================== */
+var nR = document.getElementById('nRange'), tR = document.getElementById('tRange');
+function lsb(j){ var i = 0; while (j % 2 === 0 && j > 0){ j /= 2; i++; } return i; }
+/* fewest aligned dyadic intervals covering [t, N] */
+function skipPath(N, t){
+  var j = N, out = [];
+  while (j > t){
+    var i = lsb(j);
+    while (j - Math.pow(2, i) < t) i--;
+    out.push({ a: j - Math.pow(2, i), b: j, i: i });
+    j -= Math.pow(2, i);
+  }
+  return out;
+}
+var SUP = ['⁰','¹','²','³','⁴','⁵'];
+function drawSkip(animatePath){
+  var N = +nR.value; tR.max = N - 1; if (+tR.value > N - 1) tR.value = N - 1;
+  var t = +tR.value;
+  document.getElementById('nVal').textContent = N;
+  document.getElementById('tVal').textContent = t;
+  var path = skipPath(N, t);
+  var L = Math.ceil(Math.log2(N));
+  document.getElementById('roPath').textContent = path.length;
+  document.getElementById('roBound').textContent = '≤ ' + fmt(2 * Math.log2(N), 1);
+  document.getElementById('roAge').textContent = (N - t) + ' · ΔT';
+
+  var svg = document.getElementById('slSvg'); clear(svg);
+  var nar = narrow(), MAXN = 32, LV = 5;
+  var W = nar ? 380 : 900, padL = nar ? 40 : 70, padR = nar ? 12 : 24, laneH = nar ? 26 : 30;
+  var yData = 22, yLane0 = 58, H = yLane0 + (LV + 1) * laneH + 26;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var X = function(v){ return padL + v * (W - padL - padR) / MAXN; };
+  var ink = css('--ink-1'), mut = css('--ink-muted'), s2 = css('--s2'), s3 = css('--s3'), axis = css('--axis'), gridc = css('--grid');
+  var onPath = {}; path.forEach(function(p){ onPath[p.i + ':' + p.a] = true; });
+
+  /* now line and future shading */
+  svg.appendChild(el('rect', { x: X(N), y: yLane0 - 18, width: X(MAXN) - X(N), height: (LV + 1) * laneH + 10, fill: gridc, opacity: .45 }));
+  svg.appendChild(el('line', { x1: X(N), y1: 8, x2: X(N), y2: H - 18, stroke: css('--accent'), 'stroke-width': 1.5 }));
+  svg.appendChild(el('text', { x: X(N), y: H - 4, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: css('--accent') }, 'now: N=' + N));
+
+  /* data insertion row: vector commitments vc_j */
+  svg.appendChild(el('text', { x: 4, y: yData + 4, 'font-size': nar ? 10 : 11, fill: mut }, nar ? 'vc_j' : 'data / vc_j'));
+  for (var j = 0; j <= Math.min(N, MAXN); j++){
+    var isT = j === t;
+    var onP = path.some(function(p){ return p.a === j || p.b === j; });
+    var r = el('rect', { x: X(j) - (isT ? 5 : 3), y: yData - (isT ? 5 : 3), width: isT ? 10 : 6, height: isT ? 10 : 6, rx: 1.5,
+      fill: isT ? s2 : (onP ? s3 : css('--plane')), stroke: isT ? s2 : (onP ? s3 : axis), 'stroke-width': 1.2 });
+    svg.appendChild(r);
+  }
+  svg.appendChild(el('text', { x: X(t), y: yData - 10, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: ink }, 'x_' + t));
+
+  /* lanes */
+  var fresh = [];
+  for (var i = 0; i <= LV; i++){
+    var y = yLane0 + i * laneH, len = Math.pow(2, i);
+    svg.appendChild(el('text', { x: 4, y: y + 4, 'font-size': nar ? 10 : 11, fill: i > L ? axis : mut }, nar ? '2' + SUP[i] : 'ΔT·2' + SUP[i]));
+    for (var a = 0; a <= N && a < MAXN; a += len){
+      var b = a + len, done = b <= N, key = i + ':' + a, hit = !!onPath[key];
+      var ln = el('line', { x1: X(a) + 1, y1: y, x2: X(Math.min(b, MAXN)) - 1, y2: y,
+        stroke: hit ? s3 : mut, 'stroke-width': hit ? 5 : (done ? 3 : 1.5), 'stroke-linecap': 'butt',
+        'stroke-dasharray': done ? null : '2 3', opacity: hit ? 1 : (done ? .8 : .7) });
+      ln.addEventListener('pointermove', (function(i, a, b, done, hit){ return function(e){
+        showTip(e, '<b>VDF, level ' + i + '</b>covers steps ' + a + '→' + b + ' (' + Math.pow(2, i) + ' × Δ_T)<br>' + (done ? 'finished' : 'still running') + (hit ? '<br>on the proof path' : ''));
+      }; })(i, a, b, done, hit));
+      ln.addEventListener('pointerleave', hideTip);
+      svg.appendChild(ln);
+      if (hit){
+        if (animatePath) fresh.push(ln);
+      }
+    }
+  }
+  /* x ticks */
+  for (var k = 0; k <= MAXN; k += (nar ? 8 : 4)){
+    svg.appendChild(el('text', { x: X(k), y: yLane0 + (LV + 1) * laneH - 6, 'text-anchor': 'middle', 'font-size': nar ? 10 : 10, fill: axis }, k));
+  }
+  fresh.forEach(function(ln, q){ drawOn(ln, 320, q * 110); });
+}
+nR.addEventListener('input', function(){ drawSkip(false); });
+tR.addEventListener('input', function(){ drawSkip(false); });
+nR.addEventListener('change', function(){ drawSkip(true); });
+tR.addEventListener('change', function(){ drawSkip(true); });
+
+/* =======================================================================
+   3. Security window (Theorem 2)
+   ===================================================================== */
+var T_PI_DAYS = 189;
+var epsR = document.getElementById('epsRange');
+var winShown = 0, winEntered = false;
+function winTarget(){ return T_PI_DAYS / (+epsR.value / 100) / 365.25; }
+function syncEps(){
+  var e = +epsR.value;
+  document.getElementById('epsVal').textContent = e + '%';
+  Array.prototype.forEach.call(document.querySelectorAll('#epsSeg button'), function(b){
+    b.setAttribute('aria-pressed', +b.getAttribute('data-e') === e ? 'true' : 'false');
+  });
+  var days = T_PI_DAYS / (e / 100);
+  document.getElementById('roWin').textContent = fmt(winTarget(), 1) + ' years';
+  document.getElementById('roWinS').textContent = fmt(days, 0) + ' days = 189 × ' + fmt(100 / e, 2).replace(/\.?0+$/, '');
+}
+var winAnimFrom = 0, winAnimTo = 0;
+function animateWin(ms){
+  var from = winShown, to = winTarget();
+  tween(ms, function(p){ winShown = from + (to - from) * p; drawWin(); });
+}
+epsR.addEventListener('input', function(){ syncEps(); animateWin(260); });
+epsR.addEventListener('change', function(){ syncEps(); winShown = winTarget(); drawWin(); });
+Array.prototype.forEach.call(document.querySelectorAll('#epsSeg button'), function(b){
+  b.addEventListener('click', function(){ epsR.value = b.getAttribute('data-e'); syncEps(); animateWin(600); });
+});
+function drawWin(){
+  var svg = document.getElementById('winSvg'); clear(svg);
+  var nar = narrow();
+  var W = nar ? 380 : 900, H = nar ? 150 : 146, padL = nar ? 84 : 170, padR = nar ? 20 : 40;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var maxY = 55, X = function(v){ return padL + v * (W - padL - padR) / maxY; };
+  var ink = css('--ink-1'), mut = css('--ink-muted'), axis = css('--axis'), gridc = css('--grid');
+  for (var g = 0; g <= maxY; g += 10){
+    svg.appendChild(el('line', { x1: X(g), y1: 14, x2: X(g), y2: H - 34, stroke: gridc }));
+    svg.appendChild(el('text', { x: X(g), y: H - 18, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: mut }, g));
+  }
+  svg.appendChild(el('text', { x: X(maxY), y: H - 4, 'text-anchor': 'end', 'font-size': nar ? 10 : 11, fill: mut }, 'years after the checkpoint'));
+  var rows = [
+    { lab: nar ? 'no defense' : 'Without defense', v: T_PI_DAYS / 365.25, c: css('--ink-muted'), txt: '189 days' },
+    { lab: nar ? 'InPoSW' : 'With InPoSW', v: winShown, c: css('--s1'), txt: fmt(winShown, 1) + ' yr' }
+  ];
+  rows.forEach(function(r, i){
+    var y = 26 + i * 40;
+    svg.appendChild(el('text', { x: padL - 10, y: y + 13, 'text-anchor': 'end', 'font-size': nar ? 11 : 12, fill: ink }, r.lab));
+    svg.appendChild(el('rect', { x: X(0), y: y, width: Math.max(2, X(r.v) - X(0)), height: 18, rx: 4, fill: r.c }));
+    var tx = X(r.v) + 6, anchor = 'start';
+    if (tx > W - 60){ tx = X(r.v) - 6; anchor = 'end'; }
+    svg.appendChild(el('text', { x: tx, y: y + 13, 'text-anchor': anchor, 'font-size': nar ? 11 : 12, 'font-weight': 700, fill: anchor === 'end' ? '#fff' : ink }, r.txt));
+  });
+  /* paper's two stated points */
+  [[5, '5%: >10 yr'], [1, '1%: >51 yr']].forEach(function(pt){
+    var v = T_PI_DAYS / (pt[0] / 100) / 365.25;
+    svg.appendChild(el('path', { d: 'M' + X(v) + ',88 l-4,7 l8,0 Z', fill: ink }));
+    svg.appendChild(el('text', { x: X(v), y: 106, 'text-anchor': pt[0] === 1 ? 'end' : 'middle', 'font-size': nar ? 9.5 : 10, fill: mut }, 'paper ' + pt[1]));
+  });
+}
+
+/* =======================================================================
+   4. Cost curves (Figs. 6-7). Values read from the matplotlib PGF source
+      fig/server-stroage.pgf and fig/proof-size.pgf, x = 0.1 … 10.0 years.
+   ===================================================================== */
+var CURVES = {
+  storage: { unit:'GB', lo:0, hi:5, fig:'Fig. 6',
+    snacks:[125.7,251.3,377.0,502.6,628.3,753.9,879.6,1005.0,1131.0,1257.0,1382.0,1508.0,1634.0,1759.0,1885.0,2011.0,2136.0,2262.0,2387.0,2513.0,2639.0,2764.0,2890.0,3016.0,3141.0,3267.0,3393.0,3518.0,3644.0,3770.0,3895.0,4021.0,4147.0,4272.0,4398.0,4524.0,4649.0,4775.0,4901.0,5026.0,5152.0,5278.0,5403.0,5529.0,5655.0,5780.0,5906.0,6032.0,6157.0,6283.0,6409.0,6534.0,6660.0,6786.0,6911.0,7037.0,7162.0,7288.0,7414.0,7539.0,7665.0,7791.0,7916.0,8042.0,8168.0,8293.0,8419.0,8545.0,8670.0,8796.0,8922.0,9047.0,9173.0,9299.0,9424.0,9550.0,9676.0,9801.0,9927.0,10050.0,10180.0,10300.0,10430.0,10560.0,10680.0,10810.0,10930.0,11060.0,11180.0,11310.0,11430.0,11560.0,11690.0,11810.0,11940.0,12060.0,12190.0,12310.0,12440.0,12570.0],
+    ours:[5.334,11.32,18.48,21.34,29.82,32.67,35.28,37.72,48.01,50.61,53.08,55.44,57.7,59.88,61.98,64.01,65.98,79.21,81.38,83.49,85.56,87.57,89.54,91.46,93.35,95.2,97.01,98.79,100.5,102.3,103.9,105.6,107.3,108.9,110.5,128.0,129.8,131.5,133.2,134.9,136.6,138.3,139.9,141.5,143.1,144.7,146.3,147.8,149.4,150.9,152.4,153.9,155.3,156.8,158.2,159.7,161.1,162.5,163.9,165.3,166.6,168.0,169.4,170.7,172.0,173.3,174.7,175.9,177.2,178.5,179.8,203.7,205.1,206.5,207.9,209.3,210.6,212.0,213.4,214.7,216.0,217.4,218.7,220.0,221.3,222.6,223.9,225.2,226.5,227.7,229.0,230.2,231.5,232.7,234.0,235.2,236.4,237.6,238.8,240.0],
+    text:{ snacks:[12000, '≈12 TB'], ours:[546, '≈546 GB'] } },
+  proof: { unit:'KB', lo:0, hi:6, fig:'Fig. 7',
+    snacks:[1888.0,4558.0,7345.0,10210.0,13140.0,16120.0,19130.0,22190.0,25270.0,28380.0,31510.0,34670.0,37850.0,41050.0,44260.0,47490.0,50740.0,54000.0,57280.0,60570.0,63870.0,67180.0,70510.0,73840.0,77190.0,80550.0,83910.0,87290.0,90670.0,94070.0,97470.0,100900.0,104300.0,107700.0,111200.0,114600.0,118000.0,121500.0,125000.0,128400.0,131900.0,135400.0,138900.0,142400.0,145900.0,149400.0,152900.0,156400.0,159900.0,163400.0,167000.0,170500.0,174100.0,177600.0,181200.0,184700.0,188300.0,191800.0,195400.0,199000.0,202600.0,206100.0,209700.0,213300.0,216900.0,220500.0,224100.0,227700.0,231300.0,234900.0,238600.0,242200.0,245800.0,249400.0,253100.0,256700.0,260300.0,264000.0,267600.0,271300.0,274900.0,278600.0,282300.0,285900.0,289600.0,293300.0,296900.0,300600.0,304300.0,308000.0,311600.0,315300.0,319000.0,322700.0,326400.0,330100.0,333800.0,337500.0,341200.0,344900.0],
+    ours:[1.375,2.25,3.0,3.0,4.062,4.062,4.062,4.062,4.875,4.875,4.875,4.875,4.875,4.875,4.875,4.875,4.875,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,5.688,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,6.5,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875,7.875],
+    text:{ snacks:[337 * 1024, '≈337 MB'], ours:[20, '≈20 KB'] } }
+};
+function yearAt(i){ return (i + 1) / 10; }
+var metric = 'storage', yrR = document.getElementById('yrRange');
+function sig(v){
+  if (v >= 1000) return fmt(v, 0);
+  if (v >= 100) return fmt(v, 1);
+  if (v >= 10) return fmt(v, 2);
+  return fmt(v, 3);
+}
+function syncCostReadouts(){
+  var C = CURVES[metric], i = +yrR.value;
+  document.getElementById('yrVal').textContent = yearAt(i).toFixed(1) + ' years';
+  document.getElementById('roSn').textContent = sig(C.snacks[i]) + ' ' + C.unit;
+  document.getElementById('roUs').textContent = sig(C.ours[i]) + ' ' + C.unit;
+  document.getElementById('roRatio').textContent = fmt(C.snacks[i] / C.ours[i], 0) + '×';
+  var last = i === 99;
+  document.getElementById('roSnS').textContent = 'curve, ' + C.fig + (last ? ' · text: ' + C.text.snacks[1] : '');
+  document.getElementById('roUsS').textContent = 'curve, ' + C.fig + (last ? ' · text: ' + C.text.ours[1] : '');
+  document.getElementById('roRatioS').textContent = last ? (metric === 'storage' ? 'text claims >22×' : 'text >17969× · caption >17900×') : 'ratio of plotted values';
+}
+var costLines = [], costCursor = null;
+function drawCost(mode){
+  var C = CURVES[metric];
+  var svg = document.getElementById('costSvg'); clear(svg);
+  var nar = narrow();
+  var W = nar ? 380 : 900, H = nar ? 300 : 380, padL = nar ? 48 : 70, padR = nar ? 60 : 110, padT = 18, padB = 40;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var X = function(yr){ return padL + yr * (W - padL - padR) / 10; };
+  var Y = function(v){ var l = Math.log10(v); return padT + (C.hi - l) * (H - padT - padB) / (C.hi - C.lo); };
+  var ink = css('--ink-1'), mut = css('--ink-muted'), gridc = css('--grid'), axis = css('--axis'), s1 = css('--s1'), s2 = css('--s2');
+  for (var e = C.lo; e <= C.hi; e++){
+    svg.appendChild(el('line', { x1: padL, y1: Y(Math.pow(10, e)), x2: W - padR, y2: Y(Math.pow(10, e)), stroke: gridc }));
+    var lab = Math.pow(10, e) >= 1000 ? fmt(Math.pow(10, e), 0) : String(Math.pow(10, e));
+    svg.appendChild(el('text', { x: padL - 6, y: Y(Math.pow(10, e)) + 4, 'text-anchor': 'end', 'font-size': nar ? 10 : 11, fill: mut }, lab));
+  }
+  svg.appendChild(el('text', { x: 4, y: padT - 6, 'font-size': nar ? 10 : 11, fill: mut }, C.unit));
+  for (var yr = 0; yr <= 10; yr += 2){
+    svg.appendChild(el('text', { x: X(yr), y: H - padB + 16, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: mut }, yr));
+  }
+  svg.appendChild(el('line', { x1: padL, y1: H - padB, x2: W - padR, y2: H - padB, stroke: axis }));
+  svg.appendChild(el('text', { x: (padL + W - padR) / 2, y: H - 6, 'text-anchor': 'middle', 'font-size': nar ? 10 : 11, fill: mut }, 'total elapsed time (years)'));
+
+  costLines = [];
+  [['snacks', s1, 'SNACKs'], ['ours', s2, 'InPoSW']].forEach(function(sr){
+    var d = C[sr[0]].map(function(v, i){ return (i ? 'L' : 'M') + X(yearAt(i)).toFixed(1) + ',' + Y(v).toFixed(1); }).join('');
+    var p = el('path', { d: d, fill: 'none', stroke: sr[1], 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+    svg.appendChild(p); costLines.push(p);
+    var lv = C[sr[0]][99];
+    svg.appendChild(el('text', { x: X(10) + 8, y: Y(lv) + (sr[0] === 'snacks' ? -6 : 14), 'font-size': nar ? 10 : 11, fill: ink }, sr[2]));
+  });
+  /* text-stated 10-year values: hollow diamonds */
+  ['snacks', 'ours'].forEach(function(k){
+    var v = C.text[k][0], cx = X(10), cy = Y(v), r = 6;
+    var dmd = el('path', { d: 'M' + cx + ',' + (cy - r) + ' L' + (cx + r) + ',' + cy + ' L' + cx + ',' + (cy + r) + ' L' + (cx - r) + ',' + cy + 'Z',
+      fill: css('--surface-1'), stroke: ink, 'stroke-width': 2 });
+    dmd.addEventListener('pointermove', function(ev){ showTip(ev, '<b>§6 text, 10 years</b>' + (k === 'snacks' ? 'SNACKs ' : 'InPoSW ') + C.text[k][1]); });
+    dmd.addEventListener('pointerleave', hideTip);
+    svg.appendChild(dmd);
+    if (k === 'ours') svg.appendChild(el('text', { x: cx + 10, y: cy + 4 - (metric === 'proof' ? 8 : 0), 'font-size': nar ? 10 : 11, fill: ink }, 'text: ' + C.text[k][1]));
+  });
+
+  /* cursor */
+  var i = +yrR.value, g = el('g', {});
+  var cx0 = X(yearAt(i));
+  g.appendChild(el('line', { x1: cx0, y1: padT, x2: cx0, y2: H - padB, stroke: axis, 'stroke-dasharray': '3 3' }));
+  g.appendChild(el('circle', { cx: cx0, cy: Y(C.snacks[i]), r: 5, fill: s1, stroke: css('--surface-1'), 'stroke-width': 2 }));
+  g.appendChild(el('circle', { cx: cx0, cy: Y(C.ours[i]), r: 5, fill: s2, stroke: css('--surface-1'), 'stroke-width': 2 }));
+  svg.appendChild(g); costCursor = g;
+
+  /* hover layer */
+  var hit = el('rect', { x: padL, y: padT, width: W - padL - padR, height: H - padT - padB, fill: 'transparent' });
+  hit.addEventListener('pointermove', function(ev){
+    var r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * W / r.width;
+    var yv = (sx - padL) / (W - padL - padR) * 10, idx = Math.max(0, Math.min(99, Math.round(yv * 10) - 1));
+    if (idx !== +yrR.value){ yrR.value = idx; syncCostReadouts(); drawCost('static'); }
+    showTip(ev, '<b>' + yearAt(idx).toFixed(1) + ' years (' + C.fig + ' curve)</b>SNACKs ' + sig(C.snacks[idx]) + ' ' + C.unit + '<br>InPoSW ' + sig(C.ours[idx]) + ' ' + C.unit);
+  });
+  hit.addEventListener('pointerleave', hideTip);
+  svg.appendChild(hit);
+
+  if (mode === 'hidden'){ costLines.forEach(function(p){ p.setAttribute('opacity', 0); }); g.setAttribute('opacity', 0); }
+  if (mode === 'enter'){
+    costLines.forEach(function(p, q){ drawOn(p, 1100, q * 160); });
+    fadeIn(g, 300, 1250);
+  }
+}
+function buildCostTable(){
+  var C = CURVES[metric], rows = '<thead><tr><th>Years</th><th class="num">SNACKs (' + C.unit + ')</th><th class="num">InPoSW (' + C.unit + ')</th><th>Source</th></tr></thead><tbody>';
+  for (var y = 1; y <= 10; y++){
+    var i = y * 10 - 1;
+    rows += '<tr><td>' + y + '</td><td class="num">' + sig(C.snacks[i]) + '</td><td class="num">' + sig(C.ours[i]) + '</td><td class="note">' + C.fig + ' curve</td></tr>';
+  }
+  rows += '<tr class="hl"><td>10</td><td class="num">' + C.text.snacks[1] + '</td><td class="num">' + C.text.ours[1] + '</td><td class="note">§6 text</td></tr></tbody>';
+  document.getElementById('costTable').innerHTML = rows;
+}
+Array.prototype.forEach.call(document.querySelectorAll('#metricSeg button'), function(b){
+  b.addEventListener('click', function(){
+    metric = b.getAttribute('data-m');
+    Array.prototype.forEach.call(document.querySelectorAll('#metricSeg button'), function(c){ c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+    syncCostReadouts(); buildCostTable(); drawCost('enter');
+  });
+});
+yrR.addEventListener('input', function(){ syncCostReadouts(); drawCost('static'); });
+yrR.addEventListener('change', function(){ syncCostReadouts(); drawCost('static'); });
+
+/* =======================================================================
+   5. Table 2
+   ===================================================================== */
+(function buildProps(){
+  var Y = '<span class="yes" aria-label="yes">✓</span>', N = '<span class="no" aria-label="no">✗</span>', A = '<span class="na">N/A</span>';
+  var rows = [
+    ['Timestamps as a protection', [N, Y, N, Y, N, N, Y, Y]],
+    ['No hard fork to adopt',      [N, N, A, Y, N, N, N, Y]],
+    ['No centralized server',      [Y, N, Y, Y, N, N, Y, Y]],
+    ['Light-client friendly',      [Y, N, Y, Y, N, Y, A, Y]],
+    ['Energy-efficient',           [Y, Y, Y, N, Y, Y, Y, Y]]
+  ];
+  document.querySelector('#propTable tbody').innerHTML = rows.map(function(r){
+    return '<tr><td>' + r[0] + '</td>' + r[1].map(function(c, j){ return '<td class="c' + (j === 7 ? ' us' : '') + '">' + c + '</td>'; }).join('') + '</tr>';
+  }).join('');
+})();
+
+/* copy bibtex */
+document.getElementById('copyBib').addEventListener('click', function(){
+  var b = this, t = document.getElementById('bibtex').textContent;
+  function done(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1400); }
+  if (navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; }); }
+  else b.textContent = 'Select the text above';
+});
+
+/* =======================================================================
+   Boot
+   ===================================================================== */
+function redrawAll(){
+  renderStage(false); drawSkip(false); drawWin(); drawCost('static');
+}
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+renderStage(false); drawSkip(false); syncEps(); syncCostReadouts(); buildCostTable();
+winShown = hasIO ? 0 : winTarget(); drawWin();
+drawCost(hasIO ? 'hidden' : 'static');
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(550, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      var id = sec.id;
+      if (id === 'cost') setTimeout(function(){ drawCost('enter'); }, 180);
+      else if (id === 'window') setTimeout(function(){ animateWin(1100); }, 200);
+      else if (id === 'skiplist') setTimeout(function(){ drawSkip(true); }, 200);
+      else if (id === 'attack') setTimeout(function(){ drawAttack(true); }, 150);
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var rzT, lastNarrow = narrow();
+window.addEventListener('resize', function(){ clearTimeout(rzT); rzT = setTimeout(function(){ redrawAll(); }, 120); });
+</script>
+</body>
+</html>

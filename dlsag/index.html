@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>DLSAG Refunds in Monero</title>
+<meta name="description" content="FC 2020 — DLSAG: Non-Interactive Refund Transactions For Interoperable Payment Channels in Monero. A dual-key linkable ring signature whose single key image can be computed from either key.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots — validated against #fafafa (dataviz validate_palette.js, light) */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --good:#0ca30c; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:var(--plane)}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono); font-size:.92em}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.4rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--ring); color:var(--ink-1)}
+.btn.primary:disabled:hover{color:#fff}
+
+/* ---------- tiles / claim cards ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700}
+.tile .d{font-size:.92rem; margin:0; line-height:1.5}
+.claim{display:flex; flex-direction:column}
+.claim .d{margin:.35rem 0 .6rem}
+.claim .see{margin-top:auto; font-family:var(--mono); font-size:.86rem}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:210px; flex:1}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+input[type=text]{font-family:var(--mono); font-size:.9rem; padding:.35rem .5rem; border:1px solid var(--ring);
+  border-radius:3px; background:var(--plane); color:var(--ink-1); width:100%}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.chipbtn{font-family:var(--mono); font-size:.86rem; border:1px solid var(--ring); background:var(--surface-1);
+  color:var(--ink-1); border-radius:4px; padding:.45rem .75rem; cursor:pointer; text-align:left; line-height:1.4}
+.chipbtn[aria-pressed=true]{border-color:var(--accent); background:var(--accent); color:#fff}
+.chipbtn:hover{border-color:var(--accent)}
+.chk{font-family:var(--mono); font-size:.84rem; display:flex; align-items:center; gap:.45rem; cursor:pointer}
+.chk input{accent-color:var(--accent); width:16px; height:16px}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px 16px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.legend svg{width:auto; height:auto; display:inline-block; flex:none; overflow:visible}
+.k .katex, .eyebrow .katex, th .katex{text-transform:none}
+.tip{position:fixed; left:0; top:0; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+.svgtext{font-family:var(--mono)}
+
+/* ---------- read-outs ---------- */
+.rogrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-top:14px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--surface-1); min-width:0}
+.ro .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-muted); font-weight:700; margin-bottom:.25rem}
+.ro .v{font-size:1.35rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro p{font-size:.92rem; margin:.2rem 0 0}
+.ro.focus{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+.verdict{display:inline-block; font-family:var(--mono); font-size:.78rem; font-weight:700;
+  border:1px solid currentColor; border-radius:999px; padding:.05rem .55rem; margin-top:.35rem}
+.verdict.bad{color:var(--critical)} .verdict.ok{color:var(--good)} .verdict.na{color:var(--ink-muted)}
+.split{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:20px; align-items:start}
+
+/* ---------- puzzle ledger ---------- */
+.ledger{display:flex; flex-direction:column; gap:10px}
+.evt{border:1px solid var(--ring); border-radius:4px; background:var(--plane); padding:10px 12px;
+  display:grid; grid-template-columns:5.2em minmax(0,1fr); gap:4px 12px; align-items:start}
+.evt .blk{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); font-weight:700; padding-top:.15rem}
+.evt .txt{font-size:.93rem; line-height:1.5; min-width:0}
+.evt .tag{font-family:var(--mono); font-size:.86rem; overflow-wrap:anywhere}
+.evt.bad{border-color:var(--critical); box-shadow:inset 3px 0 0 var(--critical)}
+.evt.ok{border-color:var(--good); box-shadow:inset 3px 0 0 var(--good)}
+.kiset{border:1px dashed var(--axis); border-radius:4px; padding:10px 12px; background:var(--plane); margin-top:12px}
+.kiset .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.kiset .vals{font-family:var(--mono); font-size:.95rem; min-height:1.5em}
+.guessbox{display:flex; flex-direction:column; gap:8px}
+.feedback{font-size:.95rem; margin-top:12px}
+
+/* ---------- sandbox ---------- */
+.sigbox{font-family:var(--mono); font-size:.88rem; background:var(--plane); border:1px solid var(--ring);
+  border-radius:4px; padding:10px 12px; overflow-wrap:anywhere; line-height:1.6}
+.sigbox .lab{color:var(--ink-muted)}
+.hidden-signer{color:var(--ink-muted)}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch; position:relative}
+table.data{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+table.data th, table.data td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+table.data th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700}
+table.data td.num, table.data th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+table.data tr.hl td{background:var(--surface-1)}
+table.data td.dim{color:var(--ink-muted)}
+.yes{color:var(--good); font-weight:700} .no{color:var(--critical); font-weight:700}
+table.tx{border-collapse:collapse; font-size:.9rem; margin-top:8px; width:100%}
+table.tx td{padding:.3rem .5rem; vertical-align:top}
+table.tx td.h{font-weight:700; border-bottom:1px solid var(--ink-muted); padding-top:.6rem}
+
+/* ---------- misc ---------- */
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:18px 0 0; max-width:74ch}
+.formula{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:12px 14px; margin:12px 0; overflow-x:auto; position:relative}
+ol.issues{padding-left:1.2rem; margin:.4rem 0 0} ol.issues li{margin-bottom:.7rem; max-width:78ch}
+.cmp{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px}
+.cmp .ro{font-size:.92rem}
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px;
+  overflow-x:auto; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+.katex{font-size:1.02em}
+.ro .katex{font-size:1em}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:1.85rem}
+  .split, .cmp{grid-template-columns:1fr}
+  .controls .ctl{flex:1 1 100%; min-width:0}
+  .seg button{flex:1 1 auto}
+  .chart{padding:12px 10px 10px}
+  .evt{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav aria-label="Sections">
+    <a href="#puzzle">Puzzle</a>
+    <a href="#why">Why</a>
+    <a href="#sandbox">DLSAG</a>
+    <a href="#channels">Refunds</a>
+    <a href="#cost">Cost</a>
+    <a href="#next">Next</a>
+    <a href="#appendix">Appendix</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">FC 2020</span>
+  <h1>DLSAG: Non-Interactive Refund Transactions for Interoperable Payment Channels in Monero</h1>
+  <p class="sub">Can a Monero coin go to Bob but come back to Alice if he never takes it, without a scripting language? We give each output a second key and change the linking tag. The coin can then be spent with either key, and it can still be spent only once.</p>
+  <p class="authors">
+    Pedro Moreno-Sanchez<sup>1</sup>, Arthur Blue<sup>2</sup>, <span class="me">Duc V. Le</span><sup>3</sup>, Sarang Noether<sup>4</sup>, Brandon Goodell<sup>4</sup>, Aniket Kate<sup>3</sup>
+  </p>
+  <p class="affils"><sup>1</sup>TU Wien &nbsp;·&nbsp; <sup>2</sup>Independent Researcher &nbsp;·&nbsp; <sup>3</sup>Purdue University &nbsp;·&nbsp; <sup>4</sup>Monero Research Lab</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/dlsag.pdf">[Paper PDF]</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+    <a class="btn" href="https://github.com/levduc/DLSAG-prototype-number">[Code]</a>
+  </div>
+  <p class="note" style="margin:14px 0 0">The PDF is a 33-page version with the appendix included (the paper cites its full version as Cryptology ePrint Archive, Report 2019/595). Every figure, table, definition, theorem, section and equation number on this page follows that PDF. In it the appendix is numbered §8–§12, and Definitions 2–5 appear again as Definitions 6–9.</p>
+</div></header>
+
+<!-- ============ PUZZLE ============ -->
+<section id="puzzle"><div class="wrap">
+  <p class="eyebrow">1 · The puzzle</p>
+  <h2>A coin with two keys. Can Bob still spend it?</h2>
+  <p class="lede">Monero stops double spends with a <em>key image</em>: every spend publishes a tag derived from the spending key, and the network rejects any tag it has already seen. Now give an output two keys. Bob may spend it before a timeout $t$; after $t$, Alice can take it back. The obvious tag that either of them can compute is Diffie–Hellman style: $\mathcal{J}=g^{sk_0\cdot sk_1}$. Bob computes it as $pk_1^{sk_0}$ and Alice as $pk_0^{sk_1}$. Alice now plays the move below. Can Bob still claim his coin?</p>
+  <div class="split">
+    <div>
+      <div class="ledger" id="pzLedger"></div>
+      <div class="kiset"><div class="k">Key images already used</div><div class="vals" id="pzSet">—</div></div>
+    </div>
+    <div>
+      <p class="mono" style="font-size:.86rem;margin:0 0 8px">Your guess, before block 150:</p>
+      <div id="pzGuess" class="guessbox">
+        <button type="button" class="chipbtn" aria-pressed="false" data-g="yes">Yes. Bob holds $sk_0$, so the coin is his until $t$.</button>
+        <button type="button" class="chipbtn" aria-pressed="false" data-g="refund">No, but Alice can take it back after $t$.</button>
+        <button type="button" class="chipbtn" aria-pressed="false" data-g="frozen">No, and nobody can ever spend it.</button>
+      </div>
+      <div class="btns" style="margin-top:12px">
+        <button class="btn primary" type="button" id="pzReveal" disabled>Reveal</button>
+        <button class="btn" type="button" id="pzFix" disabled>Add $m$ and replay</button>
+        <button class="btn" type="button" id="pzReset">Start over</button>
+      </div>
+      <p class="feedback" id="pzFeedback"></p>
+    </div>
+  </div>
+  <p class="callout" id="pzPunch" style="opacity:0;display:none">Both of $O_1$'s spending paths produce the tag Alice already burned with $O_2$, so the coin is frozen for good. §3.1 fixes this by mixing a unique <strong>output identifier</strong> $m$ into the tag. In Monero, $m$ can be the hash of the transaction that created the output together with the output's position. The tag becomes $\mathcal{J}=g^{m\cdot sk_0\cdot sk_1}$, so two outputs with the same keys get different tags.</p>
+  <p class="note" style="margin-top:10px">The attack is the one described in §3.1 under "Hardening key-image linkability". Tags are computed live in a toy group ($p=10007$, $q=5003$, $g=4$). Block heights and the timeout are illustrative. The key-to-time convention (Bob's $pk_0$ before $t$, Alice's $pk_1$ after) follows §5 and §6.2.</p>
+
+  <p class="lede" style="margin-top:14px">So what, exactly, must a tag for a two-key output do?</p>
+
+  <h3 style="margin-top:22px">What this post shows</h3>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile claim"><div class="k">Claim 1 · §3.1, Fig. 2</div><p class="d"><strong>One tag, either key.</strong> The dual key image $\mathcal{J}=g^{m\,sk_0 sk_1}$ is computed as $pk_{1-b}^{m\,sk_b}$ by whoever holds $sk_b$. It comes out the same from either side, so a dual-key output can be spent once, with either key.</p><a class="see" href="#why">See it &rarr;</a></div>
+    <div class="tile claim"><div class="k">Claim 2 · Theorems 1–3</div><p class="d"><strong>LSAG's three guarantees carry over.</strong> In the random-oracle model, DLSAG is unforgeable with respect to insider corruption if OMDL is hard, signer-ambiguous if DDH is hard, and linkable if OMDL is hard.</p><a class="see" href="#sandbox">See it &rarr;</a></div>
+    <div class="tile claim"><div class="k">Claim 3 · §4, Table 1</div><p class="d"><strong>One extra bit, no hash-to-point.</strong> A DLSAG signature is an LSAG signature plus a parity bit $b$. In the measured runs (ring sizes 5–20), signing and verifying were never slower than LSAG. The dual-key output itself is larger.</p><a class="see" href="#cost">See it &rarr;</a></div>
+  </div>
+</div></section>
+
+<!-- ============ WHY ============ -->
+<section id="why"><div class="wrap">
+  <p class="eyebrow">2 · Why did that happen? · §3.1</p>
+  <h2>What a two-key tag has to do</h2>
+  <p class="lede">A dual-key output $(pk_0, pk_1, m)$ has two spending paths, and its tag has two jobs. First, both paths must produce the <strong>same</strong> tag, otherwise Bob can spend before $t$ and Alice again after $t$. Second, the tag must be <strong>unique to this output</strong>, otherwise someone can burn it with a copy (the puzzle). Switch between three candidate tags and see which jobs each one does. The "Bob spends / Alice spends" toggle shows who computes what.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Tag scheme</span>
+      <div class="seg" id="whyScheme"><button type="button" aria-pressed="false" data-v="lsag">One LSAG tag per key</button><button type="button" aria-pressed="false" data-v="dh">$g^{sk_0 sk_1}$ (no $m$)</button><button type="button" aria-pressed="true" data-v="dlsag">DLSAG $g^{m\,sk_0 sk_1}$</button></div></div>
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Who spends $O_1$</span>
+      <div class="seg" id="whyView"><button type="button" aria-pressed="true" data-v="0">Bob, $b=0$</button><button type="button" aria-pressed="false" data-v="1">Alice, $b=1$</button></div></div>
+  </div>
+  <div class="chart"><svg id="whySvg" role="img" aria-label="Who computes which tag for a dual-key output"></svg>
+    <ul class="legend" id="whyLegend"></ul></div>
+  <div class="rogrid" id="whyRO"></div>
+  <details class="tbl"><summary>Table view: every tag in this diagram</summary><div class="tscroll"><table class="data" id="whyTable"></table></div></details>
+  <p class="note" style="margin-top:12px">§3.1 states the requirement: one key image that identifies the pair $(pk_0,pk_1)$ and can be computed from either $sk_b$, made unique to the output with $m$. The first scheme is our own strawman, Monero's LSAG tag $H_p(pk)^{sk}$ applied to each key separately, shown only to explain why a single tag is needed. Toy group and toy hash as in the puzzle. Here $H_p$ is modelled as $g^{H_s(\cdot)}$, which is fine for a picture but not for real use.</p>
+  <p class="lede" style="margin-top:14px">We have the tag. What does a whole signature built around it look like?</p>
+</div></section>
+
+<!-- ============ SANDBOX ============ -->
+<section id="sandbox"><div class="wrap">
+  <p class="eyebrow">3 · The definition that falls out · Figure 2</p>
+  <h2>DLSAG, one ring step at a time</h2>
+  <p class="lede">DLSAG is Monero's LSAG ring with one change. Wherever LSAG uses $H_p(pk_i)$, DLSAG uses the other key of the pair raised to that output's identifier, $pk_{i,1-b}^{m_i}$. The signer's tag is $\mathcal{J}=pk_{n,1-b}^{m_n\cdot sk_b}$. Below, the signer signs for real (Fig. 2, in a toy group). Then you step through <code>Verify</code>: each ring member turns $h_{i-1}$ into $h_i$, and the signature is valid only if the ring closes, $h_n=h_0$. Switch to the verifier's view: every member looks the same.</p>
+  <div class="controls">
+    <div class="ctl"><label for="sbN">Ring size $n$: <span class="val" id="sbNv">4</span></label>
+      <input type="range" id="sbN" min="2" max="8" step="1" value="4"></div>
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Signer spends with</span>
+      <div class="seg" id="sbB"><button type="button" aria-pressed="true" data-v="0">$sk_0$ ($b=0$)</button><button type="button" aria-pressed="false" data-v="1">$sk_1$ ($b=1$)</button></div></div>
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">View</span>
+      <div class="seg" id="sbView"><button type="button" aria-pressed="true" data-v="signer">Signer's view</button><button type="button" aria-pressed="false" data-v="verifier">Verifier's view</button></div></div>
+  </div>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Preset</span>
+      <div class="seg" id="sbPreset"><button type="button" aria-pressed="true" data-v="dlsag">Fig. 2 (unique $m_i$)</button><button type="button" aria-pressed="false" data-v="one">Puzzle: every $m_i=1$</button></div></div>
+    <div class="ctl"><label for="sbTx">Message $\mathsf{tx}$ being signed</label><input type="text" id="sbTx" value="pay Bob, output 0" maxlength="40"></div>
+    <label class="chk" style="flex:0 1 auto"><input type="checkbox" id="sbTamper"> Verify a tampered $\mathsf{tx}$</label>
+  </div>
+  <div class="split">
+    <div class="chart"><svg id="sbSvg" role="img" aria-label="DLSAG ring verification as a cycle of hashes"></svg>
+      <ul class="legend" id="sbLegend"></ul>
+      <div class="btns" style="margin-top:10px">
+        <button class="btn primary" type="button" id="sbPlay">Verify all</button>
+        <button class="btn" type="button" id="sbStep">Step</button>
+        <button class="btn" type="button" id="sbReset">Reset</button>
+        <button class="btn" type="button" id="sbNew">New keys</button>
+      </div>
+    </div>
+    <div>
+      <div class="sigbox" id="sbSig"></div>
+      <div class="rogrid" id="sbRO" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))"></div>
+    </div>
+  </div>
+  <div class="tscroll"><table class="data" id="sbTable"></table></div>
+  <h3 style="margin-top:26px">Link: did the same output get spent twice?</h3>
+  <p class="lede">$\mathsf{Link}$ verifies two signatures and compares their tags. Sign a second transaction from the <em>same</em> output, or from a <em>different</em> output that reuses both keys (the puzzle's move). Then try the second one again under the "every $m_i=1$" preset.</p>
+  <div class="btns">
+    <button class="btn" type="button" id="lkSame">Same output, new transaction</button>
+    <button class="btn" type="button" id="lkOther">Different output, same two keys</button>
+  </div>
+  <div class="rogrid" id="lkRO"></div>
+  <p class="note" style="margin-top:12px">Sign, Verify and Link are implemented as in Figure 2. As in its caption, the signer's output sits at position $n$; in practice the position is chosen uniformly at random. Output identifiers are $m_i=H_s(\text{outpoint}_i)$, following §3.1's "hash of the transaction and the output's position". Toy parameters: the order-$q$ subgroup of $\mathbb{Z}_p^*$ with $p=10007$, $q=5003$, $g=4$, and a non-cryptographic toy $H_s$ (FNV-1a mod $q$). This is an illustration; Monero uses ed25519.</p>
+  <p class="lede" style="margin-top:14px">One tag for two keys, and still one spend per output. What does that buy?</p>
+</div></section>
+
+<!-- ============ CHANNELS ============ -->
+<section id="channels"><div class="wrap">
+  <p class="eyebrow">4 · What it buys · §6.2</p>
+  <h2>A refund with no script: a one-way payment channel</h2>
+  <p class="lede">With one tag for two keys, a refund needs no script and no second signature from Bob. Alice opens a channel by paying into the dual key $(pk_{AB}, pk'_A)$ with <span style="white-space:nowrap">timeout $t$.</span> Before $t$, the coins move only with <em>both</em> shares of $sk_{AB}$ (a 2-of-2 DLSAG, §6.1, Fig. 4). After $t$, Alice alone can take everything back with $pk'_A$. Off-chain, Alice pays Bob by half-signing a transaction and handing him her share $[\sigma]_A$. Bob keeps the newest one and must close before $t$.</p>
+  <div class="controls">
+    <div class="ctl"><label for="chH">Block height: <span class="val" id="chHv">0</span></label>
+      <input type="range" id="chH" min="0" max="24" step="1" value="0"></div>
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Off-chain and on-chain moves</span>
+      <div class="btns"><button class="btn primary" type="button" id="chPay">Alice pays Bob 1 off-chain</button><button class="btn" type="button" id="chClose">Bob closes</button><button class="btn" type="button" id="chReset">Reset</button></div></div>
+  </div>
+  <div class="chart"><svg id="chSvg" role="img" aria-label="Payment channel timeline with a refund after the timeout"></svg>
+    <ul class="legend" id="chLegend"></ul></div>
+  <div class="rogrid" id="chRO"></div>
+  <p class="note" style="margin-top:12px">Protocol from §6.2 (open, off-chain payments, close). The amounts (10 coins, payments of 1) and the timeout (block 16) are illustrative; the paper uses $x$, $x'$ and $t$. We follow §5 and §6.2: $pk_0$ spends before block $t$ and $pk_1$ after. The parenthetical example in §3.1 states the opposite order.</p>
+
+  <h3 style="margin-top:30px">From one channel to many</h3>
+  <p class="lede">The same 2-of-2 signing, run with an extra secret $y$ (Fig. 4's highlighted lines), gives a <strong>conditional payment</strong>. It completes only if the receiver knows $y$ with $g^y=Y$, and once it is on chain Alice can read $y$ back out of the signature (§6.3). Chaining conditional payments under one $y$ gives a <strong>payment-channel network</strong> (§6.4). Tying $y$ to a hash lock on another chain gives an <strong>atomic swap</strong> (§6.5). None of these need a script, and to an observer the conditional transaction looks like any other spend.</p>
+
+  <h3 style="margin-top:30px">LSAG and DLSAG side by side</h3>
+  <div class="tscroll"><table class="data" id="propTable">
+    <thead><tr><th></th><th>LSAG (Monero today)</th><th>DLSAG</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td>Output</td><td>$(pk, \mathsf{Com}(x), \Pi)$</td><td>$((pk_0, pk_1), \mathsf{Com}(x), \Pi, t)$, plus identifier $m$</td><td class="dim">§2, §3.1</td></tr>
+      <tr><td>Key image</td><td>$\mathcal{I}=H_p(pk)^{sk}$</td><td>$\mathcal{J}=g^{m\,sk_0 sk_1}=pk_{1-b}^{m\,sk_b}$</td><td class="dim">§3.1, Figs. 2, 5</td></tr>
+      <tr><td>Who can spend</td><td>the holder of $sk$</td><td>$sk_0$ before $t$, $sk_1$ after</td><td class="dim">§5, §6.2</td></tr>
+      <tr><td>Work per ring member</td><td>as DLSAG, plus one hash-to-point $H_p$</td><td>$\approx 4$ group operations and $1$ hash-to-scalar</td><td class="dim">§4</td></tr>
+      <tr><td>Signature</td><td>$(s_0,\dots,s_{n-1},h_0,\mathcal{I})$</td><td>$(s_0,\dots,s_{n-1},h_0,\mathcal{J},b)$: one bit more</td><td class="dim">Figs. 2, 5; §4</td></tr>
+      <tr><td>Unforgeability</td><td>yes (§2; analysed in Noether–Mackenzie, Ring CT)</td><td>w.r.t. insider corruption (Def. 3), if OMDL is hard, ROM</td><td class="dim">Theorem 1</td></tr>
+      <tr><td>Signer ambiguity</td><td>yes (§2; analysed in Noether–Mackenzie, Ring CT)</td><td>Def. 4, if DDH is hard, ROM</td><td class="dim">Theorem 2</td></tr>
+      <tr><td>Linkability</td><td>yes (§2; analysed in Noether–Mackenzie, Ring CT)</td><td>Def. 5, if OMDL is hard, ROM</td><td class="dim">Theorem 3</td></tr>
+      <tr><td>Refund without a script</td><td class="no">no</td><td class="yes">yes</td><td class="dim">§3.1, §6</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ COST ============ -->
+<section id="cost"><div class="wrap">
+  <p class="eyebrow">4 · What it buys, continued · Table 1</p>
+  <h2>What the second key costs</h2>
+  <p class="lede">We implemented both schemes in C++ with <code>libsodium</code> on ed25519, the curve Monero uses, and timed them on an Intel Core i5-7400 at 3.00 GHz with 12 GB RAM (§4). DLSAG drops LSAG's per-member hash-to-point. At every measured ring size it signed and verified a little faster than LSAG. The ring-size control snaps to the four sizes that were measured.</p>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto"><span class="lbl">Operation</span>
+      <div class="seg" id="costOp"><button type="button" aria-pressed="true" data-v="sign">Sign</button><button type="button" aria-pressed="false" data-v="vrfy">Verify</button></div></div>
+    <div class="ctl"><label for="costN">Ring size: <span class="val" id="costNv">5</span></label>
+      <input type="range" id="costN" min="0" max="3" step="1" value="0" aria-label="Ring size, measured values 5, 10, 15, 20"></div>
+  </div>
+  <div class="chart"><svg id="costSvg" role="img" aria-label="Running time of LSAG and DLSAG versus ring size"></svg>
+    <ul class="legend" id="costLegend"></ul></div>
+  <div class="rogrid" id="costRO"></div>
+  <details class="tbl"><summary>Table view: Table 1, every cell</summary><div class="tscroll"><table class="data" id="costTable"></table></div></details>
+  <p class="note" style="margin-top:12px">Times in milliseconds, copied from Table 1. The "DLSAG faster by" figures are derived here as (LSAG − DLSAG) / LSAG; the paper does not tabulate them. Only four ring sizes were measured, so the lines only connect measured points.</p>
+  <p class="lede" style="margin-top:14px">Cheap, and it makes refunds possible. What does it leave open?</p>
+</div></section>
+
+<!-- ============ NEXT ============ -->
+<section id="next"><div class="wrap">
+  <p class="eyebrow">5 · Where this goes next · §7, §12</p>
+  <h2>What DLSAG does not settle</h2>
+  <ol class="issues">
+    <li><strong>Two-way channels.</strong> The construction here is one-way (Alice pays Bob). Two-way channels, and whether Lightning-style techniques carry over, are open.</li>
+    <li><strong>More policies.</strong> Threshold signatures in the style of Thring, and key aggregation in the style of MuSig, could extend what DLSAG can express.</li>
+    <li><strong>Models beyond one signature.</strong> Monero's security and privacy definitions cover single signatures. Attacks that combine many transactions call for new models, including for the hidden-timelock extension of §5.</li>
+    <li><strong>The timelock offset.</strong> To prove whether $t$ has expired, the signer publishes an offset $t'$. This leaks where the real timelock lies, and so whether a ring spends a two-party output. Heuristics for this, and good distributions to draw $t$ from, are open.</li>
+    <li><strong>A new tracing channel.</strong> With the new key image, a sender who paid the same stealth address twice can tell when the receiver spends those outputs. The illustration below shows how.</li>
+  </ol>
+  <div class="formula" id="stealthBox">
+    <p class="eyebrow" style="margin-bottom:.5rem">Illustration · §12, Eq. (1)</p>
+    <p style="margin:0 0 .6rem">Bob's stealth address is $(B_1,B_2)=(g^{b_1},g^{b_2})$. Alice pays him twice, creating dual keys whose secret keys are $sk=H_s(B_1^{r_j})+b_2$ for her own random $r_1,\dots,r_4$. Write $a_j = H_s(B_1^{r_j})$; Alice knows every $a_j$. When Bob spends, the tags are $\mathcal{J}_1=g^{m(a_1+b_2)(a_2+b_2)}$ and $\mathcal{J}_2=g^{m'(a_3+b_2)(a_4+b_2)}$, and Alice can compute $m$ and $m'$. The unknown $g^{b_2^2}$ cancels:</p>
+    <p style="margin:0">$$\frac{\mathcal{J}_1^{\,m^{-1}}}{\mathcal{J}_2^{\,m'^{-1}}}=\frac{g^{a_1a_2}\,B_2^{\,a_1}\,B_2^{\,a_2}}{g^{a_3a_4}\,B_2^{\,a_3}\,B_2^{\,a_4}}$$</p>
+    <p class="note" style="margin:.6rem 0 0">Every factor on the right is known to Alice, so she can precompute it and recognise Bob's spends. Mitigation (§12): Bob moves received funds to a fresh dual address. This costs one more transaction, but channels save many more.</p>
+  </div>
+</div></section>
+
+<!-- ============ APPENDIX ============ -->
+<section id="appendix"><div class="wrap">
+  <p class="eyebrow">Appendix</p>
+  <h2>Figures, definitions and building blocks</h2>
+
+  <h3 style="margin-top:14px">Figure 1 and Figure 3: a transaction before and after</h3>
+  <div class="cmp">
+    <div class="ro"><div class="k">Figure 1 · Monero today (§2)</div>
+      <table class="tx"><tbody>
+        <tr><td class="h">Inputs</td></tr>
+        <tr><td>[0] $\{(pk_1, \mathsf{Com}(v_1), \Pi_1), \ldots, (pk_{n-1}, \mathsf{Com}(v_{n-1}), \Pi_{n-1}),$ $(pk_A, \mathsf{Com}(5), \Pi_A)\}$</td></tr>
+        <tr><td class="h">Outputs</td></tr>
+        <tr><td>[0] $pk_B$, $\mathsf{Com}(4)$, $\Pi_B$; &nbsp;[1] $pk'_A$, $\mathsf{Com}(1)$, $\Pi'_A$</td></tr>
+        <tr><td class="h">Authorizations</td></tr>
+        <tr><td>[0] $\sigma$</td></tr>
+      </tbody></table>
+      <p>Alice ($pk_A$) puts in 5 coins, pays 4 to Bob and gets 1 back as change.</p></div>
+    <div class="ro"><div class="k">Figure 3 · Dual keys, hidden timelocks (§5)</div>
+      <table class="tx"><tbody>
+        <tr><td class="h">Inputs</td></tr>
+        <tr><td>[0] $((pk_{1,0}, pk_{1,1}), \mathsf{Com}(v_1), \Pi_1, \mathsf{Com}(t_1), \Pi\text{-}time_1), \ldots,$ $((pk_A, pk'_A), \mathsf{Com}(10), \Pi_A, \mathsf{Com}(t_A), \Pi\text{-}time_A)$</td></tr>
+        <tr><td class="h">Outputs</td></tr>
+        <tr><td>[0] $(pk_B, pk''_A)$, $\mathsf{Com}(10)$, $\Pi'_A$, $\mathsf{Com}(t_B)$, $\Pi\text{-}time_B$</td></tr>
+        <tr><td class="h">Authorizations</td></tr>
+        <tr><td>[0] $\sigma^0$</td></tr>
+      </tbody></table>
+      <p>Alice pays Bob 10 coins with timeout $t_B$. Bob claims them before $t_B$, or they go back to Alice at $pk''_A$.</p></div>
+  </div>
+  <p class="note" style="margin-top:8px">Reproduced from the tables in <code>background.tex</code> (Fig. 1) and <code>integration.tex</code> (Fig. 3). In Fig. 3, $t$ is hidden in a Pedersen commitment. To show it has passed, the signer publishes $t'$ with $t&lt;t'&lt;T$ and a range proof for $\mathsf{Com}(t'-t)$ (§5). §10 works through this in full.</p>
+
+  <h3 style="margin-top:26px">Figure 5 against Figure 2: exactly what changes</h3>
+  <div class="tscroll"><table class="data">
+    <thead><tr><th>Step</th><th>LSAG (Fig. 5)</th><th>DLSAG (Fig. 2)</th></tr></thead>
+    <tbody>
+      <tr><td>KeyGen</td><td>$sk$, $pk=g^{sk}$</td><td>$sk_0, sk_1$, $pk_b=g^{sk_b}$, and $m$</td></tr>
+      <tr><td>Key image</td><td>$\mathcal{I}=H_p(pk_n)^{sk}$</td><td>$\mathcal{J}=pk_{n,1-b}^{\,m_n sk_b}$</td></tr>
+      <tr><td>$L_i$</td><td>$g^{s_i}\,pk_i^{h_{i-1}}$</td><td>$g^{s_i}\,pk_{i,b}^{h_{i-1}}$</td></tr>
+      <tr><td>$R_i$</td><td>$H_p(pk_i)^{s_i}\,\mathcal{I}^{h_{i-1}}$</td><td>$pk_{i,1-b}^{\,s_i m_i}\,\mathcal{J}^{h_{i-1}}$</td></tr>
+      <tr><td>$h_i$</td><td>$H_s(\mathsf{tx}\,\|\,L_i\,\|\,R_i)$</td><td>same</td></tr>
+      <tr><td>Close the ring</td><td>$s_0=s'_0-h_{n-1}\,sk$</td><td>$s_0=s'_0-h_{n-1}\,sk_b$</td></tr>
+      <tr><td>Output</td><td>$(s_0,\dots,s_{n-1},h_0,\mathcal{I})$</td><td>$(s_0,\dots,s_{n-1},h_0,\mathcal{J},b)$</td></tr>
+      <tr><td>Link</td><td>$\mathcal{I}_1=\mathcal{I}_2$</td><td>$\mathcal{J}_1=\mathcal{J}_2$</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:26px">Definitions and results</h3>
+  <div class="tscroll"><table class="data">
+    <thead><tr><th>Number</th><th>Statement</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Def. 1</td><td>LSAG: $(\mathsf{KeyGen},\mathsf{Sign},\mathsf{Vrfy},\mathsf{Link})$, with an explicit linking algorithm</td><td class="dim">§2</td></tr>
+      <tr><td>Defs. 2, 3</td><td>Existential unforgeability with respect to insider corruption (game, and $(t,\epsilon,N,q_H,q_S,q_C)$-forger), following Bender et al.</td><td class="dim">§3.2</td></tr>
+      <tr><td>Def. 4</td><td>Signer ambiguity: with $t$ corrupted keys and $n-t\ge 2$, guessing the signer succeeds with probability within a negligible amount of $\frac{1}{n-t}$</td><td class="dim">§3.2</td></tr>
+      <tr><td>Def. 5</td><td>Linkability: $\mathsf{Link}$ errs on (same key and identifier) versus (different) only with negligible probability</td><td class="dim">§3.2</td></tr>
+      <tr><td>Theorem 1</td><td>Unforgeable against adaptive chosen-plaintext attack, provided OMDL is hard, in the random-oracle model</td><td class="dim">§3.2, proof §9.3</td></tr>
+      <tr><td>Theorem 2</td><td>Signer ambiguous, provided DDH is hard, in the random-oracle model</td><td class="dim">§3.2, proof §9.3</td></tr>
+      <tr><td>Theorem 3</td><td>Linkable, provided OMDL is hard, in the random-oracle model</td><td class="dim">§3.2, proof §9.3</td></tr>
+      <tr><td>Defs. 6–9</td><td>Definitions 2–5, repeated</td><td class="dim">§9.1</td></tr>
+      <tr><td>Def. 10, Lemma 1</td><td>Forking algorithm and the generalized forking lemma (Bellare–Neven)</td><td class="dim">§9.2</td></tr>
+      <tr><td>Defs. 11–13</td><td>One-more discrete logarithm hardness (Defs. 11, 12) and the decisional Diffie–Hellman assumption (Def. 13)</td><td class="dim">§9.2</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:26px">Building blocks and applications</h3>
+  <div class="tscroll"><table class="data">
+    <thead><tr><th>Construction</th><th>What it does</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>2-of-2 DLSAG</td><td>Alice and Bob jointly sign from a shared dual key, with commit-then-reveal nonces and $\Sigma$-protocol proofs. Each can check the other's share: $g^{[s_0]_A+[s_0]_B}\overset{?}{=}(R_A R_B)/pk_{AB,b}^{h_{n-1}}$</td><td class="dim">§6.1, Fig. 4</td></tr>
+      <tr><td>Payment channel</td><td>Open into $(pk_{AB},pk'_A)$ with timeout $t$; pay off-chain with half-signatures; close by completing the latest one, or refund after $t$</td><td class="dim">§6.2</td></tr>
+      <tr><td>DTLC</td><td>Discrete-log timelock contract: Bob is paid if he reveals $y$ with $g^y=Y$ before $t$; otherwise Alice is refunded</td><td class="dim">§6.3</td></tr>
+      <tr><td>Payment-channel network</td><td>Alice → Bob → Carol → Dave under one secret $y$. Each hop needs its own $Y^*_i$, so an extra round lets the receiver issue $(Y,Y^*_i)$ with a zero-knowledge proof of the same $y$</td><td class="dim">§6.4</td></tr>
+      <tr><td>Atomic swap</td><td>An HTLC on Bitcoin with $h=H(y)$, and a DTLC on Monero with $Y=g^y$, linked by a zero-knowledge proof (e.g. ZKBoo or Bulletproofs) that both use the same $y$</td><td class="dim">§6.5</td></tr>
+      <tr><td>Hidden timelocks</td><td>Commit to $t$ and prove expiry through $\mathsf{Com}(t'-t)$ and a range proof, keeping timeouts indistinguishable</td><td class="dim">§5, §10</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{morenosanchez2020dlsag,
+  title     = {{DLSAG}: Non-Interactive Refund Transactions for
+               Interoperable Payment Channels in {Monero}},
+  author    = {Moreno-Sanchez, Pedro and Blue, Arthur and Le, Duc V. and
+               Noether, Sarang and Goodell, Brandon and Kate, Aniket},
+  booktitle = {Financial Cryptography and Data Security (FC)},
+  year      = {2020},
+  note      = {Full version: Cryptology ePrint Archive, Report 2019/595}
+}</pre>
+  <div class="btns"><button class="btn" type="button" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Code and data.</strong> The paper has no data availability statement. Its §4 cites the prototype C++ implementation used for Table 1: <a href="https://github.com/levduc/DLSAG-prototype-number">github.com/levduc/DLSAG-prototype-number</a>. Every number on this page comes from the paper, is computed live in the toy group from Figure 2's definitions, or is an illustrative value (block heights, channel amounts) labelled as such.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">DLSAG · FC 2020 · TU Wien, Purdue University, Monero Research Lab.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+function isNarrow(){ return window.innerWidth < 620; }
+
+/* =======================================================================
+   Motion — every animation goes through tween(). It force-settles via
+   setTimeout(finish, ms + 150) if requestAnimationFrame is starved.
+   ===================================================================== */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done, linear){
+  var h = { finished:false, cancelled:false };
+  function finish(){
+    if (h.finished || h.cancelled) return;
+    h.finished = true; step(1); if (done) done();
+  }
+  h.finish = finish;
+  h.cancel = function(){ h.cancelled = true; };
+  if (REDUCED || ms <= 0){ finish(); return h; }
+  var t0 = null;
+  function frame(t){
+    if (h.finished || h.cancelled) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(linear ? p : easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setTimeout(finish, ms + 150);
+  return h;
+}
+/* keyed tweens: a new one on the same key cancels the old one */
+var ANIMS = {};
+function run(key, ms, step, done, linear){
+  if (ANIMS[key]){ ANIMS[key].cancel(); delete ANIMS[key]; }
+  var h = tween(ms, step, function(){ if (ANIMS[key] === h) delete ANIMS[key]; if (done) done(); }, linear);
+  if (!h.finished) ANIMS[key] = h;
+  return h;
+}
+function settle(key){ if (ANIMS[key]){ var h = ANIMS[key]; delete ANIMS[key]; h.finish(); } }
+function lerp(a, b, p){ return a + (b - a) * p; }
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+
+/* tooltip */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = Math.max(4, y) + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+/* KaTeX */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError:false,
+    ignoredTags:['script','noscript','style','textarea','pre','code','option']
+  });
+}
+function setMath(node, html){ node.innerHTML = html; katexRender(node); }
+
+/* segmented control */
+function seg(id, onPick){
+  var box = $(id);
+  Array.prototype.forEach.call(box.children, function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(box.children, function(c){ c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+      onPick(b.getAttribute('data-v'));
+    });
+  });
+}
+function segSet(id, v){
+  Array.prototype.forEach.call($(id).children, function(c){ c.setAttribute('aria-pressed', c.getAttribute('data-v') === v ? 'true' : 'false'); });
+}
+
+/* SVG text with ^{superscripts}, e.g. "pk₁^{m·sk₀}" */
+function mtext(x, y, str, attrs){
+  var t = el('text', attrs); t.setAttribute('x', x); t.setAttribute('y', y);
+  var parts = str.split(/\^\{([^}]*)\}/), off = 0;
+  parts.forEach(function(s, i){
+    if (!s) return;
+    var sup = i % 2 === 1, target = sup ? -6 : 0;
+    var ts = el('tspan', { dy: target - off }, s);
+    if (sup) ts.setAttribute('font-size', '0.74em');
+    off = target; t.appendChild(ts);
+  });
+  return t;
+}
+
+/* =======================================================================
+   Toy group: order-q subgroup of Z_p^*, p = 2q + 1 = 10007, q = 5003, g = 4.
+   Toy hash H_s: FNV-1a (32-bit) mod q. Illustration only.
+   ===================================================================== */
+var P = 10007, Q = 5003, G = 4;
+function modq(e){ e %= Q; return e < 0 ? e + Q : e; }
+function mpow(b, e){
+  e = modq(e); b %= P; var r = 1;
+  while (e > 0){ if (e & 1) r = r * b % P; b = b * b % P; e = Math.floor(e / 2); }
+  return r;
+}
+function mul(a, b){ return a * b % P; }
+function Hs(str){
+  var h = 0x811c9dc5;
+  for (var i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h % Q;
+}
+function Hp(pk){ return mpow(G, Hs('Hp|' + pk)); }        /* toy stand-in for hash-to-point */
+function nz(x){ return x === 0 ? 1 : x; }
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function scalar(rng){ return 1 + Math.floor(rng() * (Q - 1)); }
+
+/* ---------- DLSAG (Fig. 2), signer at position n ---------- */
+/* ring: array (0-based slot i ↔ paper index i+1) of {pk0, pk1, m} */
+function dlsagSign(ring, skb, b, tx, rng){
+  var n = ring.length, me = ring[n - 1];
+  var other = b === 0 ? me.pk1 : me.pk0;
+  var J = mpow(other, modq(me.m * skb));
+  var sp0 = scalar(rng);
+  var L0 = mpow(G, sp0), R0 = mpow(other, modq(sp0 * me.m));
+  var h = [Hs(tx + '|' + L0 + '|' + R0)];
+  var s = [0];
+  for (var i = 1; i <= n - 1; i++){
+    var mem = ring[i - 1], si = scalar(rng); s.push(si);
+    var pkb = b === 0 ? mem.pk0 : mem.pk1, pko = b === 0 ? mem.pk1 : mem.pk0;
+    var Li = mul(mpow(G, si), mpow(pkb, h[i - 1]));
+    var Ri = mul(mpow(pko, modq(si * mem.m)), mpow(J, h[i - 1]));
+    h.push(Hs(tx + '|' + Li + '|' + Ri));
+  }
+  s[0] = modq(sp0 - h[n - 1] * skb);
+  return { sig: { s: s, h0: h[0], J: J, b: b }, trace: { sp0: sp0, L0: L0, R0: R0, hsign: h } };
+}
+function dlsagVerify(ring, tx, sig){
+  var n = ring.length, b = sig.b, h = [sig.h0], L = [null], R = [null];
+  for (var i = 1; i <= n; i++){
+    var mem = ring[i - 1], si = i === n ? sig.s[0] : sig.s[i];
+    var pkb = b === 0 ? mem.pk0 : mem.pk1, pko = b === 0 ? mem.pk1 : mem.pk0;
+    var Li = mul(mpow(G, si), mpow(pkb, h[i - 1]));
+    var Ri = mul(mpow(pko, modq(si * mem.m)), mpow(sig.J, h[i - 1]));
+    L.push(Li); R.push(Ri); h.push(Hs(tx + '|' + Li + '|' + Ri));
+  }
+  return { ok: h[n] === h[0], L: L, R: R, h: h };
+}
+function dlsagLink(r1, tx1, s1, r2, tx2, s2){
+  if (!(dlsagVerify(r1, tx1, s1).ok && dlsagVerify(r2, tx2, s2).ok)) return 0;
+  return s1.J === s2.J ? 1 : 0;
+}
+
+/* =======================================================================
+   1 · Puzzle: the frozen coin (§3.1)
+   ===================================================================== */
+var PZ = (function(){
+  var r = mulberry32(2020);
+  var skB = scalar(r), skA = scalar(r);
+  return { skB: skB, skA: skA, pkB: mpow(G, skB), pkA: mpow(G, skA),
+    m1: nz(Hs('outpoint|tx:alice-pays-bob|0')), m2: nz(Hs('outpoint|tx:alice-copy|0')) };
+})();
+var pzState = { guess: null, revealed: false, withM: false };
+function pzTags(withM){
+  var m1 = withM ? PZ.m1 : 1, m2 = withM ? PZ.m2 : 1;
+  return {
+    o2Alice: mpow(PZ.pkB, modq(m2 * PZ.skA)),
+    o1Bob:   mpow(PZ.pkA, modq(m1 * PZ.skB)),
+    o1Alice: mpow(PZ.pkB, modq(m1 * PZ.skA))
+  };
+}
+function pzEvents(){
+  var T = pzTags(pzState.withM), M = pzState.withM;
+  var e2 = M ? '$pk_B^{m_2\\cdot sk_A}$' : '$pk_B^{sk_A}$';
+  var e3 = M ? '$pk_A^{m_1\\cdot sk_B}$' : '$pk_A^{sk_B}$';
+  var e4 = M ? '$pk_B^{m_1\\cdot sk_A}$' : '$pk_B^{sk_A}$';
+  var bobOk = T.o1Bob !== T.o2Alice;
+  return [
+    { blk:'block 100', stage:0, cls:'', html:'Alice pays Bob into $O_1=(pk_0{=}pk_B,\\ pk_1{=}pk_A)$ with timeout $t=$ block 200' + (M ? ' and identifier $m_1=' + PZ.m1 + '$' : '') + '.', tag:'' },
+    { blk:'block 101', stage:1, cls:'', html:'Alice creates $O_2=(pk_B, pk_A)$, the <em>same two keys</em>, with a timeout already in the past, so her key works' + (M ? '. Its identifier is $m_2=' + PZ.m2 + '$.' : '.'), tag:'' },
+    { blk:'block 102', stage:2, cls:'ok', html:'Alice spends $O_2$ with $sk_A$. Tag ' + e2 + ':', tag: T.o2Alice + ' · accepted', add: T.o2Alice },
+    { blk:'block 150', stage:3, cls: bobOk ? 'ok' : 'bad', html:'Bob spends $O_1$ with $sk_B$. Tag ' + e3 + ':', tag: T.o1Bob + (bobOk ? ' · new, accepted' : ' · already used, rejected'), add: bobOk ? T.o1Bob : null },
+    { blk:'block 201', stage:4, cls: bobOk ? '' : 'bad', html: bobOk ? 'Nothing left to refund: $O_1$ was spent once, by Bob.' : 'Alice tries to refund $O_1$ with $sk_A$. Tag ' + e4 + ':', tag: bobOk ? '' : T.o1Alice + ' · already used, rejected' }
+  ];
+}
+var pzCards = [];
+function pzBuild(){
+  var box = $('pzLedger'); box.innerHTML = ''; pzCards = [];
+  pzEvents().forEach(function(ev){
+    var d = document.createElement('div');
+    d.className = 'evt'; d.setAttribute('data-stage', ev.stage);
+    d.innerHTML = '<div class="blk">' + ev.blk + '</div><div class="txt">' + ev.html + (ev.tag ? '<div class="tag">' + ev.tag + '</div>' : '') + '</div>';
+    box.appendChild(d); pzCards.push({ node: d, ev: ev });
+  });
+  katexRender(box);
+}
+function pzApply(ms){
+  var show = pzState.revealed, T = pzTags(pzState.withM);
+  var base = [T.o2Alice], added = null;
+  pzCards.forEach(function(c){
+    c.node.classList.remove('ok', 'bad'); c.node.style.transform = '';
+    if (c.ev.stage <= 2){ c.node.style.opacity = 1; c.node.style.display = ''; if (c.ev.cls) c.node.classList.add(c.ev.cls); }
+    else { c.node.style.opacity = 0; c.node.style.display = show ? '' : 'none'; }
+    if (c.ev.stage === 3 && c.ev.add) added = c.ev.add;
+  });
+  $('pzSet').textContent = base.join(', ');
+  $('pzPunch').style.display = show && !pzState.withM ? '' : 'none';
+  if (!show){ $('pzPunch').style.opacity = 0; return; }
+  run('pz', ms, function(p){
+    pzCards.forEach(function(c){
+      if (c.ev.stage < 3) return;
+      var a = clamp01((p - (c.ev.stage - 3) * 0.35) / 0.3);
+      c.node.style.opacity = a.toFixed(3);
+      c.node.style.transform = 'translateX(' + (10 * (1 - a)).toFixed(2) + 'px)';
+      if (a >= 1 && c.ev.cls) c.node.classList.add(c.ev.cls);
+    });
+    $('pzSet').textContent = base.concat(added !== null && p >= 0.3 ? [added] : []).join(', ');
+    $('pzPunch').style.opacity = pzState.withM ? 0 : clamp01((p - 0.75) / 0.25).toFixed(3);
+  }, function(){
+    pzCards.forEach(function(c){ c.node.style.transform = ''; if (c.ev.cls) c.node.classList.add(c.ev.cls); });
+  }, true);
+}
+function pzFeedback(){
+  var f = $('pzFeedback');
+  if (!pzState.revealed){ f.innerHTML = ''; return; }
+  if (pzState.withM){
+    setMath(f, '<strong>With $m$, the copy no longer collides.</strong> $O_2$ burns $g^{m_2 sk_A sk_B}$, while $O_1$\'s tag is $g^{m_1 sk_A sk_B}$. Bob spends normally. $O_1$ still has one tag, whichever key spends it, so Alice cannot also refund it afterwards.');
+    return;
+  }
+  var msg = {
+    yes: 'Not quite. Bob does hold the key, but his tag $pk_A^{sk_B}=g^{sk_A sk_B}$ is exactly the value Alice published when she spent her copy $O_2$. The network sees a repeated key image and rejects the spend.',
+    refund: 'Close, but no. Alice\'s refund tag $pk_B^{sk_A}$ is the same value she already used, so after $t$ her refund is rejected too. She has burned the coin rather than stolen it.',
+    frozen: 'Right. Both of $O_1$\'s spending paths compute $g^{sk_A sk_B}$, and that tag is already used. The funds are unspendable (§3.1), and nobody profits.'
+  };
+  setMath(f, msg[pzState.guess] || '');
+}
+Array.prototype.forEach.call($('pzGuess').children, function(b){
+  b.addEventListener('click', function(){
+    if (pzState.revealed) return;
+    pzState.guess = b.getAttribute('data-g');
+    Array.prototype.forEach.call($('pzGuess').children, function(c){ c.setAttribute('aria-pressed', c === b ? 'true' : 'false'); });
+    $('pzReveal').disabled = false;
+  });
+});
+$('pzReveal').addEventListener('click', function(){
+  if (!pzState.guess || pzState.revealed) return;
+  pzState.revealed = true; this.disabled = true; $('pzFix').disabled = false;
+  pzApply(1600); pzFeedback();
+});
+$('pzFix').addEventListener('click', function(){
+  pzState.withM = !pzState.withM;
+  this.textContent = pzState.withM ? 'Replay without $m$' : 'Add $m$ and replay';
+  katexRender(this);
+  pzBuild(); pzApply(1600); pzFeedback();
+});
+$('pzReset').addEventListener('click', function(){
+  settle('pz');
+  pzState = { guess: null, revealed: false, withM: false };
+  Array.prototype.forEach.call($('pzGuess').children, function(c){ c.setAttribute('aria-pressed', 'false'); });
+  $('pzReveal').disabled = true; $('pzFix').disabled = true;
+  $('pzFix').textContent = 'Add $m$ and replay'; katexRender($('pzFix'));
+  pzBuild(); pzApply(0); pzFeedback();
+});
+
+/* =======================================================================
+   2 · Why: three tag schemes, two spenders
+   ===================================================================== */
+var whyState = { scheme: 'dlsag', view: 0 };
+function whyTags(scheme){
+  var sk0 = PZ.skB, sk1 = PZ.skA, pk0 = PZ.pkB, pk1 = PZ.pkA, m1 = PZ.m1, m2 = PZ.m2;
+  if (scheme === 'lsag') return {
+    bob: { f:'Hₚ(pk₀)^{sk₀}', v: mpow(Hp(pk0), sk0) }, alice: { f:'Hₚ(pk₁)^{sk₁}', v: mpow(Hp(pk1), sk1) },
+    o2: { f:'Hₚ(pk₀)^{sk₀}', v: mpow(Hp(pk0), sk0) } };
+  if (scheme === 'dh') return {
+    bob: { f:'pk₁^{sk₀}', v: mpow(pk1, sk0) }, alice: { f:'pk₀^{sk₁}', v: mpow(pk0, sk1) },
+    o2: { f:'pk₁^{sk₀}', v: mpow(pk1, sk0) } };
+  return {
+    bob: { f:'pk₁^{m₁·sk₀}', v: mpow(pk1, modq(m1 * sk0)) }, alice: { f:'pk₀^{m₁·sk₁}', v: mpow(pk0, modq(m1 * sk1)) },
+    o2: { f:'pk₁^{m₂·sk₀}', v: mpow(pk1, modq(m2 * sk0)) } };
+}
+var whyDom = {};
+function whyGeom(){
+  if (isNarrow()) return { W:360, H:470,
+    out:[180, 34, 300], bob:[92, 118, 160], alice:[268, 118, 160],
+    tb:[180, 210, 320], eq:[180, 254], ta:[180, 298, 320], o2:[180, 408, 320], o2lab:[180, 372] };
+  return { W:760, H:390,
+    out:[380, 36, 320], bob:[150, 130, 220], alice:[610, 130, 220],
+    tb:[150, 236, 270], eq:[380, 236], ta:[610, 236, 270], o2:[380, 340, 360], o2lab:[380, 302] };
+}
+function box(g, cx, cy, w, h, cls){
+  var r = el('rect', { x: cx - w / 2, y: cy - h / 2, width: w, height: h, rx: 4,
+    fill: css('--plane'), stroke: css('--axis'), 'stroke-width': 1.2 });
+  if (cls) r.setAttribute('class', cls);
+  g.appendChild(r); return r;
+}
+function drawWhy(){
+  var svg = $('whySvg'); clear(svg); var g = whyGeom(); whyDom = { g: g };
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var fs = 14, mono = { 'class':'svgtext', 'text-anchor':'middle', 'font-size': fs, fill: css('--ink-1') };
+  /* connectors */
+  function line(a, b, key){
+    var l = el('line', { x1:a[0], y1:a[1], x2:b[0], y2:b[1], stroke: css('--axis'), 'stroke-width': 2 });
+    svg.appendChild(l); whyDom[key] = l;
+  }
+  line([g.out[0], g.out[1] + 20], [g.bob[0], g.bob[1] - 20], 'lOB');
+  line([g.out[0], g.out[1] + 20], [g.alice[0], g.alice[1] - 20], 'lOA');
+  line([g.bob[0], g.bob[1] + 20], [g.tb[0] - (isNarrow() ? 60 : 0), g.tb[1] - 22], 'lBT');
+  line([g.alice[0], g.alice[1] + 20], [g.ta[0] + (isNarrow() ? 60 : 0), g.ta[1] - 22], 'lAT');
+  /* output */
+  box(svg, g.out[0], g.out[1], g.out[2], 40);
+  svg.appendChild(mtext(g.out[0], g.out[1] + 5, 'O₁ = (pk₀, pk₁, m₁)', mono));
+  /* holders */
+  whyDom.bobBox = box(svg, g.bob[0], g.bob[1], g.bob[2], 40);
+  svg.appendChild(mtext(g.bob[0], g.bob[1] + 5, 'Bob · holds sk₀', mono));
+  whyDom.aliceBox = box(svg, g.alice[0], g.alice[1], g.alice[2], 40);
+  svg.appendChild(mtext(g.alice[0], g.alice[1] + 5, 'Alice · holds sk₁', mono));
+  /* tag boxes */
+  whyDom.tbBox = box(svg, g.tb[0], g.tb[1], g.tb[2], 44);
+  whyDom.tbTxt = el('g'); svg.appendChild(whyDom.tbTxt);
+  whyDom.taBox = box(svg, g.ta[0], g.ta[1], g.ta[2], 44);
+  whyDom.taTxt = el('g'); svg.appendChild(whyDom.taTxt);
+  whyDom.eq = el('text', { x: g.eq[0], y: g.eq[1] + 8, 'text-anchor':'middle', 'font-size': 26, 'class':'svgtext', 'font-weight':700 });
+  svg.appendChild(whyDom.eq);
+  /* second output */
+  svg.appendChild(mtext(g.o2lab[0], g.o2lab[1], 'Another output O₂ = (pk₀, pk₁, m₂), same keys:', { 'class':'svgtext', 'text-anchor':'middle', 'font-size': 13, fill: css('--ink-muted') }));
+  whyDom.o2Box = box(svg, g.o2[0], g.o2[1], g.o2[2], 44);
+  whyDom.o2Txt = el('g'); svg.appendChild(whyDom.o2Txt);
+  whyDom.all = svg;
+  var lg = $('whyLegend');
+  lg.innerHTML = '<li><span class="swatch" style="background:' + css('--accent') + '"></span>path used by the chosen spender</li>' +
+    '<li><span class="swatch" style="background:' + css('--good') + '"></span>= tags match</li>' +
+    '<li><span class="swatch" style="background:' + css('--critical') + '"></span>≠ tags differ</li>';
+}
+function whyFill(gnode, cx, cy, f, v, faint){
+  while (gnode.firstChild) gnode.removeChild(gnode.firstChild);
+  var at = { 'class':'svgtext', 'text-anchor':'middle', 'font-size': 14, fill: faint ? css('--ink-muted') : css('--ink-1') };
+  gnode.appendChild(mtext(cx, cy + 5, f + ' = ' + v, at));
+}
+function whyApply(ms){
+  var d = whyDom, g = d.g, T = whyTags(whyState.scheme), v = whyState.view;
+  var same = T.bob.v === T.alice.v, o2diff = T.o2.v !== T.bob.v;
+  whyFill(d.tbTxt, g.tb[0], g.tb[1], 'Bob: ' + T.bob.f, T.bob.v, v !== 0);
+  whyFill(d.taTxt, g.ta[0], g.ta[1], 'Alice: ' + T.alice.f, T.alice.v, v !== 1);
+  whyFill(d.o2Txt, g.o2[0], g.o2[1], 'Bob on O₂: ' + T.o2.f, T.o2.v, false);
+  d.eq.textContent = same ? '=' : '≠';
+  d.eq.setAttribute('fill', same ? css('--good') : css('--critical'));
+  d.o2Box.setAttribute('stroke', o2diff ? css('--good') : css('--critical'));
+  var acc = css('--accent'), ax = css('--axis');
+  [['lOB', 0], ['lBT', 0], ['lOA', 1], ['lAT', 1]].forEach(function(p){ d[p[0]].setAttribute('stroke', p[1] === v ? acc : ax); });
+  d.bobBox.setAttribute('stroke', v === 0 ? acc : ax); d.tbBox.setAttribute('stroke', v === 0 ? acc : ax);
+  d.aliceBox.setAttribute('stroke', v === 1 ? acc : ax); d.taBox.setAttribute('stroke', v === 1 ? acc : ax);
+  /* animate the tag rows in */
+  var nodes = [d.tbTxt, d.taTxt, d.eq, d.o2Txt];
+  run('why', ms, function(p){ nodes.forEach(function(nd, i){ nd.setAttribute('opacity', clamp01(p * 1.6 - i * 0.18).toFixed(3)); }); });
+  /* read-outs */
+  var ro = $('whyRO');
+  var who = whyState.scheme === 'lsag' ? 'Each spender alone. Bob\'s tag and Alice\'s tag are unrelated values.' :
+    'Either spender: $pk_1^{' + (whyState.scheme === 'dh' ? '' : 'm\\,') + 'sk_0}=pk_0^{' + (whyState.scheme === 'dh' ? '' : 'm\\,') + 'sk_1}=g^{' + (whyState.scheme === 'dh' ? '' : 'm\\,') + 'sk_0 sk_1}$.';
+  setMath(ro,
+    '<div class="ro' + (same ? '' : ' focus') + '"><div class="k">Job 1 · one tag for both paths</div><div class="v">' + (same ? 'yes' : 'no') + '</div>' +
+      '<span class="verdict ' + (same ? 'ok' : 'bad') + '">' + (same ? 'double spend blocked' : 'Bob before $t$, Alice after: both accepted') + '</span></div>' +
+    '<div class="ro' + (o2diff ? '' : ' focus') + '"><div class="k">Job 2 · unique to the output</div><div class="v">' + (o2diff ? 'yes' : 'no') + '</div>' +
+      '<span class="verdict ' + (o2diff ? 'ok' : 'bad') + '">' + (o2diff ? 'a copy cannot burn it' : 'a copy burns it (the puzzle)') + '</span></div>' +
+    '<div class="ro"><div class="k">Who can compute it</div><p>' + who + '</p></div>');
+  var tb = $('whyTable'), rows = [['lsag', 'One LSAG tag per key (strawman)'], ['dh', '$g^{sk_0 sk_1}$, no $m$'], ['dlsag', 'DLSAG $g^{m\\,sk_0 sk_1}$']];
+  var html = '<thead><tr><th>Scheme</th><th class="num">Bob on $O_1$</th><th class="num">Alice on $O_1$</th><th class="num">Bob on $O_2$</th><th>Job 1</th><th>Job 2</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var t = whyTags(r[0]), s1 = t.bob.v === t.alice.v, s2 = t.o2.v !== t.bob.v;
+    html += '<tr' + (r[0] === whyState.scheme ? ' class="hl"' : '') + '><td>' + r[1] + '</td><td class="num">' + t.bob.v + '</td><td class="num">' + t.alice.v + '</td><td class="num">' + t.o2.v +
+      '</td><td class="' + (s1 ? 'yes' : 'no') + '">' + (s1 ? 'yes' : 'no') + '</td><td class="' + (s2 ? 'yes' : 'no') + '">' + (s2 ? 'yes' : 'no') + '</td></tr>';
+  });
+  setMath(tb, html + '</tbody>');
+}
+seg('whyScheme', function(v){ whyState.scheme = v; whyApply(450); });
+seg('whyView', function(v){ whyState.view = +v; whyApply(300); });
+
+/* =======================================================================
+   3 · Sandbox: DLSAG Sign / Verify / Link on a toy ring
+   ===================================================================== */
+var sb = { n: 4, b: 0, view: 'signer', preset: 'dlsag', tx: 'pay Bob, output 0', tamper: false, seed: 7, step: 0 };
+var sbData = null;
+function makeRing(n, seed, preset, tag){
+  var r = mulberry32(seed * 7919 + n * 31 + 17), ring = [], mySk = null;
+  for (var i = 1; i <= n; i++){
+    var a = scalar(r), c = scalar(r);
+    ring.push({ pk0: mpow(G, a), pk1: mpow(G, c), sk0: a, sk1: c,
+      m: preset === 'one' ? 1 : nz(Hs('outpoint|' + tag + '|' + seed + '|' + i)) });
+  }
+  return ring;
+}
+function sbCompute(){
+  var ring = makeRing(sb.n, sb.seed, sb.preset, 'ring');
+  var me = ring[sb.n - 1], skb = sb.b === 0 ? me.sk0 : me.sk1;
+  var S = dlsagSign(ring, skb, sb.b, sb.tx, mulberry32(sb.seed * 104729 + 3));
+  var V = dlsagVerify(ring, sb.tamper ? sb.tx + ' (edited)' : sb.tx, S.sig);
+  sbData = { ring: ring, skb: skb, S: S, V: V };
+}
+var sbDom = {};
+function sbGeom(){
+  var nar = isNarrow();
+  return nar ? { W: 340, H: 330, cx: 170, cy: 166, R: 104, nr: 22, fs: 13 } : { W: 420, H: 400, cx: 210, cy: 200, R: 145, nr: 25, fs: 14 };
+}
+function nodePos(g, i, n){ var a = -Math.PI / 2 + 2 * Math.PI * (i - 1) / n; return [g.cx + g.R * Math.cos(a), g.cy + g.R * Math.sin(a)]; }
+function drawSb(){
+  var svg = $('sbSvg'); clear(svg); var g = sbGeom(), n = sb.n; sbDom = { g: g, arcs: [], labs: [], nodes: [] };
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var defs = el('defs');
+  ['ax', 'on', 'ok', 'bad'].forEach(function(k){
+    var col = { ax: css('--axis'), on: css('--accent'), ok: css('--good'), bad: css('--critical') }[k];
+    var m = el('marker', { id: 'sbA' + k, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+    m.appendChild(el('path', { d: 'M0,0 L10,5 L0,10 z', fill: col })); defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+  for (var i = 1; i <= n; i++){
+    var a = nodePos(g, i, n), b = nodePos(g, i % n + 1, n);
+    var mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    var dx = mx - g.cx, dy = my - g.cy, L = Math.hypot(dx, dy) || 1;
+    var bulge = n === 2 ? 70 : 26;
+    var c = [mx + dx / L * bulge, my + dy / L * bulge];
+    if (n === 2){ c = i === 1 ? [g.cx + g.R * 0.9, g.cy] : [g.cx - g.R * 0.9, g.cy]; }
+    /* shorten to node rims */
+    function towards(p, q, d){ var ux = q[0] - p[0], uy = q[1] - p[1], l = Math.hypot(ux, uy) || 1; return [p[0] + ux / l * d, p[1] + uy / l * d]; }
+    var s = towards(a, c, g.nr + 3), t = towards(b, c, g.nr + 5);
+    var path = el('path', { d: 'M' + s[0].toFixed(1) + ',' + s[1].toFixed(1) + ' Q' + c[0].toFixed(1) + ',' + c[1].toFixed(1) + ' ' + t[0].toFixed(1) + ',' + t[1].toFixed(1),
+      fill: 'none', stroke: css('--axis'), 'stroke-width': 2, 'marker-end': 'url(#sbAax)' });
+    svg.appendChild(path); sbDom.arcs.push(path);
+    var lp = [0.25 * s[0] + 0.5 * c[0] + 0.25 * t[0], 0.25 * s[1] + 0.5 * c[1] + 0.25 * t[1]];
+    var ox = lp[0] - g.cx, oy = lp[1] - g.cy, ol = Math.hypot(ox, oy) || 1;
+    var lx = lp[0] + ox / ol * 10, ly = lp[1] + oy / ol * 10 + 4;
+    var anc = Math.abs(ox / ol) < 0.35 ? 'middle' : (ox > 0 ? 'start' : 'end');
+    if (anc === 'middle') ly += oy > 0 ? 10 : -6;
+    var lab = el('text', { x: lx.toFixed(1), y: ly.toFixed(1), 'text-anchor': anc, 'class': 'svgtext', 'font-size': g.fs - 1, fill: css('--ink-muted') });
+    svg.appendChild(lab); sbDom.labs.push(lab);
+  }
+  for (var j = 1; j <= n; j++){
+    var p = nodePos(g, j, n), grp = el('g', { transform: 'translate(' + p[0].toFixed(1) + ',' + p[1].toFixed(1) + ')', style: 'cursor:default' });
+    var circ = el('circle', { r: g.nr, fill: css('--surface-1'), stroke: css('--ink-muted'), 'stroke-width': 1.5 });
+    grp.appendChild(circ);
+    grp.appendChild(el('text', { y: 5, 'text-anchor': 'middle', 'class': 'svgtext', 'font-size': g.fs + 1, 'font-weight': 700, fill: css('--ink-1') }, String(j)));
+    (function(jj){
+      grp.addEventListener('mousemove', function(e){
+        var m = sbData.ring[jj - 1];
+        var mine = sb.view === 'signer' && jj === sb.n;
+        showTip(e, '<b>Ring member ' + jj + (mine ? ' · signer' : '') + '</b>pk₀ = ' + m.pk0 + '<br>pk₁ = ' + m.pk1 + '<br>m = ' + m.m);
+      });
+      grp.addEventListener('mouseleave', hideTip);
+    })(j);
+    svg.appendChild(grp); sbDom.nodes.push({ g: grp, c: circ });
+  }
+  sbDom.center = el('text', { x: g.cx, y: g.cy + 5, 'text-anchor': 'middle', 'class': 'svgtext', 'font-size': g.fs + 1, 'font-weight': 700, fill: css('--ink-muted') });
+  svg.appendChild(sbDom.center);
+  $('sbLegend').innerHTML = '<li><span class="swatch" style="background:' + css('--accent') + '"></span>computed so far</li>' +
+    '<li><span class="swatch" style="background:' + css('--good') + '"></span>ring closes, $h_n=h_0$</li>' +
+    '<li><span class="swatch" style="background:' + css('--critical') + '"></span>ring breaks</li>';
+  katexRender($('sbLegend'));
+}
+function sbPaint(){
+  var n = sb.n, k = sb.step, V = sbData.V, done = k >= n;
+  var acc = css('--accent'), ax = css('--axis'), okc = css('--good'), bad = css('--critical');
+  for (var i = 1; i <= n; i++){
+    var arc = sbDom.arcs[i - 1], lab = sbDom.labs[i - 1], on = k >= i;
+    var closing = i === n;
+    var col = !on ? ax : (closing ? (V.ok ? okc : bad) : acc);
+    arc.setAttribute('stroke', col);
+    arc.setAttribute('marker-end', 'url(#sbA' + (!on ? 'ax' : (closing ? (V.ok ? 'ok' : 'bad') : 'on')) + ')');
+    lab.textContent = on ? ('h' + (closing ? 'ₙ' : subDigits(i)) + '=' + V.h[i]) : (closing ? 'h₀=' + sbData.S.sig.h0 : '');
+    lab.setAttribute('fill', on ? css('--ink-1') : css('--ink-muted'));
+  }
+  sbDom.nodes.forEach(function(nd, idx){
+    var j = idx + 1, mine = sb.view === 'signer' && j === n, comp = k >= j;
+    nd.c.setAttribute('fill', mine ? css('--accent') : css('--surface-1'));
+    nd.c.setAttribute('stroke', comp ? acc : css('--ink-muted'));
+    nd.g.lastChild.setAttribute('fill', mine ? '#fff' : css('--ink-1'));
+  });
+  sbDom.center.textContent = done ? (V.ok ? 'Verify = 1' : 'Verify = 0') : (k === 0 ? 'start: h₀' : 'step ' + k + ' / ' + n);
+  sbDom.center.setAttribute('fill', done ? (V.ok ? okc : bad) : css('--ink-muted'));
+  sbTable();
+  sbRO();
+}
+function subDigits(i){ return String(i).split('').map(function(c){ return '₀₁₂₃₄₅₆₇₈₉'[+c]; }).join(''); }
+function sbSig(){
+  var S = sbData.S, sig = S.sig, n = sb.n, b = sb.b;
+  var html = '<span class="lab">σ = (</span>s₀=' + sig.s[0];
+  for (var i = 1; i < n; i++) html += ', s' + subDigits(i) + '=' + sig.s[i];
+  html += ', h₀=' + sig.h0 + ', J=' + sig.J + ', b=' + b + '<span class="lab">)</span>';
+  if (sb.view === 'signer'){
+    var me = sbData.ring[n - 1], other = b === 0 ? me.pk1 : me.pk0;
+    html += '<br><span class="lab">signer only:</span> $sk_' + b + '=' + sbData.skb + '$, $s\'_0=' + S.trace.sp0 + '$, and $s_0=s\'_0-h_{' + (n - 1) + '}\\cdot sk_' + b +
+      '=' + S.trace.sp0 + '-' + S.trace.hsign[n - 1] + '\\cdot' + sbData.skb + '\\bmod q=' + sig.s[0] + '$' +
+      '<br><span class="lab">tag:</span> $\\mathcal{J}=pk_{' + n + ',' + (1 - b) + '}^{\\,m_{' + n + '}\\cdot sk_' + b + '}=' + other + '^{\\,' + me.m + '\\cdot ' + sbData.skb + '}=' + sig.J + '$';
+  } else {
+    html += '<br><span class="hidden-signer">The verifier sees only the ring, tx and σ. Nothing marks member ' + n + '.</span>';
+  }
+  setMath($('sbSig'), html);
+}
+function sbRO(){
+  var V = sbData.V, done = sb.step >= sb.n;
+  var n = sb.n;
+  setMath($('sbRO'),
+    '<div class="ro"><div class="k">Verify</div><div class="v">' + (done ? (V.ok ? '1' : '0') : '…') + '</div>' +
+      (done ? '<span class="verdict ' + (V.ok ? 'ok' : 'bad') + '">$h_' + n + (V.ok ? '=' : '\\neq') + 'h_0$</span>' : '<span class="verdict na">' + sb.step + ' of ' + n + ' steps</span>') + '</div>' +
+    '<div class="ro"><div class="k">Signature size</div><div class="v">' + (n + 3) + ' items</div><p>$n$ scalars, $h_0$, $\\mathcal{J}$ and one bit $b$</p></div>');
+}
+function sbTable(){
+  var V = sbData.V, n = sb.n, k = sb.step;
+  var html = '<thead><tr><th class="num">$i$</th><th class="num">$L_i=g^{s_i}pk_{i,b}^{h_{i-1}}$</th><th class="num">$R_i=pk_{i,1-b}^{s_i m_i}\\mathcal{J}^{h_{i-1}}$</th><th class="num">$h_i$</th></tr></thead><tbody>';
+  for (var i = 1; i <= n; i++){
+    var on = k >= i;
+    html += '<tr' + (i === k ? ' class="hl"' : '') + '><td class="num">' + i + '</td><td class="num">' + (on ? V.L[i] : '·') + '</td><td class="num">' + (on ? V.R[i] : '·') + '</td><td class="num">' + (on ? V.h[i] + (i === n ? (V.ok ? ' = h₀' : ' ≠ h₀ (' + V.h[0] + ')') : '') : '·') + '</td></tr>';
+  }
+  setMath($('sbTable'), html + '</tbody>');
+}
+function sbStepTo(k, ms){
+  var from = sb.step; sb.step = Math.max(0, Math.min(sb.n, k));
+  sbPaint();
+  if (ms > 0 && sb.step > from){
+    var arcs = sbDom.arcs.slice(from, sb.step);
+    arcs.forEach(function(a){ var L = a.getTotalLength ? a.getTotalLength() : 100; a.style.strokeDasharray = L; a.style.strokeDashoffset = L; a._L = L; });
+    run('sb-arc', ms, function(p){
+      arcs.forEach(function(a, idx){
+        var q = clamp01(p * arcs.length - idx);
+        a.style.strokeDashoffset = (a._L * (1 - q)).toFixed(1);
+      });
+    }, function(){ arcs.forEach(function(a){ a.style.strokeDasharray = ''; a.style.strokeDashoffset = ''; }); }, true);
+  }
+}
+function sbRebuild(ms){
+  settle('sb-arc');
+  sbCompute(); drawSb(); sb.step = 0; sbPaint(); sbSig();
+  if (ms) sbStepTo(sb.n, ms);
+  lkClear();
+}
+$('sbN').addEventListener('input', function(){ sb.n = +this.value; $('sbNv').textContent = sb.n; sbRebuild(0); });
+$('sbN').addEventListener('change', function(){ settle('sb-arc'); });
+seg('sbB', function(v){ sb.b = +v; sbRebuild(0); });
+seg('sbView', function(v){ sb.view = v; sbPaint(); sbSig(); });
+seg('sbPreset', function(v){ sb.preset = v; sbRebuild(0); });
+$('sbTx').addEventListener('input', function(){ sb.tx = this.value; sbCompute(); sbPaint(); sbSig(); lkClear(); });
+$('sbTamper').addEventListener('change', function(){ sb.tamper = this.checked; sbCompute(); sbPaint(); });
+$('sbPlay').addEventListener('click', function(){ settle('sb-arc'); sb.step = 0; sbPaint(); sbStepTo(sb.n, 260 * sb.n + 300); });
+$('sbStep').addEventListener('click', function(){ settle('sb-arc'); if (sb.step >= sb.n){ sb.step = 0; } sbStepTo(sb.step + 1, 380); });
+$('sbReset').addEventListener('click', function(){ settle('sb-arc'); sb.step = 0; sbPaint(); });
+$('sbNew').addEventListener('click', function(){ sb.seed = sb.seed + 1; sbRebuild(0); });
+
+/* ---------- Link ---------- */
+function lkClear(){ $('lkRO').innerHTML = ''; }
+function lkRun(kind){
+  var ring1 = sbData.ring, sig1 = sbData.S.sig, tx1 = sb.tx;
+  var me = ring1[sb.n - 1], ring2, tx2, skb2, tag;
+  var decoys = makeRing(sb.n, sb.seed + 1000, sb.preset, 'ring2');
+  if (kind === 'same'){
+    ring2 = decoys.slice(0, sb.n - 1).concat([me]); tx2 = tx1 + ' (second spend)';
+    tag = 'Same output: $(pk_{n,0}, pk_{n,1}, m_n)$ again, with fresh decoys';
+  } else {
+    var m2 = sb.preset === 'one' ? 1 : nz(Hs('outpoint|copy|' + sb.seed));
+    var copy = { pk0: me.pk0, pk1: me.pk1, sk0: me.sk0, sk1: me.sk1, m: m2 };
+    ring2 = decoys.slice(0, sb.n - 1).concat([copy]); tx2 = tx1 + ' (the copy)';
+    tag = 'Another output with the same keys, $m=' + m2 + '$' + (sb.preset === 'one' ? ' (preset forces $m=1$)' : '');
+  }
+  skb2 = sb.b === 0 ? me.sk0 : me.sk1;
+  var S2 = dlsagSign(ring2, skb2, sb.b, tx2, mulberry32(sb.seed * 31 + (kind === 'same' ? 5 : 9)));
+  var v1 = dlsagVerify(ring1, tx1, sig1).ok, v2 = dlsagVerify(ring2, tx2, S2.sig).ok;
+  var link = dlsagLink(ring1, tx1, sig1, ring2, tx2, S2.sig);
+  var good = kind === 'same' ? link === 1 : link === 0;
+  var explain = kind === 'same' ? (link ? 'Double spend detected, as it should be.' : 'Missed a double spend.') :
+    (link ? 'Two different outputs collide: spending the copy freezes the original (the puzzle).' : 'Different outputs, different tags: the copy cannot burn the original.');
+  setMath($('lkRO'),
+    '<div class="ro"><div class="k">Second signature</div><p>' + tag + '. Both verify: ' + (v1 && v2 ? 'yes' : 'no') + '.</p></div>' +
+    '<div class="ro"><div class="k">Tags</div><p class="mono">𝒥₁ = ' + sig1.J + '<br>𝒥₂ = ' + S2.sig.J + '</p></div>' +
+    '<div class="ro focus"><div class="k">Link</div><div class="v">' + link + '</div><span class="verdict ' + (good ? 'ok' : 'bad') + '">' + explain + '</span></div>');
+  var nodes = $('lkRO').children;
+  run('lk', 450, function(p){ Array.prototype.forEach.call(nodes, function(nd, i){ nd.style.opacity = clamp01(p * 1.8 - i * 0.3).toFixed(3); }); });
+}
+$('lkSame').addEventListener('click', function(){ lkRun('same'); });
+$('lkOther').addEventListener('click', function(){ lkRun('other'); });
+
+/* =======================================================================
+   4 · Channel timeline (§6.2) — illustrative amounts
+   ===================================================================== */
+var CH_T = 16, CH_MAX = 24, CH_X = 10;
+var ch = { h: 0, paid: 0, closed: null, refunded: false, shownH: 0, pays: [] };
+function chGeom(){
+  return isNarrow() ? { W: 360, H: 132, x0: 22, x1: 344, y: 58, tickEvery: 4, fs: 12 } : { W: 900, H: 136, x0: 40, x1: 870, y: 60, tickEvery: 2, fs: 13 };
+}
+var chDom = {};
+function chX(g, h){ return g.x0 + (g.x1 - g.x0) * h / CH_MAX; }
+function drawCh(){
+  var svg = $('chSvg'); clear(svg); var g = chGeom(); chDom = { g: g };
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var xt = chX(g, CH_T);
+  svg.appendChild(el('rect', { x: g.x0, y: g.y - 26, width: xt - g.x0, height: 52, fill: css('--s1'), opacity: 0.10 }));
+  svg.appendChild(el('rect', { x: xt, y: g.y - 26, width: g.x1 - xt, height: 52, fill: css('--s2'), opacity: 0.12 }));
+  var la = { 'class': 'svgtext', 'font-size': g.fs, fill: css('--ink-1') };
+  svg.appendChild(mtext(g.x0 + 6, g.y - 34, isNarrow() ? 'before t: pk_AB, 2-of-2' : 'before t: pk_AB — needs Alice\'s and Bob\'s shares', la));
+  svg.appendChild(mtext(xt + 6, g.y - 34, isNarrow() ? 'after t: pk′_A' : 'after t: pk′_A — Alice alone', la));
+  svg.appendChild(el('line', { x1: g.x0, y1: g.y + 26, x2: g.x1, y2: g.y + 26, stroke: css('--axis'), 'stroke-width': 1 }));
+  for (var h = 0; h <= CH_MAX; h += g.tickEvery){
+    var x = chX(g, h);
+    svg.appendChild(el('line', { x1: x, y1: g.y + 26, x2: x, y2: g.y + 31, stroke: css('--axis') }));
+    svg.appendChild(el('text', { x: x, y: g.y + 46, 'text-anchor': 'middle', 'class': 'svgtext', 'font-size': g.fs - 1, fill: css('--ink-muted') }, String(h)));
+  }
+  svg.appendChild(el('line', { x1: xt, y1: g.y - 30, x2: xt, y2: g.y + 34, stroke: css('--ink-1'), 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }));
+  svg.appendChild(el('text', { x: xt, y: g.y + 62, 'text-anchor': 'middle', 'class': 'svgtext', 'font-size': g.fs, 'font-weight': 700, fill: css('--ink-1') }, 't = 16'));
+  chDom.events = el('g'); svg.appendChild(chDom.events);
+  chDom.cursor = el('g');
+  chDom.cursor.appendChild(el('line', { x1: 0, y1: g.y - 26, x2: 0, y2: g.y + 26, stroke: css('--accent'), 'stroke-width': 2.5 }));
+  chDom.cursor.appendChild(el('circle', { cx: 0, cy: g.y + 26, r: 5, fill: css('--accent') }));
+  svg.appendChild(chDom.cursor);
+  $('chLegend').innerHTML = '<li><span class="swatch" style="background:' + css('--s1') + ';opacity:.5"></span>2-of-2 key $pk_{AB}$ spends</li>' +
+    '<li><span class="swatch" style="background:' + css('--s2') + ';opacity:.5"></span>refund key $pk\'_A$ spends</li>' +
+    '<li><span class="swatch" style="background:' + css('--accent') + '"></span>current block</li>' +
+    '<li><span class="swatch" style="background:' + css('--ink-1') + ';border-radius:50%"></span>on-chain event</li>' +
+    '<li><span class="swatch" style="border:1.5px solid ' + css('--ink-1') + ';border-radius:50%"></span>off-chain payment</li>';
+  katexRender($('chLegend'));
+}
+function chEvents(){
+  var g = chDom.g, gg = chDom.events; while (gg.firstChild) gg.removeChild(gg.firstChild);
+  function dot(h, label, filled, col, up){
+    var x = chX(g, h);
+    var cy = up ? g.y - 11 : g.y + 9;
+    gg.appendChild(el('circle', { cx: x, cy: cy, r: 6, fill: filled ? col : css('--plane'), stroke: col, 'stroke-width': 1.8 }));
+    if (label) gg.appendChild(el('text', { x: x + 10, y: cy + 4, 'text-anchor': 'start', 'class': 'svgtext', 'font-size': g.fs - 1, fill: css('--ink-1') }, label));
+  }
+  dot(0, 'open', true, css('--ink-1'), false);
+  ch.pays.forEach(function(p, i){ dot(p, i === ch.pays.length - 1 ? ('+' + ch.pays.length) : '', false, css('--ink-1'), true); });
+  if (ch.closed) dot(ch.closed.at, 'close', true, css('--good'), false);
+  if (ch.refunded) dot(CH_T, 'refund', true, css('--critical'), false);
+}
+function chRefresh(ms){
+  if (!ch.closed && !ch.refunded && ch.h >= CH_T) ch.refunded = true;
+  $('chHv').textContent = ch.h;
+  var live = !ch.closed && !ch.refunded;
+  $('chPay').disabled = !live || ch.h >= CH_T || ch.paid >= CH_X;
+  $('chClose').disabled = !live || ch.h >= CH_T || ch.paid === 0;
+  chEvents();
+  var from = ch.shownH, to = ch.h, g = chDom.g;
+  run('ch', ms, function(p){ ch.shownH = lerp(from, to, p); chDom.cursor.setAttribute('transform', 'translate(' + chX(g, ch.shownH).toFixed(1) + ',0)'); });
+  var st, bob, now;
+  if (ch.closed){
+    st = 'Closed at block ' + ch.closed.at + ' by the 2-of-2 key.'; bob = 'Completed $\\sigma$ with his share $[\\sigma]_B$ and published it.';
+    now = 'Bob <strong>' + ch.closed.amount + '</strong>, Alice <strong>' + (CH_X - ch.closed.amount) + '</strong>. Settled.';
+  } else if (ch.refunded){
+    st = 'Timeout passed. Alice spent with $pk\'_A$ alone.'; bob = ch.paid ? 'A payment of ' + ch.paid + ' signed only with $[\\sigma]_A$. It can no longer be completed.' : 'Nothing.';
+    now = 'Alice <strong>' + CH_X + '</strong> refunded, Bob <strong>0</strong>. ' + (ch.paid ? 'Bob waited too long.' : 'Bob never showed up; Alice needed no help to get her coins back.');
+  } else {
+    st = 'Output $(pk_{AB}, pk\'_A)$ holds ' + CH_X + ', timeout $t=16$.';
+    bob = ch.paid ? 'The latest transaction paying him <strong>' + ch.paid + '</strong>, with Alice\'s share $[\\sigma]_A$.' : 'No payment yet.';
+    now = ch.paid ? 'Bob <strong>' + ch.paid + '</strong>, Alice <strong>' + (CH_X - ch.paid) + '</strong>. He must close before block 16.' : 'Nothing to close yet. At block 16 Alice can refund.';
+  }
+  setMath($('chRO'),
+    '<div class="ro"><div class="k">On chain</div><p>' + st + '</p></div>' +
+    '<div class="ro"><div class="k">Bob holds, off-chain</div><p>' + bob + '</p></div>' +
+    '<div class="ro focus"><div class="k">' + (live ? 'If Bob closes now' : 'Outcome') + '</div><p>' + now + '</p></div>');
+}
+$('chH').addEventListener('input', function(){
+  var v = +this.value;
+  if (ch.refunded && v < CH_T){ ch.refunded = false; }
+  if (ch.closed && v < ch.closed.at){ ch.closed = null; }
+  ch.pays = ch.pays.filter(function(p){ return p <= v; }); ch.paid = ch.pays.length;
+  ch.h = v; chRefresh(260);
+});
+$('chH').addEventListener('change', function(){ settle('ch'); });
+$('chPay').addEventListener('click', function(){
+  ch.pays.push(ch.h); ch.paid = ch.pays.length; chRefresh(0);
+});
+$('chClose').addEventListener('click', function(){ ch.closed = { at: ch.h, amount: ch.paid }; chRefresh(0); });
+$('chReset').addEventListener('click', function(){ ch = { h: 0, paid: 0, closed: null, refunded: false, shownH: ch.shownH, pays: [] }; $('chH').value = 0; chRefresh(400); });
+
+/* =======================================================================
+   5 · Cost: Table 1 (ms)
+   ===================================================================== */
+var T1 = { n: [5, 10, 15, 20],
+  lsag:  { sign: [1.929, 3.863, 5.873, 8.045], vrfy: [1.835, 3.789, 5.577, 7.952] },
+  dlsag: { sign: [1.771, 3.665, 5.625, 7.516], vrfy: [1.699, 3.428, 5.512, 7.428] } };
+var cost = { op: 'sign', idx: 0, shown: null };
+function gap(op, i){ var a = T1.lsag[op][i], b = T1.dlsag[op][i]; return (a - b) / a * 100; }
+function costGeom(){ return isNarrow() ? { W: 360, H: 260, l: 40, r: 70, t: 18, b: 40, fs: 12 } : { W: 820, H: 320, l: 52, r: 110, t: 20, b: 44, fs: 13 }; }
+var costDom = {};
+function drawCost(){
+  var svg = $('costSvg'); clear(svg); var g = costGeom(); costDom = { g: g };
+  svg.setAttribute('viewBox', '0 0 ' + g.W + ' ' + g.H);
+  var X = function(n){ return g.l + (g.W - g.l - g.r) * (n - 5) / 15; };
+  var Y = function(v){ return g.H - g.b - (g.H - g.b - g.t) * v / 9; };
+  costDom.X = X; costDom.Y = Y;
+  for (var v = 0; v <= 8; v += 2){
+    svg.appendChild(el('line', { x1: g.l, x2: g.W - g.r, y1: Y(v), y2: Y(v), stroke: css('--grid'), 'stroke-width': 1 }));
+    svg.appendChild(el('text', { x: g.l - 8, y: Y(v) + 4, 'text-anchor': 'end', 'class': 'svgtext', 'font-size': g.fs, fill: css('--ink-muted') }, String(v)));
+  }
+  svg.appendChild(el('text', { x: g.l - 8, y: g.t - 4, 'text-anchor': 'end', 'class': 'svgtext', 'font-size': g.fs, fill: css('--ink-muted') }, 'ms'));
+  T1.n.forEach(function(n){
+    svg.appendChild(el('text', { x: X(n), y: g.H - g.b + 18, 'text-anchor': 'middle', 'class': 'svgtext', 'font-size': g.fs, fill: css('--ink-muted') }, String(n)));
+  });
+  svg.appendChild(el('text', { x: (g.l + g.W - g.r) / 2, y: g.H - 6, 'text-anchor': 'middle', 'class': 'svgtext', 'font-size': g.fs, fill: css('--ink-muted') }, 'ring size'));
+  svg.appendChild(el('line', { x1: g.l, x2: g.W - g.r, y1: Y(0), y2: Y(0), stroke: css('--axis'), 'stroke-width': 1 }));
+  costDom.guide = el('line', { y1: g.t, y2: Y(0), stroke: css('--ink-muted'), 'stroke-width': 1, 'stroke-dasharray': '3 3' });
+  svg.appendChild(costDom.guide);
+  costDom.series = {};
+  [['lsag', '--s1', 'LSAG'], ['dlsag', '--s2', 'DLSAG']].forEach(function(s){
+    var col = css(s[1]);
+    var line = el('polyline', { fill: 'none', stroke: col, 'stroke-width': 2, 'stroke-linejoin': 'round' });
+    svg.appendChild(line);
+    var dots = T1.n.map(function(n, i){
+      var d = el('circle', { r: 4.5, fill: col, stroke: css('--surface-1'), 'stroke-width': 2 });
+      var hit = el('circle', { r: 13, fill: 'transparent' });
+      hit.addEventListener('mousemove', function(e){
+        showTip(e, '<b>' + s[2] + ' · ' + (cost.op === 'sign' ? 'Sign' : 'Verify') + '</b>ring size ' + n + ': ' + T1[s[0]][cost.op][i].toFixed(3) + ' ms');
+      });
+      hit.addEventListener('mouseleave', hideTip);
+      hit.addEventListener('click', function(){ $('costN').value = i; costSetIdx(i); });
+      svg.appendChild(d); svg.appendChild(hit);
+      return { d: d, hit: hit };
+    });
+    var end = el('text', { 'class': 'svgtext', 'font-size': g.fs, fill: css('--ink-1') }, s[2]);
+    svg.appendChild(end);
+    costDom.series[s[0]] = { line: line, dots: dots, end: end };
+  });
+  $('costLegend').innerHTML = '<li><span class="swatch" style="background:' + css('--s1') + '"></span>LSAG (Monero today)</li><li><span class="swatch" style="background:' + css('--s2') + '"></span>DLSAG</li>';
+}
+function costPaint(vals){
+  var X = costDom.X, Y = costDom.Y, g = costDom.g, i = cost.idx;
+  ['lsag', 'dlsag'].forEach(function(k){
+    var s = costDom.series[k], v = vals[k];
+    s.line.setAttribute('points', T1.n.map(function(n, j){ return X(n).toFixed(1) + ',' + Y(v[j]).toFixed(1); }).join(' '));
+    s.dots.forEach(function(o, j){
+      o.d.setAttribute('cx', X(T1.n[j])); o.d.setAttribute('cy', Y(v[j])); o.d.setAttribute('r', j === i ? 6 : 4.5);
+      o.hit.setAttribute('cx', X(T1.n[j])); o.hit.setAttribute('cy', Y(v[j]));
+    });
+    var ly = Y(v[3]) + (k === 'lsag' ? -6 : 14);
+    s.end.setAttribute('x', X(20) + 10); s.end.setAttribute('y', ly);
+  });
+  costDom.guide.setAttribute('x1', X(T1.n[i])); costDom.guide.setAttribute('x2', X(T1.n[i]));
+}
+function costApply(ms, fromZero){
+  var target = { lsag: T1.lsag[cost.op].slice(), dlsag: T1.dlsag[cost.op].slice() };
+  var from = fromZero ? { lsag: [0, 0, 0, 0], dlsag: [0, 0, 0, 0] } : (cost.shown || target);
+  run('cost', ms, function(p){
+    var cur = { lsag: from.lsag.map(function(a, j){ return lerp(a, target.lsag[j], p); }), dlsag: from.dlsag.map(function(a, j){ return lerp(a, target.dlsag[j], p); }) };
+    cost.shown = cur; costPaint(cur);
+  });
+  var i = cost.idx, n = T1.n[i], a = T1.lsag[cost.op][i], b = T1.dlsag[cost.op][i];
+  $('costNv').textContent = n;
+  var opn = cost.op === 'sign' ? 'Sign' : 'Verify';
+  setMath($('costRO'),
+    '<div class="ro"><div class="k">LSAG · ' + opn + ' · $n=' + n + '$</div><div class="v">' + a.toFixed(3) + ' ms</div></div>' +
+    '<div class="ro"><div class="k">DLSAG · ' + opn + ' · $n=' + n + '$</div><div class="v">' + b.toFixed(3) + ' ms</div></div>' +
+    '<div class="ro focus"><div class="k">DLSAG faster by (derived)</div><div class="v">' + gap(cost.op, i).toFixed(1) + '%</div><p>$(' + a.toFixed(3) + '-' + b.toFixed(3) + ')/' + a.toFixed(3) + '$</p></div>');
+}
+function costSetIdx(i){ cost.idx = i; costApply(0); }
+function costTable(){
+  var html = '<thead><tr><th class="num">Ring size</th><th class="num">LSAG Sign</th><th class="num">LSAG Vrfy</th><th class="num">DLSAG Sign</th><th class="num">DLSAG Vrfy</th><th class="num">Sign gap (derived)</th><th class="num">Vrfy gap (derived)</th></tr></thead><tbody>';
+  T1.n.forEach(function(n, i){
+    html += '<tr><td class="num">' + n + '</td><td class="num">' + T1.lsag.sign[i].toFixed(3) + '</td><td class="num">' + T1.lsag.vrfy[i].toFixed(3) + '</td><td class="num">' + T1.dlsag.sign[i].toFixed(3) + '</td><td class="num">' + T1.dlsag.vrfy[i].toFixed(3) +
+      '</td><td class="num">' + gap('sign', i).toFixed(1) + '%</td><td class="num">' + gap('vrfy', i).toFixed(1) + '%</td></tr>';
+  });
+  $('costTable').innerHTML = html + '</tbody>';
+}
+seg('costOp', function(v){ cost.op = v; costApply(500); });
+$('costN').addEventListener('input', function(){ cost.idx = +this.value; costApply(0); });
+
+/* =======================================================================
+   BibTeX copy
+   ===================================================================== */
+$('copyBib').addEventListener('click', function(){
+  var b = this, t = $('bibtex').textContent;
+  function done(){ b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   Boot, entrances, resize
+   ===================================================================== */
+function drawAllStatic(){
+  pzBuild(); pzApply(0);
+  drawWhy(); whyApply(0);
+  sbCompute(); drawSb(); sbPaint(); sbSig();
+  drawCh(); chRefresh(0);
+  drawCost(); costApply(0);
+}
+drawAllStatic(); costTable();
+
+var ENTER = {
+  why: function(){ whyApply(700); },
+  sandbox: function(){ settle('sb-arc'); sb.step = 0; sbPaint(); sbStepTo(sb.n, 260 * sb.n + 300); },
+  channels: function(){ ch.shownH = 0; chDom.cursor.setAttribute('transform', 'translate(' + chX(chDom.g, 0) + ',0)'); chRefresh(700); },
+  cost: function(){ costApply(900, true); }
+};
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(600, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      if (ENTER[sec.id]) ENTER[sec.id]();
+    });
+  }, { threshold:0.12 });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var lastNarrow = isNarrow();
+window.addEventListener('resize', function(){
+  var nw = isNarrow(); if (nw === lastNarrow) return; lastNarrow = nw;
+  Object.keys(ANIMS).forEach(settle);
+  var keep = sb.step;
+  drawAllStatic(); sb.step = keep; sbPaint();
+});
+window.addEventListener('load', function(){ katexRender(document.body); });
+</script>
+</body>
+</html>

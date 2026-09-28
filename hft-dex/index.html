@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>High-Frequency Trading on Decentralized On-Chain Exchanges</title>
+<meta name="description" content="IEEE S&amp;P 2021 — Sandwich attacks on automated-market-maker exchanges: formalised, evaluated analytically and on Ethereum mainnet, and simulated under competing adversaries.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* validated categorical order (dataviz validator, surface #fafafa, light) */
+  --s1:#2a78d6;  /* victim */
+  --s2:#eb6834;  /* adversarial taker */
+  --s3:#1baf7a;  /* adversarial provider */
+  --s4:#eda100;  /* forgone commission */
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:20px}
+.mono{font-family:var(--mono); font-size:.85rem}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50;
+  background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-family:var(--mono); font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .v small{font-size:.9rem; font-weight:400; font-family:var(--mono); color:var(--ink-2)}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+.tile .src{font-family:var(--mono); font-size:.74rem; color:var(--ink-muted); margin:.5rem 0 0}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem}
+.ctl.grow{flex:1; min-width:220px}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .75rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.chart .ctitle{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); margin:0 0 6px}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono);
+  font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.dash{height:0; width:16px; border-top:2px dashed var(--ink-2); border-radius:0}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .09s;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- readouts ---------- */
+.calcgrid{display:grid; grid-template-columns:minmax(0,1.45fr) minmax(0,1fr); gap:20px; align-items:start}
+.readout{display:flex; flex-direction:column; gap:10px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:10px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.3rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro .d{font-family:var(--mono); font-size:.8rem; color:var(--ink-2)}
+.ro.hl{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+.check{display:none; margin-top:12px; border-left:3px solid var(--good); padding:.35rem 0 .35rem 12px;
+  font-family:var(--mono); font-size:.8rem; color:var(--ink-2); background:var(--surface-1)}
+.check.on{display:block}
+.check b{color:var(--good)}
+
+/* ---------- transaction lane ---------- */
+.lanewrap{margin-top:22px}
+.playrow{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 10px}
+.lane{display:grid; gap:8px}
+.lane.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lane.n4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.txc{border:1px solid var(--ring); border-radius:4px; background:var(--plane); padding:10px 12px;
+  position:relative; cursor:pointer}
+.txc .who{font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase}
+.txc .what{font-size:.9rem; margin-top:.15rem; color:var(--ink-2)}
+.txc .amt{font-family:var(--mono); font-size:.8rem; margin-top:.3rem; color:var(--ink-1)}
+.txc .bar{position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:4px 0 0 4px}
+.txc[aria-pressed=true]{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent)}
+.txc.done{background:var(--surface-1)}
+.pool{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px}
+
+/* ---------- ordering ---------- */
+.ordgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start}
+.verdict{border-radius:4px; padding:10px 14px; font-size:.9rem; border:1px solid; margin-top:12px; background:var(--plane)}
+.verdict.ok{color:var(--good); border-color:var(--good)}
+.verdict.bad{color:var(--critical); border-color:var(--critical)}
+.verdict.idle{color:var(--ink-2); border-color:var(--ring)}
+.verdict b{display:block}
+.verdict span{color:var(--ink-2)}
+
+/* ---------- competition ---------- */
+.race{display:flex; flex-direction:column; gap:6px; margin-top:8px}
+.race .row{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+.chipx{font-family:var(--mono); font-size:.8rem; border-radius:3px; padding:.2rem .5rem; border:1px solid var(--ring);
+  background:var(--plane); color:var(--ink-1); white-space:nowrap}
+.chipx.fail{opacity:.45; text-decoration:line-through}
+.arrow{font-family:var(--mono); color:var(--ink-muted); font-size:.8rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.hl td{background:var(--surface-1); font-weight:700}
+tr.sub td{font-family:var(--mono); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--ink-muted); font-weight:700; background:var(--surface-1)}
+.flag{font-family:var(--mono); font-size:.72rem; color:var(--critical)}
+
+/* ---------- notes on the numbers ---------- */
+ol.prov{margin:.6rem 0 0; padding-left:1.25rem; font-size:.92rem; color:var(--ink-2)}
+ol.prov li{margin-bottom:.6rem}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid);
+  font-size:.8rem; color:var(--ink-muted); text-align:right}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:72ch}
+.two{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px}
+.katex{font-size:1.05em}
+.katex-display{overflow-x:auto; overflow-y:hidden; padding:2px 0; max-width:100%}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  .tip{transition:none}
+}
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2rem}
+  .calcgrid,.ordgrid,.two{grid-template-columns:1fr}
+  .lane.n3,.lane.n4{grid-template-columns:1fr}
+  .seg{flex-wrap:wrap}
+  .seg button{flex:1 1 auto; border-bottom:1px solid var(--ring)}
+  .controls .ctl{flex:1 1 100%; min-width:0}
+  .pool{grid-template-columns:1fr 1fr 1fr}
+  .ro .v{font-size:1.15rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#taker">Taker attack</a>
+    <a href="#provider">Provider attack</a>
+    <a href="#ordering">Ordering</a>
+    <a href="#revenue">158 days</a>
+    <a href="#competition">Competition</a>
+    <a href="#compare">Compare</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">IEEE S&amp;P 2021</span>
+  <h1>High-Frequency Trading on Decentralized On-Chain Exchanges</h1>
+  <p class="sub">A trader who watches the Ethereum peer-to-peer network can see your exchange order before it is mined, buy just before it and sell just after it. This paper is the first to formalise and quantify these <em>sandwich attacks</em> on automated-market-maker exchanges such as Uniswap.</p>
+  <p class="authors">
+    Liyi Zhou<sup>1</sup>, Kaihua Qin<sup>1</sup>, Christof Ferreira Torres<sup>2</sup>,
+    <span class="me">Duc V. Le</span><sup>3</sup>, Arthur Gervais<sup>1</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Imperial College London, United Kingdom &nbsp;·&nbsp; <sup>2</sup>University of Luxembourg, Luxembourg &nbsp;·&nbsp; <sup>3</sup>Purdue University, United States</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/hft-dex.pdf">Paper (PDF)</a>
+    <a class="btn" href="#cite">BibTeX</a>
+  </div>
+</div></header>
+
+<!-- ============ TILES ============ -->
+<section id="tldr"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What a sandwich is worth</h2>
+  <div class="tiles" style="margin-top:14px">
+    <div class="tile">
+      <div class="k">Average daily revenue</div>
+      <div class="v"><span data-count="3414" data-fmt="int">3,414</span> <small>USD / day</small></div>
+      <p class="d">What a single adversary could have earned on Uniswap, without colluding with any miner.</p>
+      <p class="src">= (440,749.02 + 98,666.15) USD ÷ 158 days: the taker plus provider totals in Table III. The paper states the 3,414 figure without showing this division.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Blocks ordered by gas price</div>
+      <div class="v"><span data-count="78.53" data-fmt="2">78.53</span><small>%</small></div>
+      <p class="d">Of 2,372,084 blocks, 1,862,800 sort transactions purely by gas price. There, paying 1 Wei more or less than the victim places a transaction just before or just after it.</p>
+      <p class="src">Table V; the paper rounds this to 79%.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Profit lost to 10 rival bots</div>
+      <div class="v">&minus;<span data-count="91.5" data-fmt="1">91.5</span><small>%</small></div>
+      <p class="d">Expected profit per attacker falls to 0.08 ETH (12 USD) when ten adversaries counter-bid for the same 20 ETH&nbsp;&rarr;&nbsp;DAI victim pending for 10 s.</p>
+      <p class="src">§VII simulation, 100,000 runs per setting.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>A transparent exchange with a delay is a front-runner's dream</h2>
+  <p class="lede">An automated market maker (AMM) holds two pools of assets, $x$ of asset $X$ and $y$ of asset $Y$, and quotes prices from a fixed formula. Uniswap keeps the product constant, $x \cdot y = k$. A taker who pays in $\delta_x$ moves the pool to</p>
+  <p>$$ (x,y) \xrightarrow{\ \textsf{TransactXForY}(\delta_x)\ } \Big(x+\delta_x,\ \frac{xy}{x+\delta_x-c_x(\cdot)}+c_y(\cdot)\Big) $$</p>
+  <p class="lede">where $c_x, c_y$ are fees (0.3% on Uniswap). Every price is <em>deterministic</em> and every pending order is <em>public</em> in the mempool for seconds before a miner includes it. So an adversary knows exactly how a victim's trade will move the price, and has time to act.</p>
+  <p class="lede">Traders defend themselves with a <strong>slippage limit</strong>: “fill me only if the price is at most 0.5% worse than quoted”. The attack exploits exactly that tolerance. The adversary front-runs just enough to push the price to the edge of the victim's limit, lets the victim trade at the worse price, then back-runs to unwind. The victim's trade still succeeds, only more expensively.</p>
+  <div class="callout"><p style="margin:0">The paper studies two variants. The <strong>liquidity taker</strong> attack is buy, victim, sell. The new <strong>liquidity provider</strong> attack is withdraw liquidity, victim, re-deposit, rebalance. Both are evaluated at Uniswap's pool states at Ethereum block 9,000,000 (25 November 2019). Preliminary results were disclosed to Uniswap on 18 November 2019, which allowed it to tighten trader protections.</p></div>
+  <details class="tbl"><summary>Table I: example price slippages on an AMM DEX</summary>
+    <div class="tscroll"><table>
+      <thead><tr><th></th><th class="num" colspan="2">AMM state 1</th><th class="num" colspan="2">AMM state 2</th></tr></thead>
+      <tbody>
+        <tr><td>Liquidity $X$ ($x$)</td><td class="num" colspan="2">100</td><td class="num" colspan="2">1,000</td></tr>
+        <tr><td>Liquidity $Y$ ($y$)</td><td class="num" colspan="2">10</td><td class="num" colspan="2">100</td></tr>
+        <tr><td>Product ($k = xy$)</td><td class="num" colspan="2">1,000</td><td class="num" colspan="2">100,000</td></tr>
+        <tr><td>Purchase amount X</td><td class="num">1</td><td class="num">10</td><td class="num">1</td><td class="num">10</td></tr>
+        <tr><td>AMM price Y/X</td><td class="num">0.1000</td><td class="num">0.1000</td><td class="num">0.1000</td><td class="num">0.1000</td></tr>
+        <tr><td>$\mathbb{E}[P]$ Y/X</td><td class="num">0.1010</td><td class="num">0.1111</td><td class="num">0.1001</td><td class="num">0.1010</td></tr>
+        <tr><td>Expected slippage</td><td class="num">0.0010</td><td class="num">0.0111</td><td class="num">0.0001</td><td class="num">0.0010</td></tr>
+        <tr><td>Slippage rate</td><td class="num">1.01%</td><td class="num">11.11%</td><td class="num">0.10%</td><td class="num">1.01%</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</div></section>
+
+<!-- ============ TAKER ============ -->
+<section id="taker"><div class="wrap">
+  <p class="eyebrow">Interactive · attack 1</p>
+  <h2>Sandwich a trade: the liquidity-taker attack</h2>
+  <p class="lede">A victim sells ETH for a token. Pick one of the five largest Uniswap markets, a trade size and the victim's slippage tolerance. The adversary front-runs with the largest trade that still leaves the victim's order inside its limit, then sells the tokens back.</p>
+
+  <div class="controls">
+    <div class="ctl"><span class="lbl">Market (pool at block 9M)</span><div class="seg" id="tkMarket"></div></div>
+    <div class="ctl"><span class="lbl">Victim's unexpected-slippage limit</span><div class="seg" id="tkSlip"></div></div>
+    <div class="ctl"><span class="lbl">Adversary's gas cost (both txs)</span><div class="seg" id="tkFee"></div></div>
+    <div class="ctl grow"><label for="tkV">Victim sells <span class="val" id="tkVv">40</span> ETH</label>
+      <input type="range" id="tkV" min="1" max="200" step="1" value="40"></div>
+  </div>
+
+  <div class="calcgrid">
+    <div class="chart">
+      <p class="ctitle">Adversary's revenue vs the victim's trade size</p>
+      <svg id="tkChart" role="img" aria-label="Adversary revenue as a function of victim trade size"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s2)"></span>Revenue, before gas</li>
+        <li><span class="swatch dash"></span>Break-even (gas cost)</li>
+      </ul>
+      <details class="tbl"><summary>Table view</summary><div class="tscroll"><table id="tkTable"></table></div></details>
+    </div>
+    <div class="readout">
+      <div class="ro"><div class="k">Front-run $T_{A1}$</div><div class="v" id="tkA1">–</div><div class="d" id="tkA1d"></div></div>
+      <div class="ro"><div class="k">Victim $T_V$ receives</div><div class="v" id="tkVo">–</div><div class="d" id="tkVod"></div></div>
+      <div class="ro"><div class="k">Back-run $T_{A2}$</div><div class="v" id="tkA2">–</div><div class="d" id="tkA2d"></div></div>
+      <div class="ro hl"><div class="k">Profit after gas</div><div class="v" id="tkP">–</div><div class="d" id="tkPd"></div></div>
+      <div class="ro"><div class="k">Smallest profitable victim</div><div class="v" id="tkMin">–</div><div class="d">for this market, limit and gas cost</div></div>
+    </div>
+  </div>
+  <div class="check" id="tkCheck"></div>
+
+  <div class="lanewrap">
+    <h3>Walk the block</h3>
+    <div class="playrow"><button class="btn" id="tkPlay">&#9654; Play the block</button><span class="note" id="tkStepNote">Pool before the attack.</span></div>
+    <div class="lane n3" id="tkLane"></div>
+    <div class="pool" id="tkPool"></div>
+  </div>
+  <p class="note" style="margin-top:16px">Recomputed in your browser from the paper's constant-product model (0.3% fee, pool reserves at block 9M from §IV-A). At the default settings it reproduces the Fig. 5 example exactly, and across markets it reproduces all 15 minimum-victim points of Fig. 7. The model is continuous; the mainnet bot also searched over Uniswap's integer rounding (§V). Dollar values use the paper's rate of 1 ETH = 148.97 USD.</p>
+</div></section>
+
+<!-- ============ PROVIDER ============ -->
+<section id="provider"><div class="wrap">
+  <p class="eyebrow">Interactive · attack 2 (new in this paper)</p>
+  <h2>Pull the rug, then put it back: the liquidity-provider attack</h2>
+  <p class="lede">A liquidity provider can hurt a victim without trading at all. By <strong>withdrawing</strong> a share $L$ of the pool just before the victim buys ETH, it thins the market so the victim's order moves the price further. Afterwards it <strong>re-deposits</strong> the same share and <strong>rebalances</strong> with one swap. The cost is the 0.3% commission its share would have earned on the victim's trade.</p>
+
+  <div class="controls">
+    <div class="ctl"><span class="lbl">Market (pool at block 9M)</span><div class="seg" id="pvMarket"></div></div>
+    <div class="ctl"><span class="lbl">Victim's unexpected-slippage limit</span><div class="seg" id="pvSlip"></div></div>
+    <div class="ctl grow"><label for="pvV">Victim buys <span class="val" id="pvVv">100</span> ETH with tokens</label>
+      <input type="range" id="pvV" min="1" max="200" step="1" value="100"></div>
+  </div>
+
+  <div class="calcgrid">
+    <div class="chart">
+      <p class="ctitle">Provider's revenue and forgone commission vs the victim's trade size</p>
+      <svg id="pvChart" role="img" aria-label="Provider revenue and forgone commission as a function of victim trade size"></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s3)"></span>Attack revenue, before gas</li>
+        <li><span class="swatch" style="background:var(--s4)"></span>Commission forgone (passive LP)</li>
+        <li><span class="swatch dash"></span>0.01 ETH gas</li>
+      </ul>
+      <details class="tbl"><summary>Table view</summary><div class="tscroll"><table id="pvTable"></table></div></details>
+    </div>
+    <div class="readout">
+      <div class="ro"><div class="k">Withdraw before $T_V$</div><div class="v" id="pvL">–</div><div class="d" id="pvLd"></div></div>
+      <div class="ro"><div class="k">Victim pays</div><div class="v" id="pvPay">–</div><div class="d" id="pvPayd"></div></div>
+      <div class="ro hl"><div class="k">Attack revenue</div><div class="v" id="pvRev">–</div><div class="d" id="pvRevd"></div></div>
+      <div class="ro"><div class="k">A passive LP with the same share earns</div><div class="v" id="pvPas">–</div><div class="d" id="pvPasd"></div></div>
+      <div class="ro"><div class="k">Revenue turns positive at</div><div class="v" id="pvMin">–</div><div class="d" id="pvMind"></div></div>
+    </div>
+  </div>
+  <div class="check" id="pvCheck"></div>
+
+  <div class="lanewrap">
+    <h3>Walk the block</h3>
+    <div class="playrow"><button class="btn" id="pvPlay">&#9654; Play the block</button><span class="note" id="pvStepNote">Pool before the attack.</span></div>
+    <div class="lane n4" id="pvLane"></div>
+    <div class="pool" id="pvPool"></div>
+  </div>
+  <p class="note" style="margin-top:16px">Derived for this page from the paper's appendix equations: withdraw $L$, victim buys an exact amount of ETH, re-deposit to restore share $L$, then one swap. At the default settings it reproduces the paper's 100&nbsp;ETH example (26.58%, 0.28&nbsp;ETH vs 0.08&nbsp;ETH passive) and its 60&nbsp;ETH example (37.76%, 0.07&nbsp;ETH after 0.01&nbsp;ETH gas). For minimum victim sizes, see note 6 under <a href="#notes">Notes on the numbers</a>.</p>
+</div></section>
+
+<!-- ============ ORDERING ============ -->
+<section id="ordering"><div class="wrap">
+  <p class="eyebrow">Interactive · positioning</p>
+  <h2>Can you land in the sandwich?</h2>
+  <p class="lede">The attack works only if the miner places $T_{A1}$ directly before the victim and $T_{A2}$ directly after. The adversary does not collude with miners. It prices $T_{A1}$ at the victim's gas price $+1$ Wei and $T_{A2}$ at $-1$ Wei, then relies on the miner's ordering policy. The authors classified every block from Uniswap's launch (block 6,627,917) to block 9M: 388 days.</p>
+  <div class="ordgrid">
+    <div class="chart">
+      <div class="controls" style="margin-bottom:10px">
+        <div class="ctl"><span class="lbl">Miner's ordering policy</span><div class="seg" id="ordPol"></div></div>
+      </div>
+      <p class="ctitle">A block, top = executed first (fees shown relative to the victim's)</p>
+      <svg id="ordBlock" role="img" aria-label="Transactions in a block under the chosen ordering policy"></svg>
+      <div class="verdict idle" id="ordVerdict"></div>
+    </div>
+    <div class="chart">
+      <p class="ctitle">Share of the 2,372,084 blocks by ordering policy (Table V)</p>
+      <svg id="ordBars" role="img" aria-label="Share of blocks per ordering policy"></svg>
+      <details class="tbl"><summary>Table view</summary><div class="tscroll"><table>
+        <thead><tr><th>Strategy</th><th class="num">Blocks</th><th class="num">Ratio</th></tr></thead>
+        <tbody>
+          <tr><td>Empty block</td><td class="num">55,545</td><td class="num">0.0234</td></tr>
+          <tr><td>Order per gas price</td><td class="num">1,862,800</td><td class="num">0.7853</td></tr>
+          <tr><td>Order per Parity default</td><td class="num">384,150</td><td class="num">0.1620</td></tr>
+          <tr><td>Unknown ordering</td><td class="num">69,589</td><td class="num">0.0293</td></tr>
+          <tr class="hl"><td>Total</td><td class="num">2,372,084</td><td class="num">1.0000</td></tr>
+        </tbody></table></div></details>
+      <p class="note" style="margin-top:12px">Parity-default blocks are a lower bound: a Parity miner with no local transactions looks like pure gas-price ordering. When two transactions pay the same gas price, both Geth and Parity fall back to first-in-first-out.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ REVENUE ============ -->
+<section id="revenue"><div class="wrap">
+  <p class="eyebrow">Interactive · missed revenue</p>
+  <h2>158 days of Uniswap, replayed</h2>
+  <p class="lede">For the 79 exchanges listed in the Uniswap UI (§V-C and Table III; §V's setup paragraph says 78, see note 11), the authors replayed every transaction between blocks 8M and 9M. For each one they asked whether a sandwich would have beaten a 0.01 ETH break-even cost. Out of 105,161 trades, 7.4% were profitable targets for a taker and 4.2% for a provider.</p>
+  <div class="controls">
+    <div class="ctl"><span class="lbl">Measure</span><div class="seg" id="revMetric"></div></div>
+  </div>
+  <div class="chart">
+    <p class="ctitle" id="revTitle"></p>
+    <svg id="revChart" role="img" aria-label="Estimated adversarial revenue by trade direction"></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s2)"></span>Liquidity taker attacks taker</li>
+      <li><span class="swatch" style="background:var(--s3)"></span>Liquidity provider attacks taker</li>
+    </ul>
+    <details class="tbl"><summary>Table view (Table III)</summary><div class="tscroll"><table>
+      <thead><tr><th></th><th class="num">Profitable / total txs</th><th class="num">Revenue (ETH)</th><th class="num">Revenue (USD)</th></tr></thead>
+      <tbody>
+        <tr class="sub"><td colspan="4">Liquidity taker attacks taker</td></tr>
+        <tr><td>ETH &rarr; Token</td><td class="num">878 / 25,204</td><td class="num">98.15</td><td class="num">14,621.41</td></tr>
+        <tr><td>Token &rarr; ETH</td><td class="num">5,657 / 602,85<span class="flag"> *</span></td><td class="num">2,643.84</td><td class="num">393,852.46</td></tr>
+        <tr><td>Token &rarr; Token</td><td class="num">1,258 / 196,72<span class="flag"> *</span></td><td class="num">216.66</td><td class="num">32,275.16</td></tr>
+        <tr class="hl"><td>Total</td><td class="num">7,793 / 105,161</td><td class="num">2,958.64</td><td class="num">440,749.02</td></tr>
+        <tr class="sub"><td colspan="4">Liquidity provider attacks taker</td></tr>
+        <tr><td>ETH &rarr; Token</td><td class="num">444 / 25,204</td><td class="num">52.55</td><td class="num">7,829.05</td></tr>
+        <tr><td>Token &rarr; ETH</td><td class="num">3,254 / 60,285</td><td class="num">520.61</td><td class="num">77,555.62</td></tr>
+        <tr><td>Token &rarr; Token</td><td class="num">721 / 19,672</td><td class="num">89.16</td><td class="num">13,281.49</td></tr>
+        <tr class="hl"><td>Total</td><td class="num">4,419 / 105,161</td><td class="num">662.32</td><td class="num">98,666.15</td></tr>
+      </tbody></table></div>
+      <p class="note">* Printed this way in the paper. The provider rows and the totals (25,204 + 60,285 + 19,672 = 105,161) show these should read 60,285 and 19,672; the chart uses those values.</p>
+    </details>
+  </div>
+  <p class="note" style="margin-top:12px">Transactions were crawled from a full archive Geth node. Most takers traded with about 1% maximum unexpected slippage (the Uniswap default at the time); the estimated averages were 0.58% expected and 1.16% unexpected slippage (Fig. 10).</p>
+</div></section>
+
+<!-- ============ COMPETITION ============ -->
+<section id="competition"><div class="wrap">
+  <p class="eyebrow">Interactive · many adversaries</p>
+  <h2>When the bots compete</h2>
+  <p class="lede">With several attackers watching the same victim, whoever gets their front-run $T_{A1}$ mined first wins. The loser's front-run fails the victim's slippage check. Each bot follows the <em>reactive counter-bidding</em> strategy: when it sees a rival bid, it re-issues with a 10% higher gas price (Geth's replacement bump). The authors simulated this 100,000 times per setting on the Uniswap DAI market at block 9M, with the victim's slippage fixed at 0.5%.</p>
+  <div class="two">
+    <div class="chart">
+      <div class="controls" style="margin-bottom:10px">
+        <div class="ctl"><span class="lbl">Competing adversaries</span><div class="seg" id="cmpN"></div></div>
+      </div>
+      <p class="ctitle">Victim trades 20 ETH &rarr; DAI; pending 10 s before it is mined</p>
+      <svg id="cmpChart" role="img" aria-label="Expected profit remaining per attacker and break-even pending time"></svg>
+      <details class="tbl"><summary>Table view</summary><div class="tscroll"><table>
+        <thead><tr><th class="num">Adversaries</th><th class="num">Profit reduction</th><th class="num">Expected profit / attacker</th><th class="num">Unprofitable after pending</th></tr></thead>
+        <tbody>
+          <tr><td class="num">2</td><td class="num">51.0%</td><td class="num">0.45 ETH (67 USD)</td><td class="num">27.7 s</td></tr>
+          <tr><td class="num">5</td><td class="num">81.4%</td><td class="num">0.17 ETH (25 USD)</td><td class="num">20.3 s</td></tr>
+          <tr><td class="num">10</td><td class="num">91.5%</td><td class="num">0.08 ETH (12 USD)</td><td class="num">16.3 s</td></tr>
+        </tbody></table></div></details>
+    </div>
+    <div class="chart">
+      <p class="ctitle">Who wins a two-bot race? (Table VI)</p>
+      <div class="seg" id="raceSel" style="margin-bottom:10px"></div>
+      <div class="race" id="race"></div>
+      <div class="verdict idle" id="raceVerdict"></div>
+      <p class="note" style="margin-top:12px">If a second bot is irrational and ignores the slippage check, the victim's trade fails and <em>both</em> front-runs fail, so both lose their fees.</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">Simulation inputs from the paper: transaction size 426.27 ± 68.94 bytes; victim gas price 8.76 ± 61.18 GWei; victim pending time uniform on 0–30 s (block interval 13.5 ± 0.12 s); gas used 85,488 ± 34,782; latency and bandwidth interpolated from prior measurements (Table VII). The minimum profitable victim input is 14.75 ETH (2,197.30 USD) for a single taker adversary and 27.8 ETH (4,141.37 USD) for a single provider adversary.</p>
+</div></section>
+
+<!-- ============ COMPARE ============ -->
+<section id="compare"><div class="wrap">
+  <p class="eyebrow">Side by side</p>
+  <h2>Two ways to make a sandwich</h2>
+  <div class="tscroll"><table>
+    <thead><tr><th></th><th>Liquidity taker attacks taker</th><th>Liquidity provider attacks taker</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Transactions</strong></td><td>2: buy before, sell after</td><td>3: remove liquidity, add liquidity, rebalancing swap</td></tr>
+      <tr><td><strong>How the victim is hurt</strong></td><td>The price is pushed toward the victim's slippage limit</td><td>The pool is thinned, so the victim's own trade moves the price further</td></tr>
+      <tr><td><strong>Cost beyond gas</strong></td><td>Two AMM fees on its own trades</td><td>Forgoes the commission its share would earn on the victim's trade</td></tr>
+      <tr><td><strong>Smallest profitable victim, ETH/SAI, 0.5%</strong></td><td>24.26 ETH (Fig. 7)</td><td>43.93 ETH (Fig. 9)</td></tr>
+      <tr><td><strong>Mainnet runs (ETH/VERI)</strong></td><td>11/20 full, 8/20 partial, 1/20 failed</td><td>20/20 full</td></tr>
+      <tr><td><strong>Profitable targets, blocks 8M–9M</strong></td><td>7,793 of 105,161 (7.4%)</td><td>4,419 of 105,161 (4.2%)</td></tr>
+      <tr><td><strong>Estimated revenue, 158 days</strong></td><td>2,958.64 ETH · 440,749.02 USD</td><td>662.32 ETH · 98,666.15 USD</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout" style="margin-top:22px"><p style="margin:0"><strong>Why this is hard to fix.</strong> Set the default slippage limit low and trades fail under high transaction volume, so the DEX does not scale. Set it high and adversaries profit. Cryptographic defences such as commit-reveal or submarine commitments add rounds of interaction or trusted off-chain parts (Appendix C).</p></div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured</p>
+  <h2>Results</h2>
+
+  <h3 style="margin-top:12px">Live attacks on Ethereum mainnet (Table II)</h3>
+  <p class="lede">The authors ran a modified Parity client (mempool raised from 1,024 to 2,048 transactions) on AWS in Ireland, with a Python bot subscribed to pending transactions. The only victims were their own transactions, sent through the Uniswap UI and MetaMask to the smallest-liquidity market in the UI: ETH/VERI (0.01 ETH and 0.07 VERI, 3.50 USD in total).</p>
+  <div class="tscroll"><table>
+    <thead><tr><th></th><th class="num">Taker · mean</th><th class="num">Taker · std</th><th class="num">Provider · mean</th><th class="num">Provider · std</th></tr></thead>
+    <tbody>
+      <tr><td>$T_V$ broadcast duration</td><td class="num">0.45 s</td><td class="num">0.27</td><td class="num">0.36 s</td><td class="num">0.29</td></tr>
+      <tr><td>A find-strategy duration</td><td class="num">0.03 s</td><td class="num">0.00</td><td class="num">0.03 s</td><td class="num">0.00</td></tr>
+      <tr><td>A execute-strategy duration</td><td class="num">0.16 s</td><td class="num">0.60</td><td class="num">0.04 s</td><td class="num">0.00</td></tr>
+      <tr><td>$T_V$ duration in mempool</td><td class="num">35.84 s</td><td class="num">33.31</td><td class="num">23.09 s</td><td class="num">10.52</td></tr>
+      <tr><td>$T_{A1}$ duration in mempool</td><td class="num">35.88 s</td><td class="num">33.19</td><td class="num">23.03 s</td><td class="num">10.52</td></tr>
+      <tr><td>$T_{A2}$ duration in mempool</td><td class="num">48.87 s</td><td class="num">51.25</td><td class="num">23.03 s</td><td class="num">10.52</td></tr>
+      <tr><td>$T_{A3}$ duration in mempool</td><td class="num">N/A</td><td class="num">N/A</td><td class="num">23.03 s</td><td class="num">10.52</td></tr>
+      <tr><td>A1 block relative position</td><td class="num">0.05</td><td class="num">0.22</td><td class="num">0.00</td><td class="num">0.00</td></tr>
+      <tr><td>A1 index relative position</td><td class="num">&minus;10.42</td><td class="num">10.26</td><td class="num">&minus;2.95</td><td class="num">2.34</td></tr>
+      <tr><td>A2 block relative position</td><td class="num">0.70</td><td class="num">0.92</td><td class="num">0.00</td><td class="num">0.00</td></tr>
+      <tr><td>A2 index relative position</td><td class="num">5.45</td><td class="num">6.47</td><td class="num">4.50</td><td class="num">4.90</td></tr>
+      <tr><td>A3 block relative position</td><td class="num">N/A</td><td class="num">N/A</td><td class="num">0.00</td><td class="num">0.00</td></tr>
+      <tr><td>A3 index relative position</td><td class="num">N/A</td><td class="num">N/A</td><td class="num">5.50</td><td class="num">4.90</td></tr>
+      <tr class="hl"><td>Success</td><td class="num" colspan="2">11/20</td><td class="num" colspan="2">20/20</td></tr>
+      <tr><td>Partial success</td><td class="num" colspan="2">8/20</td><td class="num" colspan="2">0/20</td></tr>
+      <tr><td>Failure</td><td class="num" colspan="2">1/20</td><td class="num" colspan="2">0/20</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Victim: 0.001 ETH at 5 GWei (taker runs), 0.002 ETH at 2 GWei (provider runs). Clock difference between adversary and victim: 8.781 ms ± 6.189 ms. “Partial” means the front- and back-runs both succeeded but $T_{A2}$ was mined in a later block than $T_V$. The one failure had $T_V$ in the mempool for only 1.677 s.</p>
+
+  <h3 style="margin-top:28px">Top 10 miners by blocks mined, blocks 6,627,917 to 9M (Table IV)</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th>Miner</th><th class="num">Empty</th><th class="num">Gas price</th><th class="num">Parity default</th><th class="num">Unknown</th><th class="num">Total</th></tr></thead>
+    <tbody id="minerRows"></tbody>
+  </table></div>
+  <p class="note">Miners seem to switch among strategies. Four of the ten always follow a known strategy, and <span class="mono">0xb293…0347</span> is the only one that mined no empty blocks.</p>
+
+  <h3 style="margin-top:28px">Gas prices, 189,951,899 transactions over the same 388 days</h3>
+  <p class="lede">Mean 17.2 ± 10,520.1 GWei; median 10 GWei. The most common price, 20 GWei, was used by 23,759,990 transactions (12.5%).</p>
+
+  <h3 id="notes" style="margin-top:28px">Notes on the numbers</h3>
+  <p class="lede">Everything on this page comes from the paper's source. Where the paper disagrees with itself, or where our recomputation departs from it, both values are shown here rather than silently reconciled.</p>
+  <ol class="prov">
+    <li><strong>ETH/SAI pool size.</strong> §IV-A first gives the pool as 7,377.53 ETH and <em>521,468.62</em> SAI, then as 7,377.53 ETH and <em>1,099,040.91</em> SAI. Only the latter reproduces Fig. 5 (2,754.32 SAI for 18.59 ETH) and the stated rate of 148.97 USD per ETH, so the calculators use it.</li>
+    <li><strong>Taker success rate.</strong> §V-A says the attack succeeded in “19 out of 20” attempts; Table II counts 11 full and 8 partial successes. The two agree only if partial successes count.</li>
+    <li><strong>Provider mempool time.</strong> §V-B says $T_V$ stayed in the mempool “on average less than 10 seconds”; Table II reports a mean of 23.09 s.</li>
+    <li><strong>Table III denominators.</strong> Two taker rows print 602,85 and 196,72. The provider rows and the column total show these are 60,285 and 19,672.</li>
+    <li><strong>ETH/USD conversions.</strong> 0.01 ETH is given as 1.97 USD and 0.001 ETH as 0.2 USD. At the paper's own 148.97 USD per ETH these would be 1.49 and 0.15 USD.</li>
+    <li><strong>Provider minimum victim.</strong> The Fig. 9 caption says “adversary break even at 0.01 ETH tx fees”, yet its 43.93 ETH (SAI), and the appendix's 27.8 ETH (DAI), match where the model's revenue first turns <em>positive</em> (43.85 and 27.70 ETH). At a 0.01 ETH cost the model gives 45.84 and 29.70 ETH. Fig. 13's curves also begin where revenue turns positive. The model is real-valued, so the token's number of decimal places cannot affect it. The paper's own computation is sensitive to decimals: Fig. 9 reports that 17 instead of 18 decimals moves the SAI minimum from 43.93 to 44.54 ETH. The remaining ~0.1 ETH gap is therefore something this model cannot reproduce.</li>
+    <li><strong>Simulation scale.</strong> §VII reports 0.45 ETH expected profit <em>per attacker</em> with two attackers on a 20 ETH &rarr; DAI victim at 0.5% slippage, and Fig. 11's colour bar reaches 3 ETH. The §IV model gives a single attacker 0.030 ETH revenue for that same trade. The paper does not explain the gap, so the §VII numbers are shown as stated and not mixed with the calculators.</li>
+    <li><strong>Taker minimum on DAI.</strong> §VII gives 14.75 ETH; Fig. 7 gives about 16.07 ETH at 0.5%. §VII uses simulated gas costs rather than a flat 0.01 ETH, so these need not agree.</li>
+    <li><strong>Fig. 13, middle panel.</strong> The axis is labelled in percent (0.10%–0.60%), but the values are fractions of the pool (0.2658 = 26.58%, as stated in §IV-B).</li>
+    <li><strong>Congestion threshold.</strong> The introduction says break-even gets harder once the victim waits longer than the average block interval (13.5 s); §VII says more than 15 s.</li>
+    <li><strong>Number of exchanges.</strong> §V's experimental setup mentions “the 78 Uniswap exchanges on the Uniswap UI as of block 9M”; §V-C and the Table III caption use 79 exchanges.</li>
+  </ol>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{zhou2021high,
+  title     = {High-Frequency Trading on Decentralized On-Chain Exchanges},
+  author    = {Zhou, Liyi and Qin, Kaihua and Ferreira Torres, Christof and
+               Le, Duc V. and Gervais, Arthur},
+  booktitle = {IEEE Symposium on Security and Privacy (S\&amp;P)},
+  year      = {2021}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px">The linked PDF is the arXiv version, arXiv:2009.14021v1.</p>
+  <p class="note"><strong>Code and data.</strong> The paper contains no code or data availability statement and points to no public repository, so this page links none. The Uniswap figures come from the authors' crawl of a full archive Geth node; the mainnet experiments attacked only the authors' own transactions.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">High-Frequency Trading on Decentralized On-Chain Exchanges · IEEE S&amp;P 2021 · Imperial College London, University of Luxembourg, Purdue University.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+/* T_A1 -> T<sub>A1</sub> in HTML; tspans in SVG */
+function sub(str){ return str.replace(/T_([A-Z][A-Z0-9]*)/g, 'T<sub>$1</sub>'); }
+function subText(t, str){
+  str.split(/(T_[A-Z][A-Z0-9]*)/).forEach(function(part){
+    if (!part) return;
+    if (/^T_/.test(part)){
+      t.appendChild(el('tspan', {}, 'T'));
+      t.appendChild(el('tspan', { 'baseline-shift':'sub', 'font-size':'75%' }, part.slice(2)));
+    } else t.appendChild(el('tspan', {}, part));
+  });
+  return t;
+}
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+
+/* ---------- motion: every animation goes through tween() ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return { cancel:function(){} }; }
+  var t0 = null, finished = false, cancelled = false;
+  function finish(){ if (finished || cancelled) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished || cancelled) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* force-settle if requestAnimationFrame is starved (throttled tab) */
+  setTimeout(finish, ms + 150);
+  return { cancel:function(){ cancelled = true; } };
+}
+function countTo(node, from, to, render, ms){
+  return tween(ms || 520, function(p){ node.textContent = render(from + (to - from) * p); });
+}
+
+/* ---------- formatting ---------- */
+function commas(n, dp){
+  return n.toLocaleString('en-US', { minimumFractionDigits:dp, maximumFractionDigits:dp });
+}
+function fE(v){ var a = Math.abs(v); return a >= 1 ? commas(v, 2) : v.toFixed(4); }
+function fT(v){ return commas(v, 2); }
+var ETHUSD = 148.97;
+function usd(v){ return commas(v * ETHUSD, 2) + ' USD'; }
+
+/* ---------- tooltip ---------- */
+var tip = $('tip');
+function showTip(evt, html){
+  tip.innerHTML = html; tip.style.opacity = 1;
+  var r = tip.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip(){ tip.style.opacity = 0; }
+
+/* ---------- segmented controls ---------- */
+function seg(id, items, initial, onPick){
+  var box = $(id), state = { v:initial };
+  items.forEach(function(it){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = it.label; b.setAttribute('aria-pressed', it.v === initial);
+    b.addEventListener('click', function(){
+      if (state.v === it.v) return;
+      state.v = it.v;
+      Array.prototype.forEach.call(box.children, function(c){ c.setAttribute('aria-pressed', c === b); });
+      onPick(it.v);
+    });
+    box.appendChild(b);
+  });
+  return state;
+}
+
+/* =======================================================================
+   The paper's constant-product model (Uniswap v1, 0.3% fee)
+   ===================================================================== */
+var MARKETS = {
+  MKR: { x:9759.83, y:2830.27 },
+  SAI: { x:7377.53, y:1099040.91 },
+  WETH:{ x:5642.08, y:5632.25 },
+  SNX: { x:5262.53, y:572512.14 },
+  DAI: { x:4660.75, y:693706.47 }
+};
+var MKEYS = ['MKR','SAI','WETH','SNX','DAI'];
+var F = 0.997;
+function outGiven(i, Ri, Ro){ return i * F * Ro / (Ri + i * F); }          /* exact input  */
+function inGiven(o, Ri, Ro){ return Ri * o / ((Ro - o) * F); }            /* exact output */
+
+/* attack 1: victim sells v ETH for tokens; adversary front-runs with the largest a that keeps the victim inside its limit */
+function taker(v, m, s){
+  var x = m.x, y = m.y, exp = outGiven(v, x, y), minOut = exp * (1 - s), lo = 0, hi = x * 10;
+  for (var i = 0; i < 90; i++){
+    var a = (lo + hi) / 2, ao = outGiven(a, x, y);
+    if (outGiven(v, x + a, y - ao) >= minOut) lo = a; else hi = a;
+  }
+  var A = lo, AO = outGiven(A, x, y), VO = outGiven(v, x + A, y - AO);
+  var x2 = x + A + v, y2 = y - AO - VO, back = outGiven(AO, y2, x2);
+  return { a:A, ao:AO, exp:exp, minOut:minOut, vo:VO, back:back, rev:back - A,
+    states:[[x, y], [x + A, y - AO], [x2, y2], [x2 - back, y2 + AO]] };
+}
+/* attack 2: victim buys exactly d ETH with tokens; provider withdraws the largest share L the limit allows */
+function provider(d, m, s){
+  var x = m.x, y = m.y, exp = inGiven(d, y, x), cap = exp * (1 + s), lo = 0, hi = 1 - d / x - 1e-9;
+  for (var i = 0; i < 90; i++){
+    var L = (lo + hi) / 2;
+    if (inGiven(d, (1 - L) * y, (1 - L) * x) <= cap) lo = L; else hi = L;
+  }
+  var Lf = lo, yin = inGiven(d, (1 - Lf) * y, (1 - Lf) * x);
+  var x1 = (1 - Lf) * x, y1 = (1 - Lf) * y, x2 = x1 - d, y2 = y1 + yin;
+  var x3 = x2 / (1 - Lf), y3 = y2 / (1 - Lf);
+  var gain = d * Lf / (1 - Lf), owed = Lf * yin / (1 - Lf), ethIn = inGiven(owed, x3, y3);
+  return { L:Lf, exp:exp, cap:cap, yin:yin, rem:[Lf * x, Lf * y], dep:[Lf * x2 / (1 - Lf), Lf * y2 / (1 - Lf)],
+    owed:owed, ethIn:ethIn, rev:gain - ethIn, forgone:Lf * d * 0.003 / F,
+    states:[[x, y], [x1, y1], [x2, y2], [x3, y3], [x3 + ethIn, y3 - owed]] };
+}
+function firstPositive(f){
+  var lo = 0.5, hi = 1000;
+  if (f(lo) > 0) return lo;
+  for (var i = 0; i < 70; i++){ var m = (lo + hi) / 2; if (f(m) > 0) hi = m; else lo = m; }
+  return hi;
+}
+
+/* =======================================================================
+   Shared line chart (single y-axis, ETH)
+   ===================================================================== */
+function lineChart(svg, cfg){
+  clear(svg);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 330 : 520, H = narrow ? 240 : 290;
+  var pL = narrow ? 42 : 50, pR = narrow ? 10 : 14, pT = 14, pB = 42;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var fs = narrow ? 11 : 12;
+  var yMin = cfg.yMin, yMax = cfg.yMax;
+  function X(v){ return pL + v / cfg.xMax * (W - pL - pR); }
+  function Y(v){ return pT + (yMax - v) / (yMax - yMin) * (H - pT - pB); }
+  var grid = css('--grid'), axis = css('--axis'), muted = css('--ink-muted'), ink2 = css('--ink-2'), surf = css('--surface-1');
+
+  var ticks = niceTicks(yMin, yMax, narrow ? 4 : 5);
+  ticks.forEach(function(t){
+    svg.appendChild(el('line', { x1:pL, x2:W - pR, y1:Y(t), y2:Y(t), stroke:t === 0 ? axis : grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:pL - 6, y:Y(t) + 3.5, 'text-anchor':'end', 'font-size':fs, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, trimNum(t)));
+  });
+  for (var xv = 0; xv <= cfg.xMax; xv += (narrow ? 50 : 25)){
+    svg.appendChild(el('text', { x:X(xv), y:H - pB + 15, 'text-anchor':'middle', 'font-size':fs, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, xv));
+  }
+  svg.appendChild(el('text', { x:(pL + W - pR) / 2, y:H - 6, 'text-anchor':'middle', 'font-size':fs, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, cfg.xLabel));
+  svg.appendChild(el('text', { x:12, y:(pT + H - pB) / 2, transform:'rotate(-90 12 ' + ((pT + H - pB) / 2) + ')',
+    'text-anchor':'middle', 'font-size':fs, fill:muted, 'font-family':'Ubuntu Mono, monospace' }, 'ETH'));
+
+  if (cfg.hline !== undefined && cfg.hline <= yMax){
+    svg.appendChild(el('line', { x1:pL, x2:W - pR, y1:Y(cfg.hline), y2:Y(cfg.hline), stroke:ink2, 'stroke-width':1.5, 'stroke-dasharray':'5 4' }));
+  }
+  cfg.series.forEach(function(s){
+    var d = s.pts.map(function(p, i){ return (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ' ' + Y(Math.max(yMin, Math.min(yMax, p[1]))).toFixed(1); }).join('');
+    svg.appendChild(el('path', { d:d, fill:'none', stroke:css(s.slot), 'stroke-width':2, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+  });
+  /* marker at the chosen trade size, with a direct label per series */
+  if (cfg.marker !== undefined){
+    var mx = X(cfg.marker);
+    svg.appendChild(el('line', { x1:mx, x2:mx, y1:pT, y2:H - pB, stroke:axis, 'stroke-width':1 }));
+    cfg.series.forEach(function(s, i){
+      var mv = s.at(cfg.marker), my = Y(Math.max(yMin, Math.min(yMax, mv)));
+      svg.appendChild(el('circle', { cx:mx, cy:my, r:5, fill:css(s.slot), stroke:surf, 'stroke-width':2 }));
+      var right = mx < (W - pR) - (narrow ? 90 : 120);
+      svg.appendChild(el('text', { x:right ? mx + 9 : mx - 9, y:my + (i ? 16 : -9), 'text-anchor':right ? 'start' : 'end',
+        'font-size':fs, fill:css('--ink-1'), 'font-weight':700, 'font-family':'Ubuntu Mono, monospace' }, fE(mv) + ' ETH'));
+    });
+  }
+  /* hover crosshair + tooltip; click picks a trade size */
+  var cross = el('line', { x1:0, x2:0, y1:pT, y2:H - pB, stroke:ink2, 'stroke-width':1, opacity:0 });
+  svg.appendChild(cross);
+  var hit = el('rect', { x:pL, y:pT, width:W - pL - pR, height:H - pT - pB, fill:'transparent', style:'cursor:crosshair' });
+  svg.appendChild(hit);
+  function pick(evt){
+    var pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+    var loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    return Math.max(1, Math.min(cfg.xMax, Math.round((loc.x - pL) / (W - pL - pR) * cfg.xMax)));
+  }
+  hit.addEventListener('mousemove', function(evt){
+    var v = pick(evt); cross.setAttribute('x1', X(v)); cross.setAttribute('x2', X(v)); cross.setAttribute('opacity', 0.5);
+    var html = '<b>' + cfg.tipHead(v) + '</b>' + cfg.series.map(function(s){ return s.label + ': ' + fE(s.at(v)) + ' ETH'; }).join('<br>');
+    showTip(evt, html);
+  });
+  hit.addEventListener('mouseleave', function(){ cross.setAttribute('opacity', 0); hideTip(); });
+  hit.addEventListener('click', function(evt){ cfg.onPick(pick(evt)); });
+}
+function niceTicks(lo, hi, n){
+  var span = hi - lo, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  var step = [1, 2, 2.5, 5, 10].map(function(k){ return k * mag; }).filter(function(s){ return s >= raw; })[0];
+  var out = [], t = Math.ceil(lo / step) * step;
+  for (; t <= hi + 1e-12; t += step) out.push(Math.round(t / step) * step);
+  return out;
+}
+function trimNum(t){ return (Math.abs(t) < 1e-12 ? 0 : +t.toPrecision(3)).toString(); }
+function niceMax(v){ var m = Math.pow(10, Math.floor(Math.log10(v))); var k = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].filter(function(k){ return k * m >= v; })[0]; return k * m; }
+
+/* =======================================================================
+   Walk-the-block lanes
+   ===================================================================== */
+function makeLane(laneId, poolId, noteId, playId, getSteps){
+  var lane = $(laneId), pool = $(poolId), note = $(noteId), step = 0, timer = null, poolVals = null;
+  pool.innerHTML = '<div class="ro"><div class="k">Pool ETH</div><div class="v" data-p="0">–</div></div>' +
+                   '<div class="ro"><div class="k" data-p="lbl">Pool tokens</div><div class="v" data-p="1">–</div></div>' +
+                   '<div class="ro"><div class="k">Tokens per ETH</div><div class="v" data-p="2">–</div></div>';
+  var cells = [pool.querySelector('[data-p="0"]'), pool.querySelector('[data-p="1"]'), pool.querySelector('[data-p="2"]')];
+  function render(animate){
+    var S = getSteps();
+    lane.innerHTML = '';
+    S.txs.forEach(function(t, i){
+      var c = document.createElement('div');
+      c.className = 'txc' + (i < step ? ' done' : ''); c.setAttribute('role', 'button'); c.tabIndex = 0;
+      c.setAttribute('aria-pressed', i === step - 1);
+      c.innerHTML = '<span class="bar" style="background:var(' + t.slot + ')"></span><div class="who" style="color:var(--ink-muted)">' + (i + 1) + '. ' + sub(t.who) +
+        '</div><div class="what">' + t.what + '</div><div class="amt">' + t.amt + '</div>';
+      c.addEventListener('click', function(){ stop(); go(i + 1, true); });
+      c.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); stop(); go(i + 1, true); } });
+      lane.appendChild(c);
+    });
+    pool.querySelector('[data-p="lbl"]').textContent = 'Pool ' + S.tok;
+    var st = S.states[step], target = [st[0], st[1], st[1] / st[0]];
+    var from = (animate && poolVals) ? poolVals : target;
+    poolVals = target;
+    tween(animate ? 600 : 0, function(p){
+      cells[0].textContent = fT(from[0] + (target[0] - from[0]) * p);
+      cells[1].textContent = fT(from[1] + (target[1] - from[1]) * p);
+      cells[2].textContent = (from[2] + (target[2] - from[2]) * p).toFixed(4);
+    });
+    note.innerHTML = step === 0 ? 'Pool before the attack.' : sub(S.txs[step - 1].note);
+  }
+  function go(n, animate){ step = n; render(animate); }
+  function stop(){ if (timer){ clearTimeout(timer); timer = null; } }
+  $(playId).addEventListener('click', function(){
+    stop(); var n = getSteps().txs.length;
+    go(0, true);
+    (function next(i){ timer = setTimeout(function(){ go(i, true); if (i < n) next(i + 1); else timer = null; }, REDUCED ? 0 : 900); })(1);
+  });
+  return { refresh:function(){ stop(); render(false); }, reset:function(){ stop(); step = 0; render(false); } };
+}
+
+/* =======================================================================
+   Attack 1: taker calculator
+   ===================================================================== */
+var TK = { m:'SAI', s:0.005, fee:0.01, v:40 }, tkCurve = null, tkPrev = null, tkAnim = null;
+function tkCompute(){
+  var m = MARKETS[TK.m], pts = [];
+  for (var v = 1; v <= 200; v++) pts.push([v, taker(v, m, TK.s).rev]);
+  var min = firstPositive(function(v){ return taker(v, m, TK.s).rev - TK.fee; });
+  return { pts:pts, min:min };
+}
+function tkDraw(fromPts){
+  var pts = tkCurve.pts;
+  function frame(p){
+    var cur = pts.map(function(q, i){ return [q[0], fromPts ? fromPts[i][1] + (q[1] - fromPts[i][1]) * p : q[1]]; });
+    var hi = Math.max.apply(null, cur.map(function(q){ return q[1]; }));
+    var lo = Math.min(0, Math.min.apply(null, cur.map(function(q){ return q[1]; })));
+    lineChart($('tkChart'), {
+      xMax:200, yMin:lo < -0.02 ? -niceMax(-lo) : lo, yMax:niceMax(Math.max(hi, TK.fee * 1.2)),
+      xLabel:'ETH sold by the victim', hline:TK.fee, marker:TK.v,
+      series:[{ label:'Revenue', slot:'--s2', pts:cur, at:function(v){ return cur[Math.round(v) - 1][1]; } }],
+      tipHead:function(v){ return v + ' ETH → ' + TK.m; }, onPick:function(v){ $('tkV').value = v; tkSlider(); }
+    });
+  }
+  if (tkAnim) tkAnim.cancel();
+  tkAnim = tween(fromPts ? 520 : 0, frame);
+}
+function tkReadouts(){
+  var m = MARKETS[TK.m], r = taker(TK.v, m, TK.s), tok = TK.m, prof = r.rev - TK.fee;
+  $('tkVv').textContent = TK.v;
+  $('tkA1').textContent = fE(r.a) + ' ETH';
+  $('tkA1d').textContent = '→ ' + fT(r.ao) + ' ' + tok;
+  $('tkVo').textContent = fT(r.vo) + ' ' + tok;
+  $('tkVod').textContent = 'quoted ' + fT(r.exp) + ' · floor ' + fT(r.minOut) + ' (' + ((1 - r.vo / r.exp) * 100).toFixed(2) + '% less)';
+  $('tkA2').textContent = fE(r.back) + ' ETH';
+  $('tkA2d').textContent = 'sells ' + fT(r.ao) + ' ' + tok + '; revenue ' + fE(r.rev) + ' ETH';
+  $('tkP').textContent = fE(prof) + ' ETH';
+  $('tkPd').textContent = (prof > 0 ? '≈ ' + usd(prof) : 'not profitable at this size');
+  $('tkP').style.color = prof > 0 ? css('--ink-head') : css('--critical');
+  $('tkMin').textContent = fE(tkCurve.min) + ' ETH';
+  /* checks against numbers the paper states */
+  var msg = '';
+  if (TK.m === 'SAI' && TK.s === 0.005){
+    if (TK.v === 40 && TK.fee === 0.01) msg = '<b>Matches the paper (Fig. 5).</b> Front-run 18.59 ETH for 2,754.32 SAI; back-run 2,754.32 SAI for 18.68 ETH; profit 0.08 ETH (11.74 USD) after 0.01 ETH fees.';
+    else if (TK.v === 25) msg = '<b>Matches the paper (§IV-A).</b> Revenue 0.01 ETH (2.03 USD) for a 25 ETH victim.';
+    else if (TK.v === 50) msg = '<b>Matches the paper (§IV-A).</b> Revenue 0.14 ETH (20.71 USD) for a 50 ETH victim.';
+    else if (TK.fee === 0.01) msg = '<b>Matches the paper (Fig. 7).</b> No profit if the victim trades less than 24.26 ETH for SAI.';
+  }
+  $('tkCheck').innerHTML = msg; $('tkCheck').className = 'check' + (msg ? ' on' : '');
+}
+function tkTable(){
+  var m = MARKETS[TK.m], rows = '<thead><tr><th class="num">Victim ETH</th><th class="num">Front-run ETH</th><th class="num">Revenue ETH</th><th class="num">Profit ETH</th></tr></thead><tbody>';
+  [10, 20, 25, 30, 40, 50, 75, 100, 150, 200].forEach(function(v){
+    var r = taker(v, m, TK.s);
+    rows += '<tr><td class="num">' + v + '</td><td class="num">' + fE(r.a) + '</td><td class="num">' + fE(r.rev) + '</td><td class="num">' + fE(r.rev - TK.fee) + '</td></tr>';
+  });
+  $('tkTable').innerHTML = rows + '</tbody>';
+}
+var tkLane = makeLane('tkLane', 'tkPool', 'tkStepNote', 'tkPlay', function(){
+  var r = taker(TK.v, MARKETS[TK.m], TK.s), tok = TK.m;
+  return { tok:tok, states:r.states, txs:[
+    { who:'Adversary · T_A1', slot:'--s2', what:'Front-run: buy ' + tok + ' at +1 Wei gas', amt:fE(r.a) + ' ETH → ' + fT(r.ao) + ' ' + tok,
+      note:'T_A1 raises the ' + tok + ' price just enough that the victim still clears its limit.' },
+    { who:'Victim · T_V', slot:'--s1', what:'Sells ETH for ' + tok, amt:TK.v + ' ETH → ' + fT(r.vo) + ' ' + tok,
+      note:'The victim gets ' + fT(r.exp - r.vo) + ' ' + tok + ' less than quoted, and still passes its slippage check.' },
+    { who:'Adversary · T_A2', slot:'--s2', what:'Back-run: sell at −1 Wei gas', amt:fT(r.ao) + ' ' + tok + ' → ' + fE(r.back) + ' ETH',
+      note:'Selling back into the higher price nets ' + fE(r.rev) + ' ETH before gas.' }
+  ]};
+});
+function tkUpdate(anim){
+  var old = tkCurve ? tkCurve.pts : null;
+  tkCurve = tkCompute(); tkReadouts(); tkTable(); tkLane.refresh();
+  tkDraw(anim ? old : null);
+}
+function tkSlider(){
+  TK.v = +$('tkV').value; tkReadouts(); tkDraw(null); tkLane.refresh();
+}
+
+/* =======================================================================
+   Attack 2: provider calculator
+   ===================================================================== */
+var PV = { m:'SAI', s:0.005, v:100 }, pvCurve = null, pvAnim = null;
+var GAS = 0.01;
+function pvCompute(){
+  var m = MARKETS[PV.m], rev = [], fg = [];
+  for (var v = 1; v <= 200; v++){ var r = provider(v, m, PV.s); rev.push([v, r.rev]); fg.push([v, r.forgone]); }
+  return { rev:rev, fg:fg,
+    min0:firstPositive(function(v){ return provider(v, m, PV.s).rev; }),
+    min1:firstPositive(function(v){ return provider(v, m, PV.s).rev - GAS; }) };
+}
+function pvDraw(old){
+  var c = pvCurve;
+  function lerp(a, b, p){ return a.map(function(q, i){ return [q[0], b ? b[i][1] + (q[1] - b[i][1]) * p : q[1]]; }); }
+  function frame(p){
+    var rev = lerp(c.rev, old && old.rev, p), fg = lerp(c.fg, old && old.fg, p);
+    var hi = Math.max.apply(null, rev.concat(fg).map(function(q){ return q[1]; }));
+    var lo = Math.min(0, Math.min.apply(null, rev.map(function(q){ return q[1]; })));
+    lineChart($('pvChart'), {
+      xMax:200, yMin:lo < -0.02 ? -niceMax(-lo) : lo, yMax:niceMax(Math.max(hi, GAS * 1.2)),
+      xLabel:'ETH bought by the victim', hline:GAS, marker:PV.v,
+      series:[
+        { label:'Revenue', slot:'--s3', pts:rev, at:function(v){ return rev[Math.round(v) - 1][1]; } },
+        { label:'Forgone commission', slot:'--s4', pts:fg, at:function(v){ return fg[Math.round(v) - 1][1]; } }
+      ],
+      tipHead:function(v){ return PV.m + ' → ' + v + ' ETH'; }, onPick:function(v){ $('pvV').value = v; pvSlider(); }
+    });
+  }
+  if (pvAnim) pvAnim.cancel();
+  pvAnim = tween(old ? 520 : 0, frame);
+}
+function pvReadouts(){
+  var r = provider(PV.v, MARKETS[PV.m], PV.s), tok = PV.m;
+  $('pvVv').textContent = PV.v;
+  $('pvL').textContent = (r.L * 100).toFixed(2) + '% of the pool';
+  $('pvLd').textContent = fT(r.rem[0]) + ' ETH + ' + fT(r.rem[1]) + ' ' + tok;
+  $('pvPay').textContent = fT(r.yin) + ' ' + tok;
+  $('pvPayd').textContent = 'quoted ' + fT(r.exp) + ' · limit ' + fT(r.cap) + ' (+' + fT(r.yin - r.exp) + ')';
+  $('pvRev').textContent = fE(r.rev) + ' ETH';
+  $('pvRevd').textContent = r.rev > 0 ? '≈ ' + usd(r.rev) + ' · ' + fE(r.rev - GAS) + ' ETH after 0.01 ETH gas' : 'no revenue at this size';
+  $('pvRev').style.color = r.rev > 0 ? css('--ink-head') : css('--critical');
+  $('pvPas').textContent = fE(r.forgone) + ' ETH';
+  $('pvPasd').textContent = '≈ ' + usd(r.forgone) + ', its 0.3% commission on the victim';
+  $('pvMin').textContent = fE(pvCurve.min0) + ' ETH';
+  $('pvMind').textContent = 'revenue clears 0.01 ETH gas at ' + fE(pvCurve.min1) + ' ETH';
+  var msg = '';
+  if (PV.m === 'SAI' && PV.s === 0.005){
+    if (PV.v === 100) msg = '<b>Matches the paper (§IV-B).</b> Withdraw 26.58% of the pool; the victim pays 15,223.02 SAI instead of 15,147.28; revenue up to 0.28 ETH (41.71 USD), versus 0.08 ETH (11.91 USD) for a passive provider with the same share.';
+    else if (PV.v === 60) msg = '<b>Matches the paper (Fig. 8).</b> Remove 37.76% (2,785.97 ETH and 415,030.47 SAI), re-deposit 2,749.57 ETH and 420,542.21 SAI; profit 0.07 ETH (10.55 USD) after 0.01 ETH gas.';
+    else msg = '<b>Paper (Fig. 9):</b> no profit below 43.93 ETH. The model puts the zero-revenue point at ' + fE(pvCurve.min0) + ' ETH (see note 6).';
+  } else if (PV.m === 'DAI' && PV.s === 0.005){
+    msg = '<b>Paper (Appendix B):</b> minimum profitable victim input 27.8 ETH (4,141.37 USD) on DAI. The model puts the zero-revenue point at ' + fE(pvCurve.min0) + ' ETH.';
+  }
+  $('pvCheck').innerHTML = msg; $('pvCheck').className = 'check' + (msg ? ' on' : '');
+}
+function pvTable(){
+  var m = MARKETS[PV.m], rows = '<thead><tr><th class="num">Victim ETH</th><th class="num">Share L</th><th class="num">Revenue ETH</th><th class="num">Forgone ETH</th></tr></thead><tbody>';
+  [30, 40, 50, 60, 75, 100, 125, 150, 175, 200].forEach(function(v){
+    var r = provider(v, m, PV.s);
+    rows += '<tr><td class="num">' + v + '</td><td class="num">' + (r.L * 100).toFixed(2) + '%</td><td class="num">' + fE(r.rev) + '</td><td class="num">' + fE(r.forgone) + '</td></tr>';
+  });
+  $('pvTable').innerHTML = rows + '</tbody>';
+}
+var pvLane = makeLane('pvLane', 'pvPool', 'pvStepNote', 'pvPlay', function(){
+  var r = provider(PV.v, MARKETS[PV.m], PV.s), tok = PV.m;
+  return { tok:tok, states:r.states, txs:[
+    { who:'Adversary · T_A1', slot:'--s3', what:'RemoveLiquidity', amt:(r.L * 100).toFixed(2) + '% · ' + fT(r.rem[0]) + ' ETH',
+      note:'The pool is now ' + (r.L * 100).toFixed(2) + '% thinner, so the victim\'s order will move the price further.' },
+    { who:'Victim · T_V', slot:'--s1', what:'Buys ' + PV.v + ' ETH', amt:'pays ' + fT(r.yin) + ' ' + tok,
+      note:'The victim pays ' + fT(r.yin - r.exp) + ' ' + tok + ' more than quoted, just inside its limit.' },
+    { who:'Adversary · T_A2', slot:'--s3', what:'AddLiquidity', amt:fT(r.dep[0]) + ' ETH + ' + fT(r.dep[1]) + ' ' + tok,
+      note:'Re-depositing restores the ' + (r.L * 100).toFixed(2) + '% share; it takes fewer ETH and more ' + tok + ' than were withdrawn.' },
+    { who:'Adversary · T_A3', slot:'--s3', what:'Rebalance swap', amt:fE(r.ethIn) + ' ETH → ' + fT(r.owed) + ' ' + tok,
+      note:'Buying back the ' + tok + ' it put in leaves ' + fE(r.rev) + ' ETH of revenue.' }
+  ]};
+});
+function pvUpdate(anim){
+  var old = pvCurve; pvCurve = pvCompute(); pvReadouts(); pvTable(); pvLane.refresh(); pvDraw(anim ? old : null);
+}
+function pvSlider(){ PV.v = +$('pvV').value; pvReadouts(); pvDraw(null); pvLane.refresh(); }
+
+/* =======================================================================
+   Ordering: a mock block + Table V bars
+   ===================================================================== */
+var ORD = [
+  { k:'gas',    label:'Gas price',      short:'Gas price',      blocks:1862800, ratio:0.7853 },
+  { k:'parity', label:'Parity default', short:'Parity default', blocks:384150,  ratio:0.1620 },
+  { k:'unk',    label:'Unknown',        short:'Unknown',        blocks:69589,   ratio:0.0293 },
+  { k:'empty',  label:'Empty',          short:'Empty block',    blocks:55545,   ratio:0.0234 }
+];
+var TX = {
+  m: { t:'Miner\'s own (local)', who:'other' },
+  h1:{ t:'Other · higher fee',   who:'other' },
+  h2:{ t:'Other · higher fee',   who:'other' },
+  a1:{ t:'T_A1 · victim + 1 Wei', who:'adv' },
+  v: { t:'T_V · victim\'s fee',  who:'vic' },
+  a2:{ t:'T_A2 · victim − 1 Wei', who:'adv' },
+  l1:{ t:'Other · lower fee',    who:'other' },
+  p: { t:'Penalised (heavy)',    who:'other' }
+};
+var ORDERS = {
+  gas:    ['h1','h2','a1','v','a2','l1','m','p'],
+  parity: ['m','h1','h2','a1','v','a2','l1','p'],
+  unk:    ['l1','a2','h1','v','m','a1','h2','p'],
+  empty:  []
+};
+var ordPos = {}, ordSel = 'gas', ordAnims = [];
+function drawBlock(animate){
+  var svg = $('ordBlock'); clear(svg);
+  var narrow = window.innerWidth < 620, W = narrow ? 340 : 440, rowH = 30, n = 8, H = n * rowH + 8;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var order = ORDERS[ordSel];
+  ordAnims.forEach(function(a){ a.cancel(); }); ordAnims = [];
+  svg.appendChild(el('rect', { x:0.5, y:0.5, width:W - 1, height:H - 1, rx:4, fill:css('--plane'), stroke:css('--ring') }));
+  if (!order.length){
+    svg.appendChild(el('text', { x:W / 2, y:H / 2 + 4, 'text-anchor':'middle', 'font-size':13, fill:css('--ink-muted'), 'font-family':'Ubuntu Mono, monospace' }, 'empty block: no transactions'));
+    ordPos = {};
+  }
+  var groupLabel = ordSel === 'parity' ? { 0:'local', 1:'normal, by gas price', 7:'penalised' } : {};
+  order.forEach(function(key, i){
+    var t = TX[key], y1 = 4 + i * rowH, y0 = (animate && ordPos[key] !== undefined) ? ordPos[key] : y1;
+    var g = el('g', { transform:'translate(0 ' + y0 + ')' });
+    var fill = t.who === 'adv' ? css('--s2') : t.who === 'vic' ? css('--s1') : css('--surface-1');
+    g.appendChild(el('rect', { x:6, y:2, width:W - 12, height:rowH - 6, rx:3, fill:fill, stroke:t.who === 'other' ? css('--ring') : 'none' }));
+    g.appendChild(subText(el('text', { x:16, y:rowH / 2 + 3, 'font-size':narrow ? 11 : 12, fill:t.who === 'other' ? css('--ink-2') : '#ffffff',
+      'font-weight':t.who === 'other' ? 400 : 700, 'font-family':'Ubuntu Mono, monospace' }), (i + 1) + '. ' + t.t));
+    if (groupLabel[i]) g.appendChild(el('text', { x:W - 14, y:rowH / 2 + 3, 'text-anchor':'end', 'font-size':10,
+      fill:t.who === 'other' ? css('--ink-muted') : '#ffffff', 'font-family':'Ubuntu Mono, monospace' }, groupLabel[i]));
+    svg.appendChild(g);
+    if (y0 !== y1) ordAnims.push(tween(560, function(p){ g.setAttribute('transform', 'translate(0 ' + (y0 + (y1 - y0) * p) + ')'); }));
+    else if (animate && ordPos[key] === undefined && !REDUCED){
+      g.setAttribute('opacity', 0);
+      ordAnims.push(tween(400, function(p){ g.setAttribute('opacity', p); }));
+    }
+    ordPos[key] = y1;
+  });
+  var o = ORD.filter(function(q){ return q.k === ordSel; })[0], v = $('ordVerdict');
+  var share = '<span>' + o.label + ' ordering: ' + (o.ratio * 100).toFixed(2) + '% of blocks (' + commas(o.blocks, 0) + ').</span>';
+  if (ordSel === 'gas'){ v.className = 'verdict ok'; v.innerHTML = '<b>&#10003; Sandwich lands.</b>' + share; }
+  else if (ordSel === 'parity'){ v.className = 'verdict ok'; v.innerHTML = '<b>&#10003; Lands: all three sit in the same priority group, sorted by gas price.</b>' + share; }
+  else if (ordSel === 'unk'){ v.className = 'verdict bad'; v.innerHTML = '<b>&#10007; Not guaranteed: this block is not sorted by gas price, so ±1 Wei gives no control over position.</b>' + share; }
+  else { v.className = 'verdict idle'; v.innerHTML = '<b>Nothing mined.</b> The pending transactions wait for a later block.' + share; }
+  drawOrdBars(false);
+}
+function drawOrdBars(enter){
+  var svg = $('ordBars'); clear(svg);
+  var narrow = window.innerWidth < 620, W = narrow ? 340 : 440, pL = narrow ? 100 : 118, pR = narrow ? 76 : 96, rowH = 40, H = ORD.length * rowH + 8;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  ORD.forEach(function(o, i){
+    var y = 6 + i * rowH, bw = o.ratio * (W - pL - pR), sel = o.k === ordSel;
+    svg.appendChild(el('text', { x:pL - 8, y:y + 17, 'text-anchor':'end', 'font-size':narrow ? 11 : 12, fill:css('--ink-1'),
+      'font-weight':sel ? 700 : 400, 'font-family':'Ubuntu Mono, monospace' }, o.short));
+    var r = el('rect', { x:pL, y:y + 4, width:Math.max(bw, 3), height:rowH - 16, rx:4, fill:css('--s1'), opacity:sel ? 1 : 0.45 });
+    svg.appendChild(r);
+    var lbl = el('text', { x:pL + Math.max(bw, 3) + 6, y:y + 17, 'font-size':narrow ? 11 : 12, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace' },
+      (o.ratio * 100).toFixed(2) + '%');
+    svg.appendChild(lbl);
+    var hit = el('rect', { x:0, y:y, width:W, height:rowH, fill:'transparent', style:'cursor:pointer' });
+    hit.addEventListener('mousemove', function(evt){ showTip(evt, '<b>' + o.label + '</b>' + commas(o.blocks, 0) + ' blocks · ratio ' + o.ratio.toFixed(4)); });
+    hit.addEventListener('mouseleave', hideTip);
+    hit.addEventListener('click', function(){ pickOrd(o.k); });
+    svg.appendChild(hit);
+    if (enter && !REDUCED){
+      r.setAttribute('width', 0); lbl.setAttribute('opacity', 0);
+      tween(700, function(p){ r.setAttribute('width', Math.max(bw, 3) * p); lbl.setAttribute('x', pL + Math.max(bw, 3) * p + 6); lbl.setAttribute('opacity', p); });
+    }
+  });
+}
+var ordState;
+function pickOrd(k){
+  ordSel = k; ordState.v = k;
+  Array.prototype.forEach.call($('ordPol').children, function(b, i){ b.setAttribute('aria-pressed', ORD[i].k === k); });
+  drawBlock(true);
+}
+
+/* =======================================================================
+   Table III explorer
+   ===================================================================== */
+var REV = [
+  { dir:'ETH → Token',   t:{ p:878,  n:25204, eth:98.15,   usd:14621.41 },  pv:{ p:444,  n:25204, eth:52.55,  usd:7829.05 } },
+  { dir:'Token → ETH',   t:{ p:5657, n:60285, eth:2643.84, usd:393852.46 }, pv:{ p:3254, n:60285, eth:520.61, usd:77555.62 } },
+  { dir:'Token → Token', t:{ p:1258, n:19672, eth:216.66,  usd:32275.16 },  pv:{ p:721,  n:19672, eth:89.16,  usd:13281.49 } }
+];
+var REVM = {
+  usd:  { title:'Estimated revenue, USD (blocks 8M–9M, 0.01 ETH break-even)', get:function(r){ return r.usd; }, fmt:function(v){ return commas(v, 2); } },
+  count:{ title:'Profitable transactions', get:function(r){ return r.p; }, fmt:function(v){ return commas(Math.round(v), 0); } },
+  share:{ title:'Share of transactions that were profitable targets, %', get:function(r){ return r.p / r.n * 100; }, fmt:function(v){ return v.toFixed(1) + '%'; } }
+};
+var revM = 'usd', revPrev = null;
+function drawRev(animate){
+  var svg = $('revChart'); clear(svg);
+  var narrow = window.innerWidth < 620, W = narrow ? 360 : 900, pL = narrow ? 92 : 130, pR = narrow ? 84 : 110;
+  var groupH = narrow ? 64 : 62, barH = narrow ? 20 : 20, H = REV.length * groupH + 10;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var M = REVM[revM]; $('revTitle').textContent = M.title;
+  var all = []; REV.forEach(function(g){ all.push(M.get(g.t), M.get(g.pv)); });
+  var max = Math.max.apply(null, all), next = [], k = 0;
+  REV.forEach(function(g, i){
+    var y = 6 + i * groupH;
+    svg.appendChild(el('text', { x:pL - 10, y:y + barH + 6, 'text-anchor':'end', 'font-size':narrow ? 11 : 13, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace' }, g.dir));
+    [['t', '--s2', 'Taker'], ['pv', '--s3', 'Provider']].forEach(function(sp, j){
+      var val = M.get(g[sp[0]]), w = val / max * (W - pL - pR), by = y + j * (barH + 2);
+      var fromW = (animate && revPrev) ? revPrev[k].w : (animate ? 0 : w), fromV = (animate && revPrev) ? revPrev[k].v : (animate ? 0 : val);
+      next.push({ w:w, v:val }); k++;
+      var r = el('rect', { x:pL, y:by, width:Math.max(fromW, 2), height:barH, rx:4, fill:css(sp[1]) });
+      var t = el('text', { x:pL + Math.max(fromW, 2) + 6, y:by + barH / 2 + 4, 'font-size':narrow ? 10.5 : 12, fill:css('--ink-1'), 'font-family':'Ubuntu Mono, monospace' }, M.fmt(fromV));
+      svg.appendChild(r); svg.appendChild(t);
+      var hit = el('rect', { x:pL, y:by, width:W - pL, height:barH, fill:'transparent' });
+      var row = g[sp[0]];
+      hit.addEventListener('mousemove', function(evt){ showTip(evt, '<b>' + sp[2] + ' · ' + g.dir + '</b>' + commas(row.p, 0) + ' / ' + commas(row.n, 0) + ' txs profitable<br>' + commas(row.eth, 2) + ' ETH · ' + commas(row.usd, 2) + ' USD'); });
+      hit.addEventListener('mouseleave', hideTip);
+      svg.appendChild(hit);
+      if (fromW !== w || fromV !== val){
+        tween(640, function(p){
+          var cw = Math.max(fromW + (w - fromW) * p, 2);
+          r.setAttribute('width', cw); t.setAttribute('x', pL + cw + 6); t.textContent = M.fmt(fromV + (val - fromV) * p);
+        });
+      }
+    });
+  });
+  revPrev = next;
+}
+
+/* =======================================================================
+   Competition
+   ===================================================================== */
+var CMP = {
+  2: { red:51.0, eth:0.45, usd:67, be:27.7 },
+  5: { red:81.4, eth:0.17, usd:25, be:20.3 },
+  10:{ red:91.5, eth:0.08, usd:12, be:16.3 }
+};
+var cmpN = 2, cmpPrev = null;
+function drawCmp(animate){
+  var svg = $('cmpChart'); clear(svg);
+  var narrow = window.innerWidth < 620, W = narrow ? 330 : 440, H = 214, pL = 16, pR = 16;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var c = CMP[cmpN], keep = 100 - c.red, from = (animate && cmpPrev) ? cmpPrev : (animate ? { keep:100, be:30 } : { keep:keep, be:c.be });
+  cmpPrev = { keep:keep, be:c.be };
+  var fs = narrow ? 11 : 12, mono = 'Ubuntu Mono, monospace', ink = css('--ink-1'), muted = css('--ink-muted');
+  /* panel 1: share of single-adversary profit that survives */
+  svg.appendChild(el('text', { x:pL, y:16, 'font-size':fs, fill:muted, 'font-family':mono }, 'Expected profit per attacker, vs one attacker alone'));
+  var bx = pL, bw = W - pL - pR, by = 26, bh = 22;
+  svg.appendChild(el('rect', { x:bx, y:by, width:bw, height:bh, rx:4, fill:css('--surface-1'), stroke:css('--ring') }));
+  var bar = el('rect', { x:bx, y:by, width:0, height:bh, rx:4, fill:css('--s2') });
+  svg.appendChild(bar);
+  var bl = el('text', { x:bx, y:by + bh + 16, 'font-size':fs, fill:ink, 'font-weight':700, 'font-family':mono });
+  svg.appendChild(bl);
+  if (!narrow) svg.appendChild(el('text', { x:W - pR, y:by + bh + 16, 'text-anchor':'end', 'font-size':fs, fill:muted, 'font-family':mono }, '100% = single adversary'));
+  /* panel 2: pending-time axis, 0–30 s */
+  var ty = 132, tx0 = pL + 4, tx1 = W - pR - 4;
+  function T(s){ return tx0 + s / 30 * (tx1 - tx0); }
+  svg.appendChild(el('text', { x:pL, y:ty - 44, 'font-size':fs, fill:muted, 'font-family':mono }, 'Victim\'s pending time (sampled 0–30 s)'));
+  svg.appendChild(el('line', { x1:tx0, x2:tx1, y1:ty, y2:ty, stroke:css('--axis'), 'stroke-width':2 }));
+  [0, 5, 10, 15, 20, 25, 30].forEach(function(s){
+    svg.appendChild(el('line', { x1:T(s), x2:T(s), y1:ty - 4, y2:ty + 4, stroke:css('--axis') }));
+    svg.appendChild(el('text', { x:T(s), y:ty + 18, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':mono }, s + 's'));
+  });
+  var zone = el('rect', { x:T(from.be), y:ty - 14, width:T(30) - T(from.be), height:28, fill:css('--critical'), opacity:0.12 });
+  svg.insertBefore(zone, svg.lastChild);
+  var beLine = el('line', { x1:T(from.be), x2:T(from.be), y1:ty - 22, y2:ty + 22, stroke:css('--critical'), 'stroke-width':2 });
+  svg.appendChild(beLine);
+  var beLbl = el('text', { x:T(from.be), y:ty - 26, 'text-anchor':'middle', 'font-size':fs, fill:css('--critical'), 'font-weight':700, 'font-family':mono });
+  svg.appendChild(beLbl);
+  svg.appendChild(el('circle', { cx:T(10), cy:ty, r:6, fill:css('--s1'), stroke:css('--surface-1'), 'stroke-width':2 }));
+  svg.appendChild(el('text', { x:T(10), y:ty + 36, 'text-anchor':'middle', 'font-size':fs, fill:ink, 'font-family':mono }, '10 s: the case above'));
+  svg.appendChild(el('text', { x:pL, y:H - 6, 'font-size':fs, fill:ink, 'font-weight':700, 'font-family':mono },
+    cmpN + ' bots: ' + c.eth + ' ETH (' + c.usd + ' USD) each, −' + c.red.toFixed(1) + '%'));
+  tween(animate ? 620 : 0, function(p){
+    var k = from.keep + (keep - from.keep) * p, b = from.be + (c.be - from.be) * p;
+    bar.setAttribute('width', Math.max(2, bw * k / 100));
+    bl.textContent = k.toFixed(1) + '% remains' + (narrow ? '' : ' (100% − ' + c.red.toFixed(1) + '% reduction)');
+    zone.setAttribute('x', T(b)); zone.setAttribute('width', T(30) - T(b));
+    beLine.setAttribute('x1', T(b)); beLine.setAttribute('x2', T(b));
+    beLbl.setAttribute('x', Math.min(Math.max(T(b), pL + 70), W - pR - 70)); beLbl.textContent = 'unprofitable after ' + b.toFixed(1) + ' s';
+  });
+}
+var RACE = [
+  { seq:[['A1',1],['O1',0],['V',1],['O2',0],['A2',1]], win:'A', ra:'Revenue − Fee(T_A1) − Fee(T_A2)', ro:'− Fee(T_O1) − Fee(T_O2)' },
+  { seq:[['A1',1],['O1',0],['V',1],['A2',1],['O2',0]], win:'A', ra:'Revenue − Fee(T_A1) − Fee(T_A2)', ro:'− Fee(T_O1) − Fee(T_O2)' },
+  { seq:[['O1',1],['A1',0],['V',1],['A2',0],['O2',1]], win:'O', ra:'− Fee(T_A1) − Fee(T_A2)', ro:'Revenue − Fee(T_O1) − Fee(T_O2)' },
+  { seq:[['O1',1],['A1',0],['V',1],['O2',1],['A2',0]], win:'O', ra:'− Fee(T_A1) − Fee(T_A2)', ro:'Revenue − Fee(T_O1) − Fee(T_O2)' }
+];
+var raceI = 0;
+function drawRace(){
+  var r = RACE[raceI], box = $('race'); box.innerHTML = '';
+  var row = document.createElement('div'); row.className = 'row';
+  r.seq.forEach(function(s, i){
+    var c = document.createElement('span');
+    var who = s[0].charAt(0);
+    c.className = 'chipx' + (s[1] ? '' : ' fail');
+    c.style.cssText = who === 'A' ? 'background:var(--s2);color:#fff;border-color:var(--s2)' : who === 'V' ? 'background:var(--s1);color:#fff;border-color:var(--s1)' : 'border-color:var(--ink-1)';
+    c.innerHTML = 'T<sub>' + s[0] + '</sub>' + (s[1] ? ' ✓' : ' ✗');
+    if (!REDUCED){ c.style.opacity = 0; }
+    row.appendChild(c);
+    if (i < r.seq.length - 1){ var a = document.createElement('span'); a.className = 'arrow'; a.textContent = '→'; row.appendChild(a); }
+    if (!REDUCED) setTimeout(function(){ tween(260, function(p){ c.style.opacity = s[1] ? p : 0.45 * p; }); }, i * 110);
+  });
+  box.appendChild(row);
+  $('raceVerdict').className = 'verdict ' + (r.win === 'A' ? 'ok' : 'bad');
+  $('raceVerdict').innerHTML = '<b>' + (r.win === 'A' ? 'A wins: its front-run executed first.' : 'O wins: its front-run executed first.') + '</b><span>A: ' + sub(r.ra) + '<br>O: ' + sub(r.ro) + '</span>';
+}
+
+/* =======================================================================
+   Table IV
+   ===================================================================== */
+var MINERS = [
+  ['0xea674fdde714fd979de3edf0f56aa9716b898ec8', 9434, 400546, 171428, 23254, 604662],
+  ['0x5a0b54d5dc17e0aadc383d2db43b0a0d3e029c4c', 16329, 423103, 93903, 35348, 568683],
+  ['0x829bd824b016326a401d083b33d092293333a830', 7727, 275013, 1900, 20, 284660],
+  ['0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5', 259, 210061, 59141, 369, 269830],
+  ['0xb2930b35844a230f00e51431acae96fe543a0347', 0, 110079, 19271, 125, 129475],
+  ['0x04668ec2f57cc15c381b461b9fedab5d451c8f7f', 7130, 42405, 257, 0, 49792],
+  ['0x2a65aca4d5fc5b5c859090a6c34d164135398226', 1021, 25569, 10892, 251, 37733],
+  ['0x2a5994b501e6a560e727b6c2de5d856396aadd38', 1170, 31543, 5, 0, 32718],
+  ['0x005e288d713a5fb3d7c9cf1b43810a98688c7223', 1097, 27926, 30, 0, 29053],
+  ['0x35f61dfb08ada13eba64bf156b80df3d5b3a738d', 435, 28214, 68, 0, 28717]
+];
+$('minerRows').innerHTML = MINERS.map(function(m){
+  return '<tr><td><a class="mono" href="https://etherscan.io/address/' + m[0] + '" title="' + m[0] + '">' + m[0].slice(0, 6) + '…' + m[0].slice(-4) + '</a></td>' +
+    m.slice(1).map(function(v){ return '<td class="num">' + commas(v, 0) + '</td>'; }).join('') + '</tr>';
+}).join('');
+
+/* =======================================================================
+   Wiring
+   ===================================================================== */
+var SLIPS = [{ v:0.001, label:'0.1%' }, { v:0.005, label:'0.5%' }, { v:0.01, label:'1%' }];
+var MITEMS = MKEYS.map(function(k){ return { v:k, label:k }; });
+seg('tkMarket', MITEMS, TK.m, function(v){ TK.m = v; tkUpdate(true); });
+seg('tkSlip', SLIPS, TK.s, function(v){ TK.s = v; tkUpdate(true); });
+seg('tkFee', [{ v:0.01, label:'0.01 ETH' }, { v:0.001, label:'0.001 ETH' }], TK.fee, function(v){ TK.fee = v; tkUpdate(true); });
+$('tkV').addEventListener('input', tkSlider); $('tkV').addEventListener('change', tkSlider);
+seg('pvMarket', MITEMS, PV.m, function(v){ PV.m = v; pvUpdate(true); });
+seg('pvSlip', SLIPS, PV.s, function(v){ PV.s = v; pvUpdate(true); });
+$('pvV').addEventListener('input', pvSlider); $('pvV').addEventListener('change', pvSlider);
+ordState = seg('ordPol', ORD.map(function(o){ return { v:o.k, label:o.label }; }), ordSel, function(v){ ordSel = v; drawBlock(true); });
+seg('revMetric', [{ v:'usd', label:'Revenue (USD)' }, { v:'count', label:'Profitable txs' }, { v:'share', label:'% profitable' }], revM, function(v){ revM = v; drawRev(true); });
+seg('cmpN', [{ v:2, label:'2' }, { v:5, label:'5' }, { v:10, label:'10' }], cmpN, function(v){ cmpN = v; drawCmp(true); });
+seg('raceSel', RACE.map(function(r, i){ return { v:i, label:'Order ' + (i + 1) }; }), 0, function(v){ raceI = v; drawRace(); });
+
+$('copyBib').addEventListener('click', function(){
+  var txt = $('bibtex').textContent, b = this;
+  function ok(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1400); }
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(ok, function(){});
+});
+
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError:false,
+    ignoredTags:['script','noscript','style','textarea','pre','code','option']
+  });
+}
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+/* initial state */
+tkUpdate(false); pvUpdate(false); drawBlock(false); drawRev(false); drawCmp(false); drawRace();
+
+/* tiles count up on load */
+Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
+  var to = +n.getAttribute('data-count'), f = n.getAttribute('data-fmt');
+  var render = f === 'int' ? function(v){ return commas(Math.round(v), 0); } : function(v){ return v.toFixed(+f); };
+  countTo(n, 0, to, render, 1200);
+});
+
+/* section entrances: opacity/translate via the guarded tween, charts animate in */
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+if (hasIO){
+  var secs = document.querySelectorAll('section:not(#tldr)');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(600, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      var id = sec.id;
+      if (id === 'taker'){ var z = tkCurve.pts.map(function(q){ return [q[0], 0]; }); tkDraw(z); }
+      else if (id === 'provider'){ var zz = pvCurve.rev.map(function(q){ return [q[0], 0]; }); pvDraw({ rev:zz, fg:zz }); }
+      else if (id === 'ordering') drawOrdBars(true);
+      else if (id === 'revenue'){ revPrev = null; drawRev(true); }
+      else if (id === 'competition'){ cmpPrev = null; drawCmp(true); }
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){
+    if ((window.innerWidth < 620) === (lastW < 620)){ lastW = window.innerWidth; return; }
+    lastW = window.innerWidth;
+    tkDraw(null); pvDraw(null); drawBlock(false); drawRev(false); drawCmp(false);
+  }, 120);
+});
+</script>
+</body>
+</html>
