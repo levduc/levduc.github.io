@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fastlane</title>
 <meta name="description" content="Fastlane: a lean payment lane beside the EVM, committed under one BFT certificate. One consensus, many commitments.">
+<script>try{var t=localStorage.getItem("fastlane-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -12,16 +13,41 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root{
-  color-scheme: light only;
+  color-scheme: light dark;
   --font:"Computer Modern Typewriter", sans-serif;
   --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --plane:#ffffff; --surface-1:#fafafa;
-  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
-  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#767676;
+  --grid:#e8e8e8; --axis:#c4c4c4; --ring:rgba(0,0,0,.13);
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
   --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
-  --accent:#00008b;
+  --accent:#00008b; --on-accent:#ffffff;
+  --hl:#eef3fb; --warn-ink:#9a6a00; --c-frame:#8a8a8a; --c-drop:#8a5cd6;
 }
+/* dark theme: follows the system unless the reader picks one with the theme button */
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#16181b; --surface-1:#1e2125;
+  --ink-1:#e4e4e4; --ink-head:#ecead2; --ink-2:#d2d2d2; --ink-muted:#9da1a7;
+  --grid:#2d3136; --axis:#50555d; --ring:rgba(255,255,255,.17);
+  --s1:#5a9ef0; --s2:#f08552; --s3:#33c48d; --s4:#f2b33a;
+  --good:#45c845; --warning:#fab219; --critical:#f26b6b;
+  --accent:#9db2ff; --on-accent:#0d1020;
+  --hl:#22304a; --warn-ink:#e7b54a; --c-frame:#80858c; --c-drop:#b18cf2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#16181b; --surface-1:#1e2125;
+    --ink-1:#e4e4e4; --ink-head:#ecead2; --ink-2:#d2d2d2; --ink-muted:#9da1a7;
+    --grid:#2d3136; --axis:#50555d; --ring:rgba(255,255,255,.17);
+    --s1:#5a9ef0; --s2:#f08552; --s3:#33c48d; --s4:#f2b33a;
+    --good:#45c845; --warning:#fab219; --critical:#f26b6b;
+    --accent:#9db2ff; --on-accent:#0d1020;
+    --hl:#22304a; --warn-ink:#e7b54a; --c-frame:#80858c; --c-drop:#b18cf2;
+  }
+}
+:root[data-theme="light"]{ color-scheme: light; }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0; background:var(--plane); color:var(--ink-1); font-family:var(--font);
@@ -33,7 +59,7 @@ h3{font-size:1.12rem; font-weight:700; margin:0 0 .35rem}
 p{margin:0 0 1rem; color:var(--ink-2)}
 a{color:var(--accent); text-decoration:none}
 a:hover{text-decoration:underline}
-section{padding:42px 0; border-top:1px solid var(--grid)}
+section{padding:42px 0; border-top:1px solid var(--grid); scroll-margin-top:50px}
 .eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em; text-transform:uppercase;
   color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
 .lede{max-width:72ch}
@@ -64,8 +90,8 @@ code{font-family:var(--mono); font-size:.92em; background:var(--surface-1); padd
 .btn{display:inline-flex; align-items:center; font-family:var(--mono); border:1px solid var(--ring);
   background:var(--surface-1); color:var(--ink-1); padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
 .btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
-.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
-.btn.primary:hover{opacity:.88; color:#fff}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.btn.primary:hover{opacity:.88; color:var(--on-accent)}
 .btn:disabled{opacity:.4; cursor:default}
 
 .tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; margin-top:28px}
@@ -83,7 +109,7 @@ input[type=range]{width:100%; accent-color:var(--accent); height:22px}
 .seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono); font-size:.86rem;
   padding:.35rem .75rem; cursor:pointer; border-right:1px solid var(--ring)}
 .seg button:last-child{border-right:0}
-.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.seg button[aria-pressed=true]{background:var(--accent); color:var(--on-accent); font-weight:700}
 
 .chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 16px 10px}
 .chart svg{display:block; width:100%; height:auto; overflow:visible}
@@ -103,7 +129,7 @@ table{width:100%; border-collapse:collapse; font-size:.86rem; margin-top:10px}
 th,td{text-align:left; padding:.42rem .55rem; border-bottom:1px solid var(--grid); vertical-align:top}
 th{font-family:var(--mono); font-size:.76rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
 td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
-tr.hl td{background:#eef3fb}
+tr.hl td{background:var(--hl)}
 
 .split{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:18px; align-items:start}
 .readout{display:grid; grid-template-columns:1fr; gap:10px}
@@ -112,7 +138,7 @@ tr.hl td{background:#eef3fb}
 .ro .v{font-size:1.2rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
 .ro .d{font-size:.82rem; font-family:var(--mono); color:var(--ink-muted)}
 
-.cmp{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.cmp{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px}
 .cmp .card h3{font-size:1rem}
 .cmp ul{margin:.3rem 0 0; padding-left:1.1rem; font-size:.92rem}
 
@@ -122,7 +148,7 @@ tr.hl td{background:#eef3fb}
 .stepdot[aria-current=true]{border-color:var(--accent); color:var(--accent); font-weight:700}
 .stepbox{min-height:7.2em}
 .stepbox .verdict{font-family:var(--mono); font-size:.84rem; font-weight:700; margin-top:.4rem}
-.v-good{color:var(--good)} .v-bad{color:var(--critical)} .v-warn{color:#9a6a00}
+.v-good{color:var(--good)} .v-bad{color:var(--critical)} .v-warn{color:var(--warn-ink)}
 
 .timeline{list-style:none; margin:0; padding:0; border-left:2px solid var(--grid)}
 .timeline li{position:relative; padding:0 0 22px 22px}
@@ -139,9 +165,48 @@ tr.hl td{background:#eef3fb}
 .est{font-family:var(--mono); font-size:.72rem; color:var(--ink-muted); border:1px solid var(--grid); border-radius:2px; padding:0 .3em}
 
 footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
+/* ---------- walk-through (part 1) ---------- */
+.topbar .theme{flex:none; display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+  border:1px solid var(--ring); border-radius:3px; background:var(--surface-1); color:var(--ink-1); cursor:pointer; padding:0}
+.topbar .theme:hover{border-color:var(--accent); color:var(--accent)}
+.topbar nav a.walk{color:var(--ink-1); font-weight:700}
+.topbar nav a[aria-current=true]{color:var(--accent); text-decoration:underline; text-underline-offset:4px}
+.topbar nav .sep{color:var(--axis); font-family:var(--mono)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.bul{margin:0 0 1rem; padding-left:1.15rem; max-width:74ch}
+.bul li{margin:.18rem 0}
+.callout{background:var(--surface-1); border:1px solid var(--ring); border-left:4px solid var(--accent); border-radius:4px; padding:12px 16px}
+.callout.prop{border-left-color:var(--s4)}
+.callout.ask{border-left-color:var(--s2)}
+.callout p:last-child,.callout ul:last-child,.callout ol:last-child{margin-bottom:0}
+.callout ul,.callout ol{margin:.3rem 0 0; padding-left:1.15rem}
+.badge{display:inline-block; font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  border:1px solid currentColor; border-radius:3px; padding:0 .4rem; margin-bottom:.35rem}
+.badge.prop{color:var(--warn-ink)}
+.ro4{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px}
+.opt3{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px}
+.opt3 .ro .d{font-family:var(--font); font-size:.9rem; color:var(--ink-2); line-height:1.45}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:.4rem 0 0; padding:0; list-style:none}
+.chips li{font-family:var(--mono); font-size:.82rem; border:1px dashed var(--axis); border-radius:3px; padding:.05rem .5rem; color:var(--ink-2)}
+.chips li s{color:var(--ink-muted)}
+.ftab td{font-family:var(--mono); font-size:.86rem}
+.ftab td:first-child{white-space:nowrap}
+.ftab td .swatch{display:inline-block; vertical-align:-1px; margin-right:.4rem}
+.axisline{display:flex; justify-content:space-between; gap:12px; font-family:var(--mono); font-size:.78rem; color:var(--ink-muted);
+  border-top:1px solid var(--axis); margin-top:8px; padding-top:4px; max-width:640px}
+.axisline span:last-child{text-align:right}
+.part{border-top:2px solid var(--ink-1)}
+.minidx{display:flex; flex-wrap:wrap; gap:6px 16px; font-family:var(--mono); font-size:.88rem}
+.fld{cursor:pointer}
+.fld:focus{outline:none}
+.fld:focus-visible{stroke:var(--accent) !important; stroke-width:3px !important}
+#hd-info{min-height:4.6em}
+
 
 @media (max-width:760px){
-  .split,.cmp,.phases{grid-template-columns:1fr}
+  .split,.cmp,.phases,.opt3{grid-template-columns:minmax(0,1fr)}
+  .ro4{grid-template-columns:1fr 1fr}
+  .eq .katex{font-size:1em}
   .hero h1{font-size:2.3rem}
   h2{font-size:1.5rem}
 }
@@ -154,10 +219,13 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
   <div class="wrap">
     <a class="home" href="../">← Duc V. Le</a>
     <nav aria-label="Sections">
-      <a href="#idea">Idea</a><a href="#explore">Throughput</a><a href="#height">A height</a>
-      <a href="#drift">The drift</a><a href="#protocol">Protocol</a><a href="#changes">What changed</a>
-      <a href="#next">Proposals</a><a href="#props">Guarantees</a><a href="#results">Results</a>
+      <a class="walk" href="#lanes">1 Two lanes</a><a class="walk" href="#txformat">2 Tx format</a>
+      <a class="walk" href="#headers">3 Headers</a><a class="walk" href="#indexers">4 Indexers</a>
+      <span class="sep" aria-hidden="true">|</span><a href="#measured">Measured</a>
     </nav>
+    <button class="theme" id="theme-btn" type="button" aria-label="Switch between light and dark theme" title="Light / dark">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+    </button>
   </div>
 </header>
 
@@ -170,13 +238,283 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
   <p class="sub">A lean payment lane beside the EVM, committed under one BFT certificate.
     One consensus, many commitments.</p>
   <p class="authors"><span class="me">Duc V. Le</span></p>
-  <p class="affils">Research prototype, 2026 · all numbers below are fleet measurements, September 14–15 2026</p>
+  <p class="affils">Research prototype, 2026 · part 1 explains the design · part 2 holds the fleet measurements, September 14–15 2026</p>
   <div class="btns">
-    <a class="btn primary" href="#explore">[Throughput explorer]</a>
-    <a class="btn" href="#protocol">[How it works]</a>
-    <a class="btn" href="#results">[Measured results]</a>
+    <a class="btn primary" href="#lanes">[Start the walk-through]</a>
+    <a class="btn" href="#measured">[Measured results]</a>
+  </div>
+</div>
+
+<!-- ================= Part 1 · walk-through ================= -->
+
+<section id="lanes">
+  <p class="eyebrow">Walk-through 1 / 4</p>
+  <h2>A dedicated payment lane beside the EVM lane</h2>
+  <ul class="bul">
+    <li>One BFT consensus orders both lanes at every height.</li>
+    <li>The same validators vote once per height. One certificate covers both lanes.</li>
+    <li>The EVM lane runs a full EVM client.</li>
+    <li>The payment lane runs a small native engine, the <em>lean node</em>. It accepts native transfers only.</li>
+    <li>Agreement is not partitioned. So there is no cross-shard atomicity problem.</li>
+  </ul>
+  <div class="cmp">
+    <div class="card">
+      <h3>EVM lane</h3>
+      <ul>
+        <li>Full EVM client, driven over the Engine API</li>
+        <li>State in a Merkle–Patricia trie, with receipts and logs</li>
+        <li>Any transaction: contract calls and transfers</li>
+        <li>EIP-1559 native transfer: about 122 bytes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Payment lane</h3>
+      <ul>
+        <li>Lean node, driven over a five-verb JSON-RPC interface</li>
+        <li>State is a flat map: one nonce and one balance per account</li>
+        <li>Native transfers only: one signature pays $N$ recipients</li>
+        <li>Blocks form a hash chain. The head of the chain is the commitment $c_h$.</li>
+      </ul>
+    </div>
   </div>
 
+  <h3 style="margin-top:24px">Step through one height</h3>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">The lean block holds</span>
+      <div class="seg" id="ln-sc" role="group" aria-label="Lean block content">
+        <button type="button" data-b="0" aria-pressed="true">valid payments only</button>
+        <button type="button" data-b="1" aria-pressed="false">one invalid payment</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="ln-svg" role="img" aria-label="One height: the consensus, the EVM lane and the payment lane in five steps"></svg>
+    <div class="steps" id="ln-steps"></div>
+    <div class="stepbox" id="ln-text" aria-live="polite"></div>
+    <div class="btns" style="margin-top:10px">
+      <button type="button" class="btn" id="ln-prev">← back</button>
+      <button type="button" class="btn" id="ln-play">▶ play</button>
+      <button type="button" class="btn primary" id="ln-next">next →</button>
+    </div>
+  </div>
+  <div class="cmp" style="margin-top:14px">
+    <div class="callout">
+      <p><b>Validators execute every lean block.</b></p>
+      <ul>
+        <li>The vote checks structure only: parent link, timestamp, commitment.</li>
+        <li>The lean node executes the block while the votes arrive.</li>
+        <li>The vote does not wait for the result.</li>
+      </ul>
+    </div>
+    <div class="callout">
+      <p><b>An invalid payment is a no-op.</b></p>
+      <ul>
+        <li>It does not reject the block. The other payments apply.</li>
+        <li>A bad proposer can waste its own block space.</li>
+        <li>A bad proposer cannot halt or fork the payment lane.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="txformat">
+  <p class="eyebrow">Walk-through 2 / 4</p>
+  <h2>Transaction format: from Ethereum transfers to fan-out</h2>
+  <ul class="bul">
+    <li>The EVM lane carries EIP-1559 native transfers. One transfer pays one recipient. It is about 122 bytes.</li>
+    <li>The payment lane carries one transaction type: <code>0x50</code>, fan-out. One signature pays $N$ recipients.</li>
+    <li>Size: $72 + 28N$ bytes. Each recipient adds 28 bytes: a 20-byte address and an 8-byte amount.</li>
+  </ul>
+  <div class="controls">
+    <div class="ctl">
+      <label for="tx-n">Recipients per transaction: <span class="val" id="tx-nv">N = 10</span></label>
+      <input type="range" id="tx-n" min="1" max="200" step="1" value="10">
+    </div>
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">Jump to</span>
+      <div class="seg" id="tx-q" role="group" aria-label="Jump to N">
+        <button type="button" data-n="1" aria-pressed="false">1</button>
+        <button type="button" data-n="10" aria-pressed="true">10</button>
+        <button type="button" data-n="100" aria-pressed="false">100</button>
+        <button type="button" data-n="200" aria-pressed="false">200</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="tx-svg" role="img" aria-label="Byte strips: one fan-out transaction against N Ethereum transfers, at the same scale"></svg>
+    <ul class="legend" id="tx-legend"></ul>
+  </div>
+  <div class="ro4" id="tx-read" aria-live="polite"></div>
+  <div class="cmp" style="margin-top:18px">
+    <div class="card">
+      <h3>EIP-1559 native transfer · ≈ 122 B</h3>
+      <div class="tscroll"><table class="ftab" id="tx-eth-tab"></table></div>
+    </div>
+    <div class="card">
+      <h3>Fan-out <code>0x50</code> · $72 + 28N$ B</h3>
+      <div class="tscroll"><table class="ftab" id="tx-lean-tab"></table></div>
+    </div>
+  </div>
+  <h3 style="margin-top:20px">What the format drops</h3>
+  <ul class="bul">
+    <li><b>chain_id.</b> A domain tag in the signing hash binds the chain. The transaction does not carry it.</li>
+    <li><b>Fee fields and gas_limit.</b> The fee is fixed. The transaction does not bid.</li>
+    <li><b>data and access list.</b> The payment lane has no contracts.</li>
+    <li><b>value as u256 in wei.</b> The amount is a u64 in gwei.</li>
+    <li><b>Variable-length nonce.</b> The nonce is a fixed u32.</li>
+    <li><b>RLP list header.</b> The layout is fixed. The only length field is <code>n_outputs</code>.</li>
+  </ul>
+  <details class="tbl"><summary>Check the math</summary><div class="tscroll">
+    <table>
+      <thead><tr><th class="num">N</th><th class="num">Fan-out (72 + 28N)</th><th class="num">Bytes per payment</th><th class="num">N EVM transfers (122N)</th><th class="num">Signatures</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td class="num">100 B</td><td class="num">100</td><td class="num">122 B</td><td class="num">1 vs 1</td></tr>
+        <tr><td class="num">10</td><td class="num">352 B</td><td class="num">35.2</td><td class="num">1,220 B</td><td class="num">1 vs 10</td></tr>
+        <tr><td class="num">100</td><td class="num">2,872 B</td><td class="num">28.7</td><td class="num">12,200 B</td><td class="num">1 vs 100</td></tr>
+        <tr><td class="num">200</td><td class="num">5,672 B</td><td class="num">28.4</td><td class="num">24,400 B</td><td class="num">1 vs 200</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note" style="margin-top:8px">122 B is a typical size. The nonce, fee and value fields of an EIP-1559 transfer change length with their values.</p>
+  </details>
+</section>
+
+<section id="headers">
+  <p class="eyebrow">Walk-through 3 / 4</p>
+  <h2>Block headers and the prev_randao hook</h2>
+  <ul class="bul">
+    <li>The EVM chain activates every Ethereum fork from genesis.</li>
+    <li>So its block header is the standard post-Prague Ethereum header: 21 fields.</li>
+    <li>On Ethereum, <code>prev_randao</code> carries beacon-chain randomness. This chain has no beacon chain. The field is unused: zero.</li>
+    <li>Hover, tap or tab to a field for its role.</li>
+  </ul>
+  <div class="controls">
+    <div class="ctl" style="flex:0 1 auto">
+      <span class="lbl">Payment lane</span>
+      <div class="seg" id="hd-mode" role="group" aria-label="Payment lane">
+        <button type="button" data-m="0" aria-pressed="true">off</button>
+        <button type="button" data-m="1" aria-pressed="false">on</button>
+      </div>
+    </div>
+  </div>
+  <div class="chart">
+    <ul class="legend" id="hd-legend" style="margin:0 0 12px"></ul>
+    <svg id="hd-svg" role="group" aria-label="EVM header fields at byte scale, and the lean header"></svg>
+    <div class="ro" id="hd-info" aria-live="polite" style="margin-top:12px"></div>
+  </div>
+  <div class="cmp" style="margin-top:14px">
+    <div class="card">
+      <h3>Lean header: 52 bytes</h3>
+      <ul>
+        <li>parent commitment 32 | number u64 | timestamp_ms u64 | n_txs u32</li>
+        <li>Then the transactions, each with a length prefix.</li>
+        <li>The commitment chains to the parent:</li>
+      </ul>
+      <p class="eq" style="margin:.5rem 0">$c_h = \mathrm{keccak}\big(c_{h-1} \,\|\, h \,\|\, t_h \,\|\, \mathrm{keccak}(\mathrm{txs}_h)\big)$</p>
+      <p class="note" style="margin:0 0 .5rem; text-align:center">$h$ = number · $t_h$ = timestamp_ms · txs = the transaction section</p>
+      <ul>
+        <li>No block carries its own commitment. Every node recomputes $c_h$ from the bytes.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>The binding</h3>
+      <ul>
+        <li>With the payment lane on, the proposer sets <code>prev_randao</code> $= c_h$.</li>
+        <li>Consensus certifies the plain EVM block hash, as before.</li>
+        <li>The EVM block hash covers <code>prev_randao</code>. So one certificate commits to exactly one lean block.</li>
+        <li>The lean header holds $c_{h-1}$. So the certificate also commits to the whole lean chain.</li>
+        <li>With the payment lane off, <code>prev_randao</code> stays zero. The chain is byte-identical to upstream.</li>
+      </ul>
+    </div>
+  </div>
+  <h3 style="margin-top:20px">What the lean header does not have</h3>
+  <ul class="chips">
+    <li><s>state_root</s></li><li><s>transactions Merkle root</s></li><li><s>receipts_root</s></li>
+    <li><s>logs_bloom</s></li><li><s>gas_limit, gas_used, base_fee</s></li><li><s>beneficiary</s></li>
+  </ul>
+  <p class="note" style="margin-top:8px">The transaction hash in $c_h$ is a flat keccak over the transaction bytes, not a Merkle root.</p>
+</section>
+
+<section id="indexers">
+  <p class="eyebrow">Walk-through 4 / 4</p>
+  <h2>The trade-off, and the indexer we need</h2>
+  <p class="lede">The lean header has no state root, no receipts root, no log bloom and no transaction Merkle root.</p>
+  <div class="cmp">
+    <div class="card">
+      <h3>What the payment lane gives up</h3>
+      <ul>
+        <li>No balance or nonce proofs.</li>
+        <li>No light-client support.</li>
+        <li>Consensus certifies the transactions. It does not certify the balances they produce.</li>
+        <li>No receipt or event commitments.</li>
+        <li>No standard Ethereum wallet JSON-RPC.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>What it keeps</h3>
+      <ul>
+        <li>Block bytes and their order are certified.</li>
+        <li>Execution is deterministic.</li>
+        <li>Anyone can replay the chain from the certified bytes.</li>
+        <li>A complete receipt is one bit: applied or no-op.</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px"><b>So balances, receipts, history and proofs must come from indexers.</b></p>
+  <div class="callout ask" style="margin:14px 0">
+    <p class="eyebrow" style="margin:0 0 .2rem">Question for the meeting</p>
+    <p style="font-size:1.1rem">Do indexers need their own full consensus, or something weaker?</p>
+  </div>
+  <div class="callout prop">
+    <span class="badge prop">Proposal · not a measured result</span>
+    <ul>
+      <li>Agreement has two parts: order the input, then compute the output.</li>
+      <li>The chain's consensus already orders the input. That is the hard part.</li>
+      <li>An indexer's output is a deterministic function of the certified input.</li>
+      <li>So indexers need no BFT protocol among themselves.</li>
+      <li>One honest replayer is enough to detect a wrong answer.</li>
+      <li>M-of-N signatures over the same output give availability and convenience.</li>
+      <li>A disagreement is objective evidence. Replay settles it.</li>
+    </ul>
+  </div>
+
+  <h3 style="margin-top:24px">Four options: trust against protocol change</h3>
+  <div class="controls" style="margin-bottom:6px">
+    <div class="ctl">
+      <div class="seg" id="ix-opt" role="group" aria-label="Indexer option">
+        <button type="button" data-o="0" aria-pressed="false">(a) one indexer</button>
+        <button type="button" data-o="1" aria-pressed="true">(b) M-of-N + audit</button>
+        <button type="button" data-o="2" aria-pressed="false">(c) Merkle root + receipt bit</button>
+        <button type="button" data-o="3" aria-pressed="false">(d) delayed state root</button>
+      </div>
+      <div class="axisline" aria-hidden="true"><span>← trust operators, no protocol change</span><span>trust consensus only, more protocol change →</span></div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="ix-svg" role="img" aria-label="Data flow from validators through indexers to wallets for the selected option"></svg>
+  </div>
+  <div class="opt3" id="ix-read" aria-live="polite"></div>
+  <div class="callout prop" style="margin-top:16px">
+    <span class="badge prop">Recommendation · proposal</span>
+    <ol>
+      <li>Start with (b): M-of-N indexers and a public replay audit. No protocol change.</li>
+      <li>Fold (c) into the next coordinated format change.</li>
+      <li>Keep (d) for when users need trustless balances.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= Part 2 · measured ================= -->
+
+<section id="measured" class="part">
+  <p class="eyebrow">Part 2</p>
+  <h2>Measured</h2>
+  <p class="lede">The sections below hold the fleet measurements, the protocol details and the earlier proposals.
+  Every number comes from the run logs.</p>
+  <nav class="minidx" aria-label="Measured sections">
+    <a href="#explore">Throughput</a><a href="#height">A height</a><a href="#drift">The drift</a><a href="#protocol">Protocol</a>
+    <a href="#changes">What changed</a><a href="#next">Proposals</a><a href="#props">Guarantees</a><a href="#results">Results</a>
+  </nav>
   <div class="tiles" id="tiles">
     <div class="tile">
       <div class="k">Payments per second</div>
@@ -193,51 +531,6 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
       <div class="v"><span data-count="31317">31,317</span>–<span data-count="31910">31,910</span> tx/s</div>
       <p class="d">Lean lane at 450 M, 1.81–1.84 blocks/s, 100 % full. The EVM lane on the same fleet: 4,377–8,419 tx/s (mean ~6,550), blocks never full.</p>
     </div>
-  </div>
-</div>
-
-<section id="idea">
-  <p class="eyebrow">The problem</p>
-  <h2>One agreement layer, but not one commitment</h2>
-  <div class="lede">
-  <p>A smart-contract chain commits <em>everything</em> — accounts, contract storage, receipts — through a
-  single general-purpose Merkle–Patricia trie, and every validator re-executes and re-commits every block before
-  it votes. Payments don't need most of that. A payment only moves a balance and bumps a nonce.</p>
-  <p>Fastlane keeps the chain's one BFT consensus and adds a second execution domain beside the EVM: a
-  <strong>payment lane</strong> with a flat nonce-and-balance map and a hash-chain commitment. Both lanes are
-  decided in the same round by the same validators under the same certificate. The agreement is shared; only the
-  commitment differs. Unlike sharding there is no cross-shard atomicity problem, because nothing about agreement
-  is partitioned.</p>
-  </div>
-  <div class="cmp" style="margin-top:14px">
-    <div class="card">
-      <h3>EVM lane (unchanged)</h3>
-      <ul>
-        <li>Reth execution client over the Engine API</li>
-        <li>Full Merkle–Patricia state, receipts, logs</li>
-        <li>EIP-1559 native transfer: 122 bytes, 21,000 gas</li>
-      </ul>
-    </div>
-    <div class="card">
-      <h3>Payment lane (new)</h3>
-      <ul>
-        <li>A separate lean node, driven over a five-verb JSON-RPC shim</li>
-        <li>Flat nonce + balance map; no trie, no receipts, no logs</li>
-        <li>Fan-out transaction: one signature, $N$ outputs, $72 + 28N$ bytes</li>
-      </ul>
-    </div>
-  </div>
-  <div class="card" style="margin-top:14px">
-    <h3>The binding</h3>
-    <p style="margin:.2rem 0 .6rem">A lean block is its framed bytes; its commitment chains to the previous one:</p>
-    <p class="eq">$c_h = \mathrm{keccak}\big(c_{h-1} \,\|\, h \,\|\, t_h \,\|\, \mathrm{keccak}(\mathrm{txs}_h)\big)$</p>
-    <p style="margin:.4rem 0 .6rem">The proposer places $c_h$ in the EVM header field that this chain never used (<code>prev_randao</code>),
-    so consensus signs the plain EVM block hash exactly as before, and that hash already covers $c_h$:</p>
-    <p class="eq">$\mathrm{cert}\big(H(\text{EVM header}_h)\big)$</p>
-    <p class="eq">$\text{EVM header}_h.\mathtt{prev\_randao} = c_h$</p>
-    <p class="note" style="margin:.4rem 0 0">Voting on the lane is structural (parent link, timestamp in lockstep with the EVM block, bytes hash to $c_h$).
-    Execution happens in the gap between votes and is anchored at decide. Total state-transition semantics: an invalid transaction
-    is a no-op, so a byzantine proposer can waste bytes but cannot halt or fork the lane.</p>
   </div>
 </section>
 
@@ -482,7 +775,8 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
 </footer>
 
 <script>
-/* Light only, like the rest of the site. Every number below comes from the fleet run logs (Sept 14-15 2026). */
+/* Light and dark themes: every chart reads its colours from the CSS tokens at draw time.
+   Every measured number below comes from the fleet run logs (Sept 14-15 2026). */
 var SVGNS = 'http://www.w3.org/2000/svg';
 function el(name, attrs, text){
   var n = document.createElementNS(SVGNS, name);
@@ -861,15 +1155,16 @@ function drawPr(animate){
     svg.appendChild(el('line', { x1:a.x, y1:a.y, x2:b.x, y2:b.y, stroke:css('--grid'), 'stroke-width':2 })); });
   Object.keys(NODES).forEach(function(id){
     var n = NODES[id], c = P(id), on = st.on.indexOf(id) >= 0;
-    var stroke = on ? (st.bad ? css('--critical') : (st.warn ? '#9a6a00' : css('--accent'))) : css('--axis');
-    svg.appendChild(el('rect', { x:c.x - bw/2, y:c.y - bh/2, width:bw, height:bh, rx:4, fill: on ? '#ffffff' : css('--surface-1'), stroke:stroke, 'stroke-width': on ? 2.2 : 1 }));
+    var stroke = on ? (st.bad ? css('--critical') : (st.warn ? css('--warn-ink') : css('--accent'))) : css('--axis');
+    svg.appendChild(el('rect', { x:c.x - bw/2, y:c.y - bh/2, width:bw, height:bh, rx:4, fill: on ? css('--plane') : css('--surface-1'), stroke:stroke, 'stroke-width': on ? 2.2 : 1 }));
     svg.appendChild(el('text', { x:c.x, y:c.y - 3, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size': narrow ? 11 : 13, 'font-weight':700, fill: on ? css('--ink-1') : css('--ink-muted') }, n.t));
     svg.appendChild(el('text', { x:c.x, y:c.y + 13, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size': narrow ? 10 : 12, fill: on ? css('--ink-2') : css('--ink-muted') }, n.s));
   });
   var a = C(st.pk[0]), b = C(st.pk[1]);
   var pkt = el('g', {});
-  pkt.appendChild(el('circle', { r:11, fill: st.bad ? css('--critical') : css('--s1'), stroke:'#ffffff', 'stroke-width':2 }));
-  pkt.appendChild(el('text', { y:4, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12, 'font-weight':700, fill:'#ffffff' }, 'c'));
+  var pcol = st.bad ? css('--critical') : css('--s1');
+  pkt.appendChild(el('circle', { r:11, fill: pcol, stroke:css('--plane'), 'stroke-width':2 }));
+  pkt.appendChild(el('text', { y:4, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':12, 'font-weight':700, fill:onCol(pcol) }, 'c'));
   svg.appendChild(pkt);
   if (PRS.cancel) PRS.cancel();
   function place(p){ pkt.setAttribute('transform', 'translate(' + (a.x + (b.x - a.x) * p) + ' ' + (a.y + (b.y - a.y) * p - (a === b ? 0 : 0)) + ')'); }
@@ -938,7 +1233,7 @@ function drawAp(animate){
       var rect = el('rect', { y:by, height:20, fill:css(APK[k].s), x:m.l + x0*iw, width:0 });
       svg.appendChild(rect);
       var lbl = null;
-      if (share * iw > 42){ lbl = el('text', { y:by + 14, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':11, fill:'#ffffff', 'font-weight':700 }, Math.round(share*100) + '%'); svg.appendChild(lbl); }
+      if (share * iw > 42){ lbl = el('text', { y:by + 14, 'text-anchor':'middle', 'font-family':'Ubuntu Mono', 'font-size':11, fill:onCol(css(APK[k].s)), 'font-weight':700 }, Math.round(share*100) + '%'); svg.appendChild(lbl); }
       hover(rect, function(){ return '<b>' + r.lab + '</b>' + APK[k].n + ': ' + v + ' of ' + tot + ' anchors<br>' + r.run; });
       segs.push({ r:rect, l:lbl, x0:x0, w:share });
     });
@@ -953,12 +1248,608 @@ $('ap-table').innerHTML = tableHTML(['Build','Run'].concat(APK.map(function(k){ 
   AP.map(function(r){ return { c:[r.lab, r.run].concat(r.c.map(String)) }; }), [2,3,4,5]);
 
 /* ====================================================================
+   PART 1 · walk-through figures (byte sizes and formats only; no measurements)
+   ==================================================================== */
+var MONO = 'Ubuntu Mono';
+function hexLum(h){
+  h = String(h).replace('#', '').trim();
+  if (h.length === 3) h = h.split('').map(function(c){ return c + c; }).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return 0.5;
+  var v = [0, 2, 4].map(function(i){ var c = parseInt(h.substr(i, 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+/* text colour with the higher contrast on a filled shape */
+function onCol(h){ var L = hexLum(h); return (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.0556) ? '#ffffff' : '#111111'; }
+function plainC(s){ return String(s).replace(/c_\{([^}]*)\}|c_h/g, function(m, g){ return 'c' + (g || 'h'); }); }
+function htmlC(s){ return String(s).replace(/c_\{([^}]*)\}|c_h/g, function(m, g){ return 'c<sub>' + (g || 'h') + '</sub>'; }); }
+function tw(s, fs){ return plainC(s).length * fs * 0.5; }   /* Ubuntu Mono: 0.5 em advance */
+function T(x, y, s, o){
+  o = o || {};
+  var a = { x:x, y:y, 'font-family':MONO, 'font-size':o.fs || 12, fill:o.fill || css('--ink-1'), 'pointer-events':'none' };
+  if (o.anchor) a['text-anchor'] = o.anchor;
+  if (o.w) a['font-weight'] = o.w;
+  if (o.rot) a.transform = 'rotate(' + o.rot + ' ' + x + ' ' + y + ')';
+  return el('text', a, s);
+}
+/* c_h and c_{h-1} as subscripts, with tspans (Firefox ignores baseline-shift) */
+function rich(x, y, s, o){
+  o = o || {};
+  var t = T(x, y, undefined, o), fs = o.fs || 12, low = false, re = /c_(\{[^}]*\}|h)/g, last = 0, m;
+  function add(txt, sub){
+    if (!txt) return;
+    var a = {};
+    if (sub){ a['font-size'] = fs * 0.75; if (!low){ a.dy = fs * 0.3; low = true; } }
+    else if (low){ a.dy = -fs * 0.3; low = false; }
+    t.appendChild(el('tspan', a, txt));
+  }
+  while ((m = re.exec(s))){ add(s.slice(last, m.index) + 'c', false); add(m[1].replace(/[{}]/g, ''), true); last = re.lastIndex; }
+  add(s.slice(last), false);
+  return t;
+}
+function arrowDef(svg, id, col){
+  var d = el('defs', {}), mk = el('marker', { id:id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:7, markerHeight:7, orient:'auto-start-reverse' });
+  mk.appendChild(el('path', { d:'M0 0L10 5L0 10z', fill:col }));
+  d.appendChild(mk); svg.appendChild(d);
+}
+/* tooltips that work on hover, on tap and (when focusable) from the keyboard */
+function tipNear(node, html){ var r = node.getBoundingClientRect(); showTip({ clientX:r.left + Math.min(r.width / 2, 60), clientY:r.bottom - 6 }, html); }
+function tapTip(node, html, onPick, focusable){
+  node.setAttribute('data-tip', '1');
+  if (focusable){ node.setAttribute('tabindex', '0'); node.setAttribute('role', 'button'); node.setAttribute('aria-label', String(html()).replace(/<[^>]+>/g, ' ')); }
+  node.addEventListener('mouseenter', function(e){ if (hoverOK()) showTip(e, html()); });
+  node.addEventListener('mousemove', moveTip);
+  node.addEventListener('mouseleave', hideTip);
+  node.addEventListener('click', function(e){ showTip(e, html()); if (onPick) onPick(); });
+  if (focusable){
+    node.addEventListener('focus', function(){ tipNear(node, html()); if (onPick) onPick(); });
+    node.addEventListener('blur', hideTip);
+    node.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); tipNear(node, html()); if (onPick) onPick(); } });
+  }
+}
+document.addEventListener('click', function(e){ if (!(e.target.closest && e.target.closest('[data-tip]'))) hideTip(); });
+var lastScroll = 0;
+window.addEventListener('scroll', function(){ lastScroll = Date.now(); hideTip(); }, { passive:true });
+function hoverOK(){ return Date.now() - lastScroll > 250; }
+function pressSeg(id, attr, val){
+  Array.prototype.forEach.call($(id).querySelectorAll('button'), function(bt){ bt.setAttribute('aria-pressed', String(bt.getAttribute(attr) === String(val))); });
+}
+function mathIn(node){ if (window.renderMathInElement) renderMathInElement(node, KOPTS); }
+
+/* ====================================================================
+   W1 · one height, step by step
+   ==================================================================== */
+var LN = { k:0, bad:false, timer:null };
+var LN_COLS = ['Build', 'Check', 'Vote', 'Decide', 'Commit'];
+var LN_ROWS = [ { name:'Consensus', sub:'BFT, all validators' }, { name:'EVM lane', sub:'EVM client' }, { name:'Payment lane', sub:'lean node' } ];
+function lnCells(bad){
+  return [
+    [ { t:'proposal', s:'EVM block + lean bytes', n:'propose' }, { t:'check', s:'each validator', n:'check' },
+      { t:'prevote, precommit', s:'votes arrive', n:'vote' }, { t:'certificate', s:'on EVM block hash', n:'certify' }, { t:'next height', s:'', n:'next' } ],
+    [ { t:'build block', s:'prev_randao = c_h', n:'build' }, { t:'validate', s:'as before', n:'validate' }, null, null, { t:'commit', s:'', n:'commit' } ],
+    [ { t:'build block', s: bad ? 'one invalid payment' : 'bytes + c_h', n:'build', mark:bad },
+      { t:'structural check', s:'parent, time, c_h', n:'check' },
+      { t:'execute', s: bad ? 'invalid payment: no-op' : 'vote does not wait', n:'execute', mark:bad, ex:true }, null,
+      { t:'commit', s:'by commitment', n:'commit' } ]
+  ];
+}
+var LN_TXT = [
+  { h:'1 · Build', li:[
+      'The proposer asks its lean node for a lean block. The lean node returns the bytes and the commitment $c_h$.',
+      'The proposer asks its EVM client for an EVM block with <code>prev_randao</code> $= c_h$.',
+      'The proposal carries the EVM block and the lean bytes.' ],
+    bad:'The lean block holds one invalid payment, for example with a wrong nonce.' },
+  { h:'2 · Check', li:[
+      'Each validator receives the proposal. The EVM client validates the EVM block, as before.',
+      'The lean block gets structural checks only: the parent link, the timestamp against the EVM block, and keccak over the bytes against the $c_h$ in <code>prev_randao</code>.',
+      'A failed check rejects the proposal. A lean node that is behind makes the validator abstain. It does not reject.' ],
+    bad:'The checks do not read the payments. The invalid payment does not change the verdict.', v:'Checks pass: the validator votes' },
+  { h:'3 · Vote and execute', li:[
+      'Validators send prevotes and precommits.',
+      'At the same time, each lean node executes the lean block.',
+      'Validators execute every lean block. The vote does not wait for the result.' ],
+    bad:'The invalid payment fails in execution. It becomes a no-op. The other payments apply.', v:'Execution runs beside the vote, not before it' },
+  { h:'4 · Decide', li:[
+      'Validators with more than two thirds of the voting power precommit. This gives a certificate on the EVM block hash.',
+      'The EVM block hash covers <code>prev_randao</code> $= c_h$. So the certificate also covers the lean block.' ],
+    v:'One certificate, two lanes' },
+  { h:'5 · Commit', li:[
+      'The EVM client commits the EVM block.',
+      'The lean node commits the lean block by its commitment. It already holds the bytes and the result.',
+      'The next height starts.' ],
+    bad:'The block commits. The invalid payment stays in the block as a no-op. A bad proposer can waste its own block space. It cannot halt or fork the payment lane.',
+    v:'Both lanes committed' }
+];
+function drawLn(){
+  var svg = $('ln-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 640, cells = lnCells(LN.bad), k = LN.k;
+  var lab = narrow ? 0 : 132, cw = (W - lab) / 5, top = narrow ? 30 : 34, ch = narrow ? 38 : 60, off = narrow ? 18 : 0, pitch = off + ch + (narrow ? 12 : 12);
+  var rowsBottom = top + pitch * 3 - 12, H = rowsBottom + 30;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  arrowDef(svg, 'ln-arr', css('--ink-muted'));
+  /* current column band */
+  svg.appendChild(el('rect', { x:lab + cw * k + 1, y:2, width:cw - 2, height:rowsBottom + 6, rx:5, fill:css('--accent'), 'fill-opacity':0.07 }));
+  LN_COLS.forEach(function(c, i){
+    var cur = i === k;
+    svg.appendChild(T(lab + cw * i + cw / 2, 18, (i + 1) + ' ' + c, { anchor:'middle', fs: narrow ? 11 : 12, w: cur ? 700 : 400, fill: cur ? css('--accent') : css('--ink-muted') }));
+  });
+  LN_ROWS.forEach(function(r, ri){
+    var y0 = top + ri * pitch;
+    if (narrow) svg.appendChild(T(2, y0 + 12, r.name + ' · ' + r.sub, { fs:11, w:700, fill:css('--ink-2') }));
+    else {
+      svg.appendChild(T(0, y0 + ch / 2 - 2, r.name, { fs:13, w:700 }));
+      svg.appendChild(T(0, y0 + ch / 2 + 15, r.sub, { fs:11, fill:css('--ink-muted') }));
+    }
+    cells[ri].forEach(function(c, ci){
+      var x = lab + cw * ci + 4, w = cw - 8, y = y0 + off, st = ci < k ? 'done' : (ci === k ? 'cur' : 'todo');
+      if (!c){
+        svg.appendChild(el('line', { x1:x + w / 2 - 7, x2:x + w / 2 + 7, y1:y + ch / 2, y2:y + ch / 2, stroke:css('--axis'), 'stroke-width':1.5 }));
+        return;
+      }
+      var stroke = st === 'cur' ? css('--accent') : (st === 'done' ? css('--axis') : css('--axis'));
+      svg.appendChild(el('rect', { x:x, y:y, width:w, height:ch, rx:4, fill: st === 'todo' ? 'none' : css('--plane'), stroke:stroke,
+        'stroke-width': st === 'cur' ? 2.2 : 1.1, 'stroke-dasharray': st === 'todo' ? '4 3' : null }));
+      var ink = st === 'todo' ? css('--ink-muted') : css('--ink-1');
+      if (narrow) svg.appendChild(rich(x + w / 2, y + ch / 2 + 4, c.n, { anchor:'middle', fs:11, w: st === 'cur' ? 700 : 400, fill:ink }));
+      else {
+        svg.appendChild(rich(x + w / 2, y + (c.s ? 26 : 35), c.t, { anchor:'middle', fs:12, w:700, fill:ink }));
+        if (c.s) svg.appendChild(rich(x + w / 2, y + 44, c.s, { anchor:'middle', fs:11, fill: st === 'todo' ? css('--ink-muted') : css('--ink-2') }));
+      }
+      if (c.mark && st !== 'todo') svg.appendChild(el('circle', { cx:x + w - 8, cy:y + 8, r:4, fill:css('--critical') }));
+    });
+  });
+  /* time axis */
+  var ay = H - 12;
+  svg.appendChild(el('line', { x1:lab + 4, x2:W - 4, y1:ay, y2:ay, stroke:css('--ink-muted'), 'stroke-width':1.2, 'marker-end':'url(#ln-arr)' }));
+  svg.appendChild(T(W - 16, ay - 7, 'time', { anchor:'end', fs:11, fill:css('--ink-muted') }));
+  /* step text */
+  var st = LN_TXT[k];
+  var html = '<h3>' + st.h + '</h3><ul class="bul" style="margin:0">' + st.li.map(function(t){ return '<li>' + t + '</li>'; }).join('');
+  if (LN.bad && st.bad) html += '<li><b class="v-bad">Invalid payment:</b> ' + st.bad + '</li>';
+  html += '</ul>' + (st.v ? '<div class="verdict v-good">' + st.v + '</div>' : '');
+  $('ln-text').innerHTML = html; mathIn($('ln-text'));
+  $('ln-steps').innerHTML = LN_COLS.map(function(c, i){ return '<button type="button" class="stepdot" data-k="' + i + '" aria-current="' + (i === k) + '" aria-label="Step ' + (i + 1) + ': ' + c + '">' + (i + 1) + ' ' + c + '</button>'; }).join('');
+  $('ln-prev').disabled = k === 0; $('ln-next').disabled = k === 4;
+  $('ln-play').textContent = LN.timer ? '❚❚ pause' : '▶ play';
+}
+function lnStop(){ if (LN.timer){ clearInterval(LN.timer); LN.timer = null; } }
+function setLn(k){ LN.k = Math.max(0, Math.min(4, k)); drawLn(); }
+$('ln-prev').addEventListener('click', function(){ lnStop(); setLn(LN.k - 1); });
+$('ln-next').addEventListener('click', function(){ lnStop(); setLn(LN.k + 1); });
+$('ln-steps').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b){ lnStop(); setLn(Number(b.dataset.k)); } });
+$('ln-play').addEventListener('click', function(){
+  if (LN.timer){ lnStop(); drawLn(); return; }
+  if (LN.k === 4) LN.k = 0;
+  LN.timer = setInterval(function(){ if (LN.k < 4) setLn(LN.k + 1); if (LN.k >= 4){ lnStop(); drawLn(); } }, 2800);
+  drawLn();
+});
+$('ln-sc').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; LN.bad = b.dataset.b === '1'; pressSeg('ln-sc', 'data-b', b.dataset.b); drawLn(); });
+
+/* ====================================================================
+   W2 · transaction format, byte strips
+   ==================================================================== */
+var TX = { n:10, segs:[] };
+var FK = {
+  sig:  { slot:'--s2', name:'signature' },
+  to:   { slot:'--s1', name:'recipient address' },
+  amt:  { slot:'--s3', name:'amount' },
+  nonce:{ slot:'--s4', name:'nonce' },
+  frame:{ slot:'--c-frame', name:'type and length fields' },
+  drop: { slot:'--c-drop', name:'fields that fan-out drops' }
+};
+var ETH_F = [
+  { k:'frame', n:'type + list header', b:3, lab:'hdr' },
+  { k:'drop',  n:'chain_id', b:3, lab:'chain' },
+  { k:'nonce', n:'nonce', b:4, bs:'3–5', lab:'nonce' },
+  { k:'drop',  n:'max_priority_fee + max_fee', b:10, bs:'~10', lab:'fees' },
+  { k:'drop',  n:'gas_limit', b:3, lab:'gas' },
+  { k:'to',    n:'to', b:21, lab:'to' },
+  { k:'amt',   n:'value', b:9, bs:'~9', lab:'value' },
+  { k:'drop',  n:'data + access list', b:2, lab:'data' },
+  { k:'sig',   n:'y_parity + r + s', b:67, lab:'signature' }
+];
+var LEAN_HEAD = [ { k:'frame', n:'type 0x50', b:1, lab:'type' }, { k:'nonce', n:'nonce u32', b:4, lab:'nonce' }, { k:'frame', n:'n_outputs u16', b:2, lab:'n_out' } ];
+var LEAN_OUT = [ { k:'to', n:'recipient address', b:20, lab:'recipient' }, { k:'amt', n:'amount u64, gwei', b:8, lab:'amount' } ];
+var LEAN_SIG = { k:'sig', n:'signature', b:65, lab:'signature' };
+function txStrip(svg, units, y0, o){
+  var cur = 0, row = 0, sep = css('--surface-1');
+  units.forEach(function(u){
+    var ub = u.segs.reduce(function(a, f){ return a + f.b; }, 0);
+    u.segs.forEach(function(f){
+      var rem = f.b;
+      while (rem > 0){
+        if (cur >= o.bpr){ cur = 0; row++; }
+        var take = Math.min(rem, o.bpr - cur), x = cur * o.s, w = take * o.s, y = y0 + row * (o.rowH + o.gap);
+        var col = css(FK[f.k].slot), id = TX.segs.length;
+        TX.segs.push({ f:f, u:u.tag });
+        svg.appendChild(el('rect', { x:x, y:y, width:Math.max(0.5, w - (o.s >= 2 ? 1 : 0)), height:o.rowH, fill:col, 'data-s':id, 'data-tip':'1' }));
+        if (o.labels){
+          var lb = f.lab + ' ' + (f.bs || f.b);
+          if (tw(lb, 11) + 8 > w) lb = f.lab;
+          if (tw(lb, 11) + 8 <= w) svg.appendChild(T(x + w / 2, y + o.rowH / 2 + 4, lb, { anchor:'middle', fs:11, fill:onCol(col), w:700 }));
+        }
+        cur += take; rem -= take;
+      }
+    });
+    /* a thin gap between transactions (or outputs) when they are wide enough to see */
+    if (u.sepAfter && ub * o.s >= 8 && cur > 0 && cur < o.bpr){
+      var y = y0 + row * (o.rowH + o.gap);
+      svg.appendChild(el('line', { x1:cur * o.s, x2:cur * o.s, y1:y, y2:y + o.rowH, stroke:sep, 'stroke-width':2, 'pointer-events':'none' }));
+    }
+  });
+  return row + 1;
+}
+function drawTx(){
+  var svg = $('tx-svg'); clear(svg); TX.segs = [];
+  var W = svgW(svg), n = TX.n, maxRows = 12, k = Math.ceil(n / maxRows), bpr = 122 * k, s = W / bpr;
+  var erows = Math.ceil(n / k), rowH = erows <= 2 ? 28 : (erows <= 6 ? 20 : 15), gap = 4;
+  var L = 72 + 28 * n, E = 122 * n, labels = rowH >= 28;
+  var y = 14;
+  svg.appendChild(T(0, y, 'Payment lane · 1 fan-out transaction', { fs:12, w:700 }));
+  svg.appendChild(T(W, y, fmt(L) + ' B', { fs:12, w:700, anchor:'end' }));
+  y += 8;
+  var units = [{ segs:LEAN_HEAD, tag:'transaction header', sepAfter:true }];
+  for (var i = 0; i < n; i++) units.push({ segs:LEAN_OUT, tag:'output ' + (i + 1) + ' of ' + n, sepAfter:true });
+  units.push({ segs:[LEAN_SIG], tag:'one signature over the whole transaction' });
+  var lr = txStrip(svg, units, y, { bpr:bpr, s:s, rowH:rowH, gap:gap, labels:labels });
+  y += lr * (rowH + gap) + 24;
+  svg.appendChild(T(0, y, 'EVM lane · ' + n + (n === 1 ? ' EIP-1559 transfer' : ' EIP-1559 transfers'), { fs:12, w:700 }));
+  svg.appendChild(T(W, y, fmt(E) + ' B', { fs:12, w:700, anchor:'end' }));
+  y += 8;
+  var eu = [];
+  for (var j = 0; j < n; j++) eu.push({ segs:ETH_F, tag:'transfer ' + (j + 1) + ' of ' + n, sepAfter:true });
+  var er = txStrip(svg, eu, y, { bpr:bpr, s:s, rowH:rowH, gap:gap, labels:labels });
+  y += er * (rowH + gap) + 12;
+  svg.appendChild(T(0, y, 'same scale · one row = ' + fmt(bpr) + ' B = ' + (k === 1 ? 'one EVM transfer' : k + ' EVM transfers'), { fs:11, fill:css('--ink-muted') }));
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y + 6));
+  txRead();
+}
+function txSegTip(e){
+  var t = e.target, id = t.getAttribute && t.getAttribute('data-s');
+  if (id === null || id === undefined) return null;
+  var d = TX.segs[Number(id)];
+  return d ? '<b>' + d.f.n + '</b>' + (d.f.bs || d.f.b) + ' bytes · ' + d.u : null;
+}
+(function(){
+  var svg = $('tx-svg');
+  svg.addEventListener('mouseover', function(e){ var h = txSegTip(e); if (h && hoverOK()) showTip(e, h); });
+  svg.addEventListener('mousemove', function(e){ if (txSegTip(e)) moveTip(e); });
+  svg.addEventListener('mouseout', function(e){ if (txSegTip(e)) hideTip(); });
+  svg.addEventListener('click', function(e){ var h = txSegTip(e); if (h) showTip(e, h); });
+})();
+function txRead(){
+  var n = TX.n, L = 72 + 28 * n, E = 122 * n, per = L / n;
+  var perS = (Math.round(per * 10) / 10).toFixed(1).replace(/\.0$/, '');
+  function ro(k, v, d){ return '<div class="ro"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>'; }
+  $('tx-read').innerHTML =
+    ro('Total bytes', fmt(L) + ' B', 'vs ' + fmt(E) + ' B for ' + n + ' EVM transfer' + (n === 1 ? '' : 's')) +
+    ro('Bytes per payment', perS, 'vs 122 · goes to 28 as N grows') +
+    ro('Signatures to verify', '1', 'vs ' + n) +
+    ro('Pool entries', '1', 'vs ' + n);
+  $('tx-nv').textContent = 'N = ' + n;
+  pressSeg('tx-q', 'data-n', n);
+}
+function txTables(){
+  function sw(k){ return '<span class="swatch" style="background:' + css(FK[k].slot) + '"></span>'; }
+  $('tx-eth-tab').innerHTML = '<thead><tr><th>Field</th><th class="num">Bytes</th></tr></thead><tbody>' +
+    ETH_F.map(function(f){ return '<tr><td>' + sw(f.k) + f.n + '</td><td class="num">' + (f.bs || f.b) + '</td></tr>'; }).join('') +
+    '<tr><td><b>total</b></td><td class="num"><b>≈ 122</b></td></tr></tbody>';
+  var rows = LEAN_HEAD.map(function(f){ return [f, String(f.b)]; })
+    .concat(LEAN_OUT.map(function(f){ return [f, f.b + ' × N']; })).concat([[LEAN_SIG, '65']]);
+  $('tx-lean-tab').innerHTML = '<thead><tr><th>Field</th><th class="num">Bytes</th></tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr><td>' + sw(r[0].k) + r[0].n + '</td><td class="num">' + r[1] + '</td></tr>'; }).join('') +
+    '<tr><td><b>total</b></td><td class="num"><b>72 + 28N</b></td></tr></tbody>';
+  var lg = $('tx-legend'); lg.innerHTML = '';
+  Object.keys(FK).forEach(function(k){ lg.insertAdjacentHTML('beforeend', '<li><span class="swatch" style="background:' + css(FK[k].slot) + '"></span>' + FK[k].name + '</li>'); });
+}
+function setTx(n){ TX.n = Math.max(1, Math.min(200, n)); $('tx-n').value = TX.n; drawTx(); }
+$('tx-n').addEventListener('input', function(){ setTx(Number(this.value)); });
+$('tx-q').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setTx(Number(b.dataset.n)); });
+
+/* ====================================================================
+   W3 · EVM header fields and the lean header
+   ==================================================================== */
+var HD = { on:false, sel:'prev_randao' };
+var HD_ROLE = {
+  link: { slot:'--s1', name:'linkage and identity' },
+  com:  { slot:'--s3', name:'commitments: what the tries buy' },
+  fee:  { slot:'--s4', name:'fee accounting' },
+  vest: { slot:'--c-frame', name:'fork-mandated, fixed on this chain' },
+  hook: { slot:'--s2', name:'prev_randao: unused, zero' }
+};
+var HD_F = [
+  { k:'parent_hash', b:32, r:'link', d:'Hash of the parent EVM header. It links the chain.' },
+  { k:'ommers_hash', b:32, r:'vest', sh:'ommers', d:'Hash of the uncle list. Always the empty-list hash: proof of stake has no uncles.' },
+  { k:'beneficiary', b:20, r:'fee', sh:'benef.', d:'Address that receives the priority fees of the block.' },
+  { k:'state_root', b:32, r:'com', d:'Root of the state trie after the block: every balance, nonce, code and storage slot.' },
+  { k:'transactions_root', b:32, r:'com', sh:'txs_root', d:'Root of a trie over the transactions of the block. It gives inclusion proofs.' },
+  { k:'receipts_root', b:32, r:'com', sh:'receipts', d:'Root of a trie over the receipts: status, gas used and logs of each transaction.' },
+  { k:'logs_bloom', b:256, r:'com', d:'2048-bit filter over the log addresses and topics. A client uses it to skip blocks in a log search.' },
+  { k:'difficulty', b:32, r:'vest', d:'Proof-of-work difficulty. Always zero.' },
+  { k:'number', b:8, r:'link', d:'Block height, u64.' },
+  { k:'gas_limit', b:8, r:'fee', sh:'gas_lim', d:'Most gas the block can use, u64.' },
+  { k:'gas_used', b:8, r:'fee', sh:'gas_used', d:'Gas the block used, u64.' },
+  { k:'timestamp', b:8, r:'link', sh:'time', d:'Block time in seconds, u64.' },
+  { k:'extra_data', b:32, r:'link', sh:'extra', bs:'0–32', d:'Free bytes set by the proposer, at most 32. Drawn at the maximum width.' },
+  { k:'prev_randao', b:32, r:'hook', d:'Called mix_hash before the Merge. On Ethereum it carries beacon-chain randomness. This chain has no beacon chain, so the field is unused: zero.',
+    don:'Holds c_h, the commitment of the lean block at this height. The EVM block hash covers it, so the certificate covers the lean block.' },
+  { k:'nonce', b:8, r:'vest', d:'Proof-of-work nonce. Always zero.' },
+  { k:'base_fee_per_gas', b:8, r:'fee', sh:'base_fee', d:'EIP-1559 base fee of the block, u64.' },
+  { k:'withdrawals_root', b:32, r:'vest', sh:'withdrawals', d:'Root of the withdrawals list (Shanghai). Always the empty root: no beacon chain.' },
+  { k:'blob_gas_used', b:8, r:'vest', sh:'blob_gas', d:'EIP-4844 blob gas used (Cancun). Fork-mandated.' },
+  { k:'excess_blob_gas', b:8, r:'vest', sh:'excess', d:'EIP-4844 excess blob gas (Cancun). Fork-mandated.' },
+  { k:'parent_beacon_block_root', b:32, r:'vest', sh:'beacon_root', d:'EIP-4788 field (Cancun). Fork-mandated. This chain has no beacon chain.' },
+  { k:'requests_hash', b:32, r:'vest', sh:'requests', d:'EIP-7685 hash of the execution-layer requests (Prague). Fork-mandated.' }
+];
+var HD_L = [
+  { k:'parent commitment', b:32, lab:'parent = c_{h−1}', sh:'parent = c_{h−1}', d:'c_{h−1}, the commitment of the parent lean block. It links the lean chain.' },
+  { k:'number', b:8, d:'Lean block height, u64.' },
+  { k:'timestamp_ms', b:8, sh:'time_ms', d:'Block time in milliseconds, u64. It must match the EVM block time.' },
+  { k:'n_txs', b:4, sh:'n', d:'Number of transactions, u32.' }
+];
+function hdFieldDesc(f){ return (f.k === 'prev_randao' && HD.on) ? f.don : f.d; }
+function hdInfo(f, lean){
+  var role = lean ? 'lean header' : HD_ROLE[f.r].name;
+  if (!lean && f.k === 'prev_randao' && HD.on) role = 'the hook: payment-lane commitment';
+  $('hd-info').innerHTML = '<div class="k">' + role + '</div><div class="v" style="font-size:1.05rem">' + f.k + ' · ' + (f.bs || f.b) + ' B</div>' +
+    '<div class="d" style="font-family:var(--font); font-size:.92rem; color:var(--ink-2)">' + htmlC(hdFieldDesc(f)) + '</div>';
+  HD.sel = f.k;
+}
+function hdBox(svg, f, x, y, w, h, o){
+  var col = o.col, fs = o.fs;
+  var r = el('rect', { x:x + 1.5, y:y, width:Math.max(1, w - 3), height:h, rx:3, fill:col, 'fill-opacity':o.fo, stroke:col,
+    'stroke-width':o.sw || 1.2, 'stroke-dasharray':o.dash || null, 'class':'fld' });
+  svg.appendChild(r);
+  var name = o.label || f.k, alt = f.sh || f.k, room = w - 8, two = !o.narrow && h >= 34;
+  var lab = tw(name, fs) <= room ? name : (tw(alt, fs) <= room ? alt : (tw(alt, fs - 1.5) <= room ? alt : ''));
+  var lfs = tw(lab, fs) <= room ? fs : fs - 1.5;
+  var line2 = o.line2 !== undefined ? o.line2 : (f.bs || f.b) + ' B';
+  if (two && line2 && tw(line2, 10) > room) line2 = '';
+  if (lab){
+    svg.appendChild(rich(x + w / 2, y + (two && line2 ? h / 2 - 2 : h / 2 + 4), lab, { anchor:'middle', fs:lfs, w: o.bold ? 700 : 400, fill:css('--ink-1') }));
+    if (two && line2) svg.appendChild(rich(x + w / 2, y + h / 2 + 12, line2, { anchor:'middle', fs:10, fill:css('--ink-muted') }));
+  }
+  tapTip(r, function(){ return '<b>' + htmlC(o.label || f.k) + ' · ' + (f.bs || f.b) + ' B</b>' + htmlC(o.desc || hdFieldDesc(f)); }, function(){ hdInfo(f, o.lean); }, true);
+  return { x:x + 1.5, y:y, w:w - 3, h:h };
+}
+function drawHd(){
+  var svg = $('hd-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 640, bpr = narrow ? 32 : 64, mr = 28, gw = W - mr, s = gw / bpr;
+  var rowH = narrow ? 30 : 36, pitch = rowH + 4, fs = narrow ? 11 : 12, hook = css('--s2');
+  arrowDef(svg, 'hd-arr', hook); arrowDef(svg, 'hd-arr2', css('--ink-muted'));
+  svg.appendChild(T(0, 12, 'EVM header · box width ∝ bytes · ' + bpr + ' B per row', { fs:11, fill:css('--ink-muted') }));
+  var y0 = 22, cur = 0, row = 0, boxes = {};
+  HD_F.forEach(function(f){
+    var x, y, w, h;
+    if (f.b > bpr){
+      if (cur > 0){ row++; cur = 0; }
+      var nr = f.b / bpr; x = 0; y = y0 + row * pitch; w = gw; h = nr * pitch - 4; row += nr;
+    } else {
+      if (cur + f.b > bpr){ row++; cur = 0; }
+      x = cur * s; y = y0 + row * pitch; w = f.b * s; h = rowH; cur += f.b;
+      if (cur >= bpr){ row++; cur = 0; }
+    }
+    var isHook = f.r === 'hook', on = isHook && HD.on, col = css(HD_ROLE[f.r].slot);
+    var o = { col:col, fs:fs, narrow:narrow, fo: on ? 0.34 : (isHook ? 0.05 : 0.17), sw: on ? 2.6 : 1.2, dash: (isHook && !on) ? '4 3' : null, bold:on };
+    if (isHook){
+      o.label = on ? 'prev_randao = c_h' : (narrow ? 'prev_randao = 0' : 'prev_randao');
+      o.line2 = on ? '32 B' : '0x00…00 (unused)';
+    }
+    boxes[f.k] = hdBox(svg, f, x, y, w, h, o);
+  });
+  if (cur > 0) row++;
+  var gridBottom = y0 + row * pitch - 4;
+  var yC = gridBottom + 34, yL = yC + rowH + (narrow ? 50 : 40), yK = yL + (narrow ? 2 * pitch : pitch) + 34, H = yK + rowH + 26;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  if (!HD.on){
+    var midY = (yC + H) / 2;
+    svg.appendChild(T(W / 2, midY - 8, 'payment lane off', { anchor:'middle', fs:13, w:700, fill:css('--ink-muted') }));
+    svg.appendChild(T(W / 2, midY + 12, 'prev_randao = 0 · no lean block', { anchor:'middle', fs:12, fill:css('--ink-muted') }));
+    return;
+  }
+  /* c_h row */
+  var cx0 = narrow ? 0 : 32 * s, cwid = 32 * s;
+  var cbox = hdBox(svg, { k:'c_h', b:32 }, cx0, yC, cwid, rowH, { col:hook, fs:fs, narrow:narrow, fo:0.34, sw:2.6, bold:true,
+    label:'c_h', line2:'recomputed, never carried', lean:true, desc:'The commitment of this lean block. Every node recomputes it from the bytes. The proposer copies it into prev_randao.' });
+  if (!narrow) svg.appendChild(rich(cx0 - 12, yC + rowH / 2 + 4, 'c_h = keccak(parent ‖ number ‖ timestamp_ms ‖ keccak(txs))', { anchor:'end', fs:11, fill:css('--ink-2') }));
+  /* c_h → prev_randao, routed through the right margin so it crosses no field */
+  var pr = boxes.prev_randao, xr = gw + 14;
+  svg.appendChild(el('path', { d:'M' + (cbox.x + cbox.w) + ' ' + (yC + rowH / 2) + 'H' + xr + 'V' + (pr.y + pr.h / 2) + 'H' + (pr.x + pr.w + 2),
+    fill:'none', stroke:hook, 'stroke-width':2, 'marker-end':'url(#hd-arr)' }));
+  /* lean header at the same byte scale */
+  svg.appendChild(T(0, yL - 9, 'lean header · same scale · 52 B', { fs:11, w:700, fill:css('--ink-2') }));
+  var lc = 0, lrow = 0, lcol = css('--s1'), lb = {};
+  HD_L.forEach(function(f){
+    if (lc + f.b > bpr){ lrow++; lc = 0; }
+    lb[f.k] = hdBox(svg, f, lc * s, yL + lrow * pitch, f.b * s, rowH, { col:lcol, fs:fs, narrow:narrow, fo:0.17, label:f.lab, lean:true, line2: f.b >= 8 ? f.b + ' B' : '' });
+    lc += f.b; if (lc >= bpr){ lrow++; lc = 0; }
+  });
+  var tx0 = lc * s, txw = gw - tx0;
+  svg.appendChild(el('rect', { x:tx0 + 1.5, y:yL + lrow * pitch, width:txw - 3, height:rowH, rx:3, fill:'none', stroke:css('--axis'), 'stroke-dasharray':'4 3' }));
+  if (tw('txs …', fs) < txw - 8) svg.appendChild(T(tx0 + txw / 2, yL + lrow * pitch + rowH / 2 + 4, 'txs …', { anchor:'middle', fs:fs, fill:css('--ink-muted') }));
+  /* lean header → c_h (keccak) */
+  var ax = narrow ? gw * 0.86 : 44 * s;
+  svg.appendChild(el('line', { x1:ax, x2:ax, y1:yL - 2, y2:yC + rowH + 3, stroke:css('--ink-muted'), 'stroke-width':1.5, 'marker-end':'url(#hd-arr2)' }));
+  if (narrow) svg.appendChild(T(ax - 7, yC + rowH + 18, 'keccak', { anchor:'end', fs:11, fill:css('--ink-muted') }));
+  else svg.appendChild(T(ax + 7, (yC + rowH + yL) / 2 + 4, 'keccak', { fs:11, fill:css('--ink-muted') }));
+  /* the lean chain */
+  var cbw = Math.min(118, (gw - 56) / 3), gapc = narrow ? 20 : 32;
+  svg.appendChild(T(0, yK - 9, 'lean chain · each header holds its parent’s commitment', { fs:11, fill:css('--ink-muted') }));
+  ['c_{h−2}', 'c_{h−1}', 'c_h'].forEach(function(lbl, i){
+    var x = i * (cbw + gapc), last = i === 2;
+    svg.appendChild(el('rect', { x:x, y:yK, width:cbw, height:rowH, rx:3, fill: last ? hook : lcol, 'fill-opacity': last ? 0.34 : 0.17, stroke: last ? hook : lcol, 'stroke-width': last ? 2.2 : 1.2 }));
+    svg.appendChild(rich(x + cbw / 2, yK + rowH / 2 + 4, narrow ? lbl : 'block ' + ['h−2', 'h−1', 'h'][i] + ' · ' + lbl, { anchor:'middle', fs: narrow ? 10 : 11, w: last ? 700 : 400 }));
+    if (i > 0) svg.appendChild(el('line', { x1:x - 3, x2:x - gapc + 4, y1:yK + rowH / 2, y2:yK + rowH / 2, stroke:css('--ink-muted'), 'stroke-width':1.5, 'marker-end':'url(#hd-arr2)' }));
+  });
+}
+function hdLegend(){
+  var lg = $('hd-legend'); lg.innerHTML = '';
+  Object.keys(HD_ROLE).forEach(function(k){ lg.insertAdjacentHTML('beforeend', '<li><span class="swatch" style="background:' + css(HD_ROLE[k].slot) + '"></span>' + HD_ROLE[k].name + '</li>'); });
+}
+function setHd(on){
+  HD.on = on; pressSeg('hd-mode', 'data-m', on ? 1 : 0); drawHd();
+  var f = HD_F.filter(function(x){ return x.k === 'prev_randao'; })[0]; hdInfo(f); mathIn($('hd-info'));
+}
+$('hd-mode').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setHd(b.dataset.m === '1'); });
+
+/* ====================================================================
+   W4 · indexer options (a proposal)
+   ==================================================================== */
+var IX = { o:1 };
+var IX_OPT = [
+  { gives:'Balances, receipts, history and search from one API. Each answer is signed.',
+    trust:'One operator. Anyone can replay to check, but most clients will not.',
+    change:'None.' },
+  { gives:'The same answers from N independent operators. A client accepts an answer that M of them sign. Service continues when some operators fail.',
+    trust:'One honest replayer who watches. A wrong signed root is objective evidence. Replay settles a dispute. The indexers run no consensus among themselves.',
+    change:'None.' },
+  { gives:'Inclusion proofs and receipt proofs against the certified header. Balances still come from the indexers of (b).',
+    trust:'Consensus only, for inclusion and receipts. The indexers of (b), for balances.',
+    change:'The txs hash in the lean header becomes a Merkle root over the transactions, plus one applied/no-op bit per transaction. A coordinated format change.',
+    note:'Open design point: execution produces the bits, and the vote does not wait for execution. One choice: header h carries the bits of block h−1.' },
+  { gives:'Balance and nonce proofs with no trusted party.',
+    trust:'Consensus only.',
+    change:'Header h carries the state root of height h−K: a fixed delay of K blocks. Validators check it. This reuses the existing consensus. Validators keep a state tree, off the critical path.' }
+];
+function ixBox(svg, cx, cy, bw, bh, lines, o){
+  o = o || {};
+  svg.appendChild(el('rect', { x:cx - bw / 2, y:cy - bh / 2, width:bw, height:bh, rx:5, fill:css('--plane'), stroke:o.stroke || css('--axis'),
+    'stroke-width':o.sw || 1.3, 'stroke-dasharray':o.dash || null }));
+  var y = cy - (lines.length - 1) * 7.5 + 4;
+  lines.forEach(function(t, i){
+    var hl = o.hl && o.hl.indexOf(i) >= 0;
+    svg.appendChild(T(cx, y + i * 15, t, { anchor:'middle', fs: i === 0 ? 12.5 : 11, w: (i === 0 || hl) ? 700 : 400,
+      fill: hl ? (o.hlc || css('--accent')) : (i === 0 ? css('--ink-1') : css('--ink-2')) }));
+  });
+}
+function drawIx(){
+  var svg = $('ix-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 700, o = IX.o, multi = o >= 1;
+  var ink = css('--ink-muted'), pc = o === 2 ? css('--s3') : css('--s2');
+  arrowDef(svg, 'ix-arr', ink); arrowDef(svg, 'ix-arrp', pc);
+  var Vl = ['Validators', 'BFT consensus'].concat(o === 3 ? ['+ state tree'] : []);
+  var Bl = o === 2 ? ['Certified bytes', 'header with', 'Merkle root + bits'] : (o === 3 ? ['Certified bytes', 'header with', 'state root of h−K'] : ['Certified bytes', 'EVM header', '+ lean block']);
+  var Il = multi ? ['Indexers (N)', 'replay, index,', 'M of N sign roots'] : ['Indexer', 'replay, index,', 'signs roots'];
+  var Cl = ['Clients', 'wallets, exchanges,', 'explorers'];
+  var Al = ['Auditor', 'replays,', 'compares roots'];
+  var proofLab = o === 2 ? 'inclusion + receipt proof' : 'balance proof, state root of h−K';
+  function line(pts, opts){
+    var d = 'M' + pts.map(function(p){ return p[0] + ' ' + p[1]; }).join('L');
+    svg.appendChild(el('path', { d:d, fill:'none', stroke:opts.c || ink, 'stroke-width':opts.w || 1.5, 'stroke-dasharray':opts.dash || null, 'marker-end':'url(#' + (opts.m || 'ix-arr') + ')' }));
+  }
+  function stack(cx, cy, bw, bh){
+    if (!multi) return;
+    [12, 6].forEach(function(d){ svg.appendChild(el('rect', { x:cx - bw / 2 + d, y:cy - bh / 2 - d, width:bw, height:bh, rx:5, fill:css('--surface-1'), stroke:css('--axis'), 'stroke-width':1.1 })); });
+  }
+  var bh = 66, H;
+  if (!narrow){
+    var bw = Math.min(160, W * 0.18), my = 150, ay = my + 118;
+    var V = bw / 2, B = W * 0.36, I = W * 0.64, C = W - bw / 2 - 2;
+    H = ay + bh / 2 + 8;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    line([[V + bw / 2, my], [B - bw / 2 - 3, my]], {});
+    svg.appendChild(T((V + B) / 2, my - 8, 'certify', { anchor:'middle', fs:11, fill:ink }));
+    line([[B + bw / 2, my], [I - bw / 2 - 3, my]], {});
+    svg.appendChild(T((B + I) / 2, my - 8, 'bytes', { anchor:'middle', fs:11, fill:ink }));
+    line([[I + bw / 2 + (multi ? 12 : 0), my], [C - bw / 2 - 3, my]], {});
+    svg.appendChild(T((I + bw / 2 + (multi ? 12 : 0) + C - bw / 2) / 2, my - 8, 'answers', { anchor:'middle', fs:11, fill:ink }));
+    if (multi){
+      line([[B, my + bh / 2], [B, ay], [I - bw / 2 - 3, ay]], { dash:'5 4' });
+      svg.appendChild(T((B + I - bw / 2) / 2, ay - 8, 'replay', { anchor:'middle', fs:11, fill:ink }));
+      line([[I, ay - bh / 2], [I, my + bh / 2 + 3]], { dash:'5 4' });
+      svg.appendChild(T(I + 8, (ay - bh / 2 + my + bh / 2) / 2 + 4, 'compare roots', { fs:11, fill:ink }));
+    }
+    if (o >= 2){
+      var py = 40;
+      line([[B, my - bh / 2], [B, py], [C, py], [C, my - bh / 2 - 3]], { c:pc, w:2.2, m:'ix-arrp' });
+      svg.appendChild(T((B + C) / 2, py - 8, proofLab, { anchor:'middle', fs:11.5, w:700, fill:pc }));
+    }
+    ixBox(svg, V, my, bw, bh, Vl, { hl: o === 3 ? [2] : null, hlc:pc });
+    ixBox(svg, B, my, bw, bh, Bl, { hl: o >= 2 ? [2] : null, hlc:pc });
+    stack(I, my, bw, bh);
+    ixBox(svg, I, my, bw, bh, Il);
+    ixBox(svg, C, my, bw, bh, Cl);
+    if (multi) ixBox(svg, I, ay, bw, bh - 10, Al, { dash:'5 4' });
+  } else {
+    var nbw = 160, cx = 40 + nbw / 2, rows = [44, 154, 266, 384], ax2 = W - 56, abw = 106, ayy = 324;
+    H = rows[3] + bh / 2 + 8;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    line([[cx, rows[0] + bh / 2], [cx, rows[1] - bh / 2 - 3]], {});
+    svg.appendChild(T(cx + 8, (rows[0] + rows[1]) / 2 + 4, 'certify', { fs:11, fill:ink }));
+    line([[cx, rows[1] + bh / 2], [cx, rows[2] - bh / 2 - (multi ? 15 : 3)]], {});
+    svg.appendChild(T(cx + 8, (rows[1] + rows[2]) / 2 + 4, 'bytes', { fs:11, fill:ink }));
+    line([[cx, rows[2] + bh / 2], [cx, rows[3] - bh / 2 - 3]], {});
+    svg.appendChild(T(cx + 8, (rows[2] + rows[3]) / 2 + 8, 'answers', { fs:11, fill:ink }));
+    if (multi){
+      line([[cx + nbw / 2, rows[1]], [ax2 + 30, rows[1]], [ax2 + 30, ayy - (bh - 10) / 2 - 3]], { dash:'5 4' });
+      svg.appendChild(T((cx + nbw / 2 + ax2 + 30) / 2, rows[1] - 7, 'replay', { anchor:'middle', fs:11, fill:ink }));
+      line([[ax2 - 24, ayy - (bh - 10) / 2], [ax2 - 24, rows[2] + 4], [cx + nbw / 2 + 15, rows[2] + 4]], { dash:'5 4' });
+      svg.appendChild(T(ax2 - 24, rows[2] - 4, 'compare', { anchor:'middle', fs:11, fill:ink }));
+    }
+    if (o >= 2){
+      var px = 14;
+      line([[cx - nbw / 2, rows[1]], [px, rows[1]], [px, rows[3]], [cx - nbw / 2 - 3, rows[3]]], { c:pc, w:2.2, m:'ix-arrp' });
+      svg.appendChild(T(px + 13, (rows[1] + rows[3]) / 2, o === 2 ? 'inclusion + receipt proof' : 'balance proof (h−K root)', { anchor:'middle', fs:11, w:700, fill:pc, rot:-90 }));
+    }
+    ixBox(svg, cx, rows[0], nbw, bh, Vl, { hl: o === 3 ? [2] : null, hlc:pc });
+    ixBox(svg, cx, rows[1], nbw, bh, Bl, { hl: o >= 2 ? [2] : null, hlc:pc });
+    stack(cx, rows[2], nbw, bh);
+    ixBox(svg, cx, rows[2], nbw, bh, Il);
+    ixBox(svg, cx, rows[3], nbw, bh, Cl);
+    if (multi) ixBox(svg, ax2, ayy, abw, bh - 10, Al, { dash:'5 4' });
+  }
+  var op = IX_OPT[o];
+  function card(k, v){ return '<div class="ro"><div class="k">' + k + '</div><div class="d">' + v + '</div></div>'; }
+  $('ix-read').innerHTML = card('What it gives', op.gives) + card('What you must trust', op.trust) +
+    card('What changes in the protocol', op.change + (op.note ? '<br><span class="note">' + op.note + '</span>' : ''));
+}
+$('ix-opt').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; IX.o = Number(b.dataset.o); pressSeg('ix-opt', 'data-o', IX.o); drawIx(); });
+
+/* ====================================================================
+   theme switch, nav highlight
+   ==================================================================== */
+function redrawAll(){
+  drawEx(false); exRead(); drawHt(); drawDr(false); drawPr(false); drawAp(false);
+  drawLn(); txTables(); drawTx(); hdLegend(); drawHd(); drawIx();
+}
+$('theme-btn').addEventListener('click', function(){
+  var root = document.documentElement, cur = root.getAttribute('data-theme');
+  if (!cur){ try { cur = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e){ cur = 'light'; } }
+  var nx = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', nx);
+  try { localStorage.setItem('fastlane-theme', nx); } catch(e){}
+  redrawAll();
+});
+try {
+  var mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mqDark.addEventListener) mqDark.addEventListener('change', redrawAll); else if (mqDark.addListener) mqDark.addListener(redrawAll);
+} catch(e){}
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  var links = {};
+  Array.prototype.forEach.call(document.querySelectorAll('.topbar nav a[href^="#"]'), function(a){ links[a.getAttribute('href').slice(1)] = a; });
+  var part2 = false;
+  var spy = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if (!e.isIntersecting) return;
+      var key = e.target.getAttribute('data-nav');
+      Object.keys(links).forEach(function(k){ if (k === key) links[k].setAttribute('aria-current', 'true'); else links[k].removeAttribute('aria-current'); });
+    });
+  }, { rootMargin:'-45% 0px -50% 0px' });
+  Array.prototype.forEach.call(document.querySelectorAll('main section'), function(s){
+    if (s.id === 'measured') part2 = true;
+    var key = links[s.id] ? s.id : (part2 ? 'measured' : null);
+    if (key){ s.setAttribute('data-nav', key); spy.observe(s); }
+  });
+})();
+
+/* ====================================================================
    boot, entrances, resize
    ==================================================================== */
 var KOPTS = { delimiters:[{left:'$', right:'$', display:false}], throwOnError:false };
 setExN(100); EX.entered = false;
 drawHt(); syncHtTable();
 drawDr(false); drawPr(false); drawAp(false);
+drawLn(); txTables(); setTx(10); hdLegend(); setHd(false); drawIx();
 
 function countTiles(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-count]'), function(n){
@@ -990,7 +1881,8 @@ if (hasIO){
 
 var rz = null;
 window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(function(){
-  drawEx(false); drawHt(); drawDr(false); drawPr(false); drawAp(false); }, 150); });
+  drawEx(false); drawHt(); drawDr(false); drawPr(false); drawAp(false);
+  drawLn(); drawTx(); drawHd(); drawIx(); }, 150); });
 
 document.addEventListener('DOMContentLoaded', function(){
   if (window.renderMathInElement) renderMathInElement(document.body, KOPTS);
