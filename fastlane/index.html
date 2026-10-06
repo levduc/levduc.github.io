@@ -191,6 +191,7 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
 .chips li s{color:var(--ink-muted)}
 .ftab td{font-family:var(--mono); font-size:.86rem}
 .ftab td:first-child{white-space:nowrap}
+.ftab .enc{font-size:.76rem; color:var(--ink-muted); white-space:normal; margin-left:1.2rem}
 .ftab td .swatch{display:inline-block; vertical-align:-1px; margin-right:.4rem}
 .axisline{display:flex; justify-content:space-between; gap:12px; font-family:var(--mono); font-size:.78rem; color:var(--ink-muted);
   border-top:1px solid var(--axis); margin-top:8px; padding-top:4px; max-width:640px}
@@ -201,6 +202,22 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
 .fld:focus{outline:none}
 .fld:focus-visible{stroke:var(--accent) !important; stroke-width:3px !important}
 #hd-info{min-height:4.6em}
+.tradeoff{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; margin:6px 0 18px}
+.tpanel{border-radius:6px; padding:16px 18px; border:2px solid; background:var(--surface-1)}
+.tpanel h3{font-size:1.25rem; margin-bottom:.5rem}
+.tpanel ul{list-style:none; margin:0; padding:0}
+.tpanel li{font-size:1.12rem; line-height:1.35; padding:.32rem 0 .32rem 1.7rem; position:relative; color:var(--ink-1)}
+.tpanel li::before{position:absolute; left:0; top:.28rem; font-family:var(--mono); font-weight:700; font-size:1.15rem}
+.tpanel.lose{border-color:var(--critical); background:color-mix(in srgb, var(--critical) 7%, var(--plane))}
+.tpanel.lose h3,.tpanel.lose li::before{color:var(--critical)}
+.tpanel.lose li::before{content:"✗"}
+.tpanel.keep{border-color:var(--good); background:color-mix(in srgb, var(--good) 7%, var(--plane))}
+.tpanel.keep h3,.tpanel.keep li::before{color:var(--good)}
+.tpanel.keep li::before{content:"✓"}
+.bigline{font-size:1.15rem; margin:0 0 12px}
+.question{font-size:1.45rem; line-height:1.3; color:var(--ink-head); border-left:5px solid var(--s2); padding:6px 0 6px 16px; margin:18px 0}
+@media (max-width:760px){ .tpanel{padding:12px 12px} .tpanel li{font-size:1rem; padding-left:1.4rem} .tpanel h3{font-size:1.1rem} .question{font-size:1.2rem} }
+
 
 
 @media (max-width:760px){
@@ -324,7 +341,8 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
   <ul class="bul">
     <li>The EVM lane carries EIP-1559 native transfers. One transfer pays one recipient. It is about 122 bytes.</li>
     <li>The payment lane carries one transaction type: <code>0x50</code>, fan-out. One signature pays $N$ recipients.</li>
-    <li>Size: $72 + 28N$ bytes. Each recipient adds 28 bytes: a 20-byte address and an 8-byte amount.</li>
+    <li>Transaction: $72 + 28N$ B. Each recipient adds 28 B: a 20-byte address and an 8-byte amount.</li>
+    <li><b>In a block, each transaction also has a 4 B length prefix (u32).</b> So a transaction with $N = 1$ is 100 B, and it takes 104 B of block bytes.</li>
   </ul>
   <div class="controls">
     <div class="ctl">
@@ -341,6 +359,9 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
       </div>
     </div>
   </div>
+  <div class="chart" style="margin-bottom:14px">
+    <svg id="fo-svg" role="img" aria-label="One signed transaction fans out to N recipients; the EVM lane needs N transactions, each with its own signature, nonce and fee fields"></svg>
+  </div>
   <div class="chart">
     <svg id="tx-svg" role="img" aria-label="Byte strips: one fan-out transaction against N Ethereum transfers, at the same scale"></svg>
     <ul class="legend" id="tx-legend"></ul>
@@ -352,10 +373,17 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
       <div class="tscroll"><table class="ftab" id="tx-eth-tab"></table></div>
     </div>
     <div class="card">
-      <h3>Fan-out <code>0x50</code> · $72 + 28N$ B</h3>
+      <h3>Fan-out <code>0x50</code> · transaction: $72 + 28N$ B</h3>
       <div class="tscroll"><table class="ftab" id="tx-lean-tab"></table></div>
     </div>
   </div>
+  <h3 style="margin-top:20px">Why the amount sizes differ</h3>
+  <ul class="bul">
+    <li><b>EVM <code>value</code>:</b> a u256 in wei, RLP-encoded. It is big-endian, with leading zero bytes removed, plus a 1-byte length prefix. So it takes 1 to 33 bytes.</li>
+    <li>One whole token is $10^{18}$ wei. That needs 8 bytes plus 1 prefix byte: about 9 bytes.</li>
+    <li><b>Payment-lane amount:</b> a u64 in gwei. It is always exactly 8 bytes, with no prefix.</li>
+    <li>The other RLP fields (chain_id, nonce, fee fields) also change length with their values. Every fan-out field has a fixed width.</li>
+  </ul>
   <h3 style="margin-top:20px">What the format drops</h3>
   <ul class="bul">
     <li><b>chain_id.</b> A domain tag in the signing hash binds the chain. The transaction does not carry it.</li>
@@ -367,15 +395,15 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
   </ul>
   <details class="tbl"><summary>Check the math</summary><div class="tscroll">
     <table>
-      <thead><tr><th class="num">N</th><th class="num">Fan-out (72 + 28N)</th><th class="num">Bytes per payment</th><th class="num">N EVM transfers (122N)</th><th class="num">Signatures</th></tr></thead>
+      <thead><tr><th class="num">N</th><th class="num">Transaction (72 + 28N)</th><th class="num">In a block (+ 4 B prefix)</th><th class="num">Bytes per payment</th><th class="num">N EVM transfers (122N)</th><th class="num">Signatures</th></tr></thead>
       <tbody>
-        <tr><td class="num">1</td><td class="num">100 B</td><td class="num">100</td><td class="num">122 B</td><td class="num">1 vs 1</td></tr>
-        <tr><td class="num">10</td><td class="num">352 B</td><td class="num">35.2</td><td class="num">1,220 B</td><td class="num">1 vs 10</td></tr>
-        <tr><td class="num">100</td><td class="num">2,872 B</td><td class="num">28.7</td><td class="num">12,200 B</td><td class="num">1 vs 100</td></tr>
-        <tr><td class="num">200</td><td class="num">5,672 B</td><td class="num">28.4</td><td class="num">24,400 B</td><td class="num">1 vs 200</td></tr>
+        <tr><td class="num">1</td><td class="num">100 B</td><td class="num">104 B</td><td class="num">100</td><td class="num">122 B</td><td class="num">1 vs 1</td></tr>
+        <tr><td class="num">10</td><td class="num">352 B</td><td class="num">356 B</td><td class="num">35.2</td><td class="num">1,220 B</td><td class="num">1 vs 10</td></tr>
+        <tr><td class="num">100</td><td class="num">2,872 B</td><td class="num">2,876 B</td><td class="num">28.7</td><td class="num">12,200 B</td><td class="num">1 vs 100</td></tr>
+        <tr><td class="num">200</td><td class="num">5,672 B</td><td class="num">5,676 B</td><td class="num">28.4</td><td class="num">24,400 B</td><td class="num">1 vs 200</td></tr>
       </tbody>
     </table></div>
-    <p class="note" style="margin-top:8px">122 B is a typical size. The nonce, fee and value fields of an EIP-1559 transfer change length with their values.</p>
+    <p class="note" style="margin-top:8px">Bytes per payment use the transaction size, without the 4 B length prefix. 122 B is a typical EIP-1559 transfer: its RLP fields change length with their values.</p>
   </details>
 </section>
 
@@ -407,12 +435,14 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
       <h3>Lean header: 52 bytes</h3>
       <ul>
         <li>parent commitment 32 | number u64 | timestamp_ms u64 | n_txs u32</li>
-        <li>Then the transactions, each with a length prefix.</li>
-        <li>The commitment chains to the parent:</li>
+        <li>Then the transactions. Each has a 4 B length prefix (u32).</li>
+        <li>Two hashes commit to the block:</li>
       </ul>
-      <p class="eq" style="margin:.5rem 0">$c_h = \mathrm{keccak}\big(c_{h-1} \,\|\, h \,\|\, t_h \,\|\, \mathrm{keccak}(\mathrm{txs}_h)\big)$</p>
-      <p class="note" style="margin:0 0 .5rem; text-align:center">$h$ = number · $t_h$ = timestamp_ms · txs = the transaction section</p>
+      <p class="eq" style="margin:.5rem 0 .2rem">$\text{txs\_hash} = \mathrm{keccak}\big(\text{n\_txs} \,\|\, \text{every tx}\big)$</p>
+      <p class="eq" style="margin:.2rem 0 .5rem">$c_h = \mathrm{keccak}\big(c_{h-1} \,\|\, h \,\|\, t_h \,\|\, \text{txs\_hash}\big)$</p>
+      <p class="note" style="margin:0 0 .5rem; text-align:center">$h$ = number · $t_h$ = timestamp_ms · every tx includes its length prefix</p>
       <ul>
+        <li>So every byte of the lean block is inside $c_h$.</li>
         <li>No block carries its own commitment. Every node recomputes $c_h$ from the bytes.</li>
       </ul>
     </div>
@@ -432,49 +462,41 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
     <li><s>state_root</s></li><li><s>transactions Merkle root</s></li><li><s>receipts_root</s></li>
     <li><s>logs_bloom</s></li><li><s>gas_limit, gas_used, base_fee</s></li><li><s>beneficiary</s></li>
   </ul>
-  <p class="note" style="margin-top:8px">The transaction hash in $c_h$ is a flat keccak over the transaction bytes, not a Merkle root.</p>
+  <p class="note" style="margin-top:8px">txs_hash is a flat keccak over the block tail, not a Merkle root.</p>
 </section>
 
 <section id="indexers">
   <p class="eyebrow">Walk-through 4 / 4</p>
   <h2>The trade-off, and the indexer we need</h2>
-  <p class="lede">The lean header has no state root, no receipts root, no log bloom and no transaction Merkle root.</p>
-  <div class="cmp">
-    <div class="card">
-      <h3>What the payment lane gives up</h3>
+  <div class="tradeoff">
+    <div class="tpanel lose">
+      <h3>Gives up</h3>
       <ul>
-        <li>No balance or nonce proofs.</li>
-        <li>No light-client support.</li>
-        <li>Consensus certifies the transactions. It does not certify the balances they produce.</li>
-        <li>No receipt or event commitments.</li>
-        <li>No standard Ethereum wallet JSON-RPC.</li>
+        <li>Balance and nonce proofs</li>
+        <li>Light clients</li>
+        <li>Certified balances</li>
+        <li>Receipt and event commitments</li>
+        <li>Standard wallet JSON-RPC</li>
       </ul>
     </div>
-    <div class="card">
-      <h3>What it keeps</h3>
+    <div class="tpanel keep">
+      <h3>Keeps</h3>
       <ul>
-        <li>Block bytes and their order are certified.</li>
-        <li>Execution is deterministic.</li>
-        <li>Anyone can replay the chain from the certified bytes.</li>
-        <li>A complete receipt is one bit: applied or no-op.</li>
+        <li>Certified block bytes and order</li>
+        <li>Deterministic execution</li>
+        <li>Anyone can replay</li>
+        <li>One-bit receipts: applied or no-op</li>
       </ul>
     </div>
   </div>
-  <p style="margin-top:14px"><b>So balances, receipts, history and proofs must come from indexers.</b></p>
-  <div class="callout ask" style="margin:14px 0">
-    <p class="eyebrow" style="margin:0 0 .2rem">Question for the meeting</p>
-    <p style="font-size:1.1rem">Do indexers need their own full consensus, or something weaker?</p>
-  </div>
+  <p class="bigline">So balances, receipts and proofs come from <b>indexers</b>.</p>
+  <p class="question">Do indexers need their own full consensus, or something weaker?</p>
   <div class="callout prop">
     <span class="badge prop">Proposal · not a measured result</span>
     <ul>
-      <li>Agreement has two parts: order the input, then compute the output.</li>
-      <li>The chain's consensus already orders the input. That is the hard part.</li>
-      <li>An indexer's output is a deterministic function of the certified input.</li>
-      <li>So indexers need no BFT protocol among themselves.</li>
-      <li>One honest replayer is enough to detect a wrong answer.</li>
-      <li>M-of-N signatures over the same output give availability and convenience.</li>
-      <li>A disagreement is objective evidence. Replay settles it.</li>
+      <li>Consensus already orders the input.</li>
+      <li>An indexer output is a deterministic function of that input.</li>
+      <li>So: no consensus among indexers. One honest replayer detects a lie. M-of-N signatures give availability.</li>
     </ul>
   </div>
 
@@ -494,14 +516,7 @@ footer{padding:34px 0 60px; border-top:1px solid var(--grid)}
     <svg id="ix-svg" role="img" aria-label="Data flow from validators through indexers to wallets for the selected option"></svg>
   </div>
   <div class="opt3" id="ix-read" aria-live="polite"></div>
-  <div class="callout prop" style="margin-top:16px">
-    <span class="badge prop">Recommendation · proposal</span>
-    <ol>
-      <li>Start with (b): M-of-N indexers and a public replay audit. No protocol change.</li>
-      <li>Fold (c) into the next coordinated format change.</li>
-      <li>Keep (d) for when users need trustless balances.</li>
-    </ol>
-  </div>
+  <p class="bigline" style="margin-top:16px"><span class="badge prop">Recommendation</span><br>Start with (b). Fold (c) into the next format change. Keep (d) for trustless balances.</p>
 </section>
 
 <!-- ================= Part 2 · measured ================= -->
@@ -1437,19 +1452,20 @@ var FK = {
   drop: { slot:'--c-drop', name:'fields that fan-out drops' }
 };
 var ETH_F = [
-  { k:'frame', n:'type + list header', b:3, lab:'hdr' },
-  { k:'drop',  n:'chain_id', b:3, lab:'chain' },
-  { k:'nonce', n:'nonce', b:4, bs:'3–5', lab:'nonce' },
-  { k:'drop',  n:'max_priority_fee + max_fee', b:10, bs:'~10', lab:'fees' },
-  { k:'drop',  n:'gas_limit', b:3, lab:'gas' },
-  { k:'to',    n:'to', b:21, lab:'to' },
-  { k:'amt',   n:'value', b:9, bs:'~9', lab:'value' },
-  { k:'drop',  n:'data + access list', b:2, lab:'data' },
-  { k:'sig',   n:'y_parity + r + s', b:67, lab:'signature' }
+  { k:'frame', n:'type + list header', b:3, enc:'type byte 0x02, then the RLP list header' },
+  { k:'drop',  n:'chain_id', b:3, bs:'≈ 3 (1–9)', enc:'RLP integer: variable length' },
+  { k:'nonce', n:'nonce', b:4, bs:'≈ 4 (1–9)', enc:'RLP integer: variable length' },
+  { k:'drop',  n:'max_priority_fee + max_fee', b:10, bs:'≈ 10 (2–66)', enc:'two RLP integers, 1–33 B each' },
+  { k:'drop',  n:'gas_limit', b:3, enc:'RLP integer: 21,000 is 2 B + 1 prefix byte' },
+  { k:'to',    n:'to', b:21, enc:'20-byte address + 1 prefix byte' },
+  { k:'amt',   n:'value', b:9, bs:'≈ 9 (1–33)', enc:'u256 in wei, RLP: leading zero bytes removed, 1 prefix byte' },
+  { k:'drop',  n:'data + access list', b:2, enc:'two empty RLP items, 1 B each' },
+  { k:'sig',   n:'y_parity + r + s', b:67, bs:'≈ 67', enc:'1 + 33 + 33; RLP drops leading zero bytes of r and s' }
 ];
-var LEAN_HEAD = [ { k:'frame', n:'type 0x50', b:1, lab:'type' }, { k:'nonce', n:'nonce u32', b:4, lab:'nonce' }, { k:'frame', n:'n_outputs u16', b:2, lab:'n_out' } ];
-var LEAN_OUT = [ { k:'to', n:'recipient address', b:20, lab:'recipient' }, { k:'amt', n:'amount u64, gwei', b:8, lab:'amount' } ];
-var LEAN_SIG = { k:'sig', n:'signature', b:65, lab:'signature' };
+ETH_F.forEach(function(f){ f.lab = { 'type + list header':'hdr', chain_id:'chain', nonce:'nonce', 'max_priority_fee + max_fee':'fees', gas_limit:'gas', to:'to', value:'value', 'data + access list':'data', 'y_parity + r + s':'signature' }[f.n]; });
+var LEAN_HEAD = [ { k:'frame', n:'type 0x50', b:1, lab:'type', enc:'fixed width' }, { k:'nonce', n:'nonce u32', b:4, lab:'nonce', enc:'fixed width' }, { k:'frame', n:'n_outputs u16', b:2, lab:'n_out', enc:'fixed width' } ];
+var LEAN_OUT = [ { k:'to', n:'recipient address', b:20, lab:'recipient', enc:'fixed width, no prefix' }, { k:'amt', n:'amount u64, gwei', b:8, lab:'amount', enc:'always exactly 8 B, no prefix' } ];
+var LEAN_SIG = { k:'sig', n:'signature', b:65, lab:'signature', enc:'fixed width' };
 function txStrip(svg, units, y0, o){
   var cur = 0, row = 0, sep = css('--surface-1');
   units.forEach(function(u){
@@ -1484,7 +1500,7 @@ function drawTx(){
   var erows = Math.ceil(n / k), rowH = erows <= 2 ? 28 : (erows <= 6 ? 20 : 15), gap = 4;
   var L = 72 + 28 * n, E = 122 * n, labels = rowH >= 28;
   var y = 14;
-  svg.appendChild(T(0, y, 'Payment lane · 1 fan-out transaction', { fs:12, w:700 }));
+  svg.appendChild(T(0, y, 'Payment lane · transaction: 72 + 28N B', { fs:12, w:700 }));
   svg.appendChild(T(W, y, fmt(L) + ' B', { fs:12, w:700, anchor:'end' }));
   y += 8;
   var units = [{ segs:LEAN_HEAD, tag:'transaction header', sepAfter:true }];
@@ -1503,11 +1519,63 @@ function drawTx(){
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y + 6));
   txRead();
 }
+/* one signed transaction fanning out, against N separate transfers */
+function drawFo(){
+  var svg = $('fo-svg'); clear(svg);
+  var W = svgW(svg), narrow = W < 640, n = TX.n, show = Math.min(n, 5), more = n - show;
+  var ink = css('--ink-muted'), sig = css('--s2'), non = css('--s4'), fee = css('--c-drop'), rc = css('--s1');
+  arrowDef(svg, 'fo-arr', ink);
+  var pw = narrow ? W : (W - 48) / 2, top = 30, rowP = 36, rh = 28, span = show * rowP - (rowP - rh), A = Math.max(span, 86), ph = top + A + (more > 0 ? 30 : 10);
+  var H = narrow ? 2 * ph + 18 : ph;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  function box(x, y, w, h, col, fo, sw){ svg.appendChild(el('rect', { x:x, y:y, width:w, height:h, rx:5, fill:col, 'fill-opacity':fo, stroke:col, 'stroke-width':sw || 1.4 })); }
+  function chip(x, y, w, col, t){ svg.appendChild(el('rect', { x:x, y:y, width:w, height:18, rx:3, fill:col })); svg.appendChild(T(x + w / 2, y + 13, t, { anchor:'middle', fs:10.5, w:700, fill:onCol(col) })); }
+  function arrow(x1, y1, x2, y2){ svg.appendChild(el('line', { x1:x1, y1:y1, x2:x2 - 2, y2:y2, stroke:ink, 'stroke-width':1.4, 'marker-end':'url(#fo-arr)' })); }
+  function rowY(y0, i){ return y0 + top + (A - span) / 2 + i * rowP; }
+  function panel(x0, y0, lean){
+    var sw = narrow ? 58 : 72, rw = narrow ? 58 : 76, rx = x0 + pw - rw, midY = y0 + top + A / 2;
+    svg.appendChild(T(x0, y0 + 14, lean ? 'Payment lane: 1 transaction, 1 signature' : 'EVM lane: ' + n + (n === 1 ? ' transaction, 1 signature' : ' transactions, ' + n + ' signatures'), { fs:12, w:700 }));
+    box(x0, midY - 20, sw, 40, css('--ink-2'), 0.08);
+    svg.appendChild(T(x0 + sw / 2, midY + 4, 'sender', { anchor:'middle', fs:11.5 }));
+    for (var i = 0; i < show; i++){
+      var ry = rowY(y0, i);
+      box(rx, ry, rw, rh, rc, 0.17);
+      var lab = (more > 0 && i === show - 1) ? '#' + n : '#' + (i + 1);
+      svg.appendChild(T(rx + rw / 2, ry + rh / 2 + 4, lab, { anchor:'middle', fs:11.5 }));
+    }
+    if (lean){
+      var tx = x0 + sw + (narrow ? 22 : 34), tw0 = narrow ? 100 : 128, th = Math.max(80, span + 4), ty = midY - th / 2;
+      arrow(x0 + sw, midY, tx, midY);
+      box(tx, ty, tw0, th, css('--accent'), 0.07, 2);
+      var cy = ty + th / 2;
+      svg.appendChild(T(tx + tw0 / 2, cy - 18, '1 transaction', { anchor:'middle', fs:12, w:700 }));
+      chip(tx + 10, cy - 8, tw0 - 20, sig, '1 signature');
+      chip(tx + 10, cy + 14, tw0 - 20, non, '1 nonce');
+      for (var j = 0; j < show; j++) arrow(tx + tw0, cy, rx, rowY(y0, j) + rh / 2);
+    } else {
+      var ex = x0 + sw + (narrow ? 18 : 30), ew = narrow ? 128 : 150;
+      for (var k = 0; k < show; k++){
+        var ey = rowY(y0, k);
+        arrow(x0 + sw, midY, ex, ey + rh / 2);
+        box(ex, ey, ew, rh, css('--accent'), 0.07, 1.4);
+        var cw = (ew - 12) / 3;
+        chip(ex + 3, ey + 5, cw, sig, 'sig');
+        chip(ex + 6 + cw, ey + 5, cw, non, 'nonce');
+        chip(ex + 9 + 2 * cw, ey + 5, cw, fee, 'fee');
+        arrow(ex + ew, ey + rh / 2, rx, ey + rh / 2);
+      }
+    }
+    if (more > 0) svg.appendChild(T(rx + rw, y0 + top + A + 20, '+ ' + more + (lean ? ' more recipients' : ' more transactions'), { anchor:'end', fs:11, w:700, fill:ink }));
+  }
+  if (narrow){ panel(0, 0, true); panel(0, ph + 18, false); }
+  else { panel(0, 0, true); panel(pw + 48, 0, false);
+    svg.appendChild(el('line', { x1:pw + 24, x2:pw + 24, y1:6, y2:H - 6, stroke:css('--grid'), 'stroke-width':1.5 })); }
+}
 function txSegTip(e){
   var t = e.target, id = t.getAttribute && t.getAttribute('data-s');
   if (id === null || id === undefined) return null;
   var d = TX.segs[Number(id)];
-  return d ? '<b>' + d.f.n + '</b>' + (d.f.bs || d.f.b) + ' bytes · ' + d.u : null;
+  return d ? '<b>' + d.f.n + '</b>' + (d.f.bs || d.f.b) + ' bytes · ' + d.u + (d.f.enc ? '<br>' + d.f.enc : '') : null;
 }
 (function(){
   var svg = $('tx-svg');
@@ -1521,7 +1589,7 @@ function txRead(){
   var perS = (Math.round(per * 10) / 10).toFixed(1).replace(/\.0$/, '');
   function ro(k, v, d){ return '<div class="ro"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>'; }
   $('tx-read').innerHTML =
-    ro('Total bytes', fmt(L) + ' B', 'vs ' + fmt(E) + ' B for ' + n + ' EVM transfer' + (n === 1 ? '' : 's')) +
+    ro('Transaction bytes', fmt(L) + ' B', '72 + 28N · vs ' + fmt(E) + ' B for ' + n + ' EVM transfer' + (n === 1 ? '' : 's')) +
     ro('Bytes per payment', perS, 'vs 122 · goes to 28 as N grows') +
     ro('Signatures to verify', '1', 'vs ' + n) +
     ro('Pool entries', '1', 'vs ' + n);
@@ -1531,17 +1599,18 @@ function txRead(){
 function txTables(){
   function sw(k){ return '<span class="swatch" style="background:' + css(FK[k].slot) + '"></span>'; }
   $('tx-eth-tab').innerHTML = '<thead><tr><th>Field</th><th class="num">Bytes</th></tr></thead><tbody>' +
-    ETH_F.map(function(f){ return '<tr><td>' + sw(f.k) + f.n + '</td><td class="num">' + (f.bs || f.b) + '</td></tr>'; }).join('') +
+    ETH_F.map(function(f){ return '<tr><td>' + sw(f.k) + f.n + '<div class="enc">' + f.enc + '</div></td><td class="num">' + (f.bs || f.b) + '</td></tr>'; }).join('') +
     '<tr><td><b>total</b></td><td class="num"><b>≈ 122</b></td></tr></tbody>';
   var rows = LEAN_HEAD.map(function(f){ return [f, String(f.b)]; })
     .concat(LEAN_OUT.map(function(f){ return [f, f.b + ' × N']; })).concat([[LEAN_SIG, '65']]);
   $('tx-lean-tab').innerHTML = '<thead><tr><th>Field</th><th class="num">Bytes</th></tr></thead><tbody>' +
-    rows.map(function(r){ return '<tr><td>' + sw(r[0].k) + r[0].n + '</td><td class="num">' + r[1] + '</td></tr>'; }).join('') +
-    '<tr><td><b>total</b></td><td class="num"><b>72 + 28N</b></td></tr></tbody>';
+    rows.map(function(r){ return '<tr><td>' + sw(r[0].k) + r[0].n + '<div class="enc">' + r[0].enc + '</div></td><td class="num">' + r[1] + '</td></tr>'; }).join('') +
+    '<tr><td><b>transaction</b></td><td class="num"><b>72 + 28N</b></td></tr>' +
+    '<tr><td>in a block: + length prefix<div class="enc">u32, before each transaction</div></td><td class="num">+ 4</td></tr></tbody>';
   var lg = $('tx-legend'); lg.innerHTML = '';
   Object.keys(FK).forEach(function(k){ lg.insertAdjacentHTML('beforeend', '<li><span class="swatch" style="background:' + css(FK[k].slot) + '"></span>' + FK[k].name + '</li>'); });
 }
-function setTx(n){ TX.n = Math.max(1, Math.min(200, n)); $('tx-n').value = TX.n; drawTx(); }
+function setTx(n){ TX.n = Math.max(1, Math.min(200, n)); $('tx-n').value = TX.n; drawFo(); drawTx(); }
 $('tx-n').addEventListener('input', function(){ setTx(Number(this.value)); });
 $('tx-q').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setTx(Number(b.dataset.n)); });
 
@@ -1581,10 +1650,10 @@ var HD_F = [
   { k:'requests_hash', b:32, r:'vest', sh:'requests', d:'EIP-7685 hash of the execution-layer requests (Prague). Fork-mandated.' }
 ];
 var HD_L = [
-  { k:'parent commitment', b:32, lab:'parent = c_{h−1}', sh:'parent = c_{h−1}', d:'c_{h−1}, the commitment of the parent lean block. It links the lean chain.' },
-  { k:'number', b:8, d:'Lean block height, u64.' },
-  { k:'timestamp_ms', b:8, sh:'time_ms', d:'Block time in milliseconds, u64. It must match the EVM block time.' },
-  { k:'n_txs', b:4, sh:'n', d:'Number of transactions, u32.' }
+  { k:'parent commitment', o:0, b:32, lab:'parent = c_{h−1}', sh:'parent = c_{h−1}', d:'c_{h−1}, the commitment of the parent lean block. Bytes 0–32. They enter the preimage of c_h directly.' },
+  { k:'number', o:32, b:8, sh:'num', d:'Lean block height, u64. Bytes 32–40. They enter the preimage directly.' },
+  { k:'timestamp_ms', o:40, b:8, sh:'time', d:'Block time in milliseconds, u64. It must match the EVM block time. Bytes 40–48.' },
+  { k:'n_txs', o:48, b:4, sh:'n', d:'Number of transactions, u32. Bytes 48–52. Hashed into txs_hash.' }
 ];
 function hdFieldDesc(f){ return (f.k === 'prev_randao' && HD.on) ? f.don : f.d; }
 function hdInfo(f, lean){
@@ -1638,41 +1707,68 @@ function drawHd(){
   });
   if (cur > 0) row++;
   var gridBottom = y0 + row * pitch - 4;
-  var yC = gridBottom + 34, yL = yC + rowH + (narrow ? 50 : 40), yK = yL + (narrow ? 2 * pitch : pitch) + 34, H = yK + rowH + 26;
+  /* lean part: one scale for the block row and the 80-byte preimage row, so that
+     bytes 0..48 sit straight above their copies and bytes 48..end sit above txs_hash */
+  var ls = gw / 80, lcol = css('--s1'), tcol = css('--s3'), ink = css('--ink-muted');
+  var yA = gridBottom + 44, yBr = yA + rowH + 5, yLab = yBr + 24, yP = yLab + (narrow ? 34 : 22);
+  var yBr2 = yP + rowH + 5, yC = yBr2 + 40, yCap = yC + rowH + 24, yK = yCap + 34, H = yK + rowH + 26;
   svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
   if (!HD.on){
-    var midY = (yC + H) / 2;
-    svg.appendChild(T(W / 2, midY - 8, 'payment lane off', { anchor:'middle', fs:13, w:700, fill:css('--ink-muted') }));
-    svg.appendChild(T(W / 2, midY + 12, 'prev_randao = 0 · no lean block', { anchor:'middle', fs:12, fill:css('--ink-muted') }));
+    var midY = (yA + H) / 2;
+    svg.appendChild(T(W / 2, midY - 8, 'payment lane off', { anchor:'middle', fs:13, w:700, fill:ink }));
+    svg.appendChild(T(W / 2, midY + 12, 'prev_randao = 0 · no lean block', { anchor:'middle', fs:12, fill:ink }));
     return;
   }
-  /* c_h row */
-  var cx0 = narrow ? 0 : 32 * s, cwid = 32 * s;
-  var cbox = hdBox(svg, { k:'c_h', b:32 }, cx0, yC, cwid, rowH, { col:hook, fs:fs, narrow:narrow, fo:0.34, sw:2.6, bold:true,
-    label:'c_h', line2:'recomputed, never carried', lean:true, desc:'The commitment of this lean block. Every node recomputes it from the bytes. The proposer copies it into prev_randao.' });
-  if (!narrow) svg.appendChild(rich(cx0 - 12, yC + rowH / 2 + 4, 'c_h = keccak(parent ‖ number ‖ timestamp_ms ‖ keccak(txs))', { anchor:'end', fs:11, fill:css('--ink-2') }));
+  function brace(x1, x2, y){
+    var m = (x1 + x2) / 2, r = 6;
+    svg.appendChild(el('path', { d:'M' + x1 + ' ' + y + 'q0 ' + r + ' ' + r + ' ' + r + 'H' + (m - r) + 'q' + r + ' 0 ' + r + ' ' + r +
+      'q0 -' + r + ' ' + r + ' -' + r + 'H' + (x2 - r) + 'q' + r + ' 0 ' + r + ' -' + r, fill:'none', stroke:ink, 'stroke-width':1.4 }));
+    return m;
+  }
+  function down(x, y1, y2){ svg.appendChild(el('line', { x1:x, x2:x, y1:y1, y2:y2 - 2, stroke:ink, 'stroke-width':1.4, 'marker-end':'url(#hd-arr2)' })); }
+  /* 1 · the lean block */
+  svg.appendChild(T(0, yA - 9, narrow ? 'lean block' : 'lean block · 52 B header, then the transactions', { fs:11, w:700, fill:css('--ink-2') }));
+  HD_L.forEach(function(f){
+    hdBox(svg, f, f.o * ls, yA, f.b * ls, rowH, { col:lcol, fs:fs, narrow:narrow, fo:0.17, label:f.lab, lean:true, line2: f.b >= 8 ? f.b + ' B' : '' });
+  });
+  var txs = narrow ? ['tx 1', '…', 'tx n'] : ['len‖tx 1', 'len‖tx 2', '…', 'len‖tx n'], tx0 = 52 * ls, txw = 28 * ls / txs.length;
+  txs.forEach(function(t, i){
+    var f = { k: t === '…' ? 'more transactions' : t.replace('len‖', 'transaction '), b: t === '…' ? '…' : '4 + 72 + 28N',
+      d:'One transaction: a 4 B length prefix (u32), then the transaction, 72 + 28N B. It is hashed into txs_hash.' };
+    hdBox(svg, f, tx0 + i * txw, yA, txw, rowH, { col:lcol, fs:fs, narrow:narrow, fo:0.17, label:t, lean:true, line2:'' });
+  });
+  /* bytes 48..end → txs_hash */
+  var mt = brace(48 * ls + 2, gw - 2, yBr);
+  if (narrow){
+    svg.appendChild(T(gw, yLab - 2, 'txs_hash = keccak(', { anchor:'end', fs:10.5, fill:css('--ink-2') }));
+    svg.appendChild(T(gw, yLab + 11, 'n_txs ‖ every tx)', { anchor:'end', fs:10.5, fill:css('--ink-2') }));
+    down(mt, yLab + 16, yP);
+  } else {
+    svg.appendChild(T(mt, yLab, 'txs_hash = keccak(n_txs ‖ every tx)', { anchor:'middle', fs:11.5, fill:css('--ink-2') }));
+    down(mt, yLab + 6, yP);
+  }
+  /* bytes 0..48 enter the preimage directly */
+  HD_L.slice(0, 3).forEach(function(f){ down((f.o + f.b / 2) * ls, yA + rowH + 2, yP); });
+  /* 2 · the 80-byte preimage */
+  HD_L.slice(0, 3).forEach(function(f){
+    hdBox(svg, f, f.o * ls, yP, f.b * ls, rowH, { col:lcol, fs:fs, narrow:narrow, fo:0.17, label:f.lab, lean:true, line2: f.b + ' B',
+      desc:'Copied from the block into the 80-byte preimage of c_h.' });
+  });
+  hdBox(svg, { k:'txs_hash', b:32 }, 48 * ls, yP, 32 * ls, rowH, { col:tcol, fs:fs, narrow:narrow, fo:0.2, lean:true,
+    desc:'keccak over bytes 48 to the end of the block: n_txs and every transaction with its length prefix.' });
+  /* 3 · keccak → c_h */
+  var mp = brace(2, gw - 2, yBr2);
+  down(mp, yBr2 + 8, yC);
+  svg.appendChild(T(mp + 8, yBr2 + 28, narrow ? 'keccak · 80 B' : 'keccak over the 80-byte preimage', { fs:11, fill:ink }));
+  var cbox = hdBox(svg, { k:'c_h', b:32 }, 24 * ls, yC, 32 * ls, rowH, { col:hook, fs:fs, narrow:narrow, fo:0.34, sw:2.6, bold:true,
+    label:'c_h', line2:'32 B', lean:true, desc:'The commitment of this lean block. Every node recomputes it from the bytes. The proposer copies it into prev_randao.' });
+  svg.appendChild(rich(W / 2, yCap, 'Every byte of the lean block is inside c_h.', { anchor:'middle', fs:12, w:700 }));
   /* c_h → prev_randao, routed through the right margin so it crosses no field */
   var pr = boxes.prev_randao, xr = gw + 14;
   svg.appendChild(el('path', { d:'M' + (cbox.x + cbox.w) + ' ' + (yC + rowH / 2) + 'H' + xr + 'V' + (pr.y + pr.h / 2) + 'H' + (pr.x + pr.w + 2),
     fill:'none', stroke:hook, 'stroke-width':2, 'marker-end':'url(#hd-arr)' }));
-  /* lean header at the same byte scale */
-  svg.appendChild(T(0, yL - 9, 'lean header · same scale · 52 B', { fs:11, w:700, fill:css('--ink-2') }));
-  var lc = 0, lrow = 0, lcol = css('--s1'), lb = {};
-  HD_L.forEach(function(f){
-    if (lc + f.b > bpr){ lrow++; lc = 0; }
-    lb[f.k] = hdBox(svg, f, lc * s, yL + lrow * pitch, f.b * s, rowH, { col:lcol, fs:fs, narrow:narrow, fo:0.17, label:f.lab, lean:true, line2: f.b >= 8 ? f.b + ' B' : '' });
-    lc += f.b; if (lc >= bpr){ lrow++; lc = 0; }
-  });
-  var tx0 = lc * s, txw = gw - tx0;
-  svg.appendChild(el('rect', { x:tx0 + 1.5, y:yL + lrow * pitch, width:txw - 3, height:rowH, rx:3, fill:'none', stroke:css('--axis'), 'stroke-dasharray':'4 3' }));
-  if (tw('txs …', fs) < txw - 8) svg.appendChild(T(tx0 + txw / 2, yL + lrow * pitch + rowH / 2 + 4, 'txs …', { anchor:'middle', fs:fs, fill:css('--ink-muted') }));
-  /* lean header → c_h (keccak) */
-  var ax = narrow ? gw * 0.86 : 44 * s;
-  svg.appendChild(el('line', { x1:ax, x2:ax, y1:yL - 2, y2:yC + rowH + 3, stroke:css('--ink-muted'), 'stroke-width':1.5, 'marker-end':'url(#hd-arr2)' }));
-  if (narrow) svg.appendChild(T(ax - 7, yC + rowH + 18, 'keccak', { anchor:'end', fs:11, fill:css('--ink-muted') }));
-  else svg.appendChild(T(ax + 7, (yC + rowH + yL) / 2 + 4, 'keccak', { fs:11, fill:css('--ink-muted') }));
   /* the lean chain */
-  var cbw = Math.min(118, (gw - 56) / 3), gapc = narrow ? 20 : 32;
+  var cbw = Math.min(118, (gw - 56) / 3), gapc = narrow ? 20 : 32;  /* lcol from above */
   svg.appendChild(T(0, yK - 9, 'lean chain · each header holds its parent’s commitment', { fs:11, fill:css('--ink-muted') }));
   ['c_{h−2}', 'c_{h−1}', 'c_h'].forEach(function(lbl, i){
     var x = i * (cbw + gapc), last = i === 2;
@@ -1696,19 +1792,10 @@ $('hd-mode').addEventListener('click', function(e){ var b = e.target.closest('bu
    ==================================================================== */
 var IX = { o:1 };
 var IX_OPT = [
-  { gives:'Balances, receipts, history and search from one API. Each answer is signed.',
-    trust:'One operator. Anyone can replay to check, but most clients will not.',
-    change:'None.' },
-  { gives:'The same answers from N independent operators. A client accepts an answer that M of them sign. Service continues when some operators fail.',
-    trust:'One honest replayer who watches. A wrong signed root is objective evidence. Replay settles a dispute. The indexers run no consensus among themselves.',
-    change:'None.' },
-  { gives:'Inclusion proofs and receipt proofs against the certified header. Balances still come from the indexers of (b).',
-    trust:'Consensus only, for inclusion and receipts. The indexers of (b), for balances.',
-    change:'The txs hash in the lean header becomes a Merkle root over the transactions, plus one applied/no-op bit per transaction. A coordinated format change.',
-    note:'Open design point: execution produces the bits, and the vote does not wait for execution. One choice: header h carries the bits of block h−1.' },
-  { gives:'Balance and nonce proofs with no trusted party.',
-    trust:'Consensus only.',
-    change:'Header h carries the state root of height h−K: a fixed delay of K blocks. Validators check it. This reuses the existing consensus. Validators keep a state tree, off the critical path.' }
+  { gives:'Balances, receipts and history from one API.', trust:'One operator.', change:'None.' },
+  { gives:'The same answers, signed by M of N operators.', trust:'One honest replayer.', change:'None.' },
+  { gives:'Inclusion and receipt proofs against the header.', trust:'Consensus; (b) for balances.', change:'txs_hash becomes a Merkle root, plus one applied/no-op bit per tx.' },
+  { gives:'Balance proofs with no trusted party.', trust:'Consensus only.', change:'Header h carries the state root of height h−K.' }
 ];
 function ixBox(svg, cx, cy, bw, bh, lines, o){
   o = o || {};
@@ -1742,7 +1829,7 @@ function drawIx(){
   }
   var bh = 66, H;
   if (!narrow){
-    var bw = Math.min(160, W * 0.18), my = 150, ay = my + 118;
+    var bw = Math.min(160, W * 0.18), my = 98, ay = my + 112;
     var V = bw / 2, B = W * 0.36, I = W * 0.64, C = W - bw / 2 - 2;
     H = ay + bh / 2 + 8;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
@@ -1759,7 +1846,7 @@ function drawIx(){
       svg.appendChild(T(I + 8, (ay - bh / 2 + my + bh / 2) / 2 + 4, 'compare roots', { fs:11, fill:ink }));
     }
     if (o >= 2){
-      var py = 40;
+      var py = 24;
       line([[B, my - bh / 2], [B, py], [C, py], [C, my - bh / 2 - 3]], { c:pc, w:2.2, m:'ix-arrp' });
       svg.appendChild(T((B + C) / 2, py - 8, proofLab, { anchor:'middle', fs:11.5, w:700, fill:pc }));
     }
@@ -1800,7 +1887,7 @@ function drawIx(){
   var op = IX_OPT[o];
   function card(k, v){ return '<div class="ro"><div class="k">' + k + '</div><div class="d">' + v + '</div></div>'; }
   $('ix-read').innerHTML = card('What it gives', op.gives) + card('What you must trust', op.trust) +
-    card('What changes in the protocol', op.change + (op.note ? '<br><span class="note">' + op.note + '</span>' : ''));
+    card('What changes in the protocol', op.change);
 }
 $('ix-opt').addEventListener('click', function(e){ var b = e.target.closest('button'); if (!b) return; IX.o = Number(b.dataset.o); pressSeg('ix-opt', 'data-o', IX.o); drawIx(); });
 
@@ -1809,7 +1896,7 @@ $('ix-opt').addEventListener('click', function(e){ var b = e.target.closest('but
    ==================================================================== */
 function redrawAll(){
   drawEx(false); exRead(); drawHt(); drawDr(false); drawPr(false); drawAp(false);
-  drawLn(); txTables(); drawTx(); hdLegend(); drawHd(); drawIx();
+  drawLn(); txTables(); drawFo(); drawTx(); hdLegend(); drawHd(); drawIx();
 }
 $('theme-btn').addEventListener('click', function(){
   var root = document.documentElement, cur = root.getAttribute('data-theme');
@@ -1882,7 +1969,7 @@ if (hasIO){
 var rz = null;
 window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(function(){
   drawEx(false); drawHt(); drawDr(false); drawPr(false); drawAp(false);
-  drawLn(); drawTx(); drawHd(); drawIx(); }, 150); });
+  drawLn(); drawFo(); drawTx(); drawHd(); drawIx(); }, 150); });
 
 document.addEventListener('DOMContentLoaded', function(){
   if (window.renderMathInElement) renderMathInElement(document.body, KOPTS);
