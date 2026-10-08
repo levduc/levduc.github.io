@@ -1,0 +1,2409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anduin</title>
+<meta name="description" content="Rating providers for AI agents from the payments they already make — a walk through Anduin, a Sybil-resistant reputation system built only from settled onchain payments.">
+<!-- the site ships no favicon.ico, and the browser's request for one 404s on every page
+     here; an inline empty icon keeps this page's console clean without adding a request. -->
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* chart categorical pair — the paper's own Figure 6 colours, validated against
+     #fafafa in light mode: all six dataviz checks pass, contrast included. */
+  --anduin:#0d9488; --existing:#ea580c;
+  /* seeded, not earned — a third categorical hue; the trio passes all six
+     dataviz checks against #fafafa, CVD separation included. */
+  --seed:#7c3aed;
+  --grey-mark:#b4b0a8;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.1rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2); max-width:72ch}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:46px 0; border-top:1px solid var(--grid); scroll-margin-top:58px}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{font-size:1.04rem; max-width:70ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.55; max-width:80ch}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:20px}
+.gloss{border-bottom:1px dotted var(--ink-muted); cursor:help}
+strong{font-weight:700; color:var(--ink-head)}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50;
+  background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+/* min-width:0 or the flex item refuses to shrink below its content and the whole
+   page gains a horizontal scrollbar at phone width */
+.topbar nav{display:flex; gap:15px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:54px 0 40px; border-top:0}
+.hero h1{font-size:2.9rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.18rem; color:var(--ink-2); margin:.7rem 0 1.5rem; max-width:58ch}
+.hero .meta{font-family:var(--mono); font-size:.84rem; color:var(--ink-muted); margin:1.6rem 0 0}
+.authors{font-size:.95rem; color:var(--ink-1); margin:1.3rem 0 .3rem; line-height:1.8}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0}
+
+/* ---------- step numbers on section headings ---------- */
+.step-n{font-family:var(--mono); font-size:.8rem; font-weight:700; color:var(--anduin);
+  letter-spacing:.06em; text-transform:uppercase}
+
+/* ---------- panel: diagram + readout side by side ---------- */
+.panel{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,282px);
+  gap:20px; align-items:start; margin-top:20px}
+.stage{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; box-shadow:var(--shadow)}
+.stage svg{display:block; width:100%; height:auto; overflow:visible}
+.readout{display:flex; flex-direction:column; gap:10px}
+.ro{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:12px 14px}
+.ro .k{font-family:var(--mono); font-size:.76rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.6rem; font-weight:700; line-height:1.2; margin:.1rem 0 .1rem; color:var(--ink-head)}
+.ro .d{font-size:.84rem; color:var(--ink-2); margin:0; line-height:1.45; max-width:none}
+.ro.lead{border-color:var(--anduin); border-width:2px}
+.ro.lead .v{color:var(--anduin)}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end; margin:18px 0 0}
+.controls.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(188px,1fr)); align-items:end}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:190px; flex:1}
+.ctl label{font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-head)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px; margin:0}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.86rem; padding:.35rem .78rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.35rem .8rem; border-radius:3px; font-size:.88rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent)}
+
+/* ---------- fixes list (section 1) ---------- */
+.fixes{list-style:none; margin:20px 0 0; padding:0; display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(234px,1fr)); gap:12px}
+.fixes li{margin:0}
+.fix{width:100%; text-align:left; display:block; cursor:pointer;
+  background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:13px 15px; font-family:var(--font); font-size:.95rem; color:var(--ink-2);
+  font-weight:300; line-height:1.45}
+.fix:hover{border-color:var(--accent)}
+.fix[aria-pressed=true]{border-color:var(--existing); border-width:2px; padding:12px 14px}
+.fix .t{display:block; font-weight:700; color:var(--ink-head); margin-bottom:.2rem}
+.fix .c{display:block; font-family:var(--mono); font-size:.78rem; color:var(--existing); font-weight:700}
+.verdict{margin-top:14px; min-height:3.2rem}
+
+/* ---------- charts ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow); margin-top:18px}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.chart .ct{font-family:var(--mono); font-size:.82rem; color:var(--ink-2); font-weight:700;
+  margin:0 0 2px; letter-spacing:.03em}
+.chart .cs{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted); margin:0 0 12px}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:14px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono);
+  font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .09s;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:252px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid)}
+th{font-family:var(--mono); font-size:.76rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+tr.ours td{background:#f2fbf9; font-weight:700}
+.scroller{overflow-x:auto}
+@media (max-width:620px){ .scroller table{min-width:460px} }
+
+/* ---------- guarantee / caveat rows ---------- */
+.rows{list-style:none; margin:18px 0 0; padding:0; display:flex; flex-direction:column; gap:12px}
+.rows li{display:grid; grid-template-columns:118px minmax(0,1fr); gap:16px;
+  background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:14px 16px}
+.rows .tag{font-family:var(--mono); font-size:.78rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--anduin); line-height:1.5}
+.rows .tag.warn{color:var(--existing)}
+.rows p{margin:0; font-size:.93rem}
+.rows p + p{margin-top:.5rem}
+
+/* ---------- entrance (driven by the guarded tween in JS, not CSS) ---------- */
+section.rv{opacity:0}
+@media (prefers-reduced-motion: reduce){
+  section.rv{opacity:1 !important; transform:none !important}
+  html{scroll-behavior:auto}
+}
+
+@media (max-width:860px){
+  .panel{grid-template-columns:1fr}
+  .readout{flex-direction:row; flex-wrap:wrap}
+  .ro{flex:1 1 150px}
+}
+@media (max-width:620px){
+  body{font-size:16px}
+  .hero h1{font-size:2.1rem}
+  .hero .sub{font-size:1.05rem}
+  h2{font-size:1.42rem}
+  section{padding:34px 0}
+  .rows li{grid-template-columns:1fr; gap:6px}
+  .seg{flex-wrap:wrap; max-width:100%}
+  .seg button{flex:1 1 auto; border-bottom:1px solid var(--ring)}
+  .ctl{min-width:100%}
+}
+</style>
+</head>
+<body>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="home" href="../">&larr; Duc V. Le</a>
+    <nav aria-label="Sections">
+      <a href="#market">1 Market</a>
+      <a href="#graph">2 Graph</a>
+      <a href="#route">3 Scoring</a>
+      <a href="#attack">4 Attack</a>
+      <a href="#anduin">5 Anduin</a>
+      <a href="#results">6 Results</a>
+      <a href="#ship">7 Shipping</a>
+      <a href="#next">Next</a>
+      <a href="#notes">Numbers</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ======================= HERO ======================= -->
+<section class="hero" id="top">
+  <h1>Anduin</h1>
+  <p class="sub">Rating providers for AI agents from the payments they already make.</p>
+  <p class="lede">AI agents buy services from each other. They pay for each request, often one cent at a
+  time. The payments settle in stablecoins on a public blockchain. The median payment is
+  <strong>\$0.01</strong>.</p>
+  <p class="lede">Anyone can list a service. An agent cannot tell a good provider from a fraud.</p>
+  <p class="lede">Every known fix taxes the market: a curator, credentials, a paid referee, or reviews
+  nobody writes. Anduin adds none of them. It reads only the payments that already settled, and
+  it makes a high rating cost real money. Each step below has one control, and every number on
+  it comes from the paper.</p>
+  <p class="authors">Reza Ramji &middot; Preston Vander Vos &middot; Ziming Zeng &middot;
+    <span class="me">Duc V. Le</span></p>
+  <p class="affils">Circle Research</p>
+  <p class="meta">66,073,201 settled payments &middot; 16 blockchains &middot; 157 days &middot;
+    March 23 &ndash; August 26, 2026</p>
+</section>
+
+<!-- ======================= 1. THE MARKET ======================= -->
+<section id="market">
+  <p class="eyebrow"><span class="step-n">Step 1</span> &nbsp;The market</p>
+  <h2>An agent must choose between strangers</h2>
+  <p>A buyer needs a service it never bought. It sees endpoints, and the descriptions their
+  owners wrote. There are no brands and no reviews. Which stranger does it pay?</p>
+  <p>Each proposed fix changes the market. Select one to see its shape.</p>
+
+  <ul class="fixes" id="fixes"></ul>
+  <div class="stage" style="margin:16px 0 0"><div id="pickSvg"></div></div>
+  <div class="verdict card" id="fixVerdict" style="margin-top:14px"></div>
+
+  <p class="note" style="margin-top:16px">Sources, in order: curated marketplaces (x402 Bazaar); identity credentials; escrowed
+  evaluator contracts; voluntary onchain ratings; and usage ranking. The last two figures come
+  from prior work on deployed rating systems, cited in the paper's introduction.</p>
+</section>
+
+<!-- ======================= 2. DRAWING THE MARKET ======================= -->
+<section id="graph">
+  <p class="eyebrow"><span class="step-n">Step 2</span> &nbsp;Drawing the market</p>
+  <h2>The ledger is already a graph</h2>
+  <p>Blockchain payments are public and permanent. Anyone can read who paid whom, and how
+  much. Buyers pay providers. Providers never pay providers. So the record sorts into two
+  columns, and the paper calls this a
+  <span class="gloss" title="A graph whose nodes split into two sets, with every edge running between the sets and none inside one.">bipartite graph</span>.</p>
+  <p>One edge is one buyer's whole relationship with one provider. Its <strong>weight</strong>
+  is the sum of their payments in the window, fees included. A thicker edge carries more dollars.
+  This graph is the only input.</p>
+  <p>Two sets matter, and they are marked below. $K(b)$ holds the providers the buyer already
+  pays. $C(b)$ holds the other buyers that pay those same providers. Step 3 uses nothing else.</p>
+
+  <div class="controls">
+    <div class="ctl" style="flex:0 0 auto; min-width:0">
+      <label for="viewSeg">How to draw it</label>
+      <div class="seg" id="viewSeg" role="group" aria-label="Graph layout">
+        <button type="button" data-view="raw" aria-pressed="false">Raw ledger</button>
+        <button type="button" data-view="sorted" aria-pressed="true">Sorted</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage" style="margin-top:18px">
+    <div id="graphSvg"></div>
+  </div>
+  <p class="note" style="margin-top:12px">Hover or tap an edge to read its weight. The weights come from Figure 4 of the paper. The
+  rest of the market is texture and carries no values.</p>
+</section>
+
+<!-- ======================= 3. SCORING A STRANGER ======================= -->
+<section id="route">
+  <p class="eyebrow"><span class="step-n">Step 3</span> &nbsp;Scoring a stranger</p>
+  <h2>Trust moves along a path. Its thinnest edge stops it.</h2>
+  <p>Buyer $b$ pays two providers. Those two are its <strong>known providers</strong>, the set
+  $K(b)$. Other buyers pay the same providers. They are co-users, the set $C(b)$; this page
+  calls them <strong>customers</strong>. Both customers also pay $p'$, which $b$ never paid.
+  $p'$ is the <strong>candidate</strong>.</p>
+  <p>A customer that pays your providers needs what you need. Its next choice is evidence. That
+  evidence moves from $b$ to a customer through the providers they share. Each shared provider
+  carries no more than the thinner of its two edges. Add those up and you get the
+  <strong>reach</strong> to that customer. The customer's own payment to the candidate then caps
+  what arrives.</p>
+  <p>Move the sliders. These two reaches are what every Anduin rating is built from.</p>
+
+  <div class="controls grid" id="routeCtls">
+    <div class="ctl">
+      <label for="wW1">Buyer &rarr; known 1 &mdash; <span class="val" id="wW1V">\$4</span></label>
+      <input type="range" id="wW1" min="0" max="12" step="1" value="4">
+    </div>
+    <div class="ctl">
+      <label for="wW2">Buyer &rarr; known 2 &mdash; <span class="val" id="wW2V">\$1</span></label>
+      <input type="range" id="wW2" min="0" max="12" step="1" value="1">
+    </div>
+    <div class="ctl">
+      <label for="wA11">Customer 1 &rarr; known 1 &mdash; <span class="val" id="wA11V">\$8</span></label>
+      <input type="range" id="wA11" min="0" max="12" step="1" value="8">
+    </div>
+    <div class="ctl">
+      <label for="wA21">Customer 2 &rarr; known 1 &mdash; <span class="val" id="wA21V">\$4</span></label>
+      <input type="range" id="wA21" min="0" max="12" step="1" value="4">
+    </div>
+    <div class="ctl">
+      <label for="wA22">Customer 2 &rarr; known 2 &mdash; <span class="val" id="wA22V">\$2</span></label>
+      <input type="range" id="wA22" min="0" max="12" step="1" value="2">
+    </div>
+    <div class="ctl">
+      <label for="wB1">Customer 1 &rarr; candidate &mdash; <span class="val" id="wB1V">\$8</span></label>
+      <input type="range" id="wB1" min="0" max="12" step="1" value="8">
+    </div>
+    <div class="ctl">
+      <label for="wB2">Customer 2 &rarr; candidate &mdash; <span class="val" id="wB2V">\$4</span></label>
+      <input type="range" id="wB2" min="0" max="12" step="1" value="4">
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="stage"><div id="routeSvg"></div></div>
+    <div class="readout">
+      <div class="ro"><div class="k">Reach to customer 1</div><div class="v" id="cap1">\$4</div>
+        <p class="d" id="cap1d">bridge \$4, capped by its \$8 to the candidate</p></div>
+      <div class="ro"><div class="k">Reach to customer 2</div><div class="v" id="cap2">\$4</div>
+        <p class="d" id="cap2d">bridge \$5, capped by its \$4 to the candidate</p></div>
+      <div class="ro"><div class="k">Buyer's own spend</div><div class="v" id="betaV">\$5</div>
+        <p class="d" id="betaD">K(b) holds 2, C(b) holds 2</p></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">Each edge is a pipe. Its bore is the weight. The water is what gets through. The paper's
+  Figure 4 uses one known provider; a set needs two, so this page carries a second. The second
+  button restores the figure, and the three ratings then read \$4, \$5 and \$8 as printed.
+  <button class="btn" id="routeReset" type="button" style="margin-left:8px">Reset</button>
+  <button class="btn" id="paperEx" type="button" style="margin-left:6px">Paper's Figure 4</button></p>
+</section>
+
+<!-- ======================= 4. THE ATTACK ======================= -->
+<section id="attack">
+  <p class="eyebrow"><span class="step-n">Step 4</span> &nbsp;The attack</p>
+  <h2>One provider, many fake identities</h2>
+  <p>A provider wants first place. Entry is free, so it creates its own buyer identities. One
+  party posing as many is the <strong>Sybil attack</strong>, named in 2002.</p>
+  <p>One asymmetry carries the whole defence. A payment to the attacker's own provider costs
+  only the fee, about <strong>\$0.017</strong>, because the money returns. A payment to a provider
+  it does not own costs the full amount, and that money is gone. And no attacker can create a
+  payment from the honest buyer.</p>
+
+  <div class="panel">
+    <div class="stage"><div id="edgeSvg"></div></div>
+    <div class="readout">
+      <div class="ro"><div class="k">Self-dealt edge</div><div class="v" style="color:var(--existing)">\$0.017</div>
+        <p class="d">the fee only. The money returns.</p></div>
+      <div class="ro"><div class="k">Edge to a real provider</div><div class="v" style="color:var(--existing)">$w$ + \$0.017</div>
+        <p class="d">gone. The attacker does not control it.</p></div>
+      <div class="ro"><div class="k">Edge out of the buyer</div><div class="v">impossible</div>
+        <p class="d">the attacker cannot create it.</p></div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:34px">Three rules, and what each costs to break</h3>
+  <p>A marketplace might reach for one of these three. All three read fake edges as real. All
+  three fall for fees alone. Add fake buyers and watch.</p>
+
+  <div class="controls">
+    <div class="ctl" style="max-width:420px">
+      <label for="nsyb">Fake buyer identities &mdash; <span class="val" id="nsybV">10</span></label>
+      <input type="range" id="nsyb" min="1" max="60" step="1" value="10">
+    </div>
+  </div>
+
+  <div class="chart">
+    <p class="ct">What the attack costs, in transaction fees</p>
+    <p class="cs">One axis, one unit: dollars. Each bar carries the score that rule gives the attacker.</p>
+    <div id="baseSvg"></div>
+  </div>
+  <div class="scroller"><table id="baseTbl"></table></div>
+  <p class="note" style="margin-top:10px">Usage ranking counts distinct buyers, so each fake pays the attacker itself: one fee.
+  Co-user count needs each fake to pay a known provider first, to qualify: two fees. Co-user
+  volume sums what customers paid the candidate, and the attacker pays itself: two fees in all.</p>
+</section>
+
+<!-- ======================= 5. ANDUIN ======================= -->
+<section id="anduin">
+  <p class="eyebrow"><span class="step-n">Step 5</span> &nbsp;Anduin</p>
+  <h2>Make trust a quantity that flows</h2>
+  <p><strong>The rule:</strong> trust reaches a candidate only on paths that start at the
+  buyer's own payments, and a path carries no more than its thinnest edge. A fake that paid a
+  known provider one cent carries one cent. More fakes do not help.</p>
+  <p>Three constructions apply the rule. They differ in how much of the buyer's pipes each
+  customer may use. The sliders from Step 3 drive all three, and the page solves the real
+  max-flow for each one.</p>
+  <p>Amplified flow widens each buyer pipe by $n_p$. That count is per provider: how many
+  customers pay <em>that</em> provider <em>and</em> the candidate. Known provider 1 has two, so
+  its pipe becomes 2 &times; \$4. Known provider 2 has only one, so its pipe becomes
+  1 &times; \$1.</p>
+
+  <div class="panel">
+    <div class="stage"><div id="ratingSvg"></div></div>
+    <div class="readout">
+      <div class="ro"><div class="k">Maximum flow</div><div class="v" id="rFlow">\$4</div>
+        <p class="d">one pipe. Both routes compete for it.</p></div>
+      <div class="ro"><div class="k">Summation flow</div><div class="v" id="rSum">\$5</div>
+        <p class="d">one pipe per customer. Add the routes.</p></div>
+      <div class="ro lead"><div class="k">Amplified flow</div><div class="v" id="rAmp">\$8</div>
+        <p class="d">one pool. The fattest route takes it all.</p></div>
+    </div>
+  </div>
+  <div class="controls" style="margin-top:14px">
+    <div class="ctl" style="flex:0 0 auto; min-width:0">
+      <label for="ratingSeg">Show the construction for</label>
+      <div class="seg" id="ratingSeg" role="group" aria-label="Which rating to draw">
+        <button type="button" data-r="flow" aria-pressed="true">Maximum</button>
+        <button type="button" data-r="sum" aria-pressed="false">Summation</button>
+        <button type="button" data-r="amp" aria-pressed="false">Amplified</button>
+      </div>
+    </div>
+    <div class="ctl" style="flex:0 0 auto; min-width:0; align-self:flex-end">
+      <label>&nbsp;</label>
+      <button class="btn" id="ratingReset" type="button">Back to the paper's example</button>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">The vessel shows what reaches the candidate, on one scale for all three. An empty pipe is a
+  route the construction could not supply. The page builds the query network of the paper and
+  runs Edmonds-Karp on it, so the numbers are the algorithm's, not an approximation of it.</p>
+
+  <h3 style="margin-top:34px">Why more fakes buy nothing</h3>
+  <p>The paper proves two bounds. The first: if the attacker pays <strong>$m$ dollars</strong>
+  to providers it does not own, no Anduin rating scores it above $m$. The identity count does not
+  matter, and the bound is tight. So its only lever is money it gives away. Split a budget across
+  more fakes and the score holds still while the fee bill climbs.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="mOut">Money paid to providers it does not own &mdash; <span class="val" id="mOutV">\$0.03</span></label>
+      <input type="range" id="mOut" min="1" max="60" step="1" value="3">
+    </div>
+    <div class="ctl">
+      <label for="nSplit">Split across this many fakes &mdash; <span class="val" id="nSplitV">3</span></label>
+      <input type="range" id="nSplit" min="1" max="24" step="1" value="3">
+    </div>
+  </div>
+  <div class="panel">
+    <div class="stage"><div id="splitSvg"></div></div>
+    <div class="readout">
+      <div class="ro lead"><div class="k">Best score</div><div class="v" id="splitScore">\$0.03</div>
+        <p class="d">capped at the money it gave away</p></div>
+      <div class="ro"><div class="k">What it costs</div><div class="v" id="splitCost">\$0.13</div>
+        <p class="d" id="splitCostD">\$0.03 forfeited, plus 6 fees at \$0.017</p></div>
+      <div class="ro"><div class="k">Per fake</div><div class="v" id="splitEach">\$0.01</div>
+        <p class="d">each thin first edge throttles its route</p></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">The second bound is stricter, and covers maximum flow alone. Its score never exceeds the
+  buyer's own spend, whatever the attacker's budget. Step 3 shows that ceiling.</p>
+</section>
+
+<!-- ======================= 6. RESULTS ======================= -->
+<section id="results">
+  <p class="eyebrow"><span class="step-n">Step 6</span> &nbsp;Results</p>
+  <h2>What it does on real money</h2>
+  <p><strong>The test.</strong> 157 days of real agent payments through x402, which carries
+  most machine payment volume: \$6.1M against roughly \$270K for the next rail. Every rating
+  reads the 90 days up to June 21, 2026. 136,646 buyers were active. 3,656 paid again within 30
+  days. <strong>813</strong> of those paid a provider they had never paid before. Those 813 are
+  the test set, and each sees 381.4 candidates on average. Did the rating put the right provider
+  first?</p>
+
+  <div class="chart">
+    <p class="ct">Was the first pick right?</p>
+    <p class="cs">Share of the 813 buyers whose next provider the rating ranked first. Higher is better.</p>
+    <div id="utilSvg"></div>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--anduin)"></span>Anduin</li>
+      <li><span class="swatch" style="background:var(--existing)"></span>existing approaches</li>
+    </ul>
+  </div>
+  <p>Amplified flow is right for <strong>22.8%</strong> of buyers. Co-user count, the standard
+  rule, gets 23.2%, so on accuracy the two are a draw. Usage ranking, the marketplace default,
+  gets 3.7%. Maximum flow ties at the top for 78.0% of buyers, so it rarely names one pick.</p>
+
+  <div class="chart">
+    <p class="ct">What first place costs to buy</p>
+    <p class="cs" id="coverSub">Cheapest spend to reach the top 1 for all 813 buyers at once</p>
+    <div class="controls" style="margin:0 0 14px">
+      <div class="ctl" style="flex:0 0 auto; min-width:0">
+        <label for="kSeg">Reach the top</label>
+        <div class="seg" id="kSeg" role="group" aria-label="Target rank">
+          <button type="button" data-k="1" aria-pressed="true">1</button>
+          <button type="button" data-k="5" aria-pressed="false">5</button>
+          <button type="button" data-k="10" aria-pressed="false">10</button>
+          <button type="button" data-k="25" aria-pressed="false">25</button>
+        </div>
+      </div>
+    </div>
+    <div id="coverSvg"></div>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--anduin)"></span>Anduin</li>
+      <li><span class="swatch" style="background:var(--existing)"></span>existing approaches</li>
+      <li>axis is logarithmic &mdash; each gridline is 100&times; the one before</li>
+    </ul>
+  </div>
+  <p>The 813 buyers spent <strong>\$41,331</strong> in all. To top every one of their lists
+  costs <strong>\$8,259</strong> under amplified flow. That is a fifth of their spend, and
+  <strong>23&times;</strong> the \$358 the standard rule asks. Co-user volume costs two cents.
+  Usage ranking looks dear at \$217,539, but that is 12.8 million fees at \$0.017, and it is
+  right for 3.7% of buyers.</p>
+  <div class="scroller"><table id="coverTbl"></table></div>
+
+  <div class="chart">
+    <p class="ct">Both measures at once</p>
+    <p class="cs">A rating belongs in the top right: accurate, and dear to fake. Only summation and
+  amplified flow are there.</p>
+    <div class="controls" style="margin:0 0 14px">
+      <div class="ctl" style="flex:0 0 auto; min-width:0">
+        <label for="quadSeg">Draw it</label>
+        <div class="seg" id="quadSeg" role="group" aria-label="Quadrant rendering">
+          <button type="button" data-q="paper" aria-pressed="true">As the paper does</button>
+          <button type="button" data-q="scale" aria-pressed="false">To scale</button>
+        </div>
+      </div>
+    </div>
+    <div id="quadSvg"></div>
+  </div>
+  <p class="note">Figure 6 of the paper places the six ratings by quadrant, not to scale.
+  &ldquo;To scale&rdquo; plots their measured coordinates, cost on a logarithmic axis, as an
+  earlier draft of that figure did. Both readings are in the repository.</p>
+
+  <h3 style="margin-top:34px">How much history to read</h3>
+  <p>One knob matters in deployment: how far the rating looks back. A longer window reaches
+  more of the market. It also lengthens every candidate list, so first place is harder to win.</p>
+  <div class="controls">
+    <div class="ctl" style="max-width:460px">
+      <label for="tau">Look-back window &mdash; <span class="val" id="tauV">90 days</span></label>
+      <input type="range" id="tau" min="0" max="5" step="1" value="5">
+    </div>
+  </div>
+  <div class="panel">
+    <div class="stage"><div id="tauSvg"></div></div>
+    <div class="readout">
+      <div class="ro"><div class="k">Reached at all</div><div class="v" id="tauCov">90.7%</div>
+        <p class="d">the true provider is somewhere on the list</p></div>
+      <div class="ro lead"><div class="k">First pick right</div><div class="v" id="tauP1">22.8%</div>
+        <p class="d" id="tauP1d">25.1% of the buyers it could reach at all</p></div>
+      <div class="ro"><div class="k">Candidates offered</div><div class="v" id="tauCand">381</div>
+        <p class="d">mean length of the candidate list</p></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">Amplified flow, fee-inclusive dollar weight. The slider snaps to the six measured
+  windows; nothing between them is interpolated. Reach climbs all the way to 90 days. Accuracy
+  peaks at 30. Use 30 to 90 days.</p>
+</section>
+
+<!-- ======================= 7. SHIPPING ======================= -->
+<section id="ship">
+  <p class="eyebrow"><span class="step-n">Step 7</span> &nbsp;Shipping it</p>
+  <h2>What you get, and what you accept</h2>
+  <p>Four things to know before you ship it. Two are proved. Two are awkward.</p>
+  <ul class="rows">
+    <li><span class="tag">Proved</span><div>
+      <p><strong>A score costs money, not identities.</strong> Pay $m$ dollars to providers you do
+  not control, and no Anduin rating scores you above $m$. Any number of fakes gives the same
+  result. The bound is tight, so that is the real price.</p></div></li>
+    <li><span class="tag">Proved</span><div>
+      <p><strong>Maximum flow is capped by the buyer.</strong> Its score never exceeds what that
+  buyer has spent with its own known providers. The attacker's budget does not change this.</p></div></li>
+    <li><span class="tag">Nothing to change</span><div>
+      <p><strong>Nothing has to change.</strong> The input is payments that already settled. No
+  party must agree a convention before it transacts. Every other proposal needs that agreement.</p>
+      <p><strong>The cost to compute is local.</strong> Summation flow precomputes one value per
+  customer, then answers each candidate in constant time. Maximum and amplified flow solve one
+  small max-flow per candidate, over the buyer's own neighbourhood and never the whole market.</p></div></li>
+    <li><span class="tag warn">Live with it</span><div>
+      <p><strong>Cold start is real.</strong> A new buyer has no known providers, no customers and
+  no candidates, so every rating is undefined. Collaborative filtering has the same hole. One
+  settled payment starts it. A new provider stays unrated until one customer pays it.</p>
+      <p><strong>Shared wallets blur.</strong> One address can be the treasury for several agents.
+  Their histories pool into one node, and the ratings get noisier. Per-agent subaccount keys
+  &mdash; ERC-4337 session keys, BIP-32 derivation &mdash; would split them again.</p></div></li>
+  </ul>
+  <p style="margin-top:22px"><strong>Ship amplified flow.</strong> It has the best accuracy of the three, and the
+  highest attack cost of all six at rank 1. Avoid maximum flow in a product: its guarantee is the
+  strongest, but it ties at the top for 78.0% of buyers, so it cannot name a first pick.</p>
+</section>
+
+<!-- ======================= FUTURE WORK ======================= -->
+<section id="next">
+  <p class="eyebrow"><span class="step-n">Next</span> &nbsp;Future work</p>
+  <h2>How a brand-new buyer gets its first ranking</h2>
+  <p>Cold start is the open problem, and it bites the buyer first. A buyer that has never paid
+  anyone has no known providers. With $K(b)$ empty there are no customers and no candidates, so
+  every rating is undefined. An undefined rating cannot be ranked.</p>
+  <p>One way out: publish a small <strong>curated set</strong> of trusted providers. A new buyer
+  credits each one a fixed amount &mdash; say <strong>\$1</strong> &mdash; and those artificial
+  edges become its $K(b)$. Nothing else is invented. The real customers of those providers become
+  $C(b)$, the providers <em>they</em> pay become the candidates, and Anduin ranks them exactly as
+  it would for any other buyer.</p>
+  <p>The seed size is the whole trade. It is also the ceiling: maximum flow can never score any
+  candidate above what the buyer has spent, and at the start that is only the seed. So a small
+  seed gives a weak but honest ranking that real payments quickly outweigh. A large seed hands
+  the curated set the ranking, which is the gatekeeper Anduin set out to remove.</p>
+
+  <div class="controls">
+    <div class="ctl" style="max-width:420px">
+      <label for="seed">The buyer credits each curated provider &mdash; <span class="val" id="seedV">\$1</span></label>
+      <input type="range" id="seed" min="0" max="6" step="1" value="1">
+    </div>
+  </div>
+  <div class="panel">
+    <div class="stage"><div id="seedSvg"></div></div>
+    <div class="readout">
+      <div class="ro"><div class="k">Candidate A</div><div class="v" id="seedA">\$4</div>
+        <p class="d">amplified flow, through the curated set's own customers</p></div>
+      <div class="ro"><div class="k">Candidate B</div><div class="v" id="seedB">\$3</div>
+        <p class="d">same buyer, same seed, a different neighbourhood</p></div>
+      <div class="ro lead"><div class="k">Ranks first</div><div class="v" id="seedRank">candidate A</div>
+        <p class="d" id="seedRankD">ranked from real payments the curated set never made</p></div>
+      <div class="ro"><div class="k">Ceiling while unseeded</div><div class="v" id="seedCeil">\$3</div>
+        <p class="d" id="seedCeilD">maximum flow can never pass 3 &times; \$1 until the buyer pays for real</p></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px"><strong>None of this is in the paper.</strong> Nothing
+  here is measured. The curated providers, their customers and the two candidates are a sketch;
+  only the arithmetic is the paper's, run as a query network per candidate. Set the seed to zero
+  to see the hole it fills. The questions we would test next: how large a seed can be before the
+  attack cost falls, and how fast real payments outweigh it.</p>
+</section>
+
+<!-- ======================= 8. NUMBERS ======================= -->
+<section id="notes">
+  <p class="eyebrow">Reference</p>
+  <h2>Every number on this page</h2>
+  <p>All six ratings on the 813 buyers, fee-inclusive dollar weight. Anduin's three are
+  shaded.</p>
+  <div class="scroller"><table id="allTbl"></table></div>
+
+  <h3 style="margin-top:30px">Targeting the buyers that matter</h3>
+  <p>To capture every buyer at once is one attack. To buy only the biggest spenders is
+  another. The top 79 buyers hold 91% of the spend.</p>
+  <div class="scroller"><table id="tgtTbl"></table></div>
+
+  <h3 style="margin-top:30px">Data</h3>
+  <p class="note">66,073,201 x402 stablecoin settlements across 16 blockchains, March 23 to August 26,
+  2026, worth \$6.1M at a median payment of \$0.01. Self-payments are removed. Ratings read the 90
+  days before June 21, 2026, 00:00 UTC &mdash; 24,429,942 payments worth \$3.83M &mdash; and are
+  scored on the 30 days after. A provider is <em>mature</em>, and so rateable, once two distinct
+  buyers have paid it: 3,649 of them. The base fee is \$0.017, the mean settlement fee across the
+  chains that carry x402. Every rating on this page uses the fee-inclusive dollar weight, so
+  accuracy and cost always come from one graph. Every figure here is read from the paper.</p>
+
+  <p class="note" style="margin-top:30px; border-top:1px solid var(--grid); padding-top:18px">The paper behind this page is under review. This walkthrough presents the idea and the
+  measured results. It is not the paper, and the paper governs.</p>
+</section>
+
+</div>
+</main>
+
+<script>
+"use strict";
+/* =====================================================================
+   Anduin — interactive walkthrough.
+   Every figure below is read from the paper in this repository:
+   sections/*.tex, figures/*.tex and main.aux. Nothing is interpolated,
+   extrapolated or rounded into a nicer number.
+   ===================================================================== */
+function $(id){ return document.getElementById(id); }
+var NS = "http://www.w3.org/2000/svg";
+function el(name, attrs){
+  var n = document.createElementNS(NS, name);
+  if (attrs) for (var k in attrs) if (attrs.hasOwnProperty(k)) n.setAttribute(k, attrs[k]);
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function narrow(){ return window.innerWidth < 620; }
+
+/* ---------- motion: one guarded tween for everything ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+}
+
+/* ---------- formatting ---------- */
+function usd(n){
+  if (n === 0) return "$0";
+  /* money keeps two decimals: $0.30, never $0.3 */
+  if (Math.abs(n) < 0.1) return "$" + n.toFixed(3).replace(/0$/, "");
+  if (Math.abs(n) < 1) return "$" + n.toFixed(2);
+  if (Math.abs(n) < 1000) return "$" + (n % 1 ? n.toFixed(2) : String(n));
+  return "$" + Math.round(n).toLocaleString("en-US");
+}
+function pct(n, d){ return n.toFixed(d === undefined ? 1 : d) + "%"; }
+
+/* ---------- tooltip ---------- */
+var tipEl = $("tip");
+function showTip(evt, html){
+  tipEl.innerHTML = html;
+  tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+/* =====================================================================
+   DATA — verbatim from the paper
+   ===================================================================== */
+var EPS = 0.017;                 /* base fee, sections/methodology.tex */
+var COHORT_SPEND = 41331;        /* combined spend of the 813 buyers, tab:cover */
+var N_BUYERS = 813;
+
+/* tab:acc, fee-inclusive dollar weight (w_$eps) row; baselines are weight-independent */
+var RATINGS = [
+  { id:"use",   name:"Usage ranking",    sym:"Πuse",   ours:false, auc:0.807, p1:3.7,
+    gloss:"counts a provider's distinct buyers, market-wide" },
+  { id:"cf",    name:"Co-user count",    sym:"Πcf",    ours:false, auc:0.880, p1:23.2,
+    gloss:"counts shared customers who pay the candidate — collaborative filtering" },
+  { id:"spend", name:"Co-user volume",   sym:"Πspend", ours:false, auc:0.749, p1:12.1,
+    gloss:"sums what shared customers spent at the candidate" },
+  { id:"flow",  name:"Maximum flow",     sym:"Πflow",  ours:true,  auc:0.758, p1:4.8,
+    gloss:"one shared copy of the buyer's edge" },
+  { id:"sum",   name:"Summation flow",   sym:"Πsum",   ours:true,  auc:0.871, p1:20.0,
+    gloss:"a private copy of the buyer's edge per shared customer" },
+  { id:"amp",   name:"Amplified flow",   sym:"Πamp",   ours:true,  auc:0.869, p1:22.8,
+    gloss:"a pool of copies the strongest path may draw on" }
+];
+
+/* tab:cover — minimum cost to capture top-k for every buyer at once.
+   frac is the paper's printed fraction of the $41,331 cohort spend. */
+var COVER = {
+  use:   { 1:[5.263,217539], 5:[0.178,7350], 10:[0.021,848], 25:[0.008,310] },
+  spend: { 1:[0.000,0.02],   5:[0.000,0.02], 10:[0.000,0.02], 25:[0.000,0.02] },
+  cf:    { 1:[0.009,358],    5:[0.003,138],  10:[0.002,100],  25:[0.001,50] },
+  flow:  { 1:[0.113,4673],   5:[0.059,2420], 10:[0.041,1701], 25:[0.022,898] },
+  sum:   { 1:[0.105,4330],   5:[0.034,1420], 10:[0.023,961],  25:[0.012,494] },
+  amp:   { 1:[0.200,8259],   5:[0.040,1661], 10:[0.028,1145], 25:[0.013,554] }
+};
+var K_VALUES = [1, 5, 10, 25];
+
+/* tab:targeted — rank 1 against the top-N highest-spending buyers */
+var TARGETED = [
+  { n:1,   spend:12612, cf:1.86, flow:289,  sum:289,  amp:291 },
+  { n:10,  spend:22981, cf:14,   flow:2508, sum:1716, amp:4138 },
+  { n:79,  spend:37566, cf:53,   flow:4096, sum:3183, amp:5490 },
+  { n:813, spend:41331, cf:358,  flow:4673, sum:4330, amp:8259 }
+];
+
+/* tab:tau-controlled — look-back sweep, amplified flow, w_$eps */
+var TAU = [
+  { t:15, cand:261, cov:70.5, auc:0.829, p1:12.9, p1r:18.3 },
+  { t:30, cand:304, cov:83.4, auc:0.860, p1:24.7, p1r:29.6 },
+  { t:45, cand:337, cov:87.2, auc:0.860, p1:21.2, p1r:24.3 },
+  { t:60, cand:356, cov:88.4, auc:0.863, p1:21.5, p1r:24.3 },
+  { t:75, cand:368, cov:89.7, auc:0.868, p1:23.0, p1r:25.7 },
+  { t:90, cand:381, cov:90.7, auc:0.869, p1:22.8, p1r:25.1 }
+];
+
+/* the proposals surveyed in the paper's introduction */
+var FIXES = [
+  { t:"A curated marketplace", c:"closes the market",
+    d:"Someone vets every provider before it may be listed. It works, and it ends permissionless participation — the property that made the market worth building. This is what deployed agent marketplaces do today." },
+  { t:"Identity credentials", c:"wrong question",
+    d:"A cryptographic credential attests to who an entity is. It says nothing about whether its service is any good, which is the thing the buyer actually needs to know." },
+  { t:"An escrowed evaluator", c:"costs more than the purchase",
+    d:"A paid referee checks each delivery and releases the funds. On a market whose median payment is \\$0.01, the referee's fee dwarfs the payment it is adjudicating." },
+  { t:"Voluntary ratings", c:"fewer than 4,000 exist",
+    d:"Ask buyers to rate providers onchain. Across deployed agentic rating systems, prior work counts fewer than 4,000 ratings in total — far too sparse to rank anything." },
+  { t:"Rank by raw usage", c:"\\$0.0027 to top",
+    d:"Count transactions, counterparties or volume, as marketplaces do now. An attacker funds its own wallets and loops self-payments. Prior work measures the cost of topping a median reputation at \\$0.0027 — a 259th of the median provider's volume." }
+];
+
+/* ---- the worked graph: two known providers, two customers, one candidate ----
+   The paper's Figure 4 uses a single known provider. One provider cannot show
+   what K(b) and C(b) are, so this page carries a second, and the preset button
+   collapses it back to the figure. Nodes: 0 buyer, 1 known 1, 2 known 2,
+   3 customer 1, 4 customer 2, 5 candidate. */
+var NB = 0, NP1 = 1, NP2 = 2, NC1 = 3, NC2 = 4, NQ = 5, NN = 6;
+var EX_RICH  = { W1:4, W2:1, A11:8, A21:4, A22:2, B1:8, B2:4 };
+var EX_PAPER = { W1:4, W2:0, A11:8, A21:1, A22:0, B1:8, B2:1 };
+var st = { W1:EX_RICH.W1, W2:EX_RICH.W2, A11:EX_RICH.A11, A21:EX_RICH.A21,
+           A22:EX_RICH.A22, B1:EX_RICH.B1, B2:EX_RICH.B2 };
+
+/* Edmonds-Karp. The query network is tiny, so an exact solve costs nothing and
+   the page runs the paper's own algorithm rather than a special case of it. */
+function maxflow(cap, s, t, N){
+  N = N || NN;
+  var res = [], i, j;
+  for (i = 0; i < N; i++){ res.push(cap[i].slice()); }
+  var total = 0;
+  for (;;){
+    var prev = [];
+    for (i = 0; i < N; i++) prev.push(-1);
+    prev[s] = s;
+    var q = [s];
+    while (q.length){
+      var u = q.shift();
+      for (j = 0; j < N; j++) if (prev[j] < 0 && res[u][j] > 1e-9){ prev[j] = u; q.push(j); }
+    }
+    if (prev[t] < 0) break;
+    var aug = Infinity, v = t;
+    while (v !== s){ aug = Math.min(aug, res[prev[v]][v]); v = prev[v]; }
+    v = t;
+    while (v !== s){ res[prev[v]][v] -= aug; res[v][prev[v]] += aug; v = prev[v]; }
+    total += aug;
+  }
+  var flow = [];
+  for (i = 0; i < N; i++){
+    flow.push([]);
+    for (j = 0; j < N; j++) flow[i].push(Math.max(0, cap[i][j] - res[i][j]));
+  }
+  return { value:total, flow:flow };
+}
+function zeros(){
+  var m = [], i, j;
+  for (i = 0; i < NN; i++){ m.push([]); for (j = 0; j < NN; j++) m[i].push(0); }
+  return m;
+}
+/* the query network of Definition 7, with the buyer's arcs optionally amplified */
+function network(s, amplify){
+  var c = zeros();
+  var nP1 = amplify ? npFor(s, NP1) : 1, nP2 = amplify ? npFor(s, NP2) : 1;
+  c[NB][NP1]  = s.W1 * nP1;  c[NB][NP2]  = s.W2 * nP2;
+  c[NP1][NC1] = s.A11;       c[NP1][NC2] = s.A21;   c[NP2][NC2] = s.A22;
+  c[NC1][NQ]  = s.B1;        c[NC2][NQ]  = s.B2;
+  return c;
+}
+/* n_p: customers that pay this known provider AND the candidate */
+function npFor(s, p){
+  var n = 0;
+  if (p === NP1){
+    if (s.A11 > 0 && s.B1 > 0) n++;
+    if (s.A21 > 0 && s.B2 > 0) n++;
+  } else {
+    if (s.A22 > 0 && s.B2 > 0) n++;
+  }
+  return n;
+}
+/* bridge(b,b') = sum over shared known providers of the thinner of the two edges */
+function bridge(s, c){
+  return c === NC1 ? Math.min(s.W1, s.A11)
+                   : Math.min(s.W1, s.A21) + Math.min(s.W2, s.A22);
+}
+function piFlow(s){ return maxflow(network(s, false), NB, NQ).value; }
+function piAmp(s){  return maxflow(network(s, true),  NB, NQ).value; }
+function piSum(s){
+  return Math.min(bridge(s, NC1), s.B1) + Math.min(bridge(s, NC2), s.B2);
+}
+function beta(s){ return s.W1 + s.W2; }                   /* the buyer's own spend */
+function Kset(s){ return (s.W1 > 0 ? 1 : 0) + (s.W2 > 0 ? 1 : 0); }
+function Cset(s){
+  var n = 0;
+  if (s.W1 > 0 && s.A11 > 0) n++;
+  if ((s.W1 > 0 && s.A21 > 0) || (s.W2 > 0 && s.A22 > 0)) n++;
+  return n;
+}
+
+/* =====================================================================
+   1. THE MARKET — the proposals, and what each costs
+   ===================================================================== */
+(function buildFixes(){
+  var ul = $("fixes"), v = $("fixVerdict");
+  FIXES.forEach(function(f, i){
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "fix"; b.setAttribute("aria-pressed", "false");
+    b.innerHTML = '<span class="t">' + f.t + '</span><span class="c">' + f.c + '</span>';
+    b.addEventListener("click", function(){
+      var on = b.getAttribute("aria-pressed") === "true";
+      Array.prototype.forEach.call(ul.querySelectorAll(".fix"), function(o){
+        o.setAttribute("aria-pressed", "false");
+      });
+      if (on){ fixShown = -1; drawPick(); v.innerHTML = idle(); return; }
+      b.setAttribute("aria-pressed", "true");
+      fixShown = i; drawPick();
+      v.innerHTML = '<p style="margin:0"><strong>' + f.t + ".</strong> " + f.d + "</p>";
+      v.style.opacity = 0;
+      tween(240, function(p){ v.style.opacity = p; });
+    });
+    li.appendChild(b); ul.appendChild(li);
+  });
+  function idle(){
+    return '<p style="margin:0" class="note">Pick one. Anduin takes none of these routes: it reads ' +
+           'the payments that already settled, and nothing about the market has to change.</p>';
+  }
+  v.innerHTML = idle();
+})();
+</script>
+
+<script>
+"use strict";
+/* Step 1's figure: the shape each proposed fix gives the market.
+   Sketches, not data; the only numbers are the ones the paper states. */
+var fixShown = -1;
+function drawPick(){
+  var nw = narrow(), W = nw ? 330 : 520, H = nw ? 212 : 196;
+  var host = $("pickSvg"); host.innerHTML = ""; flowReset();
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img" });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var fs = nw ? 9 : 10;
+  var bx = nw ? 42 : 66, px = nw ? 196 : 300;
+  var rows = 4, top = 26, gap = (H - 56) / (rows - 1);
+  function py(i){ return top + gap * i; }
+
+  function txt(x, y, t, anchor, col, bold){
+    var e = el("text", { x:x, y:y, "font-family":css("--mono"), "font-size":fs,
+      fill:css(col || "--ink-muted"), "text-anchor":anchor || "start" });
+    if (bold) e.setAttribute("font-weight", "700");
+    e.textContent = t; g.appendChild(e); return e;
+  }
+  /* a marketplace listing: every one of them looks the same from outside */
+  function listing(x, y, op, tint){
+    var w = nw ? 54 : 66, h = 19;
+    g.appendChild(el("rect", { x:x, y:y - h / 2, width:w, height:h, rx:3,
+      fill:css("--plane"), stroke:css(tint || "--ink-muted"), "stroke-width":1,
+      "stroke-opacity":op, "fill-opacity":op }));
+    [0.58, 0.34].forEach(function(f, k){
+      g.appendChild(el("rect", { x:x + 6, y:y - 5 + k * 6, width:(w - 12) * f, height:3, rx:1.5,
+        fill:css("--ink-muted"), "fill-opacity":op * 0.5 }));
+    });
+    return [x, y, w];
+  }
+  function dot(x, y, r, col, op){
+    g.appendChild(el("circle", { cx:x, cy:y, r:r, fill:css(col), "fill-opacity":op === undefined ? 1 : op }));
+  }
+  function line(x1, y1, x2, y2, col, w, dash, op){
+    var e = el("line", { x1:x1, y1:y1, x2:x2, y2:y2, stroke:css(col), "stroke-width":w || 1,
+      "stroke-linecap":"round", "stroke-opacity":op === undefined ? 0.75 : op });
+    if (dash) e.setAttribute("stroke-dasharray", dash);
+    g.appendChild(e); return e;
+  }
+  var by = H / 2;
+  dot(bx, by, 6.5, "--accent");
+  txt(bx - 11, by + 3.4, "buyer", "end");
+
+  var F = fixShown;
+  if (F === -1){
+    for (var i = 0; i < rows; i++) listing(px, py(i), 1);
+    txt((bx + px) / 2 + 14, H - 8, "every listing says the same thing", "middle");
+    stream(g, [[px - 16, py(0)], [px - 16, py(rows - 1)], [px - 16, py(0)]], 1,
+      { hue:"--ink-muted", r:8, speed:40 });
+  } else if (F === 0){            /* a curated marketplace */
+    var gx = (bx + px) / 2 + 16;
+    line(gx, 12, gx, H - 22, "--ink-muted", 1.4, "4 4", 0.8);
+    txt(gx, 8, "curator", "middle", "--ink-muted", true);
+    for (i = 0; i < rows; i++){
+      var ok = i < 2;
+      listing(ok ? px : gx - (nw ? 62 : 74), py(i), ok ? 1 : 0.3);
+      if (ok) line(bx + 9, by, px - 4, py(i), "--anduin", 1.4);
+      else txt(gx - (nw ? 70 : 82), py(i) + 3.4, "refused", "end", "--existing");
+    }
+    txt(bx, H - 8, "open participation ends at the gate", "start", "--existing", true);
+  } else if (F === 1){            /* identity credentials */
+    for (i = 0; i < rows; i++){
+      var L0 = listing(px, py(i), 1);
+      g.appendChild(el("path", { d:"M " + (px - 13) + " " + (py(i) - 6) + " l 7 0 l 0 9 l -3.5 4 l -3.5 -4 z",
+        fill:css("--anduin"), "fill-opacity":0.85 }));
+      line(bx + 9, by, px - 17, py(i), "--anduin", 1.2, null, 0.5);
+    }
+    txt(bx, H - 8, "identical badges; the service behind them is not identical",
+      "start", "--existing", true);
+  } else if (F === 2){            /* an escrowed evaluator */
+    var ex = (bx + px) / 2 + 6, ey = by;
+    g.appendChild(el("rect", { x:ex - 30, y:ey - 15, width:60, height:30, rx:4,
+      fill:css("--surface-1"), stroke:css("--ink-muted"), "stroke-width":1 }));
+    txt(ex, ey + 3.4, "referee", "middle", "--ink-muted", true);
+    line(bx + 9, by, ex - 32, ey, "--anduin", 1.2);
+    txt((bx + ex) / 2 - 4, by - 10, "pays ¢", "middle", "--anduin", true);
+    line(ex + 32, ey, px - 4, by, "--existing", 7, null, 0.55);
+    txt((ex + px) / 2 + 10, by - 14, "fee", "middle", "--existing", true);
+    listing(px, by, 1);
+    txt(bx, H - 8, "the referee costs more than the cent it is checking",
+      "start", "--existing", true);
+  } else if (F === 3){            /* voluntary ratings */
+    for (i = 0; i < rows; i++){
+      listing(px, py(i), 1);
+      line(bx + 9, by, px - 4, py(i), "--anduin", 1.2, null, 0.45);
+      if (i === 1) txt(px + (nw ? 60 : 72), py(i) + 3.4, "★ one rating", "start", "--anduin", true);
+      else txt(px + (nw ? 60 : 72), py(i) + 3.4, "no ratings", "start");
+    }
+    txt(bx, H - 8, "fewer than 4,000 ratings exist in the whole market",
+      "start", "--existing", true);
+  } else {                        /* rank by raw usage */
+    listing(px, py(1), 1, "--existing");
+    txt(px + (nw ? 60 : 72), py(1) + 3.4, "counts 6 buyers", "start", "--existing", true);
+    for (i = 0; i < rows; i++) if (i !== 1) listing(px, py(i), 0.35);
+    var fy0 = py(2) + 6;
+    for (i = 0; i < 6; i++){
+      var yy = fy0 + (i - 2.5) * (nw ? 13 : 15);
+      dot(bx + (nw ? 52 : 70), yy, 3, "--existing", 0.85);
+      line(bx + (nw ? 56 : 74), yy, px - 4, py(1), "--existing", 1, "3 3", 0.7);
+    }
+    txt(bx + (nw ? 52 : 70), fy0 - (nw ? 42 : 48), "its own wallets", "middle", "--existing", true);
+    /* SVG text is in KaTeX's ignoredTags, so a bare $ is correct here */
+    txt(bx, H - 8, "$0.0027 buys the median reputation", "start", "--existing", true);
+  }
+  flowStart();
+}
+
+/* =====================================================================
+   2. DRAWING THE MARKET — the same payments, two ways to draw them
+   ===================================================================== */
+var gView = "sorted";
+
+function prng(seed){ var s = seed; return function(){ s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }; }
+
+function graphModel(){
+  var nw = narrow();
+  var W = nw ? 340 : 560, H = nw ? 320 : 290;
+  /* leave room on the right for the node labels, which sit outside the columns */
+  var bx = nw ? 40 : 58, px = nw ? 262 : 430;
+  var nodes = [], edges = [];
+  function N(id, kind, sy){ nodes.push({ id:id, kind:kind, sy:sy }); }
+  /* the Step 3 graph: one buyer, two known providers, two customers, one candidate.
+     The members of each set are adjacent so a box can enclose them and nothing else. */
+  N("b","buyer",0.28); N("c1","buyer",0.48); N("c2","buyer",0.60);
+  N("p1","prov",0.34); N("p2","prov",0.46); N("q","cand",0.66);
+  var i;
+  for (i = 1; i <= 10; i++) N("o"+i, "buyer", 0);
+  for (i = 1; i <= 8; i++) N("r"+i, "prov", 0);
+  /* keep the middle band clear for the worked example, so its teal subgraph reads
+     as one shape instead of crossing the whole column */
+  var bI = 0, pI = 0;
+  nodes.forEach(function(n){
+    if (n.sy) return;
+    var k = (n.kind === "buyer") ? bI++ : pI++;
+    var tot = (n.kind === "buyer") ? 10 : 8, half = tot / 2;
+    n.sy = (k < half) ? (0.03 + 0.21 * (k / (half - 1)))
+                      : (0.76 + 0.21 * ((k - half) / (half - 1)));
+  });
+  var rnd = prng(20260621);
+  nodes.forEach(function(n){
+    n.sx = (n.kind === "buyer") ? bx : px;          /* sorted x */
+    n.syp = 18 + n.sy * (H - 36);                   /* sorted y */
+    n.rx = 26 + rnd() * (W - 52);                   /* raw x */
+    n.ry = 16 + rnd() * (H - 32);                   /* raw y */
+    n.x = n.rx; n.y = n.ry;
+  });
+  var idx = {}; nodes.forEach(function(n, k){ idx[n.id] = k; });
+  /* the weights the Step 3 sliders start on */
+  [["b","p1",4],["b","p2",1],["c1","p1",8],["c2","p1",4],["c2","p2",2],
+   ["c1","q",8],["c2","q",4]].forEach(function(e){
+    edges.push({ a:idx[e[0]], b:idx[e[1]], w:e[2] });
+  });
+  /* the rest of the market: texture, no values, and never touching K(b) */
+  [["o1","r1"],["o1","r2"],["o2","r2"],["o2","r5"],["o3","r3"],["o3","r4"],["o4","r3"],
+   ["o4","r6"],["o5","r5"],["o5","r7"],["o6","r4"],["o6","r6"],["o7","r5"],["o7","r8"],
+   ["o8","r6"],["o8","r1"],["o9","r7"],["o9","r2"],["o2","r3"],["o6","r1"],["o10","r4"],
+   ["o10","r8"],["o3","r8"],["o5","r1"],["o7","r3"]
+  ].forEach(function(e){ edges.push({ a:idx[e[0]], b:idx[e[1]], w:0 }); });
+  return { W:W, H:H, nodes:nodes, edges:edges, nw:nw };
+}
+
+var GM = null;
+function drawGraph(animate){
+  var host = $("graphSvg");
+  GM = GM || graphModel();
+  var m = GM;
+  host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + m.W + " " + m.H, role:"img",
+    "aria-label":"The payment graph: buyers on the left, providers on the right, every payment an edge between them." });
+  var gE = el("g"), gN = el("g"), gL = el("g");
+  svg.appendChild(gE); svg.appendChild(gN); svg.appendChild(gL);
+  host.appendChild(svg);
+
+  var lines = [], hits = [];
+  m.edges.forEach(function(e){
+    var valued = e.w > 0;
+    var ln = el("line", {
+      stroke: valued ? css("--anduin") : css("--grey-mark"),
+      "stroke-width": valued ? (1.1 + e.w * 0.28) : 0.7,
+      "stroke-opacity": valued ? 0.95 : 0.4, "stroke-linecap":"round"
+    });
+    gE.appendChild(ln); lines.push(ln);
+    if (valued){
+      var hit = el("line", { stroke:"transparent", "stroke-width":14, "stroke-linecap":"round",
+        tabindex:"0", role:"img", "aria-label":"an edge carrying $" + e.w });
+      hit.style.cursor = "help";
+      gL.appendChild(hit); hits.push({ el:hit, e:e, ln:ln });
+    } else { hits.push(null); }
+  });
+  hits.forEach(function(h){
+    if (!h) return;
+    function on(ev){
+      h.ln.setAttribute("stroke-width", 1.1 + h.e.w * 0.28 + 2.4);
+      showTip(ev, "<b>One relationship</b>$" + h.e.w + " paid over the window, fees included");
+    }
+    function off(){ h.ln.setAttribute("stroke-width", 1.1 + h.e.w * 0.28); hideTip(); }
+    h.el.addEventListener("mousemove", on);
+    h.el.addEventListener("mouseenter", on);
+    h.el.addEventListener("mouseleave", off);
+    h.el.addEventListener("focus", function(){ h.ln.setAttribute("stroke-width", 1.1 + h.e.w * 0.28 + 2.4); });
+    h.el.addEventListener("blur", off);
+  });
+
+  var dots = m.nodes.map(function(n){
+    var r = (n.id === "b") ? 5.6 : (n.id === "q" ? 5 : (n.kind === "cand" ? 5 : 3.4));
+    var fill = (n.id === "b") ? css("--accent")
+             : (n.id === "q") ? css("--existing")
+             : (n.kind === "buyer") ? "#5b7fa8" : css("--anduin");
+    var strong = (n.id === "b" || n.id === "q" || n.id === "p" || n.id === "c1" || n.id === "c2");
+    var c = el("circle", { r:r, fill:fill, "fill-opacity": strong ? 1 : 0.42 });
+    gN.appendChild(c); return c;
+  });
+
+  /* K(b) and C(b), named where the reader first meets them */
+  var boxes = [
+    { ids:["p1","p2"], label:"K(b)", side:1 },
+    { ids:["c1","c2"], label:"C(b)", side:-1 }
+  ].map(function(B){
+    var r = el("rect", { rx:7, fill:"none", stroke:css("--ink-muted"), "stroke-width":1,
+      "stroke-dasharray":"3 3" });
+    var t = el("text", { "font-family":css("--mono"), "font-size":10, fill:css("--ink-muted"),
+      "font-weight":"700", "text-anchor":B.side < 0 ? "end" : "start" });
+    t.textContent = B.label;
+    gL.appendChild(r); gL.appendChild(t);
+    B.r = r; B.t = t;
+    B.idx = B.ids.map(function(id){ var k = 0; m.nodes.forEach(function(n, j){ if (n.id === id) k = j; }); return k; });
+    return B;
+  });
+
+  var labels = [];
+  if (!m.nw){
+    [["b","buyer",-1],["q","candidate",1]].forEach(function(L){
+      var i = 0; m.nodes.forEach(function(n, k){ if (n.id === L[0]) i = k; });
+      var t = el("text", { "font-family":css("--mono"), "font-size":9.5, fill:css("--ink-muted"),
+        "text-anchor": L[2] < 0 ? "end" : "start" });
+      t.textContent = L[1];
+      gL.appendChild(t); labels.push({ t:t, i:i, dx:L[2] * 10 });
+    });
+  }
+
+  function place(p){
+    m.nodes.forEach(function(n){
+      var tx = (gView === "sorted") ? n.sx : n.rx, ty = (gView === "sorted") ? n.syp : n.ry;
+      n.x = n.px0 + (tx - n.px0) * p; n.y = n.py0 + (ty - n.py0) * p;
+    });
+    m.nodes.forEach(function(n, k){ dots[k].setAttribute("cx", n.x); dots[k].setAttribute("cy", n.y); });
+    m.edges.forEach(function(e, k){
+      var a = m.nodes[e.a], b = m.nodes[e.b];
+      lines[k].setAttribute("x1", a.x); lines[k].setAttribute("y1", a.y);
+      lines[k].setAttribute("x2", b.x); lines[k].setAttribute("y2", b.y);
+      if (hits[k]){
+        hits[k].el.setAttribute("x1", a.x); hits[k].el.setAttribute("y1", a.y);
+        hits[k].el.setAttribute("x2", b.x); hits[k].el.setAttribute("y2", b.y);
+      }
+    });
+    labels.forEach(function(L){
+      var n = m.nodes[L.i];
+      L.t.setAttribute("x", n.x + L.dx); L.t.setAttribute("y", n.y + 3.4);
+      L.t.setAttribute("opacity", gView === "sorted" ? p : 1 - p);
+    });
+    /* a box only means something once the dots are sorted, so it fades with them */
+    var vis = gView === "sorted" ? p : 1 - p;
+    boxes.forEach(function(B){
+      var xs = B.idx.map(function(i){ return m.nodes[i].x; });
+      var ys = B.idx.map(function(i){ return m.nodes[i].y; });
+      var pad = 13;
+      var x0 = Math.min.apply(null, xs) - pad, y0 = Math.min.apply(null, ys) - pad;
+      var w = Math.max.apply(null, xs) - Math.min.apply(null, xs) + pad * 2;
+      var h = Math.max.apply(null, ys) - Math.min.apply(null, ys) + pad * 2;
+      B.r.setAttribute("x", x0); B.r.setAttribute("y", y0);
+      B.r.setAttribute("width", w); B.r.setAttribute("height", h);
+      B.r.setAttribute("stroke-opacity", vis * 0.6);
+      B.t.setAttribute("x", B.side < 0 ? x0 - 5 : x0 + w + 5);
+      B.t.setAttribute("y", y0 + h / 2 + 3.5);
+      B.t.setAttribute("opacity", vis);
+    });
+  }
+  m.nodes.forEach(function(n){ n.px0 = n.x; n.py0 = n.y; });
+  if (animate){ tween(620, place); } else { place(1); }
+}
+
+Array.prototype.forEach.call($("viewSeg").querySelectorAll("button"), function(b){
+  b.addEventListener("click", function(){
+    gView = b.getAttribute("data-view");
+    Array.prototype.forEach.call($("viewSeg").querySelectorAll("button"), function(o){
+      o.setAttribute("aria-pressed", String(o === b));
+    });
+    drawGraph(true);
+  });
+});
+</script>
+
+<script>
+"use strict";
+/* =====================================================================
+   3. SCORING A STRANGER + 5. THE THREE RATINGS
+   One state object, two pictures.
+   ===================================================================== */
+function routeLayout(){
+  return narrow()
+    ? { W:344, H:272, b:[22,132], p1:[108,78], p2:[108,188], c1:[218,58], c2:[218,186],
+        q:[308,122], beaker:[308,168,22,74], fs:9.5 }
+    : { W:520, H:250, b:[30,124], p1:[152,72], p2:[152,178], c1:[300,56], c2:[300,180],
+        q:[428,116], beaker:[428,150,24,72], fs:10.5 };
+}
+function nodeDot(g, xy, r, fill, op){
+  var c = el("circle", { cx:xy[0], cy:xy[1], r:r, fill:fill, "fill-opacity":op === undefined ? 1 : op });
+  g.appendChild(c); return c;
+}
+function nodeLabel(g, xy, txt, dx, dy, anchor, L){
+  var t = el("text", { x:xy[0] + dx, y:xy[1] + dy, "font-family":css("--mono"),
+    "font-size":L.fs - 0.5, fill:css("--ink-muted"), "text-anchor":anchor || "middle" });
+  t.textContent = txt; g.appendChild(t); return t;
+}
+
+/* =====================================================================
+   THE FLOW ENGINE
+   Trust is a quantity that flows, so draw it as one: each edge is a pipe
+   whose bore is its capacity, the water inside it is the flow actually
+   carried, and droplets ride the water so the rate is visible. Water
+   wider than its pipe is an over-subscribed edge, which is exactly the
+   problem Step 5 resolves.
+   ===================================================================== */
+var FLOWS = [], flowRAF = null, flowStages = 0;
+
+function bore(v){ return v > 0 ? 2.4 + v * 0.74 : 0; }      /* pipe width for a weight */
+
+function polyGeo(pts){
+  var segs = [], tot = 0;
+  for (var i = 1; i < pts.length; i++){
+    var dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
+    var L = Math.sqrt(dx * dx + dy * dy);
+    segs.push({ a:pts[i - 1], b:pts[i], L:L, s:tot }); tot += L;
+  }
+  return { segs:segs, tot:tot || 1 };
+}
+function atDist(geo, d){
+  d = ((d % geo.tot) + geo.tot) % geo.tot;
+  for (var i = 0; i < geo.segs.length; i++){
+    var s = geo.segs[i];
+    if (d <= s.s + s.L || i === geo.segs.length - 1){
+      var t = s.L ? (d - s.s) / s.L : 0;
+      return [s.a[0] + (s.b[0] - s.a[0]) * t, s.a[1] + (s.b[1] - s.a[1]) * t];
+    }
+  }
+  return geo.segs[0].a;
+}
+function dAttr(pts){
+  return pts.map(function(p, i){ return (i ? "L" : "M") + p[0] + " " + p[1]; }).join(" ");
+}
+
+/* one pipe: grey casing at capacity, coloured water at the flow carried */
+function pipe(g, pts, cap, flow, opts){
+  opts = opts || {};
+  var over = flow > cap + 1e-9;
+  g.appendChild(el("path", { d:dAttr(pts), fill:"none", stroke:css("--grid"),
+    "stroke-width":Math.max(bore(cap), 1.6), "stroke-linecap":"round", "stroke-linejoin":"round" }));
+  g.appendChild(el("path", { d:dAttr(pts), fill:"none", stroke:css("--axis"),
+    "stroke-width":Math.max(bore(cap) - 1.5, 0.8), "stroke-linecap":"round",
+    "stroke-linejoin":"round", "stroke-opacity":0.5 }));
+  if (flow > 0){
+    g.appendChild(el("path", { d:dAttr(pts), fill:"none",
+      stroke:css(over ? "--critical" : (opts.hue || "--anduin")),
+      "stroke-width":Math.max(bore(flow) - 2.4, 1.3),
+      "stroke-linecap":"round", "stroke-linejoin":"round",
+      "stroke-opacity":over ? 0.55 : 0.42 }));
+  }
+}
+
+/* droplets riding a whole route, so the stream reads as continuous across hops */
+function stream(g, pts, flow, opts){
+  if (!(flow > 0)) return;
+  opts = opts || {};
+  var geo = polyGeo(pts);
+  var n = Math.max(3, Math.round(geo.tot / 30));
+  var r = opts.r || (1.5 + Math.min(flow, 10) * 0.19);
+  var phase = [], drops = [];
+  for (var i = 0; i < n; i++){
+    var d = el("circle", { r:r, fill:css(opts.hue || "--anduin"), "fill-opacity":0.95 });
+    g.appendChild(d); drops.push(d);
+    phase.push(geo.tot * (i / n));
+  }
+  var rec = { geo:geo, drops:drops, phase:phase, speed:opts.speed || 42 };
+  FLOWS.push(rec);
+  paintFlow(rec, REDUCED ? 0 : (performance.now() / 1000));
+}
+function paintFlow(f, t){
+  for (var i = 0; i < f.drops.length; i++){
+    var p = atDist(f.geo, f.phase[i] + t * f.speed);
+    f.drops[i].setAttribute("cx", p[0]); f.drops[i].setAttribute("cy", p[1]);
+  }
+}
+function flowTick(ts){
+  var t = ts / 1000;
+  for (var i = 0; i < FLOWS.length; i++) paintFlow(FLOWS[i], t);
+  flowRAF = requestAnimationFrame(flowTick);
+}
+function flowStart(){
+  if (flowRAF || REDUCED || !flowStages || !FLOWS.length) return;
+  flowRAF = requestAnimationFrame(flowTick);
+}
+function flowStop(){ if (flowRAF){ cancelAnimationFrame(flowRAF); flowRAF = null; } }
+/* every redraw throws its old SVG away; drop the streams that went with it, and
+   only those — another diagram's streams are still live elsewhere on the page */
+function flowReset(){
+  FLOWS = FLOWS.filter(function(f){ return f.drops[0] && document.contains(f.drops[0]); });
+}
+
+/* a measuring vessel: how much water actually reaches the candidate */
+var beakerLast = 0;
+function beaker(g, L, value, scale, label){
+  var bx = L.beaker[0], by = L.beaker[1], bw = L.beaker[2], bh = L.beaker[3];
+  var x = bx - bw / 2;
+  g.appendChild(el("rect", { x:x, y:by, width:bw, height:bh, rx:3, fill:css("--plane"),
+    stroke:css("--axis"), "stroke-width":1.2 }));
+  var frac = scale > 0 ? Math.min(1, value / scale) : 0;
+  var fh = bh * frac, fh0 = bh * (scale > 0 ? Math.min(1, beakerLast / scale) : 0);
+  var fill = el("rect", { x:x + 1.4, width:bw - 2.8, rx:2, fill:css("--anduin"), "fill-opacity":0.45 });
+  var top = el("line", { x1:x + 1.4, x2:x + bw - 1.4, stroke:css("--anduin"), "stroke-width":1.8 });
+  g.appendChild(fill); g.appendChild(top);
+  tween(520, function(pr){
+    var h = fh0 + (fh - fh0) * pr;
+    fill.setAttribute("y", by + bh - h); fill.setAttribute("height", Math.max(h - 1.4, 0.01));
+    top.setAttribute("y1", by + bh - h); top.setAttribute("y2", by + bh - h);
+    top.setAttribute("stroke-opacity", h > 0.5 ? 1 : 0);
+  });
+  beakerLast = value;
+  var t = el("text", { x:bx, y:by - 6, "font-family":css("--mono"), "font-size":L.fs,
+    fill:css("--anduin"), "text-anchor":"middle", "font-weight":"700" });
+  t.textContent = "$" + value; g.appendChild(t);
+  if (label) nodeLabel(g, [bx, by + bh], label, 0, 13, "middle", L);
+}
+
+/* a weight written on its pipe, on a surface-coloured pad so it stays legible */
+function wLabel(g, from, to, w, L){
+  var mx = (from[0] + to[0]) / 2, my = (from[1] + to[1]) / 2;
+  var lab = "$" + w, bw = lab.length * (L.fs * 0.55) + 6;
+  g.appendChild(el("rect", { x:mx - bw / 2, y:my - L.fs * 0.72, width:bw, height:L.fs * 1.35,
+    fill:css("--surface-1"), rx:2 }));
+  var t = el("text", { x:mx, y:my + L.fs * 0.36, "font-family":css("--mono"), "font-size":L.fs,
+    fill:css("--ink-1"), "text-anchor":"middle", "font-weight":"700" });
+  t.textContent = lab; g.appendChild(t);
+  return [mx, my];
+}
+function ring(g, mid){
+  g.appendChild(el("circle", { cx:mid[0], cy:mid[1], r:11, fill:"none",
+    stroke:css("--accent"), "stroke-width":1.4, "stroke-opacity":0.85 }));
+}
+
+/* a dashed box naming a set, drawn behind its members */
+function setBox(g, pts, label, L){
+  var pad = 17;
+  var xs = pts.map(function(p){ return p[0]; }), ys = pts.map(function(p){ return p[1]; });
+  var x = Math.min.apply(null, xs) - pad, y = Math.min.apply(null, ys) - pad;
+  var w = Math.max.apply(null, xs) - Math.min.apply(null, xs) + pad * 2;
+  var h = Math.max.apply(null, ys) - Math.min.apply(null, ys) + pad * 2;
+  g.appendChild(el("rect", { x:x, y:y, width:w, height:h, rx:7, fill:"none",
+    stroke:css("--ink-muted"), "stroke-width":1, "stroke-dasharray":"3 3", "stroke-opacity":0.5 }));
+  /* on the box's left edge, mid-height: the one spot no node label or pipe uses */
+  var t = el("text", { x:x - 6, y:y + h / 2 + 3.5, "font-family":css("--mono"),
+    "font-size":L.fs - 0.5, fill:css("--ink-muted"), "text-anchor":"end", "font-weight":"700" });
+  t.textContent = label; g.appendChild(t);
+}
+
+/* every edge of the worked graph, in one place */
+function edgeList(L){
+  return [
+    { a:L.b,  b:L.p1, w:st.W1,  k:"W1"  },
+    { a:L.b,  b:L.p2, w:st.W2,  k:"W2"  },
+    { a:L.p1, b:L.c1, w:st.A11, k:"A11" },
+    { a:L.p1, b:L.c2, w:st.A21, k:"A21" },
+    { a:L.p2, b:L.c2, w:st.A22, k:"A22" },
+    { a:L.c1, b:L.q,  w:st.B1,  k:"B1"  },
+    { a:L.c2, b:L.q,  w:st.B2,  k:"B2"  }
+  ];
+}
+
+function drawRoute(){
+  var L = routeLayout(), host = $("routeSvg");
+  host.innerHTML = ""; flowReset();
+  var svg = el("svg", { viewBox:"0 0 " + L.W + " " + L.H, role:"img",
+    "aria-label":"The buyer, its known providers K(b), the customers C(b) that share them, and the candidate. Edges are pipes; the water is the trust that gets through." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+
+  /* w = 0 means the edge is not in E at all: the node drops out of K(b) or C(b) */
+  var inK = [], inC = [];
+  if (st.W1 > 0) inK.push(L.p1);
+  if (st.W2 > 0) inK.push(L.p2);
+  if (st.W1 > 0 && st.A11 > 0) inC.push(L.c1);
+  if ((st.W1 > 0 && st.A21 > 0) || (st.W2 > 0 && st.A22 > 0)) inC.push(L.c2);
+  if (inK.length) setBox(g, inK, "K(b)", L);
+  if (inC.length) setBox(g, inC, "C(b)", L);
+
+  /* Step 3 shows reach, so each customer is supplied to its own bridge capacity;
+     Step 5 is where the buyer's pipes are actually shared out. */
+  var r1 = Math.min(bridge(st, NC1), st.B1), r2 = Math.min(bridge(st, NC2), st.B2);
+  var demand = r1 + r2, cap = beta(st);
+  var flows = { A11: Math.min(st.A11, r1), B1: r1, B2: r2 };
+  /* customer 2 is reachable through both known providers; fill the cheaper one first */
+  flows.A22 = Math.min(st.A22, st.W2, r2);
+  flows.A21 = Math.max(0, Math.min(st.A21, r2 - flows.A22));
+  flows.W1  = Math.min(st.W1, flows.A11 + flows.A21);
+  flows.W2  = flows.A22;
+
+  if (demand > cap){
+    [[L.b, L.p1, st.W1], [L.b, L.p2, st.W2]].forEach(function(e){
+      if (!(e[2] > 0)) return;
+      g.appendChild(el("path", { d:dAttr([e[0], e[1]]), fill:"none", stroke:css("--critical"),
+        "stroke-width":bore(e[2]) + 6, "stroke-linecap":"round", "stroke-opacity":0.2 }));
+    });
+  }
+  var mids = {};
+  edgeList(L).forEach(function(e){
+    if (e.w > 0) pipe(g, [e.a, e.b], e.w, flows[e.k] || 0);
+  });
+  stream(g, [L.b, L.p1, L.c1, L.q], flows.A11);
+  stream(g, [L.b, L.p1, L.c2, L.q], flows.A21);
+  stream(g, [L.b, L.p2, L.c2, L.q], flows.A22);
+  edgeList(L).forEach(function(e){ if (e.w > 0) mids[e.k] = wLabel(g, e.a, e.b, e.w, L); });
+
+  var liveP2 = st.W2 > 0, liveC2 = inC.indexOf(L.c2) >= 0;
+  nodeDot(g, L.b, 6, css("--accent"));
+  nodeDot(g, L.p1, 4.6, css("--anduin"), st.W1 > 0 ? 1 : 0.22);
+  nodeDot(g, L.p2, 4.6, css("--anduin"), liveP2 ? 1 : 0.22);
+  nodeDot(g, L.c1, 4.6, "#5b7fa8", inC.indexOf(L.c1) >= 0 ? 1 : 0.22);
+  nodeDot(g, L.c2, 4.6, "#5b7fa8", liveC2 ? 1 : 0.22);
+  nodeDot(g, L.q, 5.6, css("--existing"));
+  nodeLabel(g, L.b, "buyer", 0, -13, "middle", L);
+  nodeLabel(g, L.q, "candidate", 0, -13, "middle", L);
+  nodeLabel(g, L.p1, "known 1", 0, -12, "middle", L)
+    .setAttribute("opacity", st.W1 > 0 ? 1 : 0.35);
+  nodeLabel(g, L.p2, liveP2 ? "known 2" : "not in K(b)", 0, 19, "middle", L)
+    .setAttribute("opacity", liveP2 ? 1 : 0.35);
+  nodeLabel(g, L.c1, "customer 1", 0, -12, "middle", L);
+  nodeLabel(g, L.c2, liveC2 ? "customer 2" : "not in C(b)", 0, 19, "middle", L)
+    .setAttribute("opacity", liveC2 ? 1 : 0.35);
+
+  if (demand > cap){
+    var t = el("text", { x:4, y:L.H - 6, "font-family":css("--mono"), "font-size":L.fs - 0.5,
+      fill:css("--critical"), "text-anchor":"start", "font-weight":"700" });
+    t.textContent = "$" + demand + " of reach, $" + cap + " of buyer pipe. Step 5 shares it out.";
+    g.appendChild(t);
+  }
+  flowStart();
+}
+
+var SLIDERS = [
+  ["wW1", "W1"], ["wW2", "W2"], ["wA11", "A11"], ["wA21", "A21"],
+  ["wA22", "A22"], ["wB1", "B1"], ["wB2", "B2"]
+];
+function syncRoute(){
+  SLIDERS.forEach(function(pr){ $(pr[0] + "V").textContent = "$" + st[pr[1]]; });
+  var r1 = Math.min(bridge(st, NC1), st.B1), r2 = Math.min(bridge(st, NC2), st.B2);
+  $("cap1").textContent = "$" + r1;
+  $("cap2").textContent = "$" + r2;
+  $("cap1d").textContent = "bridge $" + bridge(st, NC1) + ", capped by its $" + st.B1 + " to the candidate";
+  $("cap2d").textContent = "bridge $" + bridge(st, NC2) + ", capped by its $" + st.B2 + " to the candidate";
+  $("betaV").textContent = "$" + beta(st);
+  $("betaD").textContent = "K(b) holds " + Kset(st) + ", C(b) holds " + Cset(st);
+  drawRoute();
+  syncRatings();
+  if ($("seed")) syncSeed();
+}
+SLIDERS.forEach(function(pr){
+  var r = $(pr[0]);
+  function read(){ st[pr[1]] = +r.value; syncRoute(); }
+  r.addEventListener("input", read);
+  r.addEventListener("change", read);   /* settle, in case an eased input loop was starved */
+});
+function preset(src){
+  SLIDERS.forEach(function(pr){ st[pr[1]] = src[pr[1]]; $(pr[0]).value = src[pr[1]]; });
+  syncRoute();
+}
+$("routeReset").addEventListener("click", function(){ preset(EX_RICH); });
+$("paperEx").addEventListener("click", function(){ preset(EX_PAPER); });
+$("ratingReset").addEventListener("click", function(){ preset(EX_RICH); });
+
+/* ---------------- 5a. the three constructions ---------------- */
+var whichR = "flow";
+function drawRating(){
+  var L = routeLayout(), host = $("ratingSvg");
+  host.innerHTML = ""; flowReset();
+  var svg = el("svg", { viewBox:"0 0 " + L.W + " " + L.H, role:"img" });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var scale = Math.max(piFlow(st), piSum(st), piAmp(st), 1);
+  var score, caps, fl;
+
+  if (whichR === "sum"){
+    /* each customer gets its own copy of the buyer's pipes, then the routes are added */
+    score = piSum(st);
+    var f1 = Math.min(bridge(st, NC1), st.B1), f2 = Math.min(bridge(st, NC2), st.B2);
+    svg.setAttribute("aria-label", "Summation flow: each customer gets its own copy of the buyer's pipes. Score $" + score + ".");
+    var yT = L.p1[1], yB = L.p2[1];
+    var bT = [L.b[0], yT], kT = [L.p1[0], yT], cT = [L.c1[0], yT];
+    var bB = [L.b[0], yB], kB = [L.p1[0], yB], cB = [L.c2[0], yB];
+    pipe(g, [bT, kT], beta(st), f1); pipe(g, [kT, cT], bridge(st, NC1), f1); pipe(g, [cT, L.q], st.B1, f1);
+    pipe(g, [bB, kB], beta(st), f2); pipe(g, [kB, cB], bridge(st, NC2), f2); pipe(g, [cB, L.q], st.B2, f2);
+    stream(g, [bT, kT, cT, L.q], f1);
+    stream(g, [bB, kB, cB, L.q], f2);
+    wLabel(g, bT, kT, beta(st), L); wLabel(g, kT, cT, bridge(st, NC1), L); wLabel(g, cT, L.q, st.B1, L);
+    wLabel(g, bB, kB, beta(st), L); wLabel(g, kB, cB, bridge(st, NC2), L); wLabel(g, cB, L.q, st.B2, L);
+    nodeDot(g, bT, 6, css("--accent")); nodeDot(g, kT, 4.6, css("--anduin")); nodeDot(g, cT, 4.6, "#5b7fa8");
+    nodeDot(g, bB, 6, css("--accent")); nodeDot(g, kB, 4.6, css("--anduin")); nodeDot(g, cB, 4.6, "#5b7fa8");
+    nodeLabel(g, bT, "buyer, copy 1", 0, -12, "middle", L);
+    nodeLabel(g, bB, "buyer, copy 2", 0, 19, "middle", L);
+    nodeLabel(g, kT, "K(b)", 0, -12, "middle", L);
+    nodeLabel(g, kB, "K(b)", 0, 19, "middle", L);
+    nodeLabel(g, cT, "customer 1", 0, -12, "middle", L);
+    nodeLabel(g, cB, "customer 2", 0, 19, "middle", L);
+  } else {
+    var amp = (whichR === "amp");
+    caps = network(st, amp);
+    var sol = maxflow(caps, NB, NQ);
+    score = sol.value; fl = sol.flow;
+    svg.setAttribute("aria-label", (amp
+      ? "Amplified flow: each buyer pipe is widened by the number of customers that use it."
+      : "Maximum flow: one set of buyer pipes, shared by every route.") + " Score $" + score + ".");
+    var kk = [], cc = [];
+    if (st.W1 > 0) kk.push(L.p1);
+    if (st.W2 > 0) kk.push(L.p2);
+    if (st.W1 > 0 && st.A11 > 0) cc.push(L.c1);
+    if ((st.W1 > 0 && st.A21 > 0) || (st.W2 > 0 && st.A22 > 0)) cc.push(L.c2);
+    if (kk.length) setBox(g, kk, "K(b)", L);
+    if (cc.length) setBox(g, cc, "C(b)", L);
+    var E = [
+      [L.b, L.p1, caps[NB][NP1],  fl[NB][NP1],  amp ? (npFor(st, NP1) + "×$" + st.W1) : null],
+      [L.b, L.p2, caps[NB][NP2],  fl[NB][NP2],  amp ? (npFor(st, NP2) + "×$" + st.W2) : null],
+      [L.p1, L.c1, caps[NP1][NC1], fl[NP1][NC1], null],
+      [L.p1, L.c2, caps[NP1][NC2], fl[NP1][NC2], null],
+      [L.p2, L.c2, caps[NP2][NC2], fl[NP2][NC2], null],
+      [L.c1, L.q,  caps[NC1][NQ],  fl[NC1][NQ],  null],
+      [L.c2, L.q,  caps[NC2][NQ],  fl[NC2][NQ],  null]
+    ];
+    E.forEach(function(e){ if (e[2] > 0) pipe(g, [e[0], e[1]], e[2], e[3]); });
+    stream(g, [L.b, L.p1, L.c1, L.q], Math.min(fl[NP1][NC1], fl[NC1][NQ]));
+    stream(g, [L.b, L.p1, L.c2, L.q], fl[NP1][NC2]);
+    stream(g, [L.b, L.p2, L.c2, L.q], fl[NP2][NC2]);
+    E.forEach(function(e){
+      if (!(e[2] > 0)) return;
+      if (e[4] === null){ wLabel(g, e[0], e[1], e[2], L); return; }
+      var mx = (e[0][0] + e[1][0]) / 2, my = (e[0][1] + e[1][1]) / 2;
+      var bw = e[4].length * (L.fs * 0.55) + 6;
+      g.appendChild(el("rect", { x:mx - bw / 2, y:my - L.fs * 0.72, width:bw, height:L.fs * 1.35,
+        fill:css("--surface-1"), rx:2 }));
+      var t = el("text", { x:mx, y:my + L.fs * 0.36, "font-family":css("--mono"),
+        "font-size":L.fs, fill:css("--ink-1"), "text-anchor":"middle", "font-weight":"700" });
+      t.textContent = e[4]; g.appendChild(t);
+    });
+    nodeDot(g, L.b, 6, css("--accent"));
+    nodeDot(g, L.p1, 4.6, css("--anduin"), st.W1 > 0 ? 1 : 0.22);
+    nodeDot(g, L.p2, 4.6, css("--anduin"), st.W2 > 0 ? 1 : 0.22);
+    nodeDot(g, L.c1, 4.6, "#5b7fa8", cc.indexOf(L.c1) >= 0 ? 1 : 0.22);
+    nodeDot(g, L.c2, 4.6, "#5b7fa8", cc.indexOf(L.c2) >= 0 ? 1 : 0.22);
+    nodeLabel(g, L.b, "buyer", 0, -13, "middle", L);
+    nodeLabel(g, L.p1, "known 1", 0, -12, "middle", L);
+    nodeLabel(g, L.p2, st.W2 > 0 ? "known 2" : "not in K(b)", 0, 19, "middle", L)
+      .setAttribute("opacity", st.W2 > 0 ? 1 : 0.35);
+    nodeLabel(g, L.c1, "customer 1", 0, -12, "middle", L);
+    nodeLabel(g, L.c2, "customer 2", 0, 19, "middle", L);
+    if (amp){
+      /* n_p is per provider: it counts the customers that pay THAT provider and
+         the candidate, not every customer in C(b). */
+      var n1 = npFor(st, NP1), n2 = npFor(st, NP2);
+      nodeLabel(g, L.p1, n1 + (n1 === 1 ? " customer" : " customers") + " reach p'",
+        0, -23, "middle", L);
+      if (st.W2 > 0)
+        nodeLabel(g, L.p2, n2 + (n2 === 1 ? " customer" : " customers") + " reach p'",
+          0, 30, "middle", L);
+    }
+  }
+  nodeDot(g, L.q, 5.6, css("--existing"));
+  nodeLabel(g, L.q, "candidate", 0, -13, "middle", L);
+  beaker(g, L, score, scale, "delivered");
+  flowStart();
+}
+function syncRatings(){
+  $("rFlow").textContent = "$" + piFlow(st);
+  $("rSum").textContent  = "$" + piSum(st);
+  $("rAmp").textContent  = "$" + piAmp(st);
+  drawRating();
+}
+Array.prototype.forEach.call($("ratingSeg").querySelectorAll("button"), function(b){
+  b.addEventListener("click", function(){
+    whichR = b.getAttribute("data-r");
+    Array.prototype.forEach.call($("ratingSeg").querySelectorAll("button"), function(o){
+      o.setAttribute("aria-pressed", String(o === b));
+    });
+    drawRating();
+  });
+});
+
+/* ---------------- 5b. splitting the budget buys nothing ---------------- */
+var lastSplitN = -1;
+function syncSplit(){
+  var m = (+$("mOut").value) / 100, n = +$("nSplit").value;
+  var grew = (n !== lastSplitN); lastSplitN = n;
+  var cost = m + 2 * n * EPS;
+  $("mOutV").textContent = usd(m);
+  $("nSplitV").textContent = String(n);
+  $("splitScore").textContent = usd(m);
+  $("splitCost").textContent = usd(cost);
+  $("splitCostD").textContent = usd(m) + " given away, plus " + (2 * n) + " fees at " + usd(EPS);
+  $("splitEach").textContent = usd(m / n);
+
+  var nw = narrow(), W = nw ? 330 : 470, H = nw ? 230 : 210;
+  var host = $("splitSvg"); host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"The attacker's fake buyers each pay a known provider a sliver, then pay the attacker's own provider for a fee." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var px = W * 0.56, qx = W * 0.90, fx = W * 0.16, cy = H / 2;
+  var top = 14, bot = H - 30, N = Math.min(n, 24);
+  for (var i = 0; i < N; i++){
+    var y = (N === 1) ? cy : top + (bot - top) * (i / (N - 1));
+    var ln = el("line", { x1:fx, y1:y, x2:fx, y2:y, stroke:css("--existing"),
+      "stroke-width":1, "stroke-opacity":0.75, "stroke-linecap":"round" });
+    g.appendChild(ln);
+    var dot = el("circle", { cx:fx, cy:y, r:3, fill:css("--existing"), "fill-opacity":0.8 });
+    g.appendChild(dot);
+    if (grew){
+      (function(line, yy, k){
+        setTimeout(function(){
+          tween(300, function(pr){
+            line.setAttribute("x2", fx + (px - fx) * pr);
+            line.setAttribute("y2", yy + (cy - yy) * pr);
+          });
+        }, k * 26);
+      })(ln, y, i);
+    } else {
+      ln.setAttribute("x2", px); ln.setAttribute("y2", cy);
+    }
+  }
+  g.appendChild(el("line", { x1:px, y1:cy, x2:qx, y2:cy, stroke:css("--existing"),
+    "stroke-width":6, "stroke-dasharray":"4 3", "stroke-opacity":0.75, "stroke-linecap":"round" }));
+  /* each fake trickles in only what it actually paid away; the fat self-dealt pipe
+     downstream cannot carry more than the trickles delivered */
+  for (var j = 0; j < N; j++){
+    var yj = (N === 1) ? cy : top + (bot - top) * (j / (N - 1));
+    stream(g, [[fx, yj], [px, cy], [qx, cy]], 1, { hue:"--existing", r:1.7, speed:34 });
+  }
+  g.appendChild(el("circle", { cx:px, cy:cy, r:5, fill:css("--anduin") }));
+  g.appendChild(el("circle", { cx:qx, cy:cy, r:6, fill:css("--existing") }));
+  function lab(x, y, s, anchor){
+    var t = el("text", { x:x, y:y, "font-family":css("--mono"), "font-size":nw ? 9.5 : 10,
+      fill:css("--ink-muted"), "text-anchor":anchor });
+    t.textContent = s; g.appendChild(t);
+  }
+  lab(fx, 10, n + (n === 1 ? " fake" : " fakes"), "middle");
+  lab(px, H - 4, "known provider", "middle");
+  lab(qx, cy - 14, "attacker", "end");
+  lab(fx, H - 4, usd(m / n) + " each — real money", "middle");
+  lab((px + qx) / 2, cy + 19, "self-dealt: fee only", "middle");
+}
+["mOut","nSplit"].forEach(function(id){
+  $(id).addEventListener("input", syncSplit);
+  $(id).addEventListener("change", syncSplit);
+});
+</script>
+
+<script>
+"use strict";
+/* =====================================================================
+   4. THE ATTACK — the price of an edge, and the three rules that fall
+   ===================================================================== */
+function drawEdgeKinds(){
+  var nw = narrow(), W = nw ? 320 : 460, H = nw ? 268 : 225;
+  var host = $("edgeSvg"); host.innerHTML = ""; flowReset();
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"Three kinds of edge and what each costs: self-dealt, paid to a real provider, and incident to the honest buyer." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var fs = nw ? 9.5 : 10.5;
+  var rows = [
+    { y:H * 0.14, a:"fake buyer", b:"attacker's own", dash:true,  w:5,
+      c:"fee only — " + usd(EPS), col:"--existing", strike:false },
+    { y:H * 0.52, a:"fake buyer", b:"a real provider", dash:false, w:5,
+      c:"the full amount, gone", col:"--existing", strike:false },
+    { y:H * 0.83, a:"honest buyer", b:"anything", dash:false, w:2,
+      c:"cannot be fabricated", col:"--ink-muted", strike:true }
+  ];
+  var x1 = W * 0.26, x2 = W * 0.70;
+  rows.forEach(function(r){
+    var ln = el("line", { x1:x1, y1:r.y, x2:x2, y2:r.y, stroke:css(r.col),
+      "stroke-width":r.w, "stroke-linecap":"round", "stroke-opacity":r.strike ? 0.3 : 0.8 });
+    if (r.dash) ln.setAttribute("stroke-dasharray", "5 4");
+    g.appendChild(ln);
+    g.appendChild(el("circle", { cx:x1, cy:r.y, r:4.4, fill:css(r.col), "fill-opacity":r.strike ? 0.35 : 0.9 }));
+    g.appendChild(el("circle", { cx:x2, cy:r.y, r:4.4, fill:css(r.col), "fill-opacity":r.strike ? 0.35 : 0.9 }));
+    if (r.strike){
+      var m = (x1 + x2) / 2;
+      g.appendChild(el("line", { x1:m - 9, y1:r.y - 9, x2:m + 9, y2:r.y + 9,
+        stroke:css("--critical"), "stroke-width":2, "stroke-linecap":"round" }));
+      g.appendChild(el("line", { x1:m - 9, y1:r.y + 9, x2:m + 9, y2:r.y - 9,
+        stroke:css("--critical"), "stroke-width":2, "stroke-linecap":"round" }));
+    }
+    function txt(x, y, s, anchor, bold, col){
+      var t = el("text", { x:x, y:y, "font-family":css("--mono"), "font-size":fs,
+        fill:css(col || "--ink-muted"), "text-anchor":anchor });
+      if (bold) t.setAttribute("font-weight", "700");
+      t.textContent = s; g.appendChild(t);
+    }
+    txt(x1 - 8, r.y + 3.5, r.a, "end");
+    txt(x2 + 8, r.y + 3.5, r.b, "start");
+    txt((x1 + x2) / 2, r.y - 13, r.c, "middle", true, r.strike ? "--ink-muted" : "--existing");
+
+    /* the whole asymmetry in one picture: self-dealt money runs out and comes
+       straight back, so it circulates; money paid away only ever runs out. */
+    if (r.dash){
+      var dy = 16;
+      var loop = [[x1, r.y], [x2, r.y], [x2 + 9, r.y + dy], [x1 - 9, r.y + dy], [x1, r.y]];
+      g.appendChild(el("path", { d:dAttr(loop.slice(1)), fill:"none", stroke:css("--existing"),
+        "stroke-width":1, "stroke-dasharray":"3 3", "stroke-opacity":0.4,
+        "stroke-linecap":"round", "stroke-linejoin":"round" }));
+      txt((x1 + x2) / 2, r.y + dy + 11, "the money comes back", "middle", false, "--existing");
+      stream(g, loop, 1, { hue:"--existing", r:2, speed:54 });
+    } else if (!r.strike){
+      stream(g, [[x1, r.y], [x2, r.y]], 1, { hue:"--existing", r:2, speed:54 });
+    }
+  });
+  flowStart();
+}
+
+/* the three rules of sections/constructions.tex 5.2, and what n fakes buy */
+var BASELINES = [
+  { id:"use",   name:"Usage ranking",  reads:"distinct buyers who paid the candidate",
+    fees:function(n){ return n; },     score:function(n){ return n + " buyers"; } },
+  { id:"cf",    name:"Co-user count",  reads:"shared customers who paid the candidate",
+    fees:function(n){ return 2 * n; }, score:function(n){ return n + " shared customers"; } },
+  { id:"spend", name:"Co-user volume", reads:"dollars those customers paid the candidate",
+    fees:function(){ return 2; },      score:function(){ return "any figure it likes"; } }
+];
+
+function drawBaselines(){
+  var n = +$("nsyb").value;
+  $("nsybV").textContent = String(n);
+  var nw = narrow(), W = nw ? 330 : 560;
+  var padL = nw ? 86 : 118, padR = nw ? 14 : 20, top = 10, rowH = nw ? 46 : 44;
+  var H = top + BASELINES.length * rowH + 28;
+  var host = $("baseSvg"); host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"Cost in fees of the three simple rules with " + n + " fake buyers." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var plotW = W - padL - padR;
+  var maxC = 2 * (+$("nsyb").max) * EPS;                  /* fixed axis: never jumps as n moves */
+  var fs = nw ? 9.5 : 10.5;
+
+  /* recessive grid, solid hairlines */
+  [0, 0.25, 0.5, 0.75, 1].forEach(function(f){
+    var x = padL + plotW * f;
+    g.appendChild(el("line", { x1:x, y1:top, x2:x, y2:top + BASELINES.length * rowH,
+      stroke:css("--grid"), "stroke-width":1 }));
+    var t = el("text", { x:x, y:H - 12, "font-family":css("--mono"), "font-size":fs - 0.5,
+      fill:css("--ink-muted"), "text-anchor":"middle" });
+    t.textContent = usd(maxC * f); g.appendChild(t);
+  });
+
+  BASELINES.forEach(function(b, i){
+    var y = top + i * rowH + rowH * 0.5;
+    var fees = b.fees(n), cost = fees * EPS;
+    var bw = Math.max(2, plotW * (cost / maxC));
+    var nm = el("text", { x:padL - 10, y:y + 1, "font-family":css("--mono"), "font-size":fs,
+      fill:css("--ink-1"), "text-anchor":"end", "font-weight":"700" });
+    nm.textContent = nw ? b.name.replace(" ", "\n") : b.name;
+    g.appendChild(nm);
+    var r = el("rect", { x:padL, y:y - 8, width:0, height:11, rx:4, fill:css("--existing"), "fill-opacity":0.9 });
+    g.appendChild(r);
+    tween(380, function(p){ r.setAttribute("width", bw * p); });
+    var lv = el("text", { x:padL + bw + 7, y:y + 1.5, "font-family":css("--mono"), "font-size":fs,
+      fill:css("--ink-1"), "text-anchor":"start", "font-weight":"700" });
+    lv.textContent = usd(cost); g.appendChild(lv);
+    var sc = el("text", { x:padL, y:y + 15, "font-family":css("--mono"), "font-size":fs - 1,
+      fill:css("--ink-muted"), "text-anchor":"start" });
+    sc.textContent = "scores " + b.score(n) + " · " + fees + (fees === 1 ? " fee" : " fees");
+    g.appendChild(sc);
+    var hit = el("rect", { x:padL, y:y - 14, width:plotW, height:rowH - 6, fill:"transparent" });
+    hit.style.cursor = "help";
+    hit.addEventListener("mousemove", function(ev){
+      showTip(ev, "<b>" + b.name + "</b>reads " + b.reads + "<br>with " + n + " fakes: " +
+        fees + " fees, " + usd(cost) + "<br>measured cost to top every buyer: " + usd(COVER[b.id][1][1]));
+    });
+    hit.addEventListener("mouseleave", hideTip);
+    g.appendChild(hit);
+  });
+  buildBaseTbl(n);
+}
+
+function buildBaseTbl(n){
+  var h = "<thead><tr><th>Rule</th><th>What it reads</th><th>Attacker's score</th>" +
+          "<th class='num'>Cost at " + n + " fakes</th>" +
+          "<th class='num'>Measured: top rank 1, all 813 buyers</th></tr></thead><tbody>";
+  BASELINES.forEach(function(b){
+    var fees = b.fees(n);
+    h += "<tr><td>" + b.name + "</td><td>" + b.reads + "</td><td>" + b.score(n) +
+         "</td><td class='num'>" + usd(fees * EPS) + "</td><td class='num'>" +
+         usd(COVER[b.id][1][1]) + "</td></tr>";
+  });
+  $("baseTbl").innerHTML = h + "</tbody>";
+}
+$("nsyb").addEventListener("input", drawBaselines);
+$("nsyb").addEventListener("change", drawBaselines);
+</script>
+
+<script>
+"use strict";
+/* =====================================================================
+   6. RESULTS
+   ===================================================================== */
+function byId(id){ var o = null; RATINGS.forEach(function(r){ if (r.id === id) o = r; }); return o; }
+function hue(r){ return r.ours ? css("--anduin") : css("--existing"); }
+
+/* ---------------- utility: P@1 ---------------- */
+var utilEntered = false;
+function drawUtil(animate){
+  var nw = narrow(), W = nw ? 330 : 560;
+  var padL = nw ? 96 : 132, padR = nw ? 44 : 54, top = 8, rowH = nw ? 29 : 31;
+  var order = RATINGS.slice().sort(function(a, b){ return b.p1 - a.p1; });
+  var H = top + order.length * rowH + 26;
+  var host = $("utilSvg"); host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"First-pick accuracy of six ratings over 813 buyers, highest co-user count 23.2 percent, amplified flow 22.8 percent, lowest usage ranking 3.7 percent." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var plotW = W - padL - padR, maxV = 25, fs = nw ? 9.5 : 10.5;
+
+  [0, 5, 10, 15, 20, 25].forEach(function(v){
+    var x = padL + plotW * (v / maxV);
+    g.appendChild(el("line", { x1:x, y1:top, x2:x, y2:top + order.length * rowH,
+      stroke:css("--grid"), "stroke-width":1 }));
+    var t = el("text", { x:x, y:H - 10, "font-family":css("--mono"), "font-size":fs - 0.5,
+      fill:css("--ink-muted"), "text-anchor":"middle" });
+    t.textContent = v + "%"; g.appendChild(t);
+  });
+
+  order.forEach(function(r, i){
+    var y = top + i * rowH + rowH * 0.5;
+    var nm = el("text", { x:padL - 10, y:y + 3.5, "font-family":css("--mono"), "font-size":fs,
+      fill:css("--ink-1"), "text-anchor":"end", "font-weight":r.ours ? "700" : "400" });
+    nm.textContent = r.name; g.appendChild(nm);
+    var bw = plotW * (r.p1 / maxV);
+    var rect = el("rect", { x:padL, y:y - 6, width:animate ? 0 : bw, height:12, rx:4,
+      fill:hue(r), "fill-opacity":0.92 });
+    g.appendChild(rect);
+    if (animate) tween(560, function(p){ rect.setAttribute("width", bw * p); });
+    var lv = el("text", { x:padL + bw + 7, y:y + 4, "font-family":css("--mono"), "font-size":fs,
+      fill:css("--ink-1"), "text-anchor":"start", "font-weight":"700" });
+    lv.textContent = r.p1.toFixed(1) + "%"; g.appendChild(lv);
+    var hit = el("rect", { x:padL, y:y - rowH / 2, width:plotW, height:rowH, fill:"transparent" });
+    hit.style.cursor = "help";
+    hit.addEventListener("mousemove", function(ev){
+      showTip(ev, "<b>" + r.name + "</b>" + r.gloss + "<br>first pick right: " + r.p1.toFixed(1) +
+        "% of 813 buyers<br>ranks the right one above a wrong one: AUC " + r.auc.toFixed(3));
+    });
+    hit.addEventListener("mouseleave", hideTip);
+    g.appendChild(hit);
+  });
+}
+
+/* ---------------- attack cost, logarithmic ---------------- */
+var curK = 1;
+var COST_ORDER = ["use", "amp", "flow", "sum", "cf", "spend"];   /* fixed: bars never reshuffle */
+var LO = 0.01, HI = 1e6;
+function xlog(v, padL, plotW){
+  var lv = Math.log10(Math.max(v, LO));
+  return padL + plotW * (lv - Math.log10(LO)) / (Math.log10(HI) - Math.log10(LO));
+}
+function drawCover(animate){
+  var nw = narrow(), W = nw ? 330 : 560;
+  var padL = nw ? 96 : 132, padR = nw ? 10 : 14, top = 8, rowH = nw ? 29 : 31;
+  var H = top + COST_ORDER.length * rowH + 26;
+  var host = $("coverSvg"); host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"Cost to reach the top " + curK + " for all 813 buyers, six ratings, logarithmic dollar axis." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var plotW = W - padL - padR, fs = nw ? 9.5 : 10.5;
+
+  [0.01, 1, 100, 1e4, 1e6].forEach(function(v){
+    var x = xlog(v, padL, plotW);
+    g.appendChild(el("line", { x1:x, y1:top, x2:x, y2:top + COST_ORDER.length * rowH,
+      stroke:css("--grid"), "stroke-width":1 }));
+    var t = el("text", { x:x, y:H - 10, "font-family":css("--mono"), "font-size":fs - 0.5,
+      fill:css("--ink-muted"), "text-anchor":"middle" });
+    t.textContent = v >= 1e6 ? "$1M" : (v >= 1000 ? ("$" + (v / 1000) + "k") : usd(v));
+    g.appendChild(t);
+  });
+
+  COST_ORDER.forEach(function(id, i){
+    var r = byId(id), cell = COVER[id][curK], cost = cell[1], frac = cell[0];
+    var y = top + i * rowH + rowH * 0.5;
+    var nm = el("text", { x:padL - 10, y:y + 3.5, "font-family":css("--mono"), "font-size":fs,
+      fill:css("--ink-1"), "text-anchor":"end", "font-weight":r.ours ? "700" : "400" });
+    nm.textContent = r.name; g.appendChild(nm);
+    var bw = Math.max(2, xlog(cost, padL, plotW) - padL);
+    var rect = el("rect", { x:padL, y:y - 6, width:animate ? 0 : bw, height:12, rx:4,
+      fill:hue(r), "fill-opacity":0.92 });
+    g.appendChild(rect);
+    tween(animate ? 520 : 0, function(p){ rect.setAttribute("width", bw * p); });
+    var lv = el("text", { x:padL + bw + 7, y:y + 4, "font-family":css("--mono"), "font-size":fs,
+      fill:css("--ink-1"), "text-anchor":"start", "font-weight":"700" });
+    lv.textContent = usd(cost); g.appendChild(lv);
+    var hit = el("rect", { x:padL, y:y - rowH / 2, width:plotW, height:rowH, fill:"transparent" });
+    hit.style.cursor = "help";
+    hit.addEventListener("mousemove", function(ev){
+      showTip(ev, "<b>" + r.name + "</b>" + usd(cost) + " to reach the top " + curK +
+        " for all 813 buyers<br>" + (frac === 0 ? "under 0.001" : frac.toFixed(3)) +
+        " of the $41,331 they spent" + (id === "use" ? "<br>scores providers market-wide, not per buyer" : ""));
+    });
+    hit.addEventListener("mouseleave", hideTip);
+    g.appendChild(hit);
+  });
+  $("coverSub").textContent = "Cheapest spend to reach the top " + curK +
+    " for all 813 buyers at once";
+}
+Array.prototype.forEach.call($("kSeg").querySelectorAll("button"), function(b){
+  b.addEventListener("click", function(){
+    curK = +b.getAttribute("data-k");
+    Array.prototype.forEach.call($("kSeg").querySelectorAll("button"), function(o){
+      o.setAttribute("aria-pressed", String(o === b));
+    });
+    drawCover(true);
+  });
+});
+function buildCoverTbl(){
+  var h = "<thead><tr><th>Rating</th>";
+  K_VALUES.forEach(function(k){ h += "<th class='num'>top " + k + "</th>"; });
+  h += "</tr></thead><tbody>";
+  COST_ORDER.forEach(function(id){
+    var r = byId(id);
+    h += "<tr" + (r.ours ? " class='ours'" : "") + "><td>" + r.name +
+         (id === "use" ? " <span style='color:var(--ink-muted)'>(market-wide)</span>" : "") + "</td>";
+    K_VALUES.forEach(function(k){
+      var c = COVER[id][k];
+      h += "<td class='num'>" + usd(c[1]) + "<br><span style='color:var(--ink-muted);font-size:.84em'>" +
+           (c[0] === 0 ? "&lt;0.001" : c[0].toFixed(3)) + " of spend</span></td>";
+    });
+    h += "</tr>";
+  });
+  $("coverTbl").innerHTML = h + "</tbody>";
+}
+
+/* ---------------- both measures at once ---------------- */
+var quadMode = "paper";
+/* ordinal positions, read straight out of figures/utility-cost.tex (tikz units, 0..10) */
+var QUAD_PAPER = { use:[1.3,9.3], flow:[1.7,5.6], spend:[4.2,0.8], cf:[8.8,1.2], sum:[7.3,5.2], amp:[8.7,6.7] };
+/* hand-placed labels: the coordinates are fixed, so each one is put where it cannot
+   collide with its neighbours rather than all sitting centred above the mark. */
+var QUAD_LABEL = {
+  paper: { use:[0,-11,"middle"], flow:[9,4,"start"], spend:[0,-11,"middle"],
+           cf:[0,18,"middle"],   sum:[0,17,"middle"], amp:[0,-11,"middle"] },
+  scale: { use:[-9,-7,"end"],    flow:[0,19,"middle"], spend:[9,4,"start"],
+           cf:[-9,-7,"end"],     sum:[-9,15,"end"],    amp:[9,-7,"start"] }
+};
+var SHORT = { use:"usage", cf:"co-user count", spend:"co-user volume",
+              flow:"max flow", sum:"sum flow", amp:"amp flow" };
+function drawQuad(animate){
+  var nw = narrow(), W = nw ? 330 : 560, H = nw ? 300 : 330;
+  var padL = nw ? 42 : 54, padR = nw ? 16 : 22, padT = 14, padB = nw ? 42 : 40;
+  var host = $("quadSvg"); host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img" });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var pw = W - padL - padR, ph = H - padT - padB, fs = nw ? 9 : 10;
+  function axTxt(x, y, s, anchor, rot, col, bold){
+    var t = el("text", { x:x, y:y, "font-family":css("--mono"), "font-size":fs,
+      fill:css(col || "--ink-muted"), "text-anchor":anchor || "middle" });
+    if (rot) t.setAttribute("transform", "rotate(-90 " + x + " " + y + ")");
+    if (bold) t.setAttribute("font-weight", "700");
+    t.textContent = s; g.appendChild(t); return t;
+  }
+  var pts = [];
+  if (quadMode === "paper"){
+    svg.setAttribute("aria-label", "The paper's Figure 6: six ratings placed in the quadrant their measured values put them in. Summation and amplified flow alone are accurate and dear to fake.");
+    var dx = padL + pw * 0.5, dy = padT + ph * 0.6;
+    g.appendChild(el("rect", { x:dx, y:padT, width:padL + pw - dx, height:dy - padT,
+      fill:css("--anduin"), "fill-opacity":0.08 }));
+    g.appendChild(el("line", { x1:dx, y1:padT, x2:dx, y2:padT + ph, stroke:css("--axis"), "stroke-width":1 }));
+    g.appendChild(el("line", { x1:padL, y1:dy, x2:padL + pw, y2:dy, stroke:css("--axis"), "stroke-width":1 }));
+    axTxt(dx + (padL + pw - dx) / 2, padT + 14, "ideal", "middle", 0, "--anduin", true);
+    axTxt(dx + (padL + pw - dx) / 2, padT + 26, "accurate & dear to fake", "middle");
+    axTxt(padL + (dx - padL) / 2, padT + ph * 0.3, "less accurate,", "middle");
+    axTxt(padL + (dx - padL) / 2, padT + ph * 0.3 + 12, "dear to fake", "middle");
+    axTxt(padL + (dx - padL) / 2, dy + ph * 0.22, "weak on both", "middle");
+    axTxt(dx + (padL + pw - dx) / 2, dy + ph * 0.22, "accurate, cheap to fake", "middle");
+    Object.keys(QUAD_PAPER).forEach(function(id){
+      var c = QUAD_PAPER[id];
+      pts.push({ id:id, x:padL + pw * (c[0] / 10.6), y:padT + ph * (1 - c[1] / 10.6) });
+    });
+  } else {
+    svg.setAttribute("aria-label", "The same six ratings at their measured coordinates: cost on a logarithmic axis, first-pick accuracy up the side.");
+    var lo = 1e-7, hi = 10;
+    function fx(v){ return padL + pw * (Math.log10(Math.max(v, lo)) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo)); }
+    function fy(v){ return padT + ph * (1 - v / 26); }
+    [1e-6, 1e-4, 1e-2, 1].forEach(function(v){
+      var x = fx(v);
+      g.appendChild(el("line", { x1:x, y1:padT, x2:x, y2:padT + ph, stroke:css("--grid"), "stroke-width":1 }));
+      axTxt(x, padT + ph + 14, v === 1 ? "1" : ("1e" + Math.round(Math.log10(v))), "middle");
+    });
+    [0, 10, 20].forEach(function(v){
+      var y = fy(v);
+      g.appendChild(el("line", { x1:padL, y1:y, x2:padL + pw, y2:y, stroke:css("--grid"), "stroke-width":1 }));
+      axTxt(padL - 7, y + 3.5, v + "%", "end");
+    });
+    /* the paper's own rationality line: past this the attacker outspends its victims */
+    var xr = fx(1);
+    g.appendChild(el("line", { x1:xr, y1:padT, x2:xr, y2:padT + ph, stroke:css("--ink-muted"),
+      "stroke-width":1.2, "stroke-opacity":0.5 }));
+    axTxt(xr - 5, padT + ph * 0.45, "outspends its victims", "middle", true);
+    COST_ORDER.forEach(function(id){
+      var r = byId(id), cell = COVER[id][1];
+      var frac = (id === "spend") ? (cell[1] / COHORT_SPEND) : cell[0];
+      pts.push({ id:id, x:fx(frac), y:fy(r.p1) });
+    });
+    axTxt(padL + pw / 2, H - 6, "cost to top every buyer, as a fraction of their own spend", "middle");
+    axTxt(padL - 7, padT - 4, "P@1", "end");
+  }
+  pts.forEach(function(pt){
+    var r = byId(pt.id);
+    var mk = r.ours
+      ? el("circle", { cx:pt.x, cy:pt.y, r:0, fill:css("--anduin") })
+      : el("rect", { x:pt.x - 0, y:pt.y - 0, width:0, height:0, fill:css("--existing") });
+    /* 2px surface ring keeps overlapping marks apart */
+    mk.setAttribute("stroke", css("--surface-1")); mk.setAttribute("stroke-width", 2);
+    g.appendChild(mk);
+    var R = r.ours ? 5.5 : 5;
+    tween(animate ? 420 : 0, function(p){
+      if (r.ours){ mk.setAttribute("r", R * p); }
+      else {
+        mk.setAttribute("width", 2 * R * p); mk.setAttribute("height", 2 * R * p);
+        mk.setAttribute("x", pt.x - R * p); mk.setAttribute("y", pt.y - R * p);
+      }
+    });
+    var pl = QUAD_LABEL[quadMode][pt.id];
+    var t = el("text", { x:pt.x + pl[0], y:pt.y + pl[1], "font-family":css("--mono"),
+      "font-size":fs, fill:css(r.ours ? "--anduin" : "--existing"),
+      "text-anchor":pl[2], "font-weight":"700" });
+    t.textContent = nw ? SHORT[pt.id] : r.name; g.appendChild(t);
+    var hit = el("circle", { cx:pt.x, cy:pt.y, r:15, fill:"transparent" });
+    hit.style.cursor = "help";
+    hit.addEventListener("mousemove", function(ev){
+      showTip(ev, "<b>" + r.name + "</b>first pick right: " + r.p1.toFixed(1) + "%<br>" +
+        "to top every buyer: " + usd(COVER[pt.id][1][1]) + " of the $41,331 they spent");
+    });
+    hit.addEventListener("mouseleave", hideTip);
+    g.appendChild(hit);
+  });
+  if (quadMode === "paper"){
+    axTxt(padL + pw / 2, H - 6, "accuracy →", "middle", 0, "--ink-1", true);
+    axTxt(padL - 20, padT + ph / 2, "cost to fake →", "middle", true, "--ink-1", true);
+  }
+}
+Array.prototype.forEach.call($("quadSeg").querySelectorAll("button"), function(b){
+  b.addEventListener("click", function(){
+    quadMode = b.getAttribute("data-q");
+    Array.prototype.forEach.call($("quadSeg").querySelectorAll("button"), function(o){
+      o.setAttribute("aria-pressed", String(o === b));
+    });
+    drawQuad(true);
+  });
+});
+
+/* ---------------- look-back window ---------------- */
+function drawTau(){
+  var i = +$("tau").value, row = TAU[i];
+  $("tauV").textContent = row.t + " days";
+  $("tauCov").textContent = pct(row.cov);
+  $("tauP1").textContent = pct(row.p1);
+  $("tauP1d").textContent = pct(row.p1r) + " of the buyers it reached";
+  $("tauCand").textContent = String(row.cand);
+
+  var nw = narrow(), W = nw ? 330 : 470, H = nw ? 230 : 240;
+  var padL = nw ? 36 : 42, padR = nw ? 14 : 18, padT = 12, padB = 42;
+  var host = $("tauSvg"); host.innerHTML = "";
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"Reach and first-pick accuracy against look-back window, 15 to 90 days. Reach climbs to 90.7 percent at 90 days; accuracy peaks at 24.7 percent at 30 days." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var pw = W - padL - padR, ph = H - padT - padB, fs = nw ? 9 : 10;
+  function fx(k){ return padL + pw * (k / (TAU.length - 1)); }
+  function fy(v){ return padT + ph * (1 - v / 100); }
+  [0, 25, 50, 75, 100].forEach(function(v){
+    var y = fy(v);
+    g.appendChild(el("line", { x1:padL, y1:y, x2:padL + pw, y2:y, stroke:css("--grid"), "stroke-width":1 }));
+    var t = el("text", { x:padL - 6, y:y + 3.4, "font-family":css("--mono"), "font-size":fs - 0.5,
+      fill:css("--ink-muted"), "text-anchor":"end" });
+    t.textContent = v + "%"; g.appendChild(t);
+  });
+  TAU.forEach(function(r, k){
+    var t = el("text", { x:fx(k), y:H - 24, "font-family":css("--mono"), "font-size":fs - 0.5,
+      fill:css(k === i ? "--ink-1" : "--ink-muted"), "text-anchor":"middle",
+      "font-weight":k === i ? "700" : "400" });
+    t.textContent = String(r.t); g.appendChild(t);
+  });
+  var tl = el("text", { x:padL + pw / 2, y:H - 8, "font-family":css("--mono"), "font-size":fs - 0.5,
+    fill:css("--ink-muted"), "text-anchor":"middle" });
+  tl.textContent = "look-back window, days"; g.appendChild(tl);
+  /* the selected window */
+  g.appendChild(el("line", { x1:fx(i), y1:padT, x2:fx(i), y2:padT + ph,
+    stroke:css("--accent"), "stroke-width":1.2, "stroke-opacity":0.35 }));
+
+  [["cov", "--anduin", "reached at all"], ["p1", "--existing", "first pick right"]].forEach(function(S){
+    var d = TAU.map(function(r, k){ return (k ? "L" : "M") + fx(k) + " " + fy(r[S[0]]); }).join(" ");
+    g.appendChild(el("path", { d:d, fill:"none", stroke:css(S[1]), "stroke-width":2,
+      "stroke-linecap":"round", "stroke-linejoin":"round" }));
+    TAU.forEach(function(r, k){
+      g.appendChild(el("circle", { cx:fx(k), cy:fy(r[S[0]]), r:k === i ? 5 : 3.2,
+        fill:css(S[1]), stroke:css("--surface-1"), "stroke-width":2 }));
+    });
+    var v = TAU[i][S[0]];
+    var lab = el("text", { x:fx(i) + (i >= TAU.length - 2 ? -9 : 9), y:fy(v) - 8,
+      "font-family":css("--mono"), "font-size":fs, fill:css(S[1]), "font-weight":"700",
+      "text-anchor":i >= TAU.length - 2 ? "end" : "start" });
+    lab.textContent = pct(v); g.appendChild(lab);
+  });
+  var lg = el("g"); g.appendChild(lg);
+  [["--anduin", "reached at all"], ["--existing", "first pick right"]].forEach(function(S, k){
+    var x = padL + k * (nw ? 130 : 150);
+    lg.appendChild(el("rect", { x:x, y:padT + 1, width:9, height:9, rx:2, fill:css(S[0]) }));
+    var t = el("text", { x:x + 13, y:padT + 9, "font-family":css("--mono"), "font-size":fs - 0.5,
+      fill:css("--ink-2") });
+    t.textContent = S[1]; lg.appendChild(t);
+  });
+}
+$("tau").addEventListener("input", drawTau);
+$("tau").addEventListener("change", drawTau);
+
+/* =====================================================================
+   8. REFERENCE TABLES
+   ===================================================================== */
+function buildAllTbl(){
+  var h = "<thead><tr><th>Rating</th><th>What it reads</th><th class='num'>First pick right (P@1)</th>" +
+          "<th class='num'>Ranks right above wrong (AUC)</th>" +
+          "<th class='num'>Cost to top every buyer</th></tr></thead><tbody>";
+  RATINGS.slice().sort(function(a, b){ return b.p1 - a.p1; }).forEach(function(r){
+    h += "<tr" + (r.ours ? " class='ours'" : "") + "><td>" + r.name + "</td><td>" + r.gloss +
+         "</td><td class='num'>" + r.p1.toFixed(1) + "%</td><td class='num'>" + r.auc.toFixed(3) +
+         "</td><td class='num'>" + usd(COVER[r.id][1][1]) + "</td></tr>";
+  });
+  $("allTbl").innerHTML = h + "</tbody>";
+}
+function buildTgtTbl(){
+  var h = "<thead><tr><th class='num'>Buyers targeted</th><th class='num'>What they spend</th>" +
+          "<th class='num'>Co-user count</th><th class='num'>Maximum flow</th>" +
+          "<th class='num'>Summation flow</th><th class='num'>Amplified flow</th></tr></thead><tbody>";
+  TARGETED.forEach(function(r){
+    h += "<tr><td class='num'>" + r.n + "</td><td class='num'>" + usd(r.spend) +
+         "</td><td class='num'>" + usd(r.cf) + "</td><td class='num'>" + usd(r.flow) +
+         "</td><td class='num'>" + usd(r.sum) + "</td><td class='num'>" + usd(r.amp) + "</td></tr>";
+  });
+  $("tgtTbl").innerHTML = h + "</tbody>";
+}
+</script>
+
+<script>
+"use strict";
+/* =====================================================================
+   FUTURE WORK — a new buyer bootstraps itself off a curated set.
+   Not in the paper. Nothing here is measured. The arithmetic is the
+   paper's own: a query network per candidate, solved exactly.
+
+   Nodes: 0 new buyer | 1..3 trusted providers | 4..6 real customers
+          7..8 candidates.
+   ===================================================================== */
+var SN = 9, SB = 0, ST = [1, 2, 3], SC = [4, 5, 6], SQ = [7, 8];
+/* a sketch of a real neighbourhood: what the curated providers' own customers pay.
+   Fixed, so the only thing the reader changes is the seed. */
+var SEED_W = {
+  "4-1":6, "4-2":2, "5-2":4, "5-3":3, "6-3":5,    /* customer -> trusted provider */
+  "4-7":5, "5-7":2, "5-8":6, "6-8":3              /* customer -> candidate        */
+};
+function sw(i, j){ return SEED_W[i + "-" + j] || 0; }
+
+/* n_p for this candidate: customers paying that trusted provider AND the candidate */
+function seedNp(t, q){
+  var n = 0;
+  SC.forEach(function(c){ if (sw(c, t) > 0 && sw(c, q) > 0) n++; });
+  return n;
+}
+function seedNet(seed, q, amplify){
+  var m = [], i, j;
+  for (i = 0; i < SN; i++){ m.push([]); for (j = 0; j < SN; j++) m[i].push(0); }
+  ST.forEach(function(t){ m[SB][t] = seed * (amplify ? seedNp(t, q) : 1); });
+  SC.forEach(function(c){
+    ST.forEach(function(t){ m[t][c] = sw(c, t); });
+    m[c][q] = sw(c, q);
+  });
+  return m;
+}
+function seedScore(seed, q){ return maxflow(seedNet(seed, q, true), SB, q, SN).value; }
+
+function syncSeed(){
+  var seed = +$("seed").value;
+  var sA = seedScore(seed, SQ[0]), sB = seedScore(seed, SQ[1]);
+  var ceiling = seed * ST.length;
+  $("seedV").textContent = "$" + seed;
+  $("seedA").textContent = "$" + sA;
+  $("seedB").textContent = "$" + sB;
+  $("seedCeil").textContent = "$" + ceiling;
+  var live = seed > 0;
+  $("seedRank").textContent = !live ? "nothing ranks"
+    : (sA === sB ? "a tie" : (sA > sB ? "candidate A" : "candidate B"));
+  $("seedRankD").textContent = !live
+    ? "with no seed the new buyer has no K(b), so every rating is undefined"
+    : "ranked from real payments the curated set never made";
+  $("seedCeilD").textContent = live
+    ? ("maximum flow can never pass " + ST.length + " \u00d7 $" + seed + " until the buyer pays for real")
+    : "no edges, no ceiling and no ranking";
+
+  var nw = narrow(), W = nw ? 344 : 520, H = nw ? 330 : 320;
+  var host = $("seedSvg"); host.innerHTML = ""; flowReset();
+  var svg = el("svg", { viewBox:"0 0 " + W + " " + H, role:"img",
+    "aria-label":"A bipartite graph. The new buyer credits each of three curated providers $" + seed + ". Their real customers reach two candidates, which the new buyer can now rank." });
+  var g = el("g"); svg.appendChild(g); host.appendChild(svg);
+  var L = { fs:nw ? 9 : 10 };
+  /* a true bipartite drawing: every buyer on the left, every provider on the right,
+     with the curated set boxed at the top of the provider column */
+  var bx = nw ? 78 : 108, px = nw ? 232 : 348;
+
+  var P = {};
+  P[SB] = [bx, H * 0.09];
+  SC.forEach(function(c, i){ P[c] = [bx, H * (0.40 + i * 0.22)]; });
+  ST.forEach(function(t, i){ P[t] = [px, H * (0.07 + i * 0.145)]; });
+  SQ.forEach(function(q, i){ P[q] = [px, H * (0.66 + i * 0.19)]; });
+
+  /* the curated set, named on the right where it sits */
+  var pad = 15;
+  g.appendChild(el("rect", { x:px - pad, y:P[ST[0]][1] - pad, width:pad * 2,
+    height:(P[ST[2]][1] - P[ST[0]][1]) + pad * 2, rx:7, fill:"none",
+    stroke:css("--ink-muted"), "stroke-width":1, "stroke-dasharray":"3 3", "stroke-opacity":0.6 }));
+  var tl = el("text", { x:px + pad + 7, y:P[ST[1]][1] + 3.5, "font-family":css("--mono"),
+    "font-size":L.fs, fill:css("--ink-muted"), "font-weight":"700" });
+  tl.textContent = "trusted \u00b7 curated"; g.appendChild(tl);
+
+  /* which candidate currently wins decides which routes carry water */
+  var win = (sA >= sB) ? SQ[0] : SQ[1];
+  var sol = maxflow(seedNet(seed, win, true), SB, win, SN);
+
+  ST.forEach(function(t){
+    pipe(g, [P[SB], P[t]], seed, Math.min(seed, sol.flow[SB][t]), { hue:"--seed" });
+  });
+  SC.forEach(function(c){
+    ST.forEach(function(t){ if (sw(c, t) > 0) pipe(g, [P[t], P[c]], sw(c, t), sol.flow[t][c]); });
+    SQ.forEach(function(q){ if (sw(c, q) > 0) pipe(g, [P[c], P[q]], sw(c, q), q === win ? sol.flow[c][q] : 0); });
+  });
+  SC.forEach(function(c){
+    ST.forEach(function(t){
+      if (sw(c, t) > 0 && sw(c, win) > 0)
+        stream(g, [P[SB], P[t], P[c], P[win]], Math.min(sol.flow[t][c], sol.flow[c][win]));
+    });
+  });
+  if (seed > 0) wLabel(g, P[SB], P[ST[1]], seed, L);   /* one label; all three are equal */
+
+  nodeDot(g, P[SB], 6.5, css("--accent"));
+  ST.forEach(function(t){ nodeDot(g, P[t], 5, css("--anduin")); });
+  SC.forEach(function(c){ nodeDot(g, P[c], 4.2, "#5b7fa8"); });
+  SQ.forEach(function(q, i){
+    nodeDot(g, P[q], 5.6, css("--existing"), q === win ? 1 : 0.55);
+    nodeLabel(g, P[q], (i ? "candidate B " : "candidate A ") + "$" + (i ? sB : sA), 11, 3.4, "start", L);
+  });
+  nodeLabel(g, P[SB], "new buyer", -11, 3.4, "end", L);
+  SC.forEach(function(c, i){
+    nodeLabel(g, P[c], i === 1 ? "their customers" : "", -11, 3.4, "end", L);
+  });
+  var cap = el("text", { x:4, y:H - 5, "font-family":css("--mono"), "font-size":L.fs,
+    fill:css(live ? "--seed" : "--critical"), "text-anchor":"start", "font-weight":"700" });
+  cap.textContent = live
+    ? ("the only invented edges are the " + ST.length + " violet ones, $" + seed + " each")
+    : "no seed: K(b) is empty and nothing can be ranked";
+  g.appendChild(cap);
+  flowStart();
+}
+$("seed").addEventListener("input", syncSeed);
+$("seed").addEventListener("change", syncSeed);
+</script>
+
+<script>
+"use strict";
+/* =====================================================================
+   BOOT
+   ===================================================================== */
+/* a literal \$ in prose is money, never a KaTeX delimiter */
+(function escapeMoney(){
+  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), nodes = [];
+  while (walker.nextNode()) if (walker.currentNode.nodeValue.indexOf("\\$") !== -1) nodes.push(walker.currentNode);
+  nodes.forEach(function(n){
+    var parts = n.nodeValue.split("\\$"), frag = document.createDocumentFragment();
+    parts.forEach(function(p, i){
+      if (i){ var s = document.createElement("span"); s.className = "nokatex"; s.textContent = "$"; frag.appendChild(s); }
+      if (p) frag.appendChild(document.createTextNode(p));
+    });
+    n.parentNode.replaceChild(frag, n);
+  });
+})();
+/* every value JS writes carries a bare "$"; KaTeX must not read those as maths */
+Array.prototype.forEach.call(
+  document.querySelectorAll(".ro, .ctl, .legend, .stage, .chart .cs, table"),
+  function(n){ n.classList.add("nokatex"); });
+function katexRender(){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(document.body, {
+    delimiters:[{ left:"$$", right:"$$", display:true }, { left:"$", right:"$", display:false }],
+    throwOnError:false, ignoredClasses:["nokatex"],
+    ignoredTags:["script", "noscript", "style", "textarea", "pre", "code", "option", "svg"]
+  });
+}
+window.addEventListener("load", katexRender);
+
+/* first paint — static, no entrance replay */
+function paintAll(animate){
+  drawPick();
+  drawGraph(false);
+  syncRoute();          /* also paints the three ratings */
+  drawEdgeKinds();
+  drawBaselines();
+  syncSplit();
+  drawUtil(!!animate);
+  drawCover(!!animate);
+  drawQuad(!!animate);
+  drawTau();
+  syncSeed();
+}
+paintAll(false);
+buildCoverTbl(); buildAllTbl(); buildTgtTbl();
+
+/* ---------- entrances: the guarded tween, never a CSS transition ---------- */
+var hasIO = ("IntersectionObserver" in window) && !REDUCED;
+if (hasIO){
+  var secs = Array.prototype.slice.call(document.querySelectorAll("section")).filter(function(s){
+    return s.id !== "top";
+  });
+  secs.forEach(function(s){ s.classList.add("rv"); s.style.opacity = 0; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target;
+      io.unobserve(sec);
+      sec.style.willChange = "opacity, transform";
+      tween(540, function(p){
+        sec.style.opacity = p;
+        sec.style.transform = "translateY(" + (16 * (1 - p)) + "px)";
+      }, function(){
+        sec.classList.remove("rv");
+        sec.style.opacity = ""; sec.style.transform = ""; sec.style.willChange = "";
+      });
+      /* the cards inside follow one after another, so the eye has an order to read in */
+      Array.prototype.forEach.call(sec.querySelectorAll(".ro, .fix"), function(c, i){
+        c.style.opacity = 0;
+        setTimeout(function(){
+          tween(360, function(p){
+            c.style.opacity = p; c.style.transform = "translateY(" + (9 * (1 - p)) + "px)";
+          }, function(){ c.style.opacity = ""; c.style.transform = ""; });
+        }, 140 + i * 55);
+      });
+      if (sec.id === "graph"){
+        /* show the raw scatter, then let it sort itself into two columns */
+        gView = "raw"; drawGraph(false);
+        setTimeout(function(){ gView = "sorted"; drawGraph(true); }, 300);
+      }
+      else if (sec.id === "results") setTimeout(function(){ drawUtil(true); drawCover(true); drawQuad(true); }, 200);
+    });
+  }, { threshold:0.08, rootMargin:"0px 0px -5% 0px" });
+  secs.forEach(function(s){ io.observe(s); });
+}
+
+/* ---------- the water runs only while a pipe diagram is on screen ---------- */
+(function gateFlow(){
+  var stages = ["pickSvg", "routeSvg", "ratingSvg", "splitSvg", "seedSvg"].map(function(id){
+    var n = $(id); return n && n.parentNode;
+  }).filter(Boolean);
+  if (!("IntersectionObserver" in window)){ flowStages = stages.length; flowStart(); return; }
+  var fio = new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if (e.isIntersecting && !e.target.__wet){ e.target.__wet = true; flowStages++; }
+      else if (!e.isIntersecting && e.target.__wet){ e.target.__wet = false; flowStages--; }
+    });
+    if (flowStages > 0) flowStart(); else flowStop();
+  }, { threshold:0, rootMargin:"120px 0px" });
+  stages.forEach(function(st){ fio.observe(st); });
+})();
+document.addEventListener("visibilitychange", function(){
+  if (document.hidden) flowStop(); else flowStart();
+});
+
+/* ---------- resize: repaint, never replay an entrance ---------- */
+var rzT, rzW = window.innerWidth;
+window.addEventListener("resize", function(){
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){
+    if (window.innerWidth === rzW) return;
+    rzW = window.innerWidth;
+    GM = null;                      /* the layout depends on the breakpoint */
+    paintAll(false);
+  }, 140);
+});
+</script>
+</body>
+</html>
