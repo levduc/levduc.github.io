@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fastlane talk</title>
+<meta name="description" content="Fastlane talk: a lean payment lane beside the EVM lane, one consensus. Figures and measurements.">
+<script>try{var t=localStorage.getItem("fastlane-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="../../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&display=swap">
+<style>
+:root{
+  color-scheme: light dark;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#767676;
+  --grid:#e8e8e8; --axis:#c4c4c4; --ring:rgba(0,0,0,.13);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --accent:#00008b; --on-accent:#ffffff;
+  --hl:#eef3fb; --warn-ink:#9a6a00; --c-frame:#8a8a8a; --c-drop:#8a5cd6;
+  --barh:46px;
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#16181b; --surface-1:#1e2125;
+  --ink-1:#e4e4e4; --ink-head:#ecead2; --ink-2:#d2d2d2; --ink-muted:#9da1a7;
+  --grid:#2d3136; --axis:#50555d; --ring:rgba(255,255,255,.17);
+  --s1:#5a9ef0; --s2:#f08552; --s3:#33c48d; --s4:#f2b33a;
+  --good:#45c845; --warning:#fab219; --critical:#f26b6b;
+  --accent:#9db2ff; --on-accent:#0d1020;
+  --hl:#22304a; --warn-ink:#e7b54a; --c-frame:#80858c; --c-drop:#b18cf2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#16181b; --surface-1:#1e2125;
+    --ink-1:#e4e4e4; --ink-head:#ecead2; --ink-2:#d2d2d2; --ink-muted:#9da1a7;
+    --grid:#2d3136; --axis:#50555d; --ring:rgba(255,255,255,.17);
+    --s1:#5a9ef0; --s2:#f08552; --s3:#33c48d; --s4:#f2b33a;
+    --good:#45c845; --warning:#fab219; --critical:#f26b6b;
+    --accent:#9db2ff; --on-accent:#0d1020;
+    --hl:#22304a; --warn-ink:#e7b54a; --c-frame:#80858c; --c-drop:#b18cf2;
+  }
+}
+:root[data-theme="light"]{ color-scheme: light; }
+*{box-sizing:border-box}
+body{margin:0; background:var(--plane); color:var(--ink-1); font-family:var(--font);
+  font-weight:300; font-size:17px; line-height:1.45; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.15; margin:0}
+p{margin:0 0 .8em; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono); font-size:.95em; background:var(--surface-1); padding:0 .25em; border-radius:2px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- slides: scroll mode (phone, narrow or short windows) ---------- */
+.slide{max-width:1000px; margin:0 auto; padding:30px 16px 34px; border-top:1px solid var(--grid); position:relative}
+.slide:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.78em; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700; margin:0 0 .3em}
+.slide h2{font-size:1.75em; font-weight:400; margin:0 0 .2em}
+.fig{position:relative; margin:.8em 0}
+.fig > svg{display:block; width:100%; height:auto; overflow:visible}
+.say{list-style:none; margin:.4em 0 0; padding:0; flex:none}
+.say li{font-size:1.06em; line-height:1.35; padding:.12em 0 .12em 1.1em; position:relative; color:var(--ink-1)}
+.say li::before{content:"›"; position:absolute; left:0; color:var(--accent); font-family:var(--mono); font-weight:700}
+.say b{color:var(--ink-head)}
+.tag{display:inline-block; font-family:var(--mono); font-size:.7em; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  border:1px solid currentColor; border-radius:3px; padding:0 .4em; vertical-align:.15em}
+.tag.plan{color:var(--warn-ink)} .tag.calc{color:var(--ink-muted)}
+.notes{display:none; font-family:var(--mono); font-size:.8em; line-height:1.45; color:var(--ink-2);
+  background:var(--surface-1); border:1px solid var(--ring); border-left:4px solid var(--s4); border-radius:4px; padding:10px 14px; margin-top:12px}
+.notes b{color:var(--ink-1)}
+.notes ul{margin:.2em 0 0; padding-left:1.1em}
+.notes li{margin:.15em 0}
+.notes::before{content:"Speaker notes"; display:block; font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:.85em; color:var(--warn-ink); margin-bottom:.3em}
+body.show-notes .notes{display:block}
+
+/* title slide */
+.title-wrap h1{font-size:3.2em; font-weight:400}
+.title-slide{justify-content:center}
+.title-slide .title-wrap{text-align:center; margin:auto 0}
+.title-slide .title-wrap h1{font-size:4.2em; margin:0}
+.title-slide .title-wrap .sub{font-size:1.5em; margin:.4em 0 1.6em}
+.title-slide .title-wrap .who{font-size:1.25em; color:var(--ink-1)}
+.title-slide .title-wrap .when{font-family:var(--mono); font-size:.95em; color:var(--ink-muted); margin:.4em 0 0}
+.title-wrap .sub{font-size:1.35em; margin:.35em 0 .5em; color:var(--ink-2)}
+.title-wrap .who{font-family:var(--mono); font-size:.9em; color:var(--ink-muted); margin:0}
+.title-wrap .who b{color:var(--ink-1)}
+.divider{display:flex; flex-direction:column; justify-content:center}
+.divider h2{font-size:2.6em}
+
+/* trade-off panels */
+.tradeoff{display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:1.2em; align-items:start}
+.tpanel{border-radius:6px; padding:.8em 1.1em; border:2px solid; background:var(--surface-1)}
+.tpanel h3{font-size:1.25em; margin-bottom:.35em}
+.tpanel ul{list-style:none; margin:0; padding:0}
+.tpanel li{font-size:1.12em; line-height:1.3; padding:.26em 0 .26em 1.6em; position:relative; color:var(--ink-1)}
+.tpanel li::before{position:absolute; left:0; top:.2em; font-family:var(--mono); font-weight:700; font-size:1.15em}
+.tpanel.lose{border-color:var(--critical); background:color-mix(in srgb, var(--critical) 7%, var(--plane))}
+.tpanel.lose h3,.tpanel.lose li::before{color:var(--critical)}
+.tpanel.lose li::before{content:"✗"}
+.tpanel.lose li{font-size:1.28em}
+.tpanel.keep{border-color:var(--good); background:color-mix(in srgb, var(--good) 7%, var(--plane))}
+.tpanel.keep h3,.tpanel.keep li::before{color:var(--good)}
+.tpanel.keep li::before{content:"✓"}
+.tpanel.keep li{font-size:.98em}
+
+/* fan-out controls */
+.controls{display:flex; flex-wrap:wrap; gap:.6em 1.4em; align-items:flex-end; flex:none}
+.ctl{display:flex; flex-direction:column; gap:.2em; min-width:220px; flex:1}
+.ctl label,.ctl .lbl{font-family:var(--mono); font-size:.85em}
+.ctl .val{font-weight:700}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px; overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono); font-size:.85em;
+  padding:.3em .8em; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:var(--on-accent); font-weight:700}
+.ro4{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6em; flex:none; margin-top:.5em}
+.ro{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:.35em .7em}
+.ro .k{font-family:var(--mono); font-size:.72em; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.25em; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; line-height:1.2}
+.ro .d{font-size:.78em; font-family:var(--mono); color:var(--ink-muted)}
+
+/* summary */
+.sumlist{list-style:none; margin:0; padding:0; counter-reset:s}
+.sumlist li{counter-increment:s; position:relative; padding:.5em 0 .5em 2.6em; font-size:1.5em; line-height:1.3; color:var(--ink-1); border-bottom:1px solid var(--grid)}
+.sumlist li:last-child{border-bottom:0}
+.sumlist li::before{content:counter(s); position:absolute; left:0; top:.45em; width:1.7em; height:1.7em; border-radius:50%;
+  background:var(--accent); color:var(--on-accent); font-family:var(--mono); font-weight:700; font-size:.8em; display:flex; align-items:center; justify-content:center}
+.sumlist b{color:var(--ink-head)}
+
+/* backup tables */
+.bk{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.2em; align-items:start}
+table{width:100%; border-collapse:collapse; font-size:.74em}
+th,td{text-align:left; padding:.22em .45em; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.9em; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td{font-family:var(--mono)}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.sw{display:inline-block; width:.7em; height:.7em; border-radius:2px; margin-right:.4em; vertical-align:-.05em}
+.cav{margin:0; padding-left:1.2em; columns:2; column-gap:2.2em}
+.cav li{margin:0 0 .55em; break-inside:avoid; font-size:.95em}
+.cav b{color:var(--ink-head)}
+
+/* ---------- control bar ---------- */
+.bar{position:fixed; left:0; right:0; bottom:0; height:var(--barh); display:flex; align-items:center; gap:8px; padding:0 14px;
+  background:var(--plane); border-top:1px solid var(--grid); z-index:40; font-family:var(--mono); font-size:14px}
+.bar .prog{position:absolute; left:0; top:-2px; height:3px; background:var(--accent); width:0; transition:width .25s}
+@media (prefers-reduced-motion: reduce){ .bar .prog{transition:none} }
+.bar button{font-family:var(--mono); font-size:14px; border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  height:32px; min-width:34px; padding:0 .7em; border-radius:3px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center}
+.bar button:hover{border-color:var(--accent); color:var(--accent)}
+.bar button:disabled{opacity:.35; cursor:default}
+.bar button[aria-pressed=true]{border-color:var(--accent); color:var(--accent); font-weight:700}
+.bar .count{min-width:4.2em; text-align:center; font-variant-numeric:tabular-nums; color:var(--ink-1)}
+.bar .ttl{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink-muted)}
+.bar .home{color:var(--ink-muted); white-space:nowrap}
+.bar .k{color:var(--ink-muted); font-size:12px}
+body{padding-bottom:calc(var(--barh) + 8px)}
+
+/* ---------- deck mode: one slide per viewport ---------- */
+html.deck, html.deck body{height:100%; overflow:hidden}
+html.deck body{padding-bottom:0; font-size:clamp(14px, calc(.9vw + .72vh), 30px)}
+html.deck .slide{position:fixed; left:0; right:0; top:0; bottom:var(--barh); max-width:none; margin:0; border:0;
+  display:none; flex-direction:column; padding:2.6vh 4.5vw 1.6vh}
+html.deck .slide.on{display:flex}
+html.deck .fig{flex:1 1 auto; min-height:0; margin:1.2vh 0}
+html.deck .fig > svg{position:absolute; inset:0; width:100%; height:100%}
+html.deck .fig.html{position:static; display:flex; flex-direction:column; justify-content:center}
+html.deck .title-wrap{flex:none}
+html.deck body.show-notes .slide.on .notes{position:fixed; left:4.5vw; right:4.5vw; bottom:calc(var(--barh) + 8px); max-height:46vh; overflow:auto;
+  z-index:30; box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:.72em}
+
+@media (max-width:760px){
+  .slide h2{font-size:1.45em}
+  .title-wrap h1{font-size:2.4em}
+  .title-wrap .sub{font-size:1.12em}
+  .tradeoff,.bk{grid-template-columns:minmax(0,1fr)}
+  .tpanel li,.tpanel.lose li{font-size:1em}
+  .ro4{grid-template-columns:minmax(0,1fr)}
+  .sumlist li{font-size:1.1em}
+  .cav{columns:1}
+  .bar .ttl,.bar .k,.bar .home{display:none}
+  .bar{justify-content:space-between}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 1 · title ============ -->
+<section class="slide title-slide" id="1" data-title="Fastlane">
+  <div class="title-wrap">
+    <h1>Fastlane</h1>
+    <p class="sub">A lean payment lane beside the EVM lane, under one consensus</p>
+    <p class="who"><b>Duc V. Le</b></p>
+    <p class="when">October 2026</p>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Prototype. Two kinds of evidence: a 4-validator LAN fleet (with consensus) and a controlled single-host benchmark (no consensus).</li>
+      <li>Every number comes from run logs or result files. A computed value carries the tag "computed". Fleet numbers always carry block fullness.</li>
+      <li>Keys: ← → / space / PgUp PgDn / Home End move. N shows these notes. T switches light/dark. B turns step-by-step builds off/on (slides 4, 7, 8, 9, 14, 17). #k in the URL jumps to slide k.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 2 · motivation ============ -->
+<section class="slide" id="2" data-title="Motivation: a multi-sector chain">
+  <p class="eyebrow">Motivation</p>
+  <h2>A multi-sector chain</h2>
+  <div class="fig"><svg id="fsec" role="img" aria-label="One consensus band, one certificate per height, carries three sector cards. General sector: full EVM, keeps programmability and compatibility, trades nothing. Privacy sector, planned: EVM inside a TEE, trades some speed for confidentiality. Payment sector, this talk: trades programmability for speed."></svg></div>
+  <ul class="say">
+    <li>The chain becomes multi-sector. One consensus, one certificate per height.</li>
+    <li>Each sector trades one property for another.</li>
+    <li>The payment sector removes programmability to gain speed.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>General sector</b>: the full EVM, identical to today's EVM chain. It keeps programmability and compatibility. It trades nothing: it is the baseline.</li>
+      <li><b>Privacy sector: planned, not built.</b> The EVM runs inside a TEE (trusted execution environment). It keeps programmability, trades some speed and gains confidentiality.</li>
+      <li><b>Payment sector</b>: the payment lane, the subject of this talk. It keeps value transfer, trades programmability and gains speed. We are investigating it: a research prototype, measured on a small test fleet (the rest of the talk).</li>
+      <li>The sector idea follows the original deck: "sectors trade one property for another".</li>
+      <li>All sectors use the same validators and the same consensus. Each height has one certificate. Today it covers the EVM block and the lean block.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 3 · problem ============ -->
+<section class="slide" id="3" data-title="One shared lane">
+  <p class="eyebrow">The problem</p>
+  <h2>One shared lane</h2>
+  <div class="fig"><svg id="f2" role="img" aria-label="Many kinds of transactions go into one block and update one shared state trie. One payment rehashes a whole path to the state root."></svg></div>
+  <ul class="say">
+    <li>Payments share block space and fees with every other transaction.</li>
+    <li>Payments share one big state with every contract.</li>
+    <li>Each payment pays to update and hash that state.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Earlier measurement (old deck, local devnet, real EIP-1559): contract load kept blocks 95–100 % full; the base fee rose from 12 k to 29 M wei within 2 minutes; a simple transfer went from $0.00042 to $0.42. This is the fee market working as designed. Payments should not live in it.</li>
+      <li>The state of the EVM chain grows with contract activity. A real testnet snapshot is 169 GB: it no longer fits in RAM, so merklization becomes random disk I/O.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 4 · where the time goes ============ -->
+<section class="slide" id="4" data-title="Where the time goes">
+  <p class="eyebrow">Where the time goes</p>
+  <h2>The bottleneck is the state commitment, not execution</h2>
+  <div class="fig"><svg id="f3" role="img" aria-label="Stacked bar of one reth block import: ecrecover (senders), execute, state root, persist. State root plus persist is about 75 percent. Below, three bars from a real 169 GB snapshot."></svg></div>
+  <ul class="say">
+    <li><b>State root + persist ≈ 75 %</b> of a block import <span class="tag calc">computed</span>. Execution ≈ 12 %.</li>
+    <li>The same shape on a real 169 GB testnet snapshot: root and disk dominate.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Controlled benchmark</b>: reth v2.7.0 (harness over reth crates), i7-11700F 8C/16T, 62 GB, NVMe ext4. 1M funded accounts, 20,000 native transfers per block, 8 threads, 1 warm-up + 5 measured blocks, median per block. Two runs back to back (results/ginny-alienware-20261013-144733.json, -144750.json). All checks passed.</li>
+      <li>The top bar times reth's phases directly, one after another (the direct path), not the engine path, where the root overlaps execution (newPayload 196.8–199.0 ms, without persist).</li>
+      <li>Direct path, serial by design: 1 ecrecover (senders) 82.8 ms · 2 execute 77.9–78.5 · 3 state root 336.6–341.7 (serial incremental root, 40,000 changed accounts in a 1M-account trie) · 4 persist 151.2–151.6 (MDBX durable + static files + RocksDB, per block). Full import 651.6–662.8 ms.</li>
+      <li>Computed shares: run 1 (root 341.67 + persist 151.58) / 662.83 = 74.4 %, execute 11.7 %; run 2 (336.58 + 151.22) / 651.62 = 74.9 %, execute 12.1 %.</li>
+      <li>reth's engine path overlaps the root with execution: newPayload 196.8–199.0 ms. It hides the root; it does not remove it.</li>
+      <li><b>Sender recovery</b>: ecrecover recovers the signer's public key from each secp256k1 signature. Same cost on both sides, ~82.5 ms per block.</li>
+      <li><b>Real state</b> (earlier measurement, June 2026; source: docs/campaign-log.md line 60): reth 1.11, a real 169 GB testnet snapshot (block 48.75M), one 2.7M-gas block import, cold cache. Stage times from reth's own metrics: state root 27.8 ms, persistence 24.5 ms, execution 4 ms.</li>
+      <li>The stages overlap: the whole import took 27.5 ms, less than their sum, so no total is shown.</li>
+      <li>A warm re-run (trie pages cached) halved the import to 11.3 ms: about 60 % of the merkle time was cold disk I/O. reth 2.x's sparse-trie cache targets exactly this.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 5 · what does not help ============ -->
+<section class="slide" id="5" data-title="What does not help">
+  <p class="eyebrow">What we tried</p>
+  <h2>Faster execution does not move the bottleneck</h2>
+  <div class="fig"><svg id="f4" role="img" aria-label="Lever against gain: parallel execution at most 1.14 times, computed; skipping the EVM for transfers 1.03 times, measured; UTXO about 1 times; no state commitment in the payment lane goes off the chart."></svg></div>
+  <ul class="say">
+    <li>Execution is ≈ 12 % of import. Infinitely fast execution gives at most <b>1.14×</b> <span class="tag calc">computed</span>.</li>
+    <li>UTXO is not faster for simple payments. Both models wait on signature checks.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Amdahl bound</b> from the benchmark: 1 / (1 − 0.117) = 1.13×, 1 / (1 − 0.121) = 1.14×. Block-STM can only shrink the execute slice.</li>
+      <li><b>Skip the EVM (measured, 4-validator fleet, 2026-08-08)</b>: a fast path that bypassed the interpreter for native transfers. Once it emitted the required transfer logs (without them it forked against stock nodes: receipts-root mismatch), same-block A/B: newPayload 118.3 → 115.0 ms (1.03×); execute sub-metric 87.1 → 79.5 ms. The earlier 1.39–1.58× claim was mostly the missing logs, retracted. About 0.5 % of block time; kept off.</li>
+      <li>Old deck lever table: "Execution (Block-STM): ~1× for transfers — measured dead".</li>
+      <li><b>UTXO experiment</b> (i7-11700F, standalone crate): UTXO and account transfers both ≈ 105k tx/s on 16 threads, both bound by signature verification (≈ 9 µs/tx parallel k256). Account contention is real but cheap for transfers (the contended work is one add). The win was isolation and a small RAM state, not UTXO.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 6 · three moves ============ -->
+<section class="slide" id="6" data-title="The lean lane: three moves">
+  <p class="eyebrow">The lean lane</p>
+  <h2>Three moves</h2>
+  <div class="fig"><svg id="f5" role="img" aria-label="Three numbered moves for the payment lane: no state commitment in the payment lane, fan-out transactions, vote on structure only. Each removes one cost. The EVM lane is unchanged."></svg></div>
+  <ul class="say">
+    <li>Each move removes one cost from the payment path.</li>
+    <li>Same validators, same consensus, one certificate.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>The lane is on by a flag on all validators from height 1. With the flag off, the chain is byte-identical to upstream.</li>
+      <li>The lean node is a separate small process. The consensus layer talks to it through five calls (build, stage, new block, head, block bytes).</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 7 · move 1 ============ -->
+<section class="slide" id="7" data-title="Move 1: no state commitment in the payment lane">
+  <p class="eyebrow">Move 1</p>
+  <h2>No state commitment in the payment lane</h2>
+  <div class="fig"><svg id="f6" role="img" aria-label="Left: the 21-field EVM header at byte scale, unchanged; the EVM lane keeps its commitment fields. Right: the 52-byte lean header, which has no state root, tx trie, receipts root or logs bloom, hashed into the commitment c_h; c_h goes into prev_randao, the only change to the EVM header."></svg></div>
+  <ul class="say">
+    <li>The lean header has no state root, tries, logs or bloom. Its state is a flat map in RAM.</li>
+    <li>The EVM lane is unchanged; only <b>prev_randao</b> carries <b>c<sub>h</sub></b>.</li>
+    <li>So one certificate covers the EVM block, the lean block and the whole lean chain.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>c<sub>h</sub> = keccak(c<sub>h−1</sub> ‖ number ‖ timestamp_ms ‖ keccak(n_txs ‖ every tx)). Every tx includes its 4 B length prefix. So every byte of the lean block is inside c<sub>h</sub>. No block carries its own commitment: every node recomputes it.</li>
+      <li>On Ethereum, prev_randao carries beacon-chain randomness. This chain has no beacon chain, so the field was unused (zero).</li>
+      <li>Consensus still votes the plain EVM block hash. The hash covers prev_randao, so the certificate covers c<sub>h</sub>; c<sub>h</sub> covers c<sub>h−1</sub>, so it covers the whole lean chain.</li>
+      <li>Flag off: prev_randao stays zero. A lane-on block with no lean commitment is voted Invalid.</li>
+      <li>Lean state: a flat nonce + balance map in RAM; durability: a block log + snapshots. The lean node keeps an append-only block log (fsync per block: 4.1 ms at 20,000 txs in the benchmark) and periodic snapshots.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 8 · move 2 ============ -->
+<section class="slide" id="8" data-title="Move 2: fan-out transactions">
+  <p class="eyebrow">Move 2</p>
+  <h2>Fan-out: one signature, N payments</h2>
+  <div class="controls">
+    <div class="ctl">
+      <label for="fo-n">Recipients per transaction: <span class="val" id="fo-nv">N = 10</span></label>
+      <input type="range" id="fo-n" min="1" max="200" step="1" value="10">
+    </div>
+    <div class="ctl" style="flex:0 1 auto; min-width:0">
+      <span class="lbl">Jump to</span>
+      <div class="seg" id="fo-q" role="group" aria-label="Jump to N">
+        <button type="button" data-n="1" aria-pressed="false">1</button>
+        <button type="button" data-n="10" aria-pressed="true">10</button>
+        <button type="button" data-n="100" aria-pressed="false">100</button>
+        <button type="button" data-n="200" aria-pressed="false">200</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig"><svg id="f7" role="img" aria-label="One signed fan-out transaction pays N recipients. The EVM lane needs N transactions, each with its own signature, nonce and fee fields. Below, the byte layout."></svg></div>
+  <div class="ro4" id="fo-read" aria-live="polite"></div>
+  <ul class="say">
+    <li>Per 100 payments: <b>100 → 1</b> signatures, <b>12,200 → 2,872 B</b>.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Fan-out tx (type 0x50) = 72 + 28N B: type 1 | nonce u32 4 | n_outputs u16 2 | N × (address 20 + amount u64 in gwei 8) | signature 65. In a block each tx also has a 4 B length prefix (u32): N = 1 takes 104 B of block bytes.</li>
+      <li>EIP-1559 native transfer ≈ 122 B: its RLP fields change length with their values (the benchmark's transfer is 115 B).</li>
+      <li>No chain_id (a domain tag in the signing hash binds the chain), no fee fields (fixed fee), no data or access list (no contracts).</li>
+      <li>Fan-out cuts per-transaction costs: signature, pool entry, envelope. Execution per payment is the same, and conflict-free by construction.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 9 · move 3 ============ -->
+<section class="slide" id="9" data-title="Move 3: off the consensus hot path">
+  <p class="eyebrow">Move 3</p>
+  <h2>Take work off the consensus hot path</h2>
+  <div class="fig"><svg id="f8" role="img" aria-label="Timeline of one height: propose, structural check, prevote and precommit, decide. The lean node executes in parallel with the votes and promotes the staged result at decide."></svg></div>
+  <ul class="say">
+    <li>Validators vote on structure only: parent link, timestamp, prev_randao = c<sub>h</sub>.</li>
+    <li>The vote returns at once. The lean node executes in the gap.</li>
+    <li>An invalid transaction is a no-op. Content never rejects a block.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Verified in code: the consensus layer's binding check returns Valid, then calls stage_block, which sends the block to the lean node with tokio::spawn (fire and forget). The lean node executes in its stage call. Decide promotes the staged post-state by commitment: the node already holds the bytes and the result.</li>
+      <li>A staged anchor costs 8–11 ms at 400 M gas per block (fleet).</li>
+      <li>Sender recovery (ecrecover) runs on a parallel pool, off the runtime threads. Serial ecrecover once starved admission: 0.63 vs 1.86 blocks/s.</li>
+      <li>A validator whose lean node is behind abstains. It never votes Invalid. A byzantine proposer can waste its own block bytes. It cannot halt or fork the lane.</li>
+      <li>The figure is a schematic. The bar lengths are not to scale.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 10 · result, no consensus ============ -->
+<section class="slide" id="10" data-title="Result 1: the engine, no consensus">
+  <p class="eyebrow">Result 1 · same host, no consensus</p>
+  <h2>The lean engine: 7.4× a full reth import</h2>
+  <div class="fig"><svg id="f9" role="img" aria-label="Payments per second on one host: lean 227 thousand; reth ecrecover plus execute 124 thousand; reth engine newPayload 101 thousand; reth full import 30 thousand."></svg></div>
+  <ul class="say">
+    <li>Same host, same 20,000 transfers per block, same 8 threads. One payment per signature.</li>
+    <li>Sender recovery (ecrecover) costs the same on both sides (≈ 82.5 ms). It is 94 % of the lean time.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>lean headline = decode + ecrecover + execute + apply: 88.26 / 87.80 ms per block → 226,595 / 227,803 tx/s. Lean execute alone: 2.25–2.39 ms.</li>
+      <li>reth ecrecover + execute: 160.9–161.3 ms → 123,962–124,278 tx/s (same work, no root, no disk) → 1.8×.</li>
+      <li>reth engine newPayload: 196.8–199.0 ms → 100,486–101,609 tx/s (all reth optimisations, with its state root, no disk) → 2.2×.</li>
+      <li>reth full import (1+2+3+4): 651.6–662.8 ms → 30,174–30,693 tx/s → 7.4–7.5×. Compare with lean + block-log fsync (≈ 4.1 ms).</li>
+      <li>Caveats on the backup slide: the direct path is serial and persists per block; a real reth node overlaps phases and often reuses mempool sender recovery (ecrecover).</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 11 · result, fleet ============ -->
+<section class="slide" id="11" data-title="Result 2: with consensus, on the fleet">
+  <p class="eyebrow">Result 2 · with consensus, 4-validator fleet</p>
+  <h2>Full blocks, about 20× the EVM lane</h2>
+  <div class="fig"><svg id="f10" role="img" aria-label="Log-scale bars of payments per second on the fleet: EVM lane about 6.5 thousand with blocks 51 to 78 percent full; payment lane one payment per signature 33 thousand; fan-out 100: 143 to 148 thousand; 30-minute soak 141 to 148 thousand. All payment-lane blocks are 100 percent full."></svg></div>
+  <ul class="say">
+    <li>Four validators, one LAN, 500 ms block pacer. Every payment-lane block is 100 % full.</li>
+    <li>The new limit: <b>block bytes through consensus</b> (≈ 4.4 MB/s), not execution.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>EVM lane</b>, N = 1, 150 M gas (run v02-0915-1903, 10 min): 4,377–8,419 tx/s per minute, mean ≈ 6,550; 0.81–1.57 blocks/s; blocks 51–78 % full, never full (execution/builder-bound). Re-check 2026-09-25 (run-0925-2116, lane off): 6,254–7,572 tx/s, 60–74 % full.</li>
+      <li><b>Payment lane</b>, N = 1, 450 M (run-0925-2055, 6 min): 33,172–33,460 tx/s, 115–116 blocks/min (1.92–1.93 blocks/s), 17,307/17,307 txs per block, 100 % full.</li>
+      <li><b>N = 100, 400 M</b> (run-0925-2042, 10 min): 143,173–148,287 payments/s, 112–116 blocks/min (1.87–1.93 blocks/s), 767/767 = 100 % full, 4/4 identical.</li>
+      <li><b>30-min soak</b> (run-0925-2124): 140,617–148,287 payments/s, mean 114.5 blocks/min (1.91 blocks/s), 29/29 samples 100 % full, first 10 min ≈ last 10 min (flat).</li>
+      <li>n = 1 per point, ±15 % run-to-run. Four heterogeneous machines, one on wifi. 143k / 6.55k ≈ 22× (computed); the worklog rounds it to ~20×.</li>
+      <li>Above the knee (400–450 M at N = 100) the fleet is bound by ≈ 4.4 MB/s of block bytes through consensus, not by signatures (N = 200 gives the same as N = 100) or by execution.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 12 · what we give up ============ -->
+<section class="slide" id="12" data-title="What the payment lane gives up">
+  <p class="eyebrow">The price</p>
+  <h2>What the payment lane gives up</h2>
+  <div class="fig html">
+    <div class="tradeoff">
+      <div class="tpanel lose">
+        <h3>The payment lane gives up</h3>
+        <ul>
+          <li>Light clients</li>
+          <li>Balance and nonce proofs</li>
+          <li>Certified balances: consensus certifies the transactions, not the balances</li>
+          <li>Receipts, logs and events</li>
+          <li>Standard Ethereum JSON-RPC and wallet tools</li>
+          <li>Contracts in the lane</li>
+        </ul>
+      </div>
+      <div class="tpanel keep">
+        <h3>It keeps</h3>
+        <ul>
+          <li>Certified bytes and order</li>
+          <li>Deterministic execution</li>
+          <li>Anyone can replay</li>
+          <li>A complete receipt is one bit: applied or <span style="white-space:nowrap">no-op</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <ul class="say"><li>The EVM lane keeps all of these. For the payment lane, balances, receipts and proofs must come from outside the core lane.</li></ul>
+  <aside class="notes">
+    <ul>
+      <li>Under total-STF semantics an invalid transaction is a no-op. So the full receipt of a payment is one bit: applied or not.</li>
+      <li>Today a wallet can check a payment only by downloading the whole lean block (1.65–2.48 MB at the measured budgets) and rehashing it.</li>
+      <li>Future work 3 (slides 15–16) plans how to bring these services back with small trust: indexers, TEE attestation, ZK proofs, and the data structure the indexers use for proofs.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 13 · future work 1 ============ -->
+<section class="slide" id="13" data-title="Future work 1: money between sectors">
+  <p class="eyebrow">Future work 1 <span class="tag plan">future work · open</span></p>
+  <h2>Move money between sectors</h2>
+  <div class="fig"><svg id="fx" role="img" aria-label="The general EVM sector and the payment sector side by side under one certificate per height. A two-way arrow between them carries a question mark: how money moves from one sector to the other and back is open."></svg></div>
+  <ul class="say">
+    <li>Users must send money from the EVM sector to the payment sector, and back.</li>
+    <li>Both sectors commit under one certificate, so a transfer can be atomic per height; the mechanism is open.</li>
+    <li>The tension: a same-height dependency couples the two lanes, which today run in parallel.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Problem statement only. No design is chosen, and nothing is built.</li>
+      <li>Today the two lanes share no state. A balance in the payment lane and a balance in the EVM sector are separate.</li>
+      <li>The tension is the open question from the original deck: a transfer that depends on the other lane in the same height makes one lane wait for the other. The lanes now run in parallel, and we want to keep that.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 14 · future work 2 ============ -->
+<section class="slide" id="14" data-title="Future work 2: a better network layer">
+  <p class="eyebrow">Future work 2 <span class="tag plan">future work · to measure</span></p>
+  <h2>Bigger blocks need a better network layer</h2>
+  <div class="fig"><svg id="fnet" role="img" aria-label="Left, today: the proposer sends the whole block to every validator, so its upload is about n times the block. Right, erasure-coded broadcast, a plan: the proposer sends each validator one coded piece, and the validators re-share the pieces, so the proposer upload is about one to two times the block."></svg></div>
+  <ul class="say">
+    <li>More transactions mean bigger blocks. The limit is block bytes through consensus: ≈ 4.4 MB/s measured.</li>
+    <li>Erasure-coded broadcast: the proposer sends each validator one coded piece. The validators re-share the pieces.</li>
+    <li>The gain grows with the number of validators: small at 4, large at 21+. <span class="tag plan">to measure</span></li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Measured</b>: above the knee (400–450 M gas at N = 100) the 4-validator fleet is bound by ≈ 4.4 MB/s of block bytes through consensus. N = 200 gives the same as N = 100, so signatures are not the limit.</li>
+      <li>The proposal is the largest part of a height. v0.2 at 300 M (period ≈ 530 ms): first part 115–150 ms, stream 116–129 ms, votes 60–120 ms, decided → anchor 76–98 ms. v0.1 at drain size: proposal stream + assemble 57 %, votes 13 %, anchor 10 %.</li>
+      <li>Today the proposal parts go out over gossip. With flood publish, the proposer sends each part to every peer, so its upload grows with n. On 4 validators on one LAN the gain is small. At 21+ validators across regions it should be large.</li>
+      <li><b>Not built, not measured.</b> Erasure coding: the block becomes k data pieces plus parity pieces; any k pieces rebuild it. The code overhead gives the "1–2 × block" proposer upload.</li>
+      <li>Measure first on the planned 21-validator run (local 5 → local 10 → LAN → AWS 21, one zone → multi-region): flood publish on and off, and the 10 MiB value-sync cap. Expect the knee to drop at 21.</li>
+      <li>Compact proposals attack the same wall: the proposal carries transaction hashes, and the bodies spread before the proposal (Narwhal-style separation on the same BFT stack). It combines with erasure coding. Also not built.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 15 · future work 3a ============ -->
+<section class="slide" id="15" data-title="Future work 3a: trustworthy indexers">
+  <p class="eyebrow">Future work 3a <span class="tag plan">plan · not built</span></p>
+  <h2>Trustworthy indexers</h2>
+  <div class="fig"><svg id="fidx" role="img" aria-label="Why indexers: the core payment lane keeps no state commitment, so balances, payment receipts, proofs and standard wallet RPC have nobody to serve them. An indexer layer replays the certified bytes and serves them, off the consensus hot path. Then users must trust the indexers, so a ladder of three rungs sits on top. Rung 0: replay plus M-of-N signed roots, trust one honest replayer. Rung 1: a TEE indexer with remote attestation, trust the hardware vendor and the enclave. Rung 2: a ZK proof of the state transition, trust math. Each rung up needs less trust. All rungs are a plan."></svg></div>
+  <ul class="say">
+    <li data-bstep="7" data-bdelay="500">The lean state transition is simple: signature checks plus balance arithmetic. That makes it a good target for proofs.</li>
+    <li data-bstep="7" data-bdelay="650">Signature checks dominate the proving cost, so prove per checkpoint, every K blocks.</li>
+    <li data-bstep="7" data-bdelay="800">A ZK-proven delayed state root brings light clients back without a trie on the validators' critical path.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Why</b>: the payment lane has no state commitment. Indexers bring back balances, receipts and proofs. So users must trust indexers. The goal is to make that trust small.</li>
+      <li><b>Rung 0</b> (indexer phase 1, no protocol change): replay the certified blocks, index the transactions, keep a state accumulator with a checkpoint every K = 64 blocks, sign the roots. M-of-N signatures for availability, public audit. Anyone can replay, so one honest replayer detects a lie, and replay settles a dispute.</li>
+      <li><b>Rung 1</b>: the indexer runs in a TEE. Remote attestation shows that the enclave runs the published code. Trust moves to the hardware vendor and the enclave. Fast and cheap; side channels are the known risk.</li>
+      <li><b>Rung 2</b>: a ZK proof that the state root at checkpoint h follows from the root at h − K and the certified blocks between them. Trust: the math of the proof system. A light client verifies one proof per checkpoint. Signature checks dominate the circuit, so the proof covers K blocks at a time. Proving cost: to measure.</li>
+      <li>From the earlier layer plan: a proof layer (Merkle transaction root + one applied/no-op bit per transaction; inclusion proofs 1.3–3.9 KB, estimate) and an Ethereum-compatible JSON-RPC gateway over the indexers, so wallets and exchanges keep their tools.</li>
+      <li>The other option, validators compute a delayed state root (block h carries the root of h − K; estimate +0.6–1.5 cores and +20 GB per validator), stays "only on demand". The ZK root keeps the trie off the validators.</li>
+      <li>Which authenticated data structure the indexer keeps for its state: next slide.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 16 · future work 3b ============ -->
+<section class="slide" id="16" data-title="Future work 3b: which authenticated data structure?">
+  <p class="eyebrow">Future work 3b <span class="tag plan">plan · open choice</span></p>
+  <h2>Which authenticated data structure?</h2>
+  <div class="fig"><svg id="fads" role="img" aria-label="Top: certified blocks go to the indexer as one batched update per checkpoint; many readers (wallets, exchanges, light clients) ask the indexer for balances and proofs. Below: a grid of five candidate structures against four criteria: short proofs, few reads per proof, cheap batched update, keys cannot deepen paths. Merkle-Patricia trie: no, no, partly, no (the Nurgle paper). Jellyfish Merkle tree: partly, partly, yes, no (our inference). Full-depth sparse Merkle tree: partly, no, partly, yes. Sorted Merkle accumulator: yes, yes, partly, yes. Verkle tree: yes, yes, partly, partly. Most marks are our inference."></svg></div>
+  <ul class="say">
+    <li>The indexer needs an authenticated data structure (ADS) to give proofs. It is off the consensus hot path.</li>
+    <li>Many readers, one batched writer: choose for reads.</li>
+    <li>Avoid structures where an attacker can make paths deeper (<a href="#17">next: Nurgle</a>).</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Where</b>: the ADS lives at the indexers (slide 15), not at the validators. Validators keep the flat map. The indexer state is balances and nonces.</li>
+      <li><b>Workload</b>: many readers (balance queries, proof requests from wallets, exchanges, light clients) and one writer that applies one batched update per checkpoint (every K blocks; K = 64 in the indexer plan). So the ADS must be read-efficient: short proofs, few lookups and disk seeks per proof, cache-friendly, cheap to serve many readers in parallel. Updates can be batched.</li>
+      <li><b>Robust against adversarial keys</b>: in a key-prefix tree an attacker can grind keys to make a chosen path deeper (next slide, 17: Nurgle, IEEE S&amp;P 2024).</li>
+      <li><b>Merkle-Patricia trie</b> (Ethereum, reth): key = keccak(address); 16-ary radix tree with path compression. Deep paths and large proofs. Vulnerable to Nurgle: this mark is from the paper.</li>
+      <li><b>Jellyfish Merkle tree</b> (Aptos/Diem style): hashed keys, path-compressed sparse tree, shorter proofs than the MPT, designed for batched versioned writes. Depth still follows shared key prefixes, so prefix grinding can deepen paths. Our inference from the attack mechanism; the paper does not test JMT.</li>
+      <li><b>Full-depth sparse Merkle tree</b>: fixed depth (256 levels for a 256-bit key), so grinding cannot add depth. But a proof has many hashes and a lookup touches many nodes unless the tree compresses empty subtrees. Our inference.</li>
+      <li><b>Sorted Merkle accumulator</b> (the option in our light-client design): accounts sorted by key, a Merkle tree over the positions. Depth = log2(number of accounts), independent of key prefixes, so grinding cannot deepen it. Cost: an insert shifts positions, so the indexer rebuilds per checkpoint. Our inference / design, not built.</li>
+      <li><b>Verkle tree</b>: wide nodes, short proofs. The paper lists it as a Nurgle mitigation (flatter, shorter paths). Cost: more space per node and heavier cryptography. We mark robustness "partly": it is still keyed by prefix, so it reduces depth inflation rather than removing it (our inference).</li>
+      <li><b>Earlier measurement (old deck), write side only</b>: we swapped reth's MPT (MDBX) for a JMT (redb) inside the EVM client. 2 h, two identical ELs on one box, same 800 tx/s load, ~26k blocks and ~4–5M accounts per lane, only the commitment differs. Windowed state-root latency: median 12.75 ms (JMT) vs 17.81 ms (MPT); mean 21.46 vs 17.30 ms; p99 85.38 vs 22.43 ms (redb flushes); 0 state-root mismatches. The leaf committed (nonce, balance) only, which flatters JMT; all state fit in RAM. Lesson: structure plus store matter, not the tree alone. This measured per-block writes, not the indexer's read workload.</li>
+      <li>The old deck's lever table also says "Commitment: up to 20× once state &gt; RAM; MPT is cache-bound; JMT / SALT / dense; 4 primitives, 168 GB". We do not have its exact configuration at hand, so it is not on the slide.</li>
+      <li>Marks: a solid mark comes from the Nurgle paper; a dashed mark is our inference. Nothing on this slide is built or measured for the indexer.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 17 · Nurgle ============ -->
+<section class="slide" id="17" data-title="Why the choice matters: the Nurgle attack">
+  <p class="eyebrow">Future work 3b · why the choice matters</p>
+  <h2>The Nurgle attack (IEEE S&amp;P 2024)</h2>
+  <div class="fig"><svg id="fnur" role="img" aria-label="Left: a Merkle-Patricia trie before and after the attack. Before, the target account leaf sits near the root. After, crafted leaves share a long key prefix with the target, so a chain of branch nodes pushes the target leaf down to layer x plus 2. Right: the attack pipeline, grind keys on a GPU at 1.90 billion hashes per second, craft keys with a long shared prefix, insert them with ordinary 1-wei transfers. Every later access to the target pays more, but gas stays at 21,000. Bottom: attacker cost on a log scale, from about 40 dollars on Optimism to about 11.8 million dollars on Ethereum."></svg></div>
+  <ul class="say">
+    <li>Grind keys that share a long prefix with a busy account. Insert them with 1-wei transfers.</li>
+    <li>That account's path stays deeper for good. Gas does not change: 21,000 either way.</li>
+    <li>For the payment lane (our inference): the validators' flat map is safe; a keccak-keyed trie at an indexer is not.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Source</b>: Zheyuan He, Zihao Li, Ao Qiao, Xiapu Luo, Xiaosong Zhang, Ting Chen, Shuwei Song, Dijun Liu, Weina Niu, "Nurgle: Exacerbating Resource Consumption in Blockchain State Storage via MPT Manipulation", IEEE S&amp;P 2024, arXiv:2406.10687.</li>
+      <li><b>Target</b>: MPT state storage. The leaf index is keccak256(address or storage slot). The attacker picks a target leaf, preferably an active, frequently modified account.</li>
+      <li><b>Prefix grinding</b>: brute-force identifiers whose keccak hash shares a long prefix with the target's path: 1.90 billion hashes/s on one RTX 3080.</li>
+      <li><b>Insert</b> the crafted leaves with ordinary transactions: e.g. send 1 wei to the crafted address; for storage, e.g. an ERC20 transfer via an agent contract.</li>
+      <li><b>Effect</b>: each shared prefix splits nodes into extension + branch nodes. A shared prefix of x nibbles pushes the target leaf to layer x + 2 (e.g. 13 nibbles → layer 15). The extra nodes persist.</li>
+      <li>Every later access to that account pays more: trie updates (disk and memory reads), verification (more keccak on the path to the root), in-memory node handling, persistence (more disk writes).</li>
+      <li><b>Gas does not track it</b>: two transfers both cost 21,000 gas, but one updates 6 trie nodes and the other 9.</li>
+      <li><b>Impact</b>: on Ethereum blocks #14.99M–#15M the added intermediate nodes amount to 1.11× all retrieved nodes (≈ 111 % more node work; model 111.2 %, &lt; 1 % off the measurement). On testnets the authors stopped once state-modification time rose 15 % (Ethereum) and 18 % (BSC).</li>
+      <li><b>Attacker cost</b> (paper's Table III, one-week average prices): Ethereum ≈ $11.8M, optimized ≈ $413k; BSC ≈ $198k, optimized ≈ $7.0k; Optimism ≈ $40 (GPU part $39.6: 33 RTX 3080 × 12 h). The optimized variant costs 3.5 % for 54.66 % of the impact.</li>
+      <li>Confirmed by six mainstream blockchains (bounties paid). Per the paper, 588 Ethereum-compatible and 153 Polkadot-compatible platforms are affected.</li>
+      <li><b>Mitigations in the paper</b>: (i) Verkle tree: flatter, shorter paths; costs more space per node. (ii) Trimming historical state (EIP-4444): costs full historical verification. (iii) A gas mechanism that charges for MPT node changes: may open new attack vectors.</li>
+      <li><b>Why it matters for the payment lane (our inference)</b>: the lane's validators keep a flat hash map, not a trie, so the attack does not target consensus. An indexer that builds a keccak-keyed trie inherits it. Fan-out makes crafted recipients cheap: 28 B and one tiny payment each, many per signature. So the indexer's ADS should have a depth independent of key prefixes (e.g. a sorted accumulator or a fixed-depth tree), and/or the lane should price account creation.</li>
+      <li>The trie figure is a schematic: real MPT branch nodes have 16 children and the chain is drawn shortened.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 18 · summary ============ -->
+<section class="slide" id="18" data-title="Summary">
+  <p class="eyebrow">Summary</p>
+  <h2>Each move costs something</h2>
+  <div class="fig"><svg id="fsum" role="img" aria-label="Three rows. No state commitment in the payment lane costs light clients, proofs and receipts; trustworthy indexers buy them back. Fan-out and bigger blocks hit the network wall; a better network layer buys it back. Separate sectors split the money; cross-sector transfers buy it back."></svg></div>
+  <ul class="say">
+    <li>Lean engine: <b>7.4×</b> a full reth import on one host. Fleet: <b>143k–148k payments/s</b>, every block full.</li>
+    <li>Each move costs something. Each future-work item buys it back. <span class="tag plan">plan</span></li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>A block import pays mostly for the state commitment, not for execution. The payment lane drops the state commitment from its own blocks (the EVM lane keeps its full header), fans out payments and votes on structure only.</li>
+      <li>7.4–7.5× = lean engine vs reth v2.7.0 direct full import, N = 1, same host. 2.2× vs reth's engine newPayload.</li>
+      <li>143,173–148,287 payments/s: N = 100, 400 M, 4 validators, 1.87–1.93 blocks/s, 100 % full. EVM lane on the same fleet: ≈ 6.5k tx/s, never full.</li>
+      <li>The right column is future work: none of it is built or measured.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 19 · backup divider ============ -->
+<section class="slide divider" id="19" data-title="Backup">
+  <p class="eyebrow">Backup</p>
+  <h2>Backup slides</h2>
+  <ul class="say">
+    <li><a href="#20">20 · Header field reference</a></li>
+    <li><a href="#21">21 · How the payment lane persists data</a></li>
+    <li><a href="#22">22 · Block bytes → payments per second</a> <span class="tag calc">computed</span></li>
+    <li><a href="#23">23 · Benchmark fairness caveats</a></li>
+  </ul>
+  <aside class="notes">Reference material for questions.</aside>
+</section>
+
+<!-- ============ 20 · header fields ============ -->
+<section class="slide" id="20" data-title="Backup: header fields">
+  <p class="eyebrow">Backup</p>
+  <h2>Header field reference</h2>
+  <div class="fig html"><div class="bk" id="hdr-tabs"></div></div>
+  <aside class="notes">
+    <ul>
+      <li>The EVM chain activates every Ethereum fork from genesis, so its header is the standard post-Prague header: 21 fields. extra_data is 0–32 B.</li>
+      <li>This chain has no beacon chain: prev_randao was unused (zero) before the lane.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 21 · persistence ============ -->
+<section class="slide" id="21" data-title="Backup: how the lane persists data">
+  <p class="eyebrow">Backup</p>
+  <h2>How the payment lane persists data</h2>
+  <div class="fig"><svg id="fper" role="img" aria-label="The lean node appends each decided block as one record to an append-only log file and fsyncs it. Every 1024 blocks it writes a snapshot of the whole state map. On restart it loads the newest snapshot and replays the log after it. Beside it, lean versus reth: no database and no trie, about 4 milliseconds per block against about 151 milliseconds for reth's persist."></svg></div>
+  <ul class="say">
+    <li>No database, no trie. Live state is a flat map in RAM.</li>
+    <li>The node appends each decided block to a log and fsyncs it. Every 1024 blocks, it writes the whole map to a snapshot.</li>
+    <li>The price: the state must fit in RAM (≈ 130 MB at 1M accounts).</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li><b>Code</b> (lean node, v0.3-dev, crates/lean-lane-node/src): chain.rs BlockLog::append (record = [len u32][block payload][len u32], then file.sync_data unless --no-fsync), BlockLog::replay (stops at the first record whose bounds or trailing len do not check, truncates there); state.rs write_snapshot (commitment, number, timestamp, count, then per account address 20 B + nonce u64 + balance u128 = 44 B; temp file, sync_all, rename to snapshot-N.bin); node/commit.rs (the one append both commit paths use); node/mod.rs LaneNode::open (newest snapshot not ahead of the log, replay the tail).</li>
+      <li>Live state = HashMap address → (nonce, balance). The log stores blocks, not state. An in-memory index (block number → file offset) serves old blocks to peers.</li>
+      <li>Snapshot every 1024 blocks (--snapshot-every, default 1024; 0 = never, replay from genesis). Size: 56 B + 44 B per account ≈ 44 MB at 1M accounts.</li>
+      <li>Restart: newest snapshot not ahead of the log → replay the blocks after it → head. A torn tail is truncated. If the log lost its tail (only possible with --no-fsync; snapshots are always fsynced), the node falls back to an older snapshot and pulls the missing blocks from peers. The certificate binds the bytes: a liveness cost, never a safety cost.</li>
+      <li><b>Numbers</b>: benchmark lean-lane-bench/bench/native-transfer (README + results/ginny-alienware-20261013-*.json), 1M accounts, 20,000 txs per block, i7-11700F, NVMe ext4. Lean block-log append + fsync 4.06–4.08 ms per block; reth persist (MDBX durable + static files + RocksDB) 151.2–151.6 ms per block. reth writes changed accounts and trie nodes into a B-tree (random I/O); its on-disk state is always current. Lean's on-disk state is current only at snapshots.</li>
+      <li><b>Trade-offs</b>: state must fit in RAM (≈ 130 MB at 1M accounts, ≈ 1 GB at 10M). No disk-side queries of old balances: that is an indexer job. The snapshot is written on the commit path with blocking I/O: fine at fleet sizes; moving it to a background thread is an open item before 10M+ accounts.</li>
+      <li>The figure is a schematic: block positions are not to scale.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 22 · byte wall ============ -->
+<section class="slide" id="22" data-title="Backup: bytes to payments">
+  <p class="eyebrow">Backup <span class="tag calc">computed</span></p>
+  <h2>Block bytes → payments per second</h2>
+  <div class="fig"><svg id="f17" role="img" aria-label="Computed payments per second for a 2 MB block at 2 blocks per second: N=1 about 38 thousand, N=5 about 93 thousand, N=10 about 112 thousand, N=100 about 139 thousand."></svg></div>
+  <ul class="say">
+    <li>A 2 MB block at 2 blocks/s is 4 MB/s, close to the measured ≈ 4.4 MB/s wall.</li>
+    <li>Fan-out gains flatten after N ≈ 10: bytes per payment fall from 104 to ≈ 28.8.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Computed: txs per block = floor(2,000,000 / (72 + 28N + 4)); payments/s = txs × N × 2.</li>
+      <li>N = 1: 104 B → 19,230 txs → 38.5k/s. N = 5: 216 B → 9,259 → 92.6k/s. N = 10: 356 B → 5,617 → 112.3k/s. N = 100: 2,876 B → 695 → 139.0k/s.</li>
+      <li>The measured N = 100 point (143k–148k at 400 M gas) sits near this line.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 23 · fairness ============ -->
+<section class="slide" id="23" data-title="Backup: benchmark caveats">
+  <p class="eyebrow">Backup</p>
+  <h2>Benchmark fairness caveats</h2>
+  <div class="fig html">
+    <ul class="cav">
+      <li><b>ecrecover (sender recovery) dominates lean.</b> Same library (libsecp256k1), same threads. A real reth node often recovers senders at mempool time and reuses them.</li>
+      <li><b>reth's direct path is serial.</b> A real node overlaps ecrecover, execution and root (engine path). "Full import" is an upper bound for one block.</li>
+      <li><b>Persist is per block</b> on the direct path. A real node persists in background batches.</li>
+      <li><b>The engine path uses more threads</b> (prewarm, proof workers, sparse trie). lean uses one pool of 8.</li>
+      <li><b>Allocators differ:</b> reth on jemalloc, lean on the system allocator.</li>
+      <li><b>Not the same work:</b> reth runs full EVM semantics (fees, system contracts, receipts). lean runs a payment-only transition. That is the point of the lane.</li>
+      <li><b>Small samples:</b> 5 measured blocks per run, two runs. Treat differences under ≈ 10 % as noise.</li>
+      <li><b>Not measured:</b> consensus, networking, mempool, RPC, block building. The page cache is warm.</li>
+    </ul>
+  </div>
+  <aside class="notes">Source: the benchmark README, "Fairness caveats" and "What is not measured".</aside>
+</section>
+
+<nav class="bar" aria-label="Slide navigation">
+  <div class="prog" id="prog"></div>
+  <a class="home" href="../">← Fastlane</a>
+  <button type="button" id="b-prev" aria-label="Previous slide">‹</button>
+  <span class="count" id="count" aria-live="polite">1 / 23</span>
+  <button type="button" id="b-next" aria-label="Next slide">›</button>
+  <span class="ttl" id="ttl"></span>
+  <span class="k">N notes · T theme · B builds</span>
+  <button type="button" id="b-notes" aria-pressed="false" title="Speaker notes (N)">notes</button>
+  <button type="button" id="b-theme" aria-label="Switch between light and dark theme" title="Light / dark (T)">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+  </button>
+</nav>
+
+<script>
+/* Every figure reads its colours from the CSS tokens at draw time, so light and dark both work.
+   Numbers: benchmark result files (2026-10-13), fleet run logs (2026-09-15 and 2026-09-25). */
+var SVGNS = 'http://www.w3.org/2000/svg', MONO = 'Ubuntu Mono';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+function hexLum(h){
+  h = String(h).replace('#', '').trim();
+  if (h.length === 3) h = h.split('').map(function(c){ return c + c; }).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return 0.5;
+  var v = [0, 2, 4].map(function(i){ var c = parseInt(h.substr(i, 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+/* text colour with the higher contrast on a filled shape */
+function onCol(h){ var L = hexLum(h); return (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.0556) ? '#ffffff' : '#111111'; }
+function plainC(s){ return String(s).replace(/c_\{([^}]*)\}|c_h/g, function(m, g){ return 'c' + (g || 'h'); }); }
+function tw(s, fs){ return plainC(s).length * fs * 0.5; }   /* Ubuntu Mono: 0.5 em advance */
+function T(x, y, s, o){
+  o = o || {};
+  var a = { x:x, y:y, 'font-family':MONO, 'font-size':o.fs || 13, fill:o.fill || css('--ink-1') };
+  if (o.anchor) a['text-anchor'] = o.anchor;
+  if (o.w) a['font-weight'] = o.w;
+  if (o.rot) a.transform = 'rotate(' + o.rot + ' ' + x + ' ' + y + ')';
+  return el('text', a, s);
+}
+/* c_h, c_{h−1} as subscripts, with tspans (Firefox ignores baseline-shift) */
+function rich(x, y, s, o){
+  o = o || {};
+  var t = T(x, y, undefined, o), fs = o.fs || 13, low = false, re = /c_(\{[^}]*\}|h)/g, last = 0, m;
+  function add(txt, sub){
+    if (!txt) return;
+    var a = {};
+    if (sub){ a['font-size'] = fs * 0.75; if (!low){ a.dy = fs * 0.3; low = true; } }
+    else if (low){ a.dy = -fs * 0.3; low = false; }
+    t.appendChild(el('tspan', a, txt));
+  }
+  while ((m = re.exec(s))){ add(s.slice(last, m.index) + 'c', false); add(m[1].replace(/[{}]/g, ''), true); last = re.lastIndex; }
+  add(s.slice(last), false);
+  return t;
+}
+function arrowDef(svg, id, col){
+  var d = el('defs', {}), mk = el('marker', { id:id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:7, markerHeight:7, orient:'auto-start-reverse' });
+  mk.appendChild(el('path', { d:'M0 0L10 5L0 10z', fill:col }));
+  d.appendChild(mk); svg.appendChild(d);
+}
+function add(svg, n){ svg.appendChild(n); return n; }
+function rect(svg, x, y, w, h, o){
+  o = o || {};
+  return add(svg, el('rect', { x:x, y:y, width:Math.max(0, w), height:Math.max(0, h), rx:o.rx === undefined ? 4 : o.rx, fill:o.fill || 'none',
+    'fill-opacity':o.fo === undefined ? null : o.fo, stroke:o.stroke || null, 'stroke-width':o.sw || (o.stroke ? 1.3 : null), 'stroke-dasharray':o.dash || null }));
+}
+function path(svg, d, o){
+  o = o || {};
+  return add(svg, el('path', { d:d, fill:o.fill || 'none', stroke:o.stroke || css('--ink-muted'), 'stroke-width':o.sw || 1.5,
+    'stroke-dasharray':o.dash || null, 'marker-end':o.mk ? 'url(#' + o.mk + ')' : null, 'stroke-linejoin':'round' }));
+}
+function arrow(svg, x1, y1, x2, y2, mk, o){ o = o || {}; o.mk = mk; return path(svg, 'M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2, o); }
+/* horizontal brace; dir = 1 opens downward under a span (tip down), -1 above a span (tip up) */
+function brace(svg, x1, x2, y, dir, col){
+  var m = (x1 + x2) / 2, r = 6 * dir;
+  path(svg, 'M' + x1 + ' ' + y + 'q0 ' + r + ' ' + Math.abs(r) + ' ' + r + 'H' + (m - Math.abs(r)) + 'q' + Math.abs(r) + ' 0 ' + Math.abs(r) + ' ' + r +
+    'q0 ' + (-r) + ' ' + Math.abs(r) + ' ' + (-r) + 'H' + (x2 - Math.abs(r)) + 'q' + Math.abs(r) + ' 0 ' + Math.abs(r) + ' ' + (-r), { stroke:col || css('--ink-muted'), sw:1.4 });
+  return m;
+}
+function kfmt(v){ return v >= 1000 ? (Math.round(v / 100) / 10) + 'k' : String(v); }
+
+/* ---------- builds: a figure tags groups with the step (1..N) from which they show ----------
+   bg() runs fn and wraps everything fn appended to svg into one tagged <g>.
+   kind: fade | growx (grow from the left) | land (slide in from the left + fade) | draw (path draw)
+   | kf (custom keyframes in g._kf). delay / dur in ms. The figure itself always draws the final
+   state; applyStatic() hides the groups above the current step, play() animates one step's groups. */
+var BUILDS = { f3:5, f6:4, f7:3, f8:6, fidx:7, fnet:5, fnur:5 }, stepOf = {}, buildsOn = true, MKN = 0;
+try { buildsOn = localStorage.getItem('fastlane-builds') !== 'off'; } catch(e){}
+function bAttrs(k, kind, delay, dur){ return { 'data-b':k, 'data-bk':kind || 'fade', 'data-bd':delay || 0, 'data-bt':dur || null }; }
+function bg(svg, k, fn, kind, delay, dur){
+  var n0 = svg.childNodes.length; fn();
+  if (!k) return null;
+  var g = el('g', bAttrs(k, kind, delay, dur));
+  while (svg.childNodes.length > n0) g.appendChild(svg.childNodes[n0]);
+  svg.appendChild(g); return g;
+}
+/* a group shown only before step k (it fades out at step k, after delay ms): for crossfades */
+function until(g, k, delay){ if (g && k){ g.setAttribute('data-bu', k); g.setAttribute('data-bud', delay || 0); } return g; }
+function stepG(par, k, kind, delay, dur){ return add(par, el('g', bAttrs(k, kind, delay, dur))); }
+function reducedMotion(){ try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } }
+function bHtml(svg){ var sl = svg.closest('.slide'); return sl ? sl.querySelectorAll('[data-bstep]') : []; }
+function applyStatic(svg, s){
+  Array.prototype.forEach.call(bHtml(svg), function(e){
+    if (e.getAnimations) e.getAnimations().forEach(function(a){ a.cancel(); });
+    e.style.visibility = Number(e.getAttribute('data-bstep')) > s ? 'hidden' : '';
+  });
+  Array.prototype.forEach.call(svg.querySelectorAll('g[data-b]'), function(g){
+    if (g.getAnimations) g.getAnimations({ subtree:true }).forEach(function(a){ a.cancel(); });
+    if (g._cl) g._cl();
+    var bu = Number(g.getAttribute('data-bu')) || 0;
+    g.style.visibility = (Number(g.getAttribute('data-b')) > s || (bu && s >= bu)) ? 'hidden' : '';
+  });
+}
+function drawIn(svg, g, o){
+  var vb = svg.viewBox.baseVal, defs = add(svg, el('defs', {})), ps = [];
+  Array.prototype.forEach.call(g.querySelectorAll('path, line'), function(p){
+    if (p.closest('marker')) return;
+    var d = p.tagName.toLowerCase() === 'line' ? 'M' + p.getAttribute('x1') + ' ' + p.getAttribute('y1') + 'L' + p.getAttribute('x2') + ' ' + p.getAttribute('y2') : p.getAttribute('d');
+    var id = 'bm' + (++MKN), m = el('mask', { id:id, maskUnits:'userSpaceOnUse', x:vb.x - 60, y:vb.y - 60, width:vb.width + 120, height:vb.height + 120 });
+    var mp = el('path', { d:d, fill:'none', stroke:'#ffffff', 'stroke-width':26, 'stroke-linejoin':'round', pathLength:1, 'stroke-dasharray':'1 2', 'stroke-dashoffset':0 });
+    m.appendChild(mp); defs.appendChild(m); p.setAttribute('mask', 'url(#' + id + ')'); ps.push(p);
+    if (mp.animate) mp.animate([{ strokeDashoffset:1 }, { strokeDashoffset:0 }], o);
+  });
+  var done = false;
+  g._cl = function(){ if (done) return; done = true; ps.forEach(function(p){ p.removeAttribute('mask'); }); if (defs.parentNode) defs.parentNode.removeChild(defs); g._cl = null; };
+  setTimeout(function(){ if (g._cl) g._cl(); }, o.delay + o.duration + 80);
+}
+function play(svg, s){
+  if (reducedMotion()) return;
+  Array.prototype.forEach.call(svg.querySelectorAll('g[data-b="' + s + '"]'), function(g){
+    if (!g.animate) return;
+    var kind = g.getAttribute('data-bk'), o = { duration:Number(g.getAttribute('data-bt')) || 400, delay:Number(g.getAttribute('data-bd')) || 0, easing:'ease-out', fill:'backwards' };
+    if (kind === 'growx'){ g.style.transformBox = 'fill-box'; g.style.transformOrigin = '0% 50%'; g.animate([{ transform:'scaleX(0)' }, { transform:'scaleX(1)' }], o); }
+    else if (kind === 'land') g.animate([{ opacity:0, transform:'translateX(-14px)' }, { opacity:1, transform:'translateX(0)' }], o);
+    else if (kind === 'draw') drawIn(svg, g, o);
+    else if (kind === 'kf' && g._kf){ o.easing = 'linear'; g.animate(g._kf, o); }
+    else g.animate([{ opacity:0 }, { opacity:1 }], o);
+  });
+  Array.prototype.forEach.call(bHtml(svg), function(e){
+    if (Number(e.getAttribute('data-bstep')) === s && e.animate) e.animate([{ opacity:0 }, { opacity:1 }], { duration:380, delay:Number(e.getAttribute('data-bdelay')) || 0, easing:'ease-out', fill:'backwards' });
+  });
+  /* groups that leave at this step: keep them up, fade them out, then hide */
+  Array.prototype.forEach.call(svg.querySelectorAll('g[data-bu="' + s + '"]'), function(g){
+    if (!g.animate || Number(g.getAttribute('data-b')) > s) return;
+    g.style.visibility = '';
+    var a = g.animate([{ opacity:1 }, { opacity:0 }], { duration:320, delay:Number(g.getAttribute('data-bud')) || 0, easing:'ease-out', fill:'forwards' });
+    a.onfinish = function(){ g.style.visibility = 'hidden'; a.cancel(); };
+  });
+}
+
+/* ====================================================================
+   F1 · title: one consensus, two lanes
+   ==================================================================== */
+function f1(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ev = css('--s2'), pl = css('--s1'), ac = css('--accent');
+  arrowDef(svg, 'a1', ink);
+  var lab = nar ? 0 : 150, hs = nar ? ['h−1', 'h'] : ['h−2', 'h−1', 'h'], cw = (W - lab) / hs.length;
+  var yC = nar ? 20 : 8, hC = 42, yE = nar ? 108 : 92, bh = nar ? 48 : 56, yP = nar ? 214 : 194, H = yP + bh + 6;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var fsB = nar ? 12 : 14, fsS = nar ? 11 : 12;
+  if (!nar){
+    add(svg, T(0, yC + hC / 2 - 1, 'Consensus', { fs:14, w:700 }));
+    add(svg, T(0, yC + hC / 2 + 15, 'BFT, all validators', { fs:11.5, fill:ink }));
+    add(svg, T(0, yE + bh / 2 - 1, 'EVM lane', { fs:14, w:700, fill:ev }));
+    add(svg, T(0, yE + bh / 2 + 15, 'full EVM client', { fs:11.5, fill:ink }));
+    add(svg, T(0, yP + bh / 2 - 1, 'Payment lane', { fs:14, w:700, fill:pl }));
+    add(svg, T(0, yP + bh / 2 + 15, 'lean node', { fs:11.5, fill:ink }));
+  } else {
+    add(svg, T(0, yC - 6, 'Consensus', { fs:11.5, w:700 }));
+    add(svg, T(0, yE - 7, 'EVM lane', { fs:11.5, w:700, fill:ev }));
+    add(svg, T(0, yP - 7, 'Payment lane', { fs:11.5, w:700, fill:pl }));
+  }
+  rect(svg, lab, yC, W - lab, hC, { fill:ac, fo:0.06, stroke:ac, sw:1.4 });
+  hs.forEach(function(h, i){
+    var cx = lab + cw * (i + 0.5), bw = cw - (nar ? 16 : 44), x = cx - bw / 2;
+    rect(svg, x, yC + 7, bw, hC - 14, { fill:ac, fo:0.16 });
+    add(svg, T(cx, yC + hC / 2 + 4.5, 'certificate ' + h, { anchor:'middle', fs:fsS + 0.5, w:700 }));
+    rect(svg, x, yE, bw, bh, { fill:ev, fo:0.14, stroke:ev, sw:1.5 });
+    add(svg, T(cx, yE + bh / 2 - (nar ? 2 : 3), 'EVM block ' + h, { anchor:'middle', fs:fsB, w:700 }));
+    add(svg, T(cx, yE + bh / 2 + (nar ? 13 : 15), 'contracts + transfers', { anchor:'middle', fs:fsS, fill:css('--ink-2') }));
+    rect(svg, x, yP, bw, bh, { fill:pl, fo:0.14, stroke:pl, sw:1.5 });
+    add(svg, T(cx, yP + bh / 2 - (nar ? 2 : 3), 'lean block ' + h, { anchor:'middle', fs:fsB, w:700 }));
+    add(svg, T(cx, yP + bh / 2 + (nar ? 13 : 15), 'payments only', { anchor:'middle', fs:fsS, fill:css('--ink-2') }));
+    var ax = nar ? x + bw - 18 : cx;
+    arrow(svg, ax, yC + hC - 7, ax, yE - 2, 'a1');
+    arrow(svg, ax, yE + bh, ax, yP - 2, 'a1');
+    if (i === hs.length - 1) add(svg, rich(ax - 8, (yE + bh + yP) / 2 + 4, 'prev_randao = c_h', { anchor:'end', fs:fsS, w:700, fill:css('--s2') }));
+    if (i > 0){
+      var xl = x - 3, xr = lab + cw * (i - 0.5) + bw / 2 + 3;
+      arrow(svg, xl, yE + bh / 2, xr, yE + bh / 2, 'a1');
+      arrow(svg, xl, yP + bh / 2, xr, yP + bh / 2, 'a1');
+    }
+  });
+}
+
+/* ====================================================================
+   F2 · one shared lane: one block, one state trie
+   ==================================================================== */
+function f2(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), pl = css('--s1'), ax = css('--axis');
+  arrowDef(svg, 'a2', ink);
+  var chips = ['NFT mint', 'bot trade', 'your payment', 'airdrop claim', 'contract deploy'];
+  var H, bx, by, bw, bh, tx0, tx1, ty0;
+  if (!nar){
+    var cw = 176, ch = 36, gap = 10, cy0 = 40;
+    add(svg, T(0, 22, 'many kinds of transactions', { fs:12.5, fill:ink }));
+    bx = 262; bw = 150; bh = 92; by = cy0 + (5 * (ch + gap) - gap) / 2 - bh / 2;
+    chips.forEach(function(c, i){
+      var y = cy0 + i * (ch + gap), me = c === 'your payment';
+      rect(svg, 0, y, cw, ch, { fill: me ? pl : css('--ink-2'), fo: me ? 0.2 : 0.07, stroke: me ? pl : ax, sw: me ? 2 : 1 });
+      add(svg, T(cw / 2, y + ch / 2 + 4.5, c, { anchor:'middle', fs:13, w: me ? 700 : 400 }));
+      arrow(svg, cw + 2, y + ch / 2, bx - 3, by + 18 + i * (bh - 36) / 4, 'a2', { stroke: me ? pl : ink, sw: me ? 2 : 1.3 });
+    });
+    rect(svg, bx, by, bw, bh, { fill:css('--accent'), fo:0.07, stroke:css('--accent'), sw:2 });
+    add(svg, T(bx + bw / 2, by + bh / 2 - 6, 'one block', { anchor:'middle', fs:15, w:700 }));
+    add(svg, T(bx + bw / 2, by + bh / 2 + 14, 'one fee market', { anchor:'middle', fs:12, fill:ink }));
+    tx0 = 500; tx1 = W; ty0 = 70;
+    arrow(svg, bx + bw + 2, by + bh / 2, tx0 - 14, by + bh / 2, 'a2', { sw:1.6 });
+    add(svg, T((bx + bw + tx0) / 2 - 6, by + bh / 2 - 8, 'writes', { anchor:'middle', fs:12, fill:ink }));
+    add(svg, T(tx0, 22, 'one shared state', { fs:15, w:700 }));
+    add(svg, T(tx0, 40, 'every account, contract and storage slot', { fs:12, fill:ink }));
+    H = trie(svg, tx0, tx1, ty0, 50, 13) + 6;
+  } else {
+    var c2 = (W - 8) / 2;
+    add(svg, T(0, 14, 'many kinds of transactions', { fs:11.5, fill:ink }));
+    chips.forEach(function(c, i){
+      var col = i % 2, row = Math.floor(i / 2), x = col * (c2 + 8), y = 24 + row * 38, me = c === 'your payment';
+      rect(svg, x, y, c2, 30, { fill: me ? pl : css('--ink-2'), fo: me ? 0.2 : 0.07, stroke: me ? pl : ax, sw: me ? 2 : 1 });
+      add(svg, T(x + c2 / 2, y + 19, c, { anchor:'middle', fs:11.5, w: me ? 700 : 400 }));
+    });
+    by = 24 + 3 * 38 + 24; bw = W * 0.6; bx = (W - bw) / 2; bh = 44;
+    arrow(svg, W / 2, by - 22, W / 2, by - 2, 'a2');
+    rect(svg, bx, by, bw, bh, { fill:css('--accent'), fo:0.07, stroke:css('--accent'), sw:2 });
+    add(svg, T(W / 2, by + 19, 'one block', { anchor:'middle', fs:13, w:700 }));
+    add(svg, T(W / 2, by + 35, 'one fee market', { anchor:'middle', fs:11, fill:ink }));
+    arrow(svg, W / 2, by + bh, W / 2, by + bh + 22, 'a2');
+    add(svg, T(0, by + bh + 44, 'one shared state', { fs:13, w:700 }));
+    add(svg, T(0, by + bh + 60, 'every account, contract, storage slot', { fs:11, fill:ink }));
+    H = trie(svg, 0, W, by + bh + 84, 44, 11) + 6;
+  }
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+}
+/* a 3-level trie with one highlighted path; returns the bottom y */
+function trie(svg, x0, x1, y0, dy, fs){
+  var ax = css('--axis'), pl = css('--s1'), ink = css('--ink-muted'), w = x1 - x0;
+  var root = { x:x0 + w / 2, y:y0 }, L1 = [], L2 = [], L3 = [];
+  for (var i = 0; i < 3; i++) L1.push({ x:x0 + w * (i + 0.5) / 3, y:y0 + dy });
+  for (i = 0; i < 9; i++) L2.push({ x:x0 + w * (i + 0.5) / 9, y:y0 + 2 * dy });
+  for (i = 0; i < 27; i++) L3.push({ x:x0 + w * (i + 0.5) / 27, y:y0 + 3 * dy });
+  var hp = [1, 4, 13];
+  function edge(a, b, on){ add(svg, el('line', { x1:a.x, y1:a.y, x2:b.x, y2:b.y, stroke: on ? pl : ax, 'stroke-width': on ? 2.6 : 1 })); }
+  L1.forEach(function(n, i){ edge(root, n, i === hp[0]); });
+  L2.forEach(function(n, i){ edge(L1[Math.floor(i / 3)], n, i === hp[1]); });
+  L3.forEach(function(n, i){ edge(L2[Math.floor(i / 3)], n, i === hp[2]); });
+  function node(n, r, on){ add(svg, el('circle', { cx:n.x, cy:n.y, r:r, fill: on ? pl : css('--plane'), stroke: on ? pl : css('--ink-muted'), 'stroke-width':1.3 })); }
+  node(root, 7, true);
+  L1.forEach(function(n, i){ node(n, 5.5, i === hp[0]); });
+  L2.forEach(function(n, i){ node(n, 4.5, i === hp[1]); });
+  L3.forEach(function(n, i){ node(n, 3.6, i === hp[2]); });
+  add(svg, T(root.x + 14, root.y + 4, 'state root', { fs:fs, w:700, fill:pl }));
+  var lf = L3[hp[2]];
+  add(svg, T(lf.x, lf.y + fs + 8, 'your balance', { anchor:'middle', fs:fs, w:700, fill:pl }));
+  add(svg, T(x0 + w / 2, lf.y + 2 * fs + 16, 'one payment: new leaf, rehash the path to the root', { anchor:'middle', fs:fs - 1, fill:ink }));
+  return lf.y + 2 * fs + 16;
+}
+
+/* ====================================================================
+   F3 · where the time goes (benchmark + real snapshot)
+   ==================================================================== */
+var BENCH = [
+  { k:'ecrecover (senders)', s:'ecrecover', v:82.79, r:'82.8 ms', c:'--c-frame' },
+  { k:'execute', s:'exec', v:78.20, r:'77.9–78.5 ms', c:'--s3' },
+  { k:'state root', s:'root', v:339.13, r:'336.6–341.7 ms', c:'--c-drop' },
+  { k:'persist', s:'persist', v:151.40, r:'151.2–151.6 ms', c:'--s4' }
+];
+var REAL = [ { k:'state root', v:27.8, c:'--c-drop' }, { k:'persistence', v:24.5, c:'--s4' }, { k:'execution', v:4, c:'--s3' } ];
+function f3(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), tot = 657.5, s = (W - 2) / 680;
+  var y = 16;
+  add(svg, T(0, y, nar ? 'reth v2.7.0 · 20,000 transfers/block' : 'Controlled benchmark · reth v2.7.0 · 1M accounts · 20,000 transfers per block · one block import', { fs:nar ? 11 : 12.5, fill:ink }));
+  if (nar) add(svg, T(0, y + 15, '1M accounts · one block import', { fs:11, fill:ink }));
+  var yb = nar ? 46 : 92, bh = nar ? 40 : 58, x = 0, seg = {};
+  BENCH.forEach(function(b, i){
+    var w = b.v * s, col = css(b.c), st = nar ? 0 : i + 1;   /* build: one segment per step */
+    bg(svg, st, function(){ rect(svg, x, yb, w - 2, bh, { fill:col, rx:3 }); }, 'growx', 0, i === 2 ? 520 : 380);
+    var inn = onCol(col);
+    if (!nar){
+      bg(svg, st, function(){
+        add(svg, T(x + w / 2, yb + bh / 2 - 3, tw(b.k, 13.5) + 14 <= w ? b.k : b.s, { anchor:'middle', fs:13.5, w:700, fill:inn }));
+        add(svg, T(x + w / 2, yb + bh / 2 + 15, b.r, { anchor:'middle', fs:12.5, fill:inn }));
+      }, 'fade', i === 2 ? 380 : 260, 300);
+    } else if (tw(b.s, 11) + 6 < w){
+      add(svg, T(x + w / 2, yb + bh / 2 + 4, b.s, { anchor:'middle', fs:11, w:700, fill:inn }));
+    }
+    seg[b.s] = { x0:x, x1:x + w - 2 };
+    x += w;
+  });
+  if (!nar){
+    /* braces above: execution share and commitment share */
+    var by = yb - 12;
+    bg(svg, 2, function(){
+      var me = brace(svg, seg.exec.x0 + 2, seg.exec.x1 - 2, by, -1, css('--s3'));
+      add(svg, T(me, by - 14, 'execution ≈ 12 %', { anchor:'middle', fs:13, w:700, fill:css('--ink-1') }));
+    }, 'fade', 380, 320);
+    bg(svg, 4, function(){
+      var mc = brace(svg, seg.root.x0 + 2, seg.persist.x1 - 2, by, -1, css('--c-drop'));
+      add(svg, T(mc, by - 14, 'state commitment ≈ 75 % of import (computed)', { anchor:'middle', fs:14, w:700, fill:css('--ink-head') }));
+    }, 'fade', 420, 340);
+    /* axis */
+    var ya = yb + bh + 6;
+    [0, 100, 200, 300, 400, 500, 600].forEach(function(g){
+      add(svg, el('line', { x1:g * s, x2:g * s, y1:ya, y2:ya + 5, stroke:css('--axis') }));
+      add(svg, T(g * s, ya + 18, g + (g === 0 ? ' ms' : ''), { anchor: g === 0 ? 'start' : 'middle', fs:11.5, fill:ink }));
+    });
+    bg(svg, 4, function(){ add(svg, T(W, ya + 36, 'full import 651.6–662.8 ms (two runs)', { anchor:'end', fs:12.5, w:700 })); }, 'fade', 620, 320);
+    add(svg, T(0, ya + 36, 'ecrecover: recover each sender’s key from its secp256k1 signature', { fs:12, fill:ink }));
+    var y2 = ya + 78;
+    bg(svg, 5, function(){ add(svg, T(0, y2, 'Real 169 GB testnet snapshot · reth 1.11, cold cache · one 2.7M-gas block import (earlier measurement)', { fs:12.5, fill:ink })); }, 'fade', 0, 300);
+    var lx = 130, s2 = (W - lx - 90) / 30, rh = 24, pitch = 32;
+    REAL.forEach(function(r, i){
+      var yy = y2 + 14 + i * pitch, col = css(r.c);
+      bg(svg, 5, function(){ add(svg, T(lx - 10, yy + rh / 2 + 4.5, r.k, { anchor:'end', fs:13 })); }, 'fade', 120 + i * 110, 260);
+      bg(svg, 5, function(){ rect(svg, lx, yy, r.v * s2, rh, { fill:col, rx:3 }); }, 'growx', 120 + i * 110, 380);
+      bg(svg, 5, function(){ add(svg, T(lx + r.v * s2 + 8, yy + rh / 2 + 4.5, r.v + ' ms', { fs:13, w:700 })); }, 'fade', 420 + i * 110, 260);
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y2 + 14 + 3 * pitch));
+  } else {
+    var ly = yb + bh + 22;
+    BENCH.forEach(function(b, i){
+      var yy = ly + i * 19;
+      rect(svg, 0, yy - 10, 11, 11, { fill:css(b.c), rx:2 });
+      add(svg, T(18, yy, b.k, { fs:11.5 }));
+      add(svg, T(W, yy, b.r, { anchor:'end', fs:11.5 }));
+    });
+    var yt = ly + 4 * 19 + 6;
+    add(svg, T(0, yt, 'state commitment ≈ 75 % (computed)', { fs:12, w:700 }));
+    add(svg, T(0, yt + 17, 'execution ≈ 12 % · total 651.6–662.8 ms', { fs:11.5, fill:ink }));
+    var y3 = yt + 46;
+    add(svg, T(0, y3, 'Real 169 GB snapshot · reth 1.11, cold,', { fs:11, fill:ink }));
+    add(svg, T(0, y3 + 14, 'one 2.7M-gas block (earlier)', { fs:11, fill:ink }));
+    var lx2 = 92, s3 = (W - lx2 - 60) / 30;
+    REAL.forEach(function(r, i){
+      var yy = y3 + 26 + i * 26;
+      add(svg, T(lx2 - 8, yy + 14, r.k, { anchor:'end', fs:11 }));
+      rect(svg, lx2, yy, r.v * s3, 20, { fill:css(r.c), rx:3 });
+      add(svg, T(lx2 + r.v * s3 + 6, yy + 14, r.v + ' ms', { fs:11, w:700 }));
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y3 + 26 + 3 * 26));
+  }
+}
+
+/* ====================================================================
+   F4 · lever vs gain
+   ==================================================================== */
+var LEV = [
+  { n:'Parallel execution (Block-STM)', d:'upper bound, computed: exec ≈ 12 %', v:1.14, lab:'≤ 1.14×', kind:'bound' },
+  { n:'Skip the EVM for transfers', d:'measured, fleet: newPayload 118.3 → 115.0 ms', v:1.03, lab:'1.03×', kind:'meas' },
+  { n:'UTXO instead of accounts', d:'measured: ≈ 105k tx/s both, 16 threads', v:1.0, lab:'≈ 1×', kind:'meas' },
+  { n:'No state commitment (payment lane)', d:'+ fan-out + vote on structure', v:null, lab:'see the next slides', kind:'go' }
+];
+function f4(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), c1 = css('--s2'), go = css('--s1');
+  arrowDef(svg, 'a4', go);
+  var lx = nar ? 8 : 370, rx = W - (nar ? 8 : 20), vmax = 1.5, rowP = nar ? 76 : 76, bh = nar ? 22 : 30, top = nar ? 6 : 10;
+  function X(v){ return lx + (v - 1) / (vmax - 1) * (rx - lx); }
+  var H = top + LEV.length * rowP + 36;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var gy1 = top + LEV.length * rowP;
+  [1, 1.1, 1.2, 1.3, 1.4, 1.5].forEach(function(g){
+    add(svg, el('line', { x1:X(g), x2:X(g), y1:top, y2:gy1, stroke: g === 1 ? css('--ink-muted') : css('--grid'), 'stroke-width': g === 1 ? 1.5 : 1 }));
+    add(svg, T(X(g), gy1 + 18, g.toFixed(1) + '×', { anchor:'middle', fs:nar ? 11 : 12.5, fill:ink }));
+  });
+  add(svg, T(X(1) + 6, gy1 + 34, '1× = no gain · speedup of block import', { fs:nar ? 10.5 : 12, fill:ink }));
+  LEV.forEach(function(L, i){
+    var y0 = top + i * rowP, yb, ty;
+    if (nar){ ty = y0 + 14; yb = y0 + 34; }
+    else { ty = y0 + rowP / 2 - 4; yb = y0 + (rowP - bh) / 2; }
+    var fsN = nar ? 12 : 14.5, fsD = nar ? 10.5 : 12;
+    add(svg, T(nar ? 18 : lx - 14, ty, L.n, { anchor: nar ? 'start' : 'end', fs:fsN, w:700, fill: L.kind === 'go' ? go : css('--ink-1') }));
+    add(svg, T(nar ? 18 : lx - 14, ty + (nar ? 14 : 17), L.d, { anchor: nar ? 'start' : 'end', fs:fsD, fill:ink }));
+    if (nar) yb = y0 + 40;
+    if (L.kind === 'go'){
+      rect(svg, X(1), yb, rx - X(1) - 14, bh, { fill:go, fo:0.9, rx:3 });
+      path(svg, 'M' + (rx - 14) + ' ' + yb + 'L' + rx + ' ' + (yb + bh / 2) + 'L' + (rx - 14) + ' ' + (yb + bh) + 'Z', { fill:go, stroke:go, sw:1 });
+      add(svg, T((X(1) + rx) / 2, yb + bh / 2 + 5, L.lab + ' →', { anchor:'middle', fs:nar ? 12 : 14, w:700, fill:onCol(go) }));
+    } else if (L.v > 1.001){
+      rect(svg, X(1), yb, X(L.v) - X(1), bh, L.kind === 'bound' ? { stroke:c1, sw:2, dash:'5 3', fill:c1, fo:0.12, rx:3 } : { fill:c1, rx:3 });
+      add(svg, T(X(L.v) + 8, yb + bh / 2 + 5, L.lab, { fs:nar ? 12.5 : 15, w:700 }));
+    } else {
+      add(svg, el('circle', { cx:X(1), cy:yb + bh / 2, r:6, fill:c1 }));
+      add(svg, T(X(1) + 14, yb + bh / 2 + 5, L.lab, { fs:nar ? 12.5 : 15, w:700 }));
+    }
+  });
+}
+
+/* ====================================================================
+   F5 · three moves
+   ==================================================================== */
+var MOVES = [
+  { t:['No state commitment', 'in the payment lane'], cut:['cuts: state root, tries,', 'logs, per-block persist'] },
+  { t:['Fan-out', 'transactions'], cut:['cuts: signatures and', 'bytes per payment'] },
+  { t:['Vote on', 'structure only'], cut:['cuts: execution from', 'the vote path'] }
+];
+function f5(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ac = css('--accent'), cols = [css('--c-drop'), css('--s1'), css('--s3')];
+  arrowDef(svg, 'a5', ink);
+  var colW, colH = nar ? 250 : 330, gap = nar ? 14 : 36;
+  colW = nar ? W : (W - 2 * gap) / 3;
+  var H = nar ? 3 * colH + 2 * gap : colH;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  MOVES.forEach(function(m, i){
+    var x0 = nar ? 0 : i * (colW + gap), y0 = nar ? i * (colH + gap) : 0, col = cols[i];
+    rect(svg, x0, y0, colW, colH, { fill:col, fo:0.06, stroke:col, sw:1.6, rx:8 });
+    add(svg, el('circle', { cx:x0 + 30, cy:y0 + 32, r:17, fill:col }));
+    add(svg, T(x0 + 30, y0 + 38.5, String(i + 1), { anchor:'middle', fs:18, w:700, fill:onCol(col) }));
+    add(svg, T(x0 + 58, y0 + 28, m.t[0], { fs:nar ? 14 : 16.5, w:700 }));
+    add(svg, T(x0 + 58, y0 + 48, m.t[1], { fs:nar ? 14 : 16.5, w:700 }));
+    var gx = x0 + colW / 2, gy = nar ? y0 + 128 : y0 + 170;
+    if (nar) gx = x0 + colW / 2;
+    glyph(svg, i, gx, gy, nar ? 0.7 : 1, col);
+    var cy = y0 + colH - (nar ? 30 : 40);
+    add(svg, T(x0 + colW / 2, cy, m.cut[0], { anchor:'middle', fs:nar ? 12 : 13.5, fill:css('--ink-2') }));
+    add(svg, T(x0 + colW / 2, cy + (nar ? 15 : 18), m.cut[1], { anchor:'middle', fs:nar ? 12 : 13.5, fill:css('--ink-2') }));
+  });
+}
+function glyph(svg, i, cx, cy, k, col){
+  var ink = css('--ink-muted'), ax = css('--axis'), cr = css('--critical');
+  function P(dx, dy){ return [cx + (dx - (i === 0 ? 13 : 0)) * k, cy + dy * k]; }
+  if (i === 0){
+    /* a small trie, struck out, then a flat table */
+    var r = P(-70, -50), a = [P(-105, -5), P(-70, -5), P(-35, -5)], b = [];
+    for (var j = 0; j < 6; j++) b.push(P(-115 + j * 18, 40));
+    a.forEach(function(p){ add(svg, el('line', { x1:r[0], y1:r[1], x2:p[0], y2:p[1], stroke:ax, 'stroke-width':1.2 })); });
+    b.forEach(function(p, j){ var q = a[Math.min(2, Math.floor(j / 2))]; add(svg, el('line', { x1:q[0], y1:q[1], x2:p[0], y2:p[1], stroke:ax, 'stroke-width':1.2 })); });
+    [r].concat(a, b).forEach(function(p){ add(svg, el('circle', { cx:p[0], cy:p[1], r:4.5 * k + 1, fill:css('--plane'), stroke:ink, 'stroke-width':1.2 })); });
+    var c1 = P(-122, -62), c2 = P(-18, 52);
+    add(svg, el('line', { x1:c1[0], y1:c1[1], x2:c2[0], y2:c2[1], stroke:cr, 'stroke-width':3.5, 'stroke-linecap':'round' }));
+    add(svg, el('line', { x1:c1[0], y1:c2[1], x2:c2[0], y2:c1[1], stroke:cr, 'stroke-width':3.5, 'stroke-linecap':'round' }));
+    var s0 = P(-2, 0), s1 = P(22, 0);
+    arrow(svg, s0[0], s0[1], s1[0], s1[1], 'a5');
+    var t0 = P(28, -48), tw0 = 124 * k, rh = 19 * k;
+    ['addr', 'nonce', 'balance'].forEach(function(h, j){
+      var w = [34, 38, 52][j] * k, x = t0[0] + [0, 34, 72][j] * k;
+      rect(svg, x, t0[1], w, rh, { fill:col, fo:0.3, stroke:col, sw:1, rx:0 });
+      add(svg, T(x + w / 2, t0[1] + rh / 2 + 3.5, h, { anchor:'middle', fs:9.5 * k + 1, w:700 }));
+      for (var q = 1; q <= 4; q++) rect(svg, x, t0[1] + q * rh, w, rh, { fill:css('--plane'), stroke:col, sw:1, rx:0 });
+    });
+    add(svg, T(t0[0] + tw0 / 2, t0[1] + 5 * rh + 16 * k, 'flat map in RAM', { anchor:'middle', fs:11 * k + 1, fill:ink }));
+  } else if (i === 1){
+    var sx = P(-80, 0);
+    rect(svg, sx[0] - 38 * k, sx[1] - 26 * k, 76 * k, 52 * k, { fill:css('--s2'), fo:0.9, rx:5 });
+    add(svg, T(sx[0], sx[1] - 3 * k, '1', { anchor:'middle', fs:16 * k + 2, w:700, fill:onCol(css('--s2')) }));
+    add(svg, T(sx[0], sx[1] + 15 * k, 'signature', { anchor:'middle', fs:10 * k + 1.5, w:700, fill:onCol(css('--s2')) }));
+    for (var n = 0; n < 6; n++){
+      var p = P(90, -62 + n * 25);
+      arrow(svg, sx[0] + 40 * k, sx[1], p[0] - 12 * k, p[1], 'a5', { sw:1.3 });
+      add(svg, el('circle', { cx:p[0], cy:p[1], r:9 * k, fill:col, 'fill-opacity':0.25, stroke:col, 'stroke-width':1.3 }));
+    }
+    var lb = P(90, 92);
+    add(svg, T(lb[0], lb[1], 'N payments', { anchor:'middle', fs:11 * k + 1, fill:ink }));
+  } else {
+    var ox = P(-110, -40), L = 220 * k;
+    add(svg, T(ox[0], ox[1] - 8 * k, 'vote', { fs:11.5 * k + 1, w:700 }));
+    rect(svg, ox[0], ox[1], 60 * k, 20 * k, { fill:css('--accent'), fo:0.85, rx:3 });
+    add(svg, T(ox[0] + 30 * k, ox[1] + 14 * k, 'check', { anchor:'middle', fs:9.5 * k + 1.5, w:700, fill:onCol(css('--accent')) }));
+    rect(svg, ox[0] + 64 * k, ox[1], 120 * k, 20 * k, { fill:css('--accent'), fo:0.35, rx:3 });
+    add(svg, T(ox[0] + 124 * k, ox[1] + 14 * k, 'votes', { anchor:'middle', fs:9.5 * k + 1.5, w:700 }));
+    var ey = ox[1] + 56 * k;
+    add(svg, T(ox[0], ey - 8 * k, 'execute', { fs:11.5 * k + 1, w:700 }));
+    rect(svg, ox[0] + 64 * k, ey, 112 * k, 20 * k, { fill:col, fo:0.85, rx:3 });
+    add(svg, T(ox[0] + 120 * k, ey + 14 * k, 'in parallel', { anchor:'middle', fs:9.5 * k + 1.5, w:700, fill:onCol(col) }));
+    add(svg, el('line', { x1:ox[0] + 62 * k, x2:ox[0] + 62 * k, y1:ox[1] - 4 * k, y2:ey + 26 * k, stroke:ink, 'stroke-width':1.3, 'stroke-dasharray':'3 3' }));
+    var ta = P(-110, 64);
+    arrow(svg, ta[0], ta[1], ta[0] + L, ta[1], 'a5', { sw:1.2 });
+    add(svg, T(ta[0] + L, ta[1] + 16 * k, 'time', { anchor:'end', fs:10 * k + 1.5, fill:ink }));
+  }
+}
+
+/* ====================================================================
+   F6 · Move 1: the EVM header and the lean header
+   ==================================================================== */
+var HD_F = [
+  ['parent_hash',32,'o'],['ommers_hash',32,'o','ommers'],['beneficiary',20,'o','benef.'],['state_root',32,'c'],['transactions_root',32,'c','txs_root'],
+  ['receipts_root',32,'c','receipts'],['logs_bloom',256,'c'],['difficulty',32,'o'],['number',8,'o','num'],['gas_limit',8,'o','gas_lim'],
+  ['gas_used',8,'o','gas_used'],['timestamp',8,'o','time'],['extra_data',32,'o','extra'],['prev_randao',32,'h'],['nonce',8,'o'],
+  ['base_fee_per_gas',8,'o','base_fee'],['withdrawals_root',32,'o','withdrawals'],['blob_gas_used',8,'o','blob_gas'],['excess_blob_gas',8,'o','excess'],
+  ['parent_beacon_block_root',32,'o','beacon_root'],['requests_hash',32,'o','requests']
+];
+function fbox(svg, x, y, w, h, col, fo, name, alt, fs, o){
+  o = o || {};
+  rect(svg, x + 1, y, Math.max(1, w - 2), h, { fill:col, fo:fo, stroke:col, sw:o.sw || 1.1, rx:3, dash:o.dash });
+  var room = w - 6, lab = tw(name, fs) <= room ? name : (alt && tw(alt, fs) <= room ? alt : (alt && tw(alt, fs - 1.5) <= room ? alt : ''));
+  var lfs = tw(lab, fs) <= room ? fs : fs - 1.5;
+  if (lab) add(svg, rich(x + w / 2, y + h / 2 + lfs * 0.36, lab, { anchor:'middle', fs:lfs, w:o.bold ? 700 : 400, fill:o.ink || css('--ink-1') }));
+  return { x:x + 1, y:y, w:w - 2, h:h };
+}
+function f6(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), com = css('--c-drop'), hook = css('--s2'), oth = css('--axis'), lc = css('--s1'), tc = css('--s3');
+  arrowDef(svg, 'a6', ink); arrowDef(svg, 'a6h', hook);
+  var LW = nar ? W - 22 : 560, bpr = 64, s = LW / bpr, rowH = nar ? 20 : 28, pitch = rowH + 3, fs = nar ? 9.5 : 11.5, y0 = nar ? 22 : 26;
+  /* builds (slide 7): 1 EVM header grid, unchanged, its commitments kept · 2 lean block row + what the lean
+     header does not have · 3 hashing into c_h · 4 c_h → prev_randao (the only EVM change), then the lean chain */
+  var B = nar ? 0 : 1;
+  bg(svg, B, function(){ add(svg, T(0, nar ? 13 : 15, nar ? 'EVM header · unchanged · width ∝ bytes' : 'EVM header · unchanged · 21 fields · box width ∝ bytes', { fs:nar ? 11 : 12.5, w:700, fill:css('--ink-2') })); }, 'fade', 0, 300);
+  var cur = 0, row = 0, boxes = {};
+  HD_F.forEach(function(f){
+    var b = f[1], x, y, w, h, col = f[2] === 'c' ? com : (f[2] === 'h' ? hook : oth);
+    if (b > bpr){ if (cur > 0){ row++; cur = 0; } x = 0; y = y0 + row * pitch; w = LW; h = (b / bpr) * pitch - 3; row += b / bpr; }
+    else { if (cur + b > bpr){ row++; cur = 0; } x = cur * s; y = y0 + row * pitch; w = b * s; h = rowH; cur += b; if (cur >= bpr){ row++; cur = 0; } }
+    var on = f[2] === 'h';
+    /* prev_randao looks like any other field until step 4, then crossfades into "= c_h" */
+    if (B && on) until(bg(svg, 1, function(){ fbox(svg, x, y, w, h, oth, 0.12, 'prev_randao', 'prev_randao', fs, {}); }, 'fade', 0, 300), 4, 420);
+    bg(svg, B ? (on ? 4 : 1) : 0, function(){
+      boxes[f[0]] = fbox(svg, x, y, w, h, col, on ? 0.34 : (f[2] === 'c' ? 0.3 : 0.12), on ? 'prev_randao = c_h' : f[0], on ? 'prev_randao' : f[3], fs, { bold: on || f[2] === 'c', sw: on ? 2.4 : 1.1 });
+    }, 'fade', on ? 420 : 0, 320);
+  });
+  if (cur > 0) row++;
+  var gridB = y0 + row * pitch - 3;
+  /* legend under the grid */
+  var lgY = gridB + (nar ? 18 : 22);
+  [[com, 'commitments: the EVM lane keeps these'], [hook, 'prev_randao = c_h: the only EVM change']].forEach(function(l, i){
+    var lx = nar ? 0 : i * 320, ly = nar ? lgY + i * 17 : lgY;
+    bg(svg, B * (i ? 4 : 1), function(){
+      rect(svg, lx, ly - 10, 11, 11, { fill:l[0], fo:0.6, stroke:l[0], rx:2 });
+      add(svg, rich(lx + 17, ly, l[1], { fs:nar ? 11 : 12 }));
+    }, 'fade', i ? 600 : 200, 320);
+  });
+  var leftBottom = nar ? lgY + 17 : lgY;
+  /* right side (or below on a phone): lean block → c_h */
+  var RX = nar ? 0 : 616, RW = nar ? W - 22 : W - RX, ls = RW / 80, top = nar ? leftBottom + 34 : 0;
+  /* what the lean header does not have: struck chips (the strike-through lives on the lean side only) */
+  var sfs = nar ? 10.5 : 12, sx = RX, sy = top + (nar ? 16 : 20), sh = sfs + 9, cr = css('--critical');
+  bg(svg, 2 * B, function(){ add(svg, T(RX, top + (nar ? 10 : 12), 'the lean header has none of these:', { fs:nar ? 11 : 12, w:700, fill:cr })); }, 'fade', 450, 300);
+  ['state root', 'tx trie', 'receipts root', 'logs bloom'].forEach(function(c, i){
+    var w = tw(c, sfs) + 18;
+    if (sx + w > RX + RW){ sx = RX; sy += sh + 5; }
+    var x = sx;
+    bg(svg, 2 * B, function(){
+      pill(svg, x, sy, c, cr, sfs, { dash:'3 2', fo:0.06 });
+      add(svg, el('line', { x1:x + 6, y1:sy + sh / 2, x2:x + w - 6, y2:sy + sh / 2, stroke:cr, 'stroke-width':1.3, 'stroke-opacity':0.85, 'stroke-linecap':'round' }));
+    }, 'fade', 550 + i * 90, 280);
+    sx += w + 6;
+  });
+  top = sy + sh + (nar ? 22 : 28);
+  var yA = top + (nar ? 22 : 26), yBr = yA + rowH + 4, yLab = yBr + (nar ? 19 : 22), yP = yBr + (nar ? 52 : 62);
+  bg(svg, 2 * B, function(){
+    add(svg, T(RX, yA - (nar ? 8 : 11), 'lean block · 52 B header, then the txs', { fs:nar ? 11 : 12.5, w:700, fill:css('--ink-2') }));
+  }, 'fade', 0, 300);
+  var LH = [['parent = c_{h−1}', 0, 32, 'parent'], ['number', 32, 8, 'num'], ['time_ms', 40, 8, 'time'], ['n_txs', 48, 4, 'n']];
+  bg(svg, 2 * B, function(){
+    LH.forEach(function(f){ fbox(svg, RX + f[1] * ls, yA, f[2] * ls, rowH, lc, 0.18, f[0], f[3], fs); });
+    ['tx', '…', 'tx'].forEach(function(t, i){ fbox(svg, RX + (52 + i * 28 / 3) * ls, yA, 28 / 3 * ls, rowH, lc, 0.08, t, t, fs, {}); });
+  }, 'land', 120, 380);
+  var mt;
+  bg(svg, 3 * B, function(){
+    mt = brace(svg, RX + 48 * ls + 2, RX + RW - 2, yBr, 1);
+    add(svg, T(mt, yLab, 'txs_hash =', { anchor:'middle', fs:nar ? 10 : 11.5, fill:css('--ink-2') }));
+    add(svg, T(Math.min(mt, RX + RW - tw('keccak(n_txs ‖ txs)', nar ? 10 : 11.5) / 2), yLab + (nar ? 12 : 14), 'keccak(n_txs ‖ txs)', { anchor:'middle', fs:nar ? 10 : 11.5, fill:css('--ink-2') }));
+  }, 'fade', 0, 320);
+  bg(svg, 3 * B, function(){
+    arrow(svg, mt, yLab + (nar ? 16 : 19), mt, yP - 2, 'a6');
+    LH.slice(0, 3).forEach(function(f){ var cx = RX + (f[1] + f[2] / 2) * ls; arrow(svg, cx, yA + rowH + 2, cx, yP - 2, 'a6'); });
+  }, 'draw', 350, 320);
+  bg(svg, 3 * B, function(){
+    LH.slice(0, 3).forEach(function(f){ fbox(svg, RX + f[1] * ls, yP, f[2] * ls, rowH, lc, 0.18, f[0], f[3], fs); });
+    fbox(svg, RX + 48 * ls, yP, 32 * ls, rowH, tc, 0.22, 'txs_hash', 'txs_hash', fs);
+  }, 'fade', 600, 300);
+  var yBr2 = yP + rowH + 4, mp, yC = yBr2 + (nar ? 34 : 40);
+  bg(svg, 3 * B, function(){
+    mp = brace(svg, RX + 2, RX + RW - 2, yBr2, 1);
+    add(svg, T(mp + 8, yBr2 + (nar ? 25 : 28), 'keccak, 80 B', { fs:nar ? 10.5 : 12, fill:ink }));
+  }, 'fade', 900, 300);
+  bg(svg, 3 * B, function(){ arrow(svg, mp, yBr2 + 8, mp, yC - 2, 'a6'); }, 'draw', 1000, 260);
+  var cb;
+  bg(svg, 3 * B, function(){ cb = fbox(svg, RX + 24 * ls, yC, 32 * ls, rowH + 4, hook, 0.34, 'c_h', 'c_h', fs + 2, { bold:true, sw:2.4 }); }, 'fade', 1200, 320);
+  var yCap = yC + rowH + (nar ? 26 : 32);
+  bg(svg, 3 * B, function(){ add(svg, rich(RX + RW / 2, yCap, 'Every byte of the lean block is inside c_h.', { anchor:'middle', fs:nar ? 11 : 13, w:700 })); }, 'fade', 1500, 340);
+  /* the lean chain */
+  var yK = yCap + (nar ? 24 : 28), gapc = nar ? 18 : 30, cbw = (RW - 2 * gapc) / 3;
+  ['c_{h−2}', 'c_{h−1}', 'c_h'].forEach(function(lbl, i){
+    var x = RX + i * (cbw + gapc), last = i === 2;
+    bg(svg, 4 * B, function(){
+      rect(svg, x, yK, cbw, rowH, { fill: last ? hook : lc, fo: last ? 0.34 : 0.16, stroke: last ? hook : lc, sw: last ? 2 : 1.1, rx:3 });
+      add(svg, rich(x + cbw / 2, yK + rowH / 2 + 4, (nar ? '' : 'block ') + lbl, { anchor:'middle', fs:fs, w: last ? 700 : 400 }));
+    }, 'fade', 800 + i * 300, 300);
+    if (i > 0) bg(svg, 4 * B, function(){ arrow(svg, x - 2, yK + rowH / 2, x - gapc + 4, yK + rowH / 2, 'a6'); }, 'draw', 950 + i * 300, 220);
+  });
+  bg(svg, 4 * B, function(){ add(svg, T(RX, yK + rowH + (nar ? 15 : 18), 'lean chain: each header holds its parent’s commitment', { fs:nar ? 10 : 11.5, fill:ink })); }, 'fade', 1500, 300);
+  /* c_h → prev_randao */
+  var pr = boxes.prev_randao, prY = pr.y + pr.h / 2;
+  bg(svg, 4 * B, function(){
+    if (!nar){
+      var gx = (LW + RX) / 2;
+      path(svg, 'M' + cb.x + ' ' + (yC + (rowH + 4) / 2) + 'H' + gx + 'V' + prY + 'H' + (pr.x + pr.w + 3), { stroke:hook, sw:2.2, mk:'a6h' });
+    } else {
+      var xr = W - 6;
+      path(svg, 'M' + (cb.x + cb.w) + ' ' + (yC + (rowH + 4) / 2) + 'H' + xr + 'V' + prY + 'H' + (pr.x + pr.w + 3), { stroke:hook, sw:2, mk:'a6h' });
+    }
+  }, 'draw', 0, 450);
+  var H = Math.max(gridB + 40, yK + rowH + 26);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+}
+
+/* ====================================================================
+   F7 · Move 2: fan-out (adapted from the walk-through)
+   ==================================================================== */
+var FO = { n:10 };
+function f7(svg, W){
+  var nar = W < 640, n = FO.n, show = Math.min(n, 5), more = n - show;
+  var ink = css('--ink-muted'), sig = css('--s2'), non = css('--s4'), fee = css('--c-drop'), rc = css('--s1');
+  arrowDef(svg, 'a7', ink);
+  var pw = nar ? W : (W - 48) / 2, top = 30, rowP = 36, rh = 28, span = show * rowP - (rowP - rh), A = Math.max(span, 86), ph = top + A + (more > 0 ? 28 : 8);
+  var H = nar ? 2 * ph + 18 : ph;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  function box(x, y, w, h, col, fo, sw){ rect(svg, x, y, w, h, { fill:col, fo:fo, stroke:col, sw:sw || 1.4, rx:5 }); }
+  function chip(x, y, w, col, t){ rect(svg, x, y, w, 18, { fill:col, rx:3 }); add(svg, T(x + w / 2, y + 13, t, { anchor:'middle', fs:11, w:700, fill:onCol(col) })); }
+  function rowY(y0, i){ return y0 + top + (A - span) / 2 + i * rowP; }
+  /* builds (slide 8): 1 sender + one transaction · 2 the arrows fan out to the recipients · 3 the EVM side, one tx after another */
+  var B = nar ? 0 : 1;
+  function panel(x0, y0, lean){
+    var sw = nar ? 58 : 72, rw = nar ? 58 : 76, rx = x0 + pw - rw, midY = y0 + top + A / 2, sP = lean ? B : 3 * B, sR = lean ? 2 * B : 3 * B;
+    bg(svg, sP, function(){
+      add(svg, T(x0, y0 + 15, lean ? 'Payment lane: 1 transaction, 1 signature' : 'EVM lane: ' + n + (n === 1 ? ' transaction, 1 signature' : ' transactions, ' + n + ' signatures'), { fs:nar ? 12 : 13.5, w:700 }));
+      box(x0, midY - 20, sw, 40, css('--ink-2'), 0.08);
+      add(svg, T(x0 + sw / 2, midY + 4, 'sender', { anchor:'middle', fs:12 }));
+    }, 'fade', 0, 300);
+    var step = Math.min(160, 700 / show);
+    for (var i = 0; i < show; i++){
+      var ry = rowY(y0, i);
+      bg(svg, sR, function(){
+        box(rx, ry, rw, rh, rc, 0.17);
+        add(svg, T(rx + rw / 2, ry + rh / 2 + 4, (more > 0 && i === show - 1) ? '#' + n : '#' + (i + 1), { anchor:'middle', fs:12 }));
+      }, lean ? 'land' : 'fade', lean ? 260 + i * 70 : 150 + i * step, 300);
+    }
+    if (lean){
+      var tx = x0 + sw + (nar ? 22 : 40), tw0 = nar ? 100 : 136, th = Math.max(80, span + 4), ty = midY - th / 2;
+      bg(svg, B, function(){ arrow(svg, x0 + sw, midY, tx - 2, midY, 'a7', { sw:1.4 }); }, 'draw', 150, 260);
+      bg(svg, B, function(){
+        box(tx, ty, tw0, th, css('--accent'), 0.07, 2);
+        var cy = ty + th / 2;
+        add(svg, T(tx + tw0 / 2, cy - 18, '1 transaction', { anchor:'middle', fs:12.5, w:700 }));
+        chip(tx + 10, cy - 8, tw0 - 20, sig, '1 signature');
+        chip(tx + 10, cy + 14, tw0 - 20, non, '1 nonce');
+      }, 'fade', 300, 320);
+      var cy2 = ty + th / 2;
+      for (var j = 0; j < show; j++) bg(svg, 2 * B, function(){ arrow(svg, tx + tw0, cy2, rx - 2, rowY(y0, j) + rh / 2, 'a7', { sw:1.4 }); }, 'draw', j * 70, 340);
+    } else {
+      var ex = x0 + sw + (nar ? 18 : 34), ew = nar ? 128 : 156;
+      for (var k = 0; k < show; k++){
+        var ey = rowY(y0, k), dk = 150 + k * step;
+        bg(svg, 3 * B, function(){ arrow(svg, x0 + sw, midY, ex - 2, ey + rh / 2, 'a7', { sw:1.4 }); }, 'draw', dk, 220);
+        bg(svg, 3 * B, function(){
+          box(ex, ey, ew, rh, css('--accent'), 0.07, 1.4);
+          var cw = (ew - 12) / 3;
+          chip(ex + 3, ey + 5, cw, sig, 'sig');
+          chip(ex + 6 + cw, ey + 5, cw, non, 'nonce');
+          chip(ex + 9 + 2 * cw, ey + 5, cw, fee, 'fee');
+        }, 'land', dk + 120, 260);
+        bg(svg, 3 * B, function(){ arrow(svg, ex + ew, ey + rh / 2, rx - 2, ey + rh / 2, 'a7', { sw:1.4 }); }, 'draw', dk + 260, 200);
+      }
+    }
+    if (more > 0) bg(svg, sR, function(){ add(svg, T(rx + rw, y0 + top + A + 20, '+ ' + more + (lean ? ' more recipients' : ' more transactions'), { anchor:'end', fs:12, w:700, fill:ink })); }, 'fade', lean ? 500 : 150 + show * step + 200, 300);
+  }
+  if (nar){ panel(0, 0, true); panel(0, ph + 18, false); }
+  else { panel(0, 0, true); panel(pw + 48, 0, false);
+    add(svg, el('line', { x1:pw + 24, x2:pw + 24, y1:6, y2:H - 6, stroke:css('--grid'), 'stroke-width':1.5 })); }
+  foRead();
+}
+function foRead(){
+  var n = FO.n, L = 72 + 28 * n, E = 122 * n, per = L / n;
+  var perS = (Math.round(per * 10) / 10).toFixed(1).replace(/\.0$/, '');
+  function ro(k, v, d){ return '<div class="ro"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="d">' + d + '</div></div>'; }
+  $('fo-read').innerHTML =
+    ro('Transaction bytes', fmt(L) + ' B', '72 + 28N · vs ' + fmt(E) + ' B for ' + n + ' EVM transfer' + (n === 1 ? '' : 's')) +
+    ro('Bytes per payment', perS, 'vs ≈ 122 · goes to 28 as N grows') +
+    ro('Signatures to check', '1', 'vs ' + n + ' in the EVM lane');
+  $('fo-nv').textContent = 'N = ' + n;
+  Array.prototype.forEach.call($('fo-q').querySelectorAll('button'), function(b){ b.setAttribute('aria-pressed', String(Number(b.dataset.n) === n)); });
+}
+function setFo(n){ FO.n = Math.max(1, Math.min(200, n)); $('fo-n').value = FO.n; drawOne('f7'); }
+$('fo-n').addEventListener('input', function(){ setFo(Number(this.value)); });
+$('fo-q').addEventListener('click', function(e){ var b = e.target.closest('button'); if (b) setFo(Number(b.dataset.n)); });
+
+/* ====================================================================
+   F8 · Move 3: one height on a timeline (schematic)
+   ==================================================================== */
+function f8(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ac = css('--accent'), pl = css('--s1'), gd = css('--good');
+  arrowDef(svg, 'a8', ink); arrowDef(svg, 'a8g', gd);
+  var lab = nar ? 0 : 150, x0 = lab + 4, x1 = W - 4, rh = nar ? 34 : 44, fs = nar ? 10.5 : 13, fsS = nar ? 9.5 : 11.5;
+  function X(t){ return x0 + t / 100 * (x1 - x0); }
+  var rows = nar ? [26, 118, 210] : [24, 112, 200];
+  var names = [['Consensus', 'all validators'], ['Vote check', 'each validator'], ['Lean node', 'each validator']];
+  names.forEach(function(nm, i){
+    if (nar) add(svg, T(0, rows[i] - 8, nm[0], { fs:11, w:700, fill:css('--ink-2') }));
+    else { add(svg, T(0, rows[i] + rh / 2 - 1, nm[0], { fs:14, w:700 })); add(svg, T(0, rows[i] + rh / 2 + 15, nm[1], { fs:11.5, fill:ink })); }
+  });
+  function bar(t0, t1, r, txt, col, fo, o){
+    o = o || {};
+    var x = X(t0), w = X(t1) - X(t0), y = rows[r], st = o.st || 0, dl = o.dl || 0;
+    bg(svg, st, function(){ rect(svg, x + 1, y, w - 2, rh, { fill:col, fo:fo, stroke:col, sw:o.sw || 1.3, rx:4, dash:o.dash }); }, 'growx', dl, 360);
+    var ink2 = fo > 0.6 ? onCol(col) : css('--ink-1'), lines = typeof txt === 'string' ? [txt] : txt;
+    bg(svg, st, function(){
+      lines.forEach(function(l, k){
+        var yy = y + rh / 2 + fs * 0.36 + (k - (lines.length - 1) / 2) * (fs + 2);
+        add(svg, rich(x + w / 2, yy, l, { anchor:'middle', fs: k === 0 ? fs : fsS, w: k === 0 ? 700 : 400, fill:ink2 }));
+      });
+    }, 'fade', dl + 220, 260);
+  }
+  /* builds (slide 9): 1 propose · 2 check · 3 valid + votes · 4 fire-and-forget stage · 5 decide → promote · 6 no-op */
+  /* consensus row */
+  var B = nar ? 0 : 1;   /* phone layout: no builds */
+  bar(0, 19, 0, nar ? ['propose'] : ['propose', 'EVM block + lean bytes'], ac, 0.12, { st:B });
+  bar(33, 56, 0, 'prevote', ac, 0.12, { st:3 * B, dl:260 });
+  bar(56, 79, 0, 'precommit', ac, 0.12, { st:3 * B, dl:520 });
+  bar(80, 94, 0, 'decide', ac, 0.85, { st:5 * B });
+  /* vote check row */
+  bar(19, 33, 1, nar ? ['check'] : ['structural', 'parent · time · c_h'], gd, 0.14, { sw:1.6, st:2 * B });
+  /* lean node row */
+  bar(33, 76, 2, nar ? ['execute (stage)'] : ['stage: execute', 'ecrecover senders in parallel'], pl, 0.16, { sw:1.6, st:4 * B, dl:340 });
+  bar(80, 100, 2, nar ? ['promote'] : ['promote by c_h', 'staged post-state'], pl, 0.85, { st:5 * B, dl:520 });
+  /* arrows: check → prevote (valid), check → stage (fire and forget), decide → promote */
+  var cy = rows[1] + rh / 2;
+  bg(svg, 3 * B, function(){ path(svg, 'M' + X(33) + ' ' + cy + 'H' + X(36) + 'V' + (rows[0] + rh + 2), { stroke:gd, sw:2, mk:'a8g' }); }, 'draw', 0, 300);
+  bg(svg, 3 * B, function(){ add(svg, T(X(36) + 6, (rows[0] + rh + rows[1]) / 2 + 8, nar ? 'Valid' : 'Valid: vote at once', { fs:fsS + 0.5, w:700, fill:gd })); }, 'fade', 120, 260);
+  bg(svg, 4 * B, function(){ path(svg, 'M' + X(26) + ' ' + (rows[1] + rh) + 'V' + (rows[2] + rh / 2) + 'H' + (X(33) - 2), { stroke:ink, sw:1.5, mk:'a8', dash:'5 3' }); }, 'draw', 0, 420);
+  bg(svg, 4 * B, function(){ add(svg, T(X(26) - 6, (rows[1] + rh + rows[2]) / 2 + 8, nar ? 'no wait' : 'fire and forget', { anchor:'end', fs:fsS, fill:ink })); }, 'fade', 160, 280);
+  if (!nar){
+    /* emphasis: the stage runs during the votes (a light band behind both, drawn under the bars) */
+    var band = bg(svg, 4, function(){ rect(svg, X(33) - 1, rows[0] - 7, X(79) - X(33) + 2, rows[2] + rh - rows[0] + 14, { fill:pl, fo:0.07, stroke:pl, sw:1, dash:'3 3', rx:8 }); }, 'fade', 640, 360);
+    svg.insertBefore(band, svg.firstChild);
+    bg(svg, 4, function(){ add(svg, T(X(56) + 12, rows[1] + rh / 2 + 4.5, 'at the same time as the votes', { anchor:'middle', fs:fsS + 1, w:700, fill:pl })); }, 'fade', 720, 320);
+  }
+  bg(svg, 5 * B, function(){ arrow(svg, X(87), rows[0] + rh, X(87), rows[2] - 2, 'a8', { sw:1.5 }); }, 'draw', 260, 300);
+  bg(svg, 5 * B, function(){ add(svg, rich(X(87) + 6, (rows[0] + rh + rows[2]) / 2 + 4, nar ? 'by c_h' : 'anchor', { fs:fsS, fill:ink })); }, 'fade', 360, 260);
+  /* time axis + note */
+  var ay = rows[2] + rh + (nar ? 22 : 26);
+  arrow(svg, x0, ay, x1, ay, 'a8', { sw:1.2 });
+  add(svg, T(x1 - 4, ay + 16, 'time · schematic, not to scale', { anchor:'end', fs:fsS, fill:ink }));
+  var ny = ay + (nar ? 34 : 40);
+  bg(svg, 6 * B, function(){
+    rect(svg, nar ? 0 : x0, ny - (nar ? 15 : 18), nar ? W : x1 - x0, nar ? 22 : 26, { fill:css('--critical'), fo:0.07, stroke:css('--critical'), sw:1, rx:4 });
+    add(svg, T(nar ? W / 2 : (x0 + x1) / 2, ny, nar ? 'invalid tx → no-op; the block stays valid' : 'An invalid transaction becomes a no-op. A block is never rejected for its content.', { anchor:'middle', fs:nar ? 10.5 : 12.5, w:700, fill:css('--ink-1') }));
+  }, 'fade', 0, 380);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (ny + 14));
+}
+
+/* ====================================================================
+   F9 · result 1: no consensus
+   ==================================================================== */
+var B9 = [
+  { n:'lean engine', d:'decode + ecrecover + execute + apply', lo:226595, hi:227803, lab:'226.6k–227.8k', r:'', lean:true },
+  { n:'reth: ecrecover + execute', d:'same work, no root, no disk', lo:123962, hi:124278, lab:'124.0k–124.3k', r:'1.8×' },
+  { n:'reth: engine newPayload', d:'all optimisations, with state root', lo:100486, hi:101609, lab:'100.5k–101.6k', r:'2.2×' },
+  { n:'reth: full import', d:'ecrecover + execute + root + persist', lo:30174, hi:30693, lab:'30.2k–30.7k', r:'7.4–7.5×' }
+];
+function f9(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), pl = css('--s1'), rt = css('--s2');
+  var lx = nar ? 0 : 330, rcol = nar ? 0 : 120, rx = W - rcol - (nar ? 4 : 10), vmax = 250000, rowP = nar ? 66 : 70, bh = nar ? 22 : 32, top = nar ? 22 : 30;
+  function X(v){ return lx + v / vmax * (rx - lx - (nar ? 0 : 0)); }
+  var gy1 = top + B9.length * rowP;
+  add(svg, T(nar ? 0 : lx, 14, 'payments/s = tx/s (N = 1) · higher is better', { fs:nar ? 10.5 : 12, fill:ink }));
+  if (!nar) add(svg, T(W, 14, 'lean ÷ reth', { anchor:'end', fs:12, w:700, fill:ink }));
+  [0, 50000, 100000, 150000, 200000, 250000].forEach(function(g){
+    add(svg, el('line', { x1:X(g), x2:X(g), y1:top, y2:gy1, stroke:css('--grid') }));
+    add(svg, T(X(g), gy1 + 17, g ? (g / 1000) + 'k' : '0', { anchor:'middle', fs:nar ? 10.5 : 12, fill:ink }));
+  });
+  B9.forEach(function(b, i){
+    var y0 = top + i * rowP, yb = nar ? y0 + 30 : y0 + (rowP - bh) / 2, col = b.lean ? pl : rt;
+    if (nar){
+      add(svg, T(0, y0 + 13, b.n + (b.r ? '  · lean ' + b.r : ''), { fs:12, w:700, fill: b.lean ? pl : css('--ink-1') }));
+      add(svg, T(0, y0 + 26, b.d, { fs:10, fill:ink }));
+    } else {
+      add(svg, T(lx - 14, y0 + rowP / 2 - 3, b.n, { anchor:'end', fs:14.5, w:700, fill: b.lean ? pl : css('--ink-1') }));
+      add(svg, T(lx - 14, y0 + rowP / 2 + 14, b.d, { anchor:'end', fs:12, fill:ink }));
+    }
+    rect(svg, X(0), yb, X(b.hi) - X(0), bh, { fill:col, rx:3 });
+    var inside = (!b.lean || nar) && X(b.hi) - X(0) > tw(b.lab, nar ? 11 : 13.5) + 16;
+    if (inside) add(svg, T(X(b.hi) - 8, yb + bh / 2 + 5, b.lab, { anchor:'end', fs:nar ? 11 : 13.5, w:700, fill:onCol(col) }));
+    else add(svg, T(X(b.hi) + 8, yb + bh / 2 + 5, b.lab, { fs:nar ? 11 : 13.5, w:700 }));
+    if (!nar && b.r) add(svg, T(W, yb + bh / 2 + 6, b.r, { anchor:'end', fs:17, w:700, fill:css('--ink-head') }));
+  });
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (gy1 + 26));
+}
+
+/* ====================================================================
+   F10 · result 2: the fleet, log scale
+   ==================================================================== */
+var B10 = [
+  { n:'EVM lane', d:'N = 1 · 150 M gas · 0.81–1.57 blk/s', v:6550, lo:4377, hi:8419, lab:'≈ 6.5k mean', full:'51–78 % full', ok:false, evm:true },
+  { n:'Payment lane, N = 1', d:'450 M · 1.92–1.93 blk/s · 6 min', v:33460, lo:33172, hi:33460, lab:'33.2k–33.5k', full:'100 % full', ok:true },
+  { n:'Payment lane, N = 100', d:'400 M · 1.87–1.93 blk/s · 10 min', v:148287, lo:143173, hi:148287, lab:'143k–148k', full:'100 % full', ok:true },
+  { n:'N = 100, 30-min soak', d:'400 M · mean 1.91 blk/s · flat', v:148287, lo:140617, hi:148287, lab:'141k–148k', full:'100 % full', ok:true }
+];
+function f10(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), pl = css('--s1'), ev = css('--s2');
+  var lx = nar ? 0 : 320, rx = W - (nar ? 4 : 150), lmin = Math.log10(1000), lmax = Math.log10(300000), rowP = nar ? 70 : 74, bh = nar ? 22 : 32, top = 26;
+  function X(v){ return lx + (Math.log10(v) - lmin) / (lmax - lmin) * (rx - lx); }
+  var gy1 = top + B10.length * rowP;
+  add(svg, T(nar ? 0 : lx, 14, 'payments/s · log scale', { fs:nar ? 10.5 : 12, fill:ink }));
+  if (!nar) add(svg, T(W, 14, 'block fullness', { anchor:'end', fs:12, w:700, fill:ink }));
+  [1000, 3000, 10000, 30000, 100000, 300000].forEach(function(g){
+    add(svg, el('line', { x1:X(g), x2:X(g), y1:top, y2:gy1, stroke:css('--grid') }));
+    add(svg, T(X(g), gy1 + 17, (g / 1000) + 'k', { anchor:'middle', fs:nar ? 10.5 : 12, fill:ink }));
+  });
+  B10.forEach(function(b, i){
+    var y0 = top + i * rowP, yb = nar ? y0 + 32 : y0 + (rowP - bh) / 2, col = b.evm ? ev : pl;
+    if (nar){
+      add(svg, T(0, y0 + 13, b.n, { fs:12, w:700, fill: b.evm ? ev : css('--ink-1') }));
+      add(svg, T(0, y0 + 27, b.d, { fs:10, fill:ink }));
+      add(svg, T(W, y0 + 13, b.full, { anchor:'end', fs:11, w:700, fill: b.ok ? css('--good') : css('--warn-ink') }));
+    } else {
+      add(svg, T(lx - 14, y0 + rowP / 2 - 3, b.n, { anchor:'end', fs:14.5, w:700, fill: b.evm ? ev : css('--ink-1') }));
+      add(svg, T(lx - 14, y0 + rowP / 2 + 14, b.d, { anchor:'end', fs:12, fill:ink }));
+      var fc = b.ok ? css('--good') : css('--warn-ink'), fw = 122;
+      rect(svg, W - fw, yb + 2, fw, bh - 4, { fill:fc, fo:0.12, stroke:fc, sw:1.5, rx:bh / 2 });
+      add(svg, T(W - fw / 2, yb + bh / 2 + 5, b.full, { anchor:'middle', fs:13, w:700, fill: b.ok ? css('--good') : css('--warn-ink') }));
+    }
+    rect(svg, X(1000), yb, X(b.v) - X(1000), bh, { fill:col, rx:3 });
+    if (b.evm){
+      /* per-minute range whisker */
+      var wy = yb + bh / 2;
+      add(svg, el('line', { x1:X(b.lo), x2:X(b.hi), y1:wy, y2:wy, stroke:css('--ink-1'), 'stroke-width':1.6 }));
+      [b.lo, b.hi].forEach(function(v){ add(svg, el('line', { x1:X(v), x2:X(v), y1:wy - 7, y2:wy + 7, stroke:css('--ink-1'), 'stroke-width':1.6 })); });
+      add(svg, T(X(b.hi) + 8, yb + bh / 2 + 5, b.lab, { fs:nar ? 11 : 13.5, w:700 }));
+    } else {
+      add(svg, T(X(b.v) - 8, yb + bh / 2 + 5, b.lab, { anchor:'end', fs:nar ? 11 : 13.5, w:700, fill:onCol(col) }));
+    }
+  });
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (gy1 + 26));
+}
+
+/* ====================================================================
+   F-sec · motivation: a multi-sector chain on one consensus
+   ==================================================================== */
+var SEC = [
+  { t:'General sector', s:'full EVM, same as today', keep:'programmability, compatibility', lose:'nothing (baseline)', gain:null, chip:'today', c:'--s2' },
+  { t:'Privacy sector', s:'EVM inside a TEE', keep:'programmability', lose:'some speed', gain:'confidentiality', chip:'planned', c:'--c-drop' },
+  { t:'Payment sector', s:'the payment lane · this talk', keep:'value transfer', lose:'programmability', gain:'speed', chip:'investigating', c:'--s1' }
+];
+/* a rounded tag; returns its width */
+function pill(svg, x, y, txt, col, fs, o){
+  o = o || {};
+  var w = tw(txt, fs) + 18, h = fs + 9;
+  rect(svg, x, y, w, h, { fill:col, fo:o.fo === undefined ? 0.13 : o.fo, stroke:col, sw:1.3, rx:h / 2, dash:o.dash });
+  add(svg, T(x + w / 2, y + h / 2 + fs * 0.36, txt, { anchor:'middle', fs:fs, w:700, fill:o.ink || col }));
+  return w;
+}
+function fsec(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ac = css('--accent'), gd = css('--good'), cr = css('--critical'), wn = css('--warn-ink');
+  arrowDef(svg, 'asec', ink);
+  var gap = nar ? 12 : 22, cw = nar ? W : (W - 2 * gap) / 3, ch = nar ? 150 : 178, pad = nar ? 12 : 16;
+  var fsT = nar ? 14 : 16.5, fsS = nar ? 11.5 : 12.5, fsL = nar ? 10.5 : 11.5, fsV = nar ? 12.5 : 13.5, fsP = nar ? 11.5 : 12.5;
+  var bandY = nar ? 3 * ch + 2 * gap + 16 : ch + 30, bandH = nar ? 50 : 54;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (bandY + bandH + 2));
+  SEC.forEach(function(sc, i){
+    var x0 = nar ? 0 : i * (cw + gap), y0 = nar ? i * (ch + gap) : 0, col = css(sc.c);
+    rect(svg, x0, y0, cw, ch, { fill:col, fo:0.06, stroke:col, sw:1.6, rx:8 });
+    add(svg, T(x0 + pad, y0 + (nar ? 24 : 28), sc.t, { fs:fsT, w:700, fill:col }));
+    var cc = sc.chip === 'today' ? gd : wn, cwid = tw(sc.chip, 11) + 16;
+    rect(svg, x0 + cw - cwid - 10, y0 + (nar ? 9 : 12), cwid, 20, { fill:cc, fo:0.12, stroke:cc, sw:1.2, rx:10, dash: sc.chip === 'today' ? null : '4 3' });
+    add(svg, T(x0 + cw - cwid / 2 - 10, y0 + (nar ? 23 : 26), sc.chip, { anchor:'middle', fs:11, w:700, fill:cc }));
+    add(svg, T(x0 + pad, y0 + (nar ? 42 : 49), sc.s, { fs:fsS, fill:css('--ink-2') }));
+    var yk = y0 + (nar ? 66 : 78);
+    add(svg, T(x0 + pad, yk, '✓ keeps', { fs:fsL, w:700, fill:gd }));
+    add(svg, T(x0 + pad, yk + (nar ? 17 : 19), sc.keep, { fs:fsV }));
+    var yt = y0 + (nar ? 108 : 126), py = yt + 7;
+    add(svg, T(x0 + pad, yt, '✗ trades', { fs:fsL, w:700, fill: sc.gain ? cr : ink }));
+    var w1 = pill(svg, x0 + pad, py, sc.lose, sc.gain ? cr : css('--ink-muted'), fsP);
+    if (sc.gain){
+      var ax0 = x0 + pad + w1 + 4, ax1 = ax0 + (nar ? 24 : 26);
+      arrow(svg, ax0, py + (fsP + 9) / 2, ax1, py + (fsP + 9) / 2, 'asec', { sw:1.6 });
+      add(svg, T(ax1 + 4, yt, '★ gains', { fs:fsL, w:700, fill:gd }));
+      pill(svg, ax1 + 4, py, sc.gain, gd, fsP);
+    }
+    if (!nar) add(svg, el('line', { x1:x0 + cw / 2, x2:x0 + cw / 2, y1:y0 + ch, y2:bandY, stroke:css('--axis'), 'stroke-width':2 }));
+  });
+  if (nar) add(svg, el('line', { x1:W / 2, x2:W / 2, y1:3 * ch + 2 * gap, y2:bandY, stroke:css('--axis'), 'stroke-width':2 }));
+  rect(svg, 0, bandY, W, bandH, { fill:ac, fo:0.08, stroke:ac, sw:1.6, rx:6 });
+  add(svg, T(W / 2, bandY + bandH / 2 - (nar ? 3 : 4), 'One consensus · one certificate per height', { anchor:'middle', fs:nar ? 12.5 : 15, w:700 }));
+  add(svg, T(W / 2, bandY + bandH / 2 + (nar ? 14 : 16), 'same validators for every sector', { anchor:'middle', fs:nar ? 10.5 : 12, fill:ink }));
+}
+
+/* ====================================================================
+   F-x · future work 1: money between sectors (problem only)
+   ==================================================================== */
+function fx(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ac = css('--accent'), ev = css('--s2'), pl = css('--s1'), wn = css('--warn-ink');
+  arrowDef(svg, 'ax1', ink);
+  var bandH = nar ? 40 : 46, fsT = nar ? 14 : 17, fsS = nar ? 11.5 : 13;
+  function sector(x, y, w, h, col, name, sub){
+    rect(svg, x, y, w, h, { fill:col, fo:0.08, stroke:col, sw:1.8, rx:8 });
+    add(svg, T(x + w / 2, y + (nar ? 26 : 34), name, { anchor:'middle', fs:fsT, w:700, fill:col }));
+    add(svg, T(x + w / 2, y + (nar ? 44 : 56), sub, { anchor:'middle', fs:fsS, fill:css('--ink-2') }));
+    var bw = Math.min(w - 40, nar ? 170 : 200), bx = x + (w - bw) / 2, by = y + h - (nar ? 46 : 62);
+    rect(svg, bx, by, bw, nar ? 28 : 34, { fill:css('--plane'), stroke:col, sw:1.3, rx:4 });
+    add(svg, T(bx + bw / 2, by + (nar ? 18.5 : 22), 'account · balance', { anchor:'middle', fs:nar ? 11.5 : 13, w:700 }));
+  }
+  function qmark(cx, cy, r){
+    add(svg, el('circle', { cx:cx, cy:cy, r:r, fill:wn, 'fill-opacity':0.14, stroke:wn, 'stroke-width':2, 'stroke-dasharray':'4 3' }));
+    add(svg, T(cx, cy + r * 0.42, '?', { anchor:'middle', fs:r * 1.25, w:700, fill:wn }));
+  }
+  if (!nar){
+    var by = bandH + 40, bh = 170, bw = Math.round(W * 0.34), H = by + bh + 44;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    rect(svg, 0, 0, W, bandH, { fill:ac, fo:0.08, stroke:ac, sw:1.6, rx:6 });
+    add(svg, T(W / 2, bandH / 2 + 5, 'certificate h · one per height · covers both sectors', { anchor:'middle', fs:14.5, w:700 }));
+    [bw / 2, W - bw / 2].forEach(function(cx){ arrow(svg, cx, bandH, cx, by - 3, 'ax1', { sw:1.5 }); });
+    sector(0, by, bw, bh, ev, 'General sector', 'full EVM · contracts');
+    sector(W - bw, by, bw, bh, pl, 'Payment sector', 'flat balance map');
+    var x1 = bw + 14, x2 = W - bw - 14, mid = (x1 + x2) / 2, yA = by + 52, yB = by + bh - 52, r = 24;
+    arrow(svg, x1, yA, x2 - 2, yA, 'ax1', { sw:2.2, stroke:css('--ink-1') });
+    arrow(svg, x2, yB, x1 + 2, yB, 'ax1', { sw:2.2, stroke:css('--ink-1') });
+    add(svg, T(mid, yA - 12, 'send: EVM → payment', { anchor:'middle', fs:13.5, w:700 }));
+    add(svg, T(mid, yB + 24, 'and back: payment → EVM', { anchor:'middle', fs:13.5, w:700 }));
+    qmark(mid, (yA + yB) / 2, r);
+    var lab = 'mechanism: open · future work', pw = tw(lab, 12.5) + 18;
+    pill(svg, (W - pw) / 2, H - 26, lab, wn, 12.5, { dash:'4 3' });
+  } else {
+    var bh2 = 120, gapM = 120, H2 = bandH + 28 + 2 * bh2 + gapM + 36;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H2);
+    rect(svg, 0, 0, W, bandH, { fill:ac, fo:0.08, stroke:ac, sw:1.6, rx:6 });
+    add(svg, T(W / 2, 17, 'certificate h · one per height', { anchor:'middle', fs:12, w:700 }));
+    add(svg, T(W / 2, 32, 'covers both sectors', { anchor:'middle', fs:10.5, fill:ink }));
+    var y1 = bandH + 28;
+    arrow(svg, W - 14, bandH, W - 14, y1 - 3, 'ax1', { sw:1.4 });
+    sector(0, y1, W - 28, bh2, ev, 'General sector', 'full EVM · contracts');
+    var y2 = y1 + bh2 + gapM;
+    path(svg, 'M' + (W - 14) + ' ' + bandH + 'V' + (y2 - 3), { sw:1.4, mk:'ax1' });
+    sector(0, y2, W - 28, bh2, pl, 'Payment sector', 'flat balance map');
+    var cx = (W - 28) / 2, xa = cx - 46, xb = cx + 46, t0 = y1 + bh2 + 6, t1 = y2 - 6;
+    arrow(svg, xa, t0, xa, t1 - 2, 'ax1', { sw:2, stroke:css('--ink-1') });
+    arrow(svg, xb, t1, xb, t0 + 2, 'ax1', { sw:2, stroke:css('--ink-1') });
+    add(svg, T(xa - 8, (t0 + t1) / 2 + 4, 'send', { anchor:'end', fs:11.5, w:700 }));
+    add(svg, T(xb + 8, (t0 + t1) / 2 + 4, 'back', { fs:11.5, w:700 }));
+    qmark(cx, (t0 + t1) / 2, 20);
+    var lab2 = 'mechanism: open · future work', pw2 = tw(lab2, 11) + 18;
+    pill(svg, (W - 28 - pw2) / 2, H2 - 24, lab2, wn, 11, { dash:'4 3' });
+  }
+}
+
+/* ====================================================================
+   F-net · future work 2: whole-block broadcast vs erasure-coded broadcast
+   ==================================================================== */
+function fnet(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), pl = css('--s1'), gd = css('--good'), wn = css('--warn-ink'), ac = css('--accent');
+  arrowDef(svg, 'an1', ink); arrowDef(svg, 'an2', gd);
+  var nV = 4, pw = nar ? W : (W - 56) / 2, vh = nar ? 30 : 34, vp = nar ? 40 : 46, top = nar ? 30 : 34, span = nV * vp - (vp - vh);
+  var meterY = top + span + (nar ? 50 : 56), ph = meterY + (nar ? 62 : 66);
+  var H = nar ? 2 * ph + 26 : ph;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  /* builds (slide 14): 1 left copies land · 2 left upload · 3 right pieces land · 4 re-share fills · 5 right upload */
+  function panel(x0, y0, coded){
+    var fsT = nar ? 12 : 14, fs = nar ? 11 : 12.5, B = nar ? 0 : 1;
+    var s0 = coded ? 3 * B : 0, sA = coded ? 3 * B : B, sR = 4 * B, sM = (coded ? 5 : 2) * B;
+    var pbw = nar ? 76 : 96, pbh = 50, midY = y0 + top + span / 2;
+    var vw = nar ? 118 : 132, rs = coded ? (nar ? 34 : 40) : 0, vx = x0 + pw - vw - rs;
+    var cellX0 = vx + (nar ? 30 : 34), cellW = (vw - (cellX0 - vx) - 8) / nV;
+    bg(svg, s0, function(){
+      add(svg, T(x0, y0 + 15, coded ? 'Erasure-coded broadcast' : 'Today: whole block to every validator', { fs:fsT, w:700 }));
+      if (coded){ var lw = tw('Erasure-coded broadcast', fsT); pill(svg, x0 + lw + 10, y0 + 2, 'plan', wn, 11, { dash:'4 3' }); }
+      rect(svg, x0, midY - pbh / 2, pbw, pbh, { fill:ac, fo:0.1, stroke:ac, sw:1.8, rx:6 });
+      add(svg, T(x0 + pbw / 2, midY + 4.5, 'proposer', { anchor:'middle', fs:fs, w:700 }));
+    }, 'fade', 0, 300);
+    for (var i = 0; i < nV; i++){
+      var vy = y0 + top + i * vp;
+      bg(svg, sA, function(){ arrow(svg, x0 + pbw + 2, midY, vx - 3, vy + vh / 2, 'an1', { sw: coded ? 1.3 : 2.2, stroke: coded ? ink : css('--ink-1') }); }, 'draw', (coded ? 200 : 0) + i * 70, 360);
+      bg(svg, s0, function(){
+        rect(svg, vx, vy, vw, vh, { fill:css('--surface-1'), stroke:css('--axis'), sw:1.2, rx:4 });
+        add(svg, T(vx + 8, vy + vh / 2 + 4, 'V' + (i + 1), { fs:fs - 0.5, w:700 }));
+      }, 'fade', 0, 300);
+      for (var k = 0; k < nV; k++){
+        var own = !coded || k === i, cx = cellX0 + k * cellW + 1;
+        if (own) bg(svg, sA, function(){ rect(svg, cx, vy + 8, cellW - 2, vh - 16, { fill:pl, fo:0.85, stroke:pl, sw:1, rx:2 }); }, 'land', (coded ? 560 : 360) + i * 70, 320);
+        else {
+          bg(svg, s0, function(){ rect(svg, cx, vy + 8, cellW - 2, vh - 16, { fill:pl, fo:0.25, stroke:pl, sw:1, rx:2, dash:'2 2' }); }, 'fade', 0, 300);
+          /* re-share fills the missing pieces */
+          bg(svg, sR, function(){ rect(svg, cx, vy + 8, cellW - 2, vh - 16, { fill:pl, fo:0.5, stroke:pl, sw:1, rx:2 }); }, 'fade', 420 + i * 60, 320);
+        }
+      }
+      if (coded && i < nV - 1){
+        var ya = vy + vh / 2, yb = ya + vp, xr = vx + vw + 4;
+        bg(svg, sR, function(){ path(svg, 'M' + xr + ' ' + ya + 'C' + (xr + rs - 8) + ' ' + ya + ' ' + (xr + rs - 8) + ' ' + yb + ' ' + (xr + 2) + ' ' + yb, { stroke:gd, sw:1.5, dash:'4 3', mk:'an2' }); }, 'draw', i * 90, 360);
+      }
+    }
+    if (coded) bg(svg, sR, function(){ add(svg, T(x0 + pw, y0 + top + span + 18, 're-share', { anchor:'end', fs:fs - 0.5, w:700, fill:gd })); }, 'fade', 200, 280);
+    bg(svg, sA, function(){ add(svg, T(x0, midY + pbh / 2 + 18, coded ? 'one piece each' : 'n full copies', { fs:fs - 0.5, fill:ink })); }, 'fade', coded ? 700 : 520, 280);
+    /* proposer upload meter, in block sizes (n = 4 shown) */
+    var lab = 'proposer upload', mx = x0, my = y0 + meterY, unit = nar ? 40 : 46, bh = 18;
+    bg(svg, sM, function(){ add(svg, T(mx, my - 8, lab, { fs:fs - 0.5, w:700, fill:css('--ink-2') })); }, 'fade', 0, 260);
+    if (!coded){
+      bg(svg, sM, function(){ for (var u = 0; u < nV; u++) rect(svg, mx + u * unit, my, unit - 3, bh, { fill:css('--critical'), fo:0.75, rx:2 }); }, 'growx', 100, 450);
+      bg(svg, sM, function(){ add(svg, T(mx + nV * unit + 6, my + 13.5, '≈ n × block', { fs:fs, w:700 })); }, 'fade', 450, 280);
+    } else {
+      bg(svg, sM, function(){
+        rect(svg, mx, my, unit - 3, bh, { fill:gd, fo:0.75, rx:2 });
+        rect(svg, mx + unit, my, unit - 3, bh, { fill:gd, fo:0.15, stroke:gd, sw:1.2, rx:2, dash:'3 2' });
+      }, 'growx', 100, 380);
+      bg(svg, sM, function(){ add(svg, T(mx + 2 * unit + 6, my + 13.5, '≈ 1–2 × block', { fs:fs, w:700 })); }, 'fade', 400, 280);
+    }
+    bg(svg, sM, function(){ add(svg, T(mx, my + bh + 18, coded ? 'flat in n · to measure' : 'grows with the number of validators', { fs:fs - 1, fill:ink })); }, 'fade', 560, 280);
+  }
+  if (nar){ panel(0, 0, false); panel(0, ph + 26, true); add(svg, el('line', { x1:0, x2:W, y1:ph + 10, y2:ph + 10, stroke:css('--grid'), 'stroke-width':1.5 })); }
+  else { panel(0, 0, false); panel(pw + 56, 0, true); add(svg, el('line', { x1:pw + 28, x2:pw + 28, y1:6, y2:H - 6, stroke:css('--grid'), 'stroke-width':1.5 })); }
+}
+
+/* ====================================================================
+   F-idx · future work 3: a trust ladder for indexers
+   ==================================================================== */
+var RUNG = [
+  { n:'Replay + M-of-N signed roots', tr:'one honest replayer', d:['disputes settled by replay', 'no protocol change'], c:'--s4' },
+  { n:'TEE indexer + remote attestation', tr:'hardware vendor and enclave', d:['fast, cheap', 'side-channel risk'], c:'--c-drop' },
+  { n:'ZK proof of the state transition', tr:'math', d:['proves a delayed state root', 'light clients verify one proof'], c:'--s3' }
+];
+function fidx(svg, W){
+  /* builds (slide 15): 1 core lane + "no state commitment" · 2 what users still need (nobody serves it)
+     · 3 the indexer layer serves it · 4 "now users must trust the indexers" · 5–7 the three rungs + "less to trust" */
+  var nar = W < 640, B = nar ? 0 : 1, ink = css('--ink-muted'), pl = css('--s1'), gd = css('--good'), wn = css('--warn-ink'), ac = css('--accent'), cr = css('--critical');
+  arrowDef(svg, 'ai1', ink);
+  var ax = nar ? 0 : 50, shift = nar ? 0 : Math.round((W - ax) * 0.1), top = nar ? 52 : 46, rh = nar ? 70 : 56, gap = 8, ih = nar ? 86 : 44, gh = nar ? 40 : 42;
+  var fsN = nar ? 13 : 15, fs = nar ? 11.5 : 12.5;
+  var yI = top + 3 * (rh + gap), gy = yI + ih + gap, H = gy + gh + (nar ? 34 : 24);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  /* header lines: the answer (step 3), the new problem (step 4) */
+  bg(svg, 3 * B, function(){ add(svg, T(ax, 14, nar ? 'Indexers rebuild these services,' : 'Indexers rebuild these services off the consensus hot path.', { fs:nar ? 11 : 13, fill:css('--ink-2') })); }, 'fade', 700, 320);
+  if (nar) add(svg, T(0, 27, 'off the consensus hot path.', { fs:11, fill:css('--ink-2') }));
+  bg(svg, 4 * B, function(){ add(svg, T(ax, nar ? 40 : 33, 'Now users must trust the indexers. Make that trust small:', { fs:nar ? 11 : 13, w:700, fill:wn })); }, 'fade', 0, 360);
+  /* the ladder */
+  RUNG.forEach(function(r, k){
+    var y = top + (2 - k) * (rh + gap), x = ax + k * shift, w = W - ax - 2 * shift, col = css(r.c);
+    bg(svg, (5 + k) * B, function(){
+      rect(svg, x, y, w, rh, { fill:col, fo:0.08, stroke:col, sw:1.6, rx:7, dash:'6 3' });
+      add(svg, el('circle', { cx:x + (nar ? 18 : 24), cy:y + (nar ? 20 : 22), r:nar ? 12 : 13, fill:col }));
+      add(svg, T(x + (nar ? 18 : 24), y + (nar ? 24.5 : 27), String(k), { anchor:'middle', fs:nar ? 13 : 14, w:700, fill:onCol(col) }));
+      var tx = x + (nar ? 38 : 46);
+      add(svg, T(tx, y + (nar ? 25 : 26), r.n, { fs:fsN, w:700 }));
+      if (!nar) pill(svg, x + w - tw('plan', 11) - 30, y + 10, 'plan', wn, 11, { dash:'4 3', fo:0.12 });
+      var trust = T(tx, y + (nar ? 45 : 45), undefined, { fs:fs });
+      trust.appendChild(el('tspan', { fill:ink }, 'trust: '));
+      trust.appendChild(el('tspan', { 'font-weight':700 }, r.tr));
+      if (!nar) trust.appendChild(el('tspan', { fill:css('--ink-2') }, '  ·  ' + r.d.join(' · ')));
+      add(svg, trust);
+      if (nar) add(svg, T(tx, y + 61, r.d.join(' · '), { fs:10.5, fill:css('--ink-2') }));
+    }, 'land', 0, 400);
+  });
+  if (!nar) bg(svg, 7 * B, function(){
+    arrow(svg, 16, yI - 6, 16, top + 4, 'ai1', { sw:1.8 });
+    add(svg, T(32, top + (yI - top) / 2, 'less to trust', { anchor:'middle', fs:12, fill:ink, rot:-90 }));
+  }, 'fade', 420, 360);
+  /* the indexer layer and what it serves; before it exists, the same items sit greyed: nobody serves them */
+  var NEED = ['balances', 'did my payment land?', 'proofs', 'wallet RPC'], cfs = nar ? 10.5 : 11.5, chH = cfs + 9;
+  var cw = NEED.map(function(c){ return tw(c, cfs) + 18; }), cpos = [], cx0, cy0;
+  if (!nar){
+    var tot = cw.reduce(function(a, v){ return a + v + 8; }, -8); cx0 = W - 12 - tot; cy0 = yI + (ih - chH) / 2;
+    NEED.forEach(function(c, i){ cpos.push([cx0, cy0]); cx0 += cw[i] + 8; });
+  } else {
+    cx0 = 10; cy0 = yI + 34;
+    NEED.forEach(function(c, i){ if (cx0 + cw[i] > W - 6){ cx0 = 10; cy0 += chH + 6; } cpos.push([cx0, cy0]); cx0 += cw[i] + 6; });
+  }
+  var lx = ax + (nar ? 10 : 16), ly = nar ? yI + 20 : yI + ih / 2 + 4.5;
+  var bar = bg(svg, 3 * B, function(){ rect(svg, ax, yI, W - ax, ih, { fill:ac, fo:0.07, stroke:ac, sw:1.6, rx:6, dash:'6 3' }); }, 'fade', 0, 360);
+  if (B) until(bg(svg, 2, function(){
+    add(svg, T(lx, ly, 'Users still need. Nobody serves these:', { fs:fs + 0.5, w:700, fill:ink }));
+    NEED.forEach(function(c, i){ pill(svg, cpos[i][0], cpos[i][1], c, ink, cfs, { dash:'3 3', fo:0.05 }); });
+  }, 'fade', 0, 360), 3, 150);
+  bg(svg, 3 * B, function(){ add(svg, T(lx, ly, nar ? 'Indexers: replay the certified bytes, serve' : 'Indexers replay the certified bytes and serve:', { fs:fs + 0.5, w:700, fill:ac })); }, 'fade', 250, 320);
+  bg(svg, 3 * B, function(){ NEED.forEach(function(c, i){ pill(svg, cpos[i][0], cpos[i][1], c, gd, cfs, { fo:0.14 }); }); }, 'fade', 350, 360);
+  /* the core lane */
+  bg(svg, B, function(){
+    rect(svg, ax, gy, W - ax, gh, { fill:pl, fo:0.16, stroke:pl, sw:2, rx:6 });
+    add(svg, T(ax + (nar ? 12 : 16), gy + gh / 2 + 5, nar ? 'Core lane · certified bytes' : 'Core lane · certified bytes, one certificate per height', { fs:nar ? 12.5 : 14.5, w:700, fill:pl }));
+    var bw2 = tw('prototype', 11) + 16;
+    rect(svg, W - bw2 - 12, gy + gh / 2 - 10, bw2, 20, { fill:gd, fo:0.12, stroke:gd, sw:1.2, rx:10 });
+    add(svg, T(W - bw2 / 2 - 12, gy + gh / 2 + 4, 'prototype', { anchor:'middle', fs:11, w:700, fill:gd }));
+  }, 'fade', 0, 320);
+  bg(svg, B, function(){
+    add(svg, T(ax, gy + gh + 18, nar ? 'No state commitment: no state root, receipts, logs.' : 'The payment lane keeps no state commitment: no state root, no receipts, no logs.', { fs:nar ? 10.5 : 12.5, w:700, fill:cr }));
+  }, 'fade', 300, 320);
+  if (nar){ /* phone: the header lines sit above the ladder */ }
+}
+
+/* ====================================================================
+   F-sum · summary: each move costs something, future work buys it back
+   ==================================================================== */
+var SUMR = [
+  { m:['No commitment in the payment lane', 'move 1'], c:['no light clients, proofs,', 'receipts in the core lane'], f:['Trustworthy indexers', 'future work 3 · TEE, ZK'] },
+  { m:['Fan-out + bigger blocks', 'move 2 · more per block'], c:['block bytes hit the', 'network wall (≈ 4.4 MB/s)'], f:['Better network layer', 'future work 2 · erasure coding'] },
+  { m:['Separate sectors', 'the multi-sector chain'], c:['money sits in', 'two sectors'], f:['Cross-sector transfers', 'future work 1 · open'] }
+];
+function fsum(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ac = css('--accent'), cr = css('--critical'), gd = css('--good');
+  arrowDef(svg, 'as1', ink);
+  if (!nar){
+    var ga = 46, cw = (W - 2 * ga) / 3, top = 30, bh = 62, rp = 78, H = top + 3 * rp - (rp - bh) + 2;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    [['the move', ac], ['what it costs', cr], ['bought back by (plan)', gd]].forEach(function(h, j){
+      add(svg, T(j * (cw + ga) + cw / 2, 16, h[0], { anchor:'middle', fs:13, w:700, fill:h[1] }));
+    });
+    SUMR.forEach(function(r, i){
+      var y = top + i * rp;
+      [[r.m, ac, null], [r.c, cr, null], [r.f, gd, '6 3']].forEach(function(b, j){
+        var x = j * (cw + ga);
+        rect(svg, x, y, cw, bh, { fill:b[1], fo:0.08, stroke:b[1], sw:1.6, rx:6, dash:b[2] });
+        add(svg, T(x + cw / 2, y + bh / 2 - 3, b[0][0], { anchor:'middle', fs:j === 1 ? 13.5 : 14.5, w: j === 1 ? 400 : 700 }));
+        add(svg, T(x + cw / 2, y + bh / 2 + 16, b[0][1], { anchor:'middle', fs:12.5, fill: j === 1 ? css('--ink-1') : ink }));
+        if (j < 2) arrow(svg, x + cw + 4, y + bh / 2, x + cw + ga - 4, y + bh / 2, 'as1', { sw:1.8 });
+      });
+    });
+  } else {
+    var rh = 84, gp = 10, H2 = 3 * (rh + gp) - gp;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H2);
+    SUMR.forEach(function(r, i){
+      var y = i * (rh + gp);
+      rect(svg, 0, y, W, rh, { fill:css('--surface-1'), stroke:css('--axis'), sw:1.2, rx:6 });
+      rect(svg, 0, y, 5, rh, { fill:ac, rx:2 });
+      add(svg, T(14, y + 21, r.m[0], { fs:13, w:700 }));
+      add(svg, T(14, y + 44, '✗ ' + r.c.join(' '), { fs:11, fill:cr }));
+      add(svg, T(14, y + 66, '✓ ' + r.f[0], { fs:11.5, w:700, fill:gd }));
+      add(svg, T(W - 10, y + 66, r.f[1].replace('future work', 'FW').split(' · ')[0], { anchor:'end', fs:10.5, fill:ink }));
+    });
+    Array.prototype.forEach.call(svg.querySelectorAll('text'), function(t){ if (t.getComputedTextLength && t.getComputedTextLength() > W - 24) t.setAttribute('textLength', W - 24), t.setAttribute('lengthAdjust', 'spacingAndGlyphs'); });
+  }
+}
+
+/* ====================================================================
+   F17 · backup: block bytes → payments/s (computed)
+   ==================================================================== */
+var B17 = [1, 5, 10, 100].map(function(n){ var b = 72 + 28 * n + 4, t = Math.floor(2000000 / b); return { n:n, b:b, t:t, p:t * n * 2 }; });
+function f17(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), pl = css('--s1');
+  var lx = nar ? 0 : 300, rx = W - (nar ? 4 : 20), rowP = nar ? 58 : 62, bh = nar ? 22 : 30, top = 26, vmax = 150000;
+  function X(v){ return lx + v / vmax * (rx - lx); }
+  var gy1 = top + B17.length * rowP;
+  add(svg, T(nar ? 0 : lx, 14, 'payments/s for a 2 MB block at 2 blocks/s (computed)', { fs:nar ? 10.5 : 12, fill:ink }));
+  [0, 50000, 100000, 150000].forEach(function(g){
+    add(svg, el('line', { x1:X(g), x2:X(g), y1:top, y2:gy1, stroke:css('--grid') }));
+    add(svg, T(X(g), gy1 + 17, g ? (g / 1000) + 'k' : '0', { anchor:'middle', fs:nar ? 10.5 : 12, fill:ink }));
+  });
+  B17.forEach(function(r, i){
+    var y0 = top + i * rowP, yb = nar ? y0 + 26 : y0 + (rowP - bh) / 2;
+    var name = 'N = ' + r.n, sub = fmt(r.b) + ' B per tx · ' + fmt(r.t) + ' txs/block';
+    if (nar){ add(svg, T(0, y0 + 13, name + ' · ' + sub, { fs:11, w:700 })); }
+    else {
+      add(svg, T(lx - 14, y0 + rowP / 2 - 3, name, { anchor:'end', fs:15, w:700 }));
+      add(svg, T(lx - 14, y0 + rowP / 2 + 14, sub, { anchor:'end', fs:12, fill:ink }));
+    }
+    rect(svg, X(0), yb, X(r.p) - X(0), bh, { fill:pl, rx:3 });
+    add(svg, T(X(r.p) - 8, yb + bh / 2 + 5, '≈ ' + kfmt(r.p) + '/s', { anchor:'end', fs:nar ? 11 : 14, w:700, fill:onCol(pl) }));
+  });
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (gy1 + 26));
+}
+
+/* ====================================================================
+   F-per · backup: how the payment lane persists data (schematic)
+   ==================================================================== */
+function fper(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), pl = css('--s1'), rt = css('--s2'), sn = css('--s4'), gd = css('--good');
+  arrowDef(svg, 'apg', gd);
+  var fsT = nar ? 11.5 : 12.5, fs = nar ? 11 : 12, RW = nar ? W : 340, LW = nar ? W : W - RW - 36;
+  var HEAD = 3500;
+  function X(n){ return n / HEAD * LW; }
+  /* ---- left: the block log over the whole chain ---- */
+  add(svg, T(0, 15, 'Block log · one append-only file', { fs:fsT, w:700, fill:css('--ink-2') }));
+  var yL = 26, hL = 28;
+  rect(svg, 0, yL, LW, hL, { fill:pl, fo:0.14, stroke:pl, sw:1.4, rx:3 });
+  add(svg, T(10, yL + hL / 2 + 4.5, 'blocks 1 … head', { fs:fs + 0.5, w:700 }));
+  var yS = yL + hL + 14, hS = 24, pw = nar ? 74 : 104;
+  [1024, 2048, 3072].forEach(function(n){
+    var cx = X(n);
+    add(svg, el('line', { x1:cx, x2:cx, y1:yL + hL, y2:yS, stroke:sn, 'stroke-width':1.6 }));
+    rect(svg, cx - pw / 2, yS, pw, hS, { fill:sn, fo:0.22, stroke:sn, sw:1.4, rx:3 });
+    add(svg, T(cx, yS + hS / 2 + 4, (nar ? 'snap ' : 'snapshot-') + n, { anchor:'middle', fs:fs - 0.5, w:700 }));
+  });
+  var yE = yS + hS + 17;
+  add(svg, T(0, yE, nar ? 'every 1024 blocks: map → tmp → fsync → rename' : 'every 1024 blocks: whole map → temp file → fsync → rename', { fs:fs, fill:ink }));
+  /* restart: newest snapshot + replay the tail */
+  var x3 = X(3072), yR = yE + 22;
+  path(svg, 'M' + x3 + ' ' + (yS + hS) + 'V' + yR + 'H' + (LW - 2), { stroke:gd, sw:2.2, mk:'apg' });
+  add(svg, T(x3 - 10, yR + 4.5, nar ? 'restart: snapshot + replay' : 'restart: newest snapshot + replay the tail', { anchor:'end', fs:fs + 0.5, w:700, fill:gd }));
+  add(svg, T(LW, yR - 11, 'head', { anchor:'end', fs:fs - 0.5, fill:ink }));
+  /* near the head: one record per decided block */
+  var yZt = yR + 40, yZ = yZt + 12, hZ = 34, g = 6, rw = (LW - 3 * g) / 4, lw = nar ? 9 : 16;
+  add(svg, T(0, yZt, nar ? 'near the head: one record per block' : 'near the head: each decided block → one record, then fsync', { fs:fsT, w:700, fill:css('--ink-2') }));
+  ['h−2', 'h−1', 'h', 'h+1'].forEach(function(h, i){
+    var x = i * (rw + g), next = i === 3;
+    if (next){
+      rect(svg, x, yZ, rw, hZ, { fill:pl, fo:0.05, stroke:pl, sw:1.3, rx:3, dash:'5 3' });
+      add(svg, T(x + rw / 2, yZ + hZ / 2 + 4.5, (nar ? '' : 'block ') + h, { anchor:'middle', fs:fs, fill:ink }));
+      add(svg, T(x + rw / 2, yZ + hZ + 16, 'next', { anchor:'middle', fs:fs - 1, fill:ink }));
+      return;
+    }
+    rect(svg, x, yZ, lw, hZ, { fill:pl, fo:0.45, stroke:pl, sw:1.1, rx:2 });
+    rect(svg, x + lw, yZ, rw - 2 * lw, hZ, { fill:pl, fo:0.14, stroke:pl, sw:1.1, rx:0 });
+    rect(svg, x + rw - lw, yZ, lw, hZ, { fill:pl, fo:0.45, stroke:pl, sw:1.1, rx:2 });
+    add(svg, T(x + rw / 2, yZ + hZ / 2 + 4.5, (nar ? '' : 'block ') + h, { anchor:'middle', fs:fs, w:700 }));
+    add(svg, T(x + rw / 2, yZ + hZ + 16, '✓ fsync', { anchor:'middle', fs:fs - 1, w:700, fill:gd }));
+  });
+  /* record format */
+  var yF = yZ + hZ + 32, hF = 20, fw = nar ? [44, 78, 44] : [64, 110, 64], fx = 0;
+  [['len u32', 0.45], ['block bytes', 0.14], ['len u32', 0.45]].forEach(function(f, i){
+    rect(svg, fx, yF, fw[i], hF, { fill:pl, fo:f[1], stroke:pl, sw:1.1, rx:2 });
+    add(svg, T(fx + fw[i] / 2, yF + hF / 2 + 4, f[0], { anchor:'middle', fs:fs - 1 }));
+    fx += fw[i];
+  });
+  var yI;
+  if (nar){
+    add(svg, T(0, yF + hF + 16, 'the trailing len detects a torn tail', { fs:fs - 0.5, fill:ink }));
+    yI = yF + hF + 32;
+  } else {
+    add(svg, T(fx + 10, yF + hF / 2 + 4, 'trailing len detects a torn tail', { fs:fs, fill:ink }));
+    yI = yF + hF + 20;
+  }
+  add(svg, T(0, yI, nar ? 'RAM index: number → offset (serves peers)' : 'RAM index: block number → file offset, serves old blocks to peers', { fs:fs, fill:ink }));
+  var leftH = yI + 6;
+  /* ---- right (below on a phone): lean vs reth ---- */
+  var RX = nar ? 0 : LW + 36, top = nar ? leftH + 30 : 0, c1 = RX + (nar ? 104 : 112), c2 = RX + (nar ? 104 + (RW - 104) / 2 : 226), fsR = nar ? 11 : 12.5;
+  add(svg, T(RX, top + 15, nar ? 'lean vs reth (MDBX), per block' : 'lean vs reth (MDBX), per block', { fs:fsT, w:700, fill:css('--ink-2') }));
+  var ROWS = [['database', 'none: a file', 'MDBX B-tree'], ['writes', 'block bytes', 'state + trie'], ['pattern', '1 append', 'random I/O'], ['disk state', 'at snapshots', 'always current'], ['trie', 'none', 'yes']];
+  var yH = top + 40, rp = nar ? 22 : 25;
+  add(svg, T(c1, yH, 'lean', { fs:fsR, w:700, fill:pl }));
+  add(svg, T(c2, yH, 'reth', { fs:fsR, w:700, fill:rt }));
+  ROWS.forEach(function(r, i){
+    var y = yH + (i + 1) * rp;
+    add(svg, el('line', { x1:RX, x2:RX + RW, y1:y - rp + 7, y2:y - rp + 7, stroke:css('--grid') }));
+    add(svg, T(RX, y, r[0], { fs:fsR - 0.5, fill:ink }));
+    add(svg, T(c1, y, r[1], { fs:fsR }));
+    add(svg, T(c2, y, r[2], { fs:fsR }));
+  });
+  /* ms per block, linear */
+  var yB = yH + ROWS.length * rp + 30, bx = RX + 44, bmax = RX + RW - bx, bh = 20;
+  add(svg, T(RX, yB, 'durable write per block (benchmark)', { fs:fs, w:700, fill:css('--ink-2') }));
+  [['lean', 4.07, '≈ 4.1 ms', pl], ['reth', 151.4, '≈ 151 ms', rt]].forEach(function(b, i){
+    var y = yB + 12 + i * (bh + 10), w = Math.max(3, b[1] / 151.4 * bmax);
+    add(svg, T(RX, y + bh / 2 + 4.5, b[0], { fs:fs, w:700, fill:b[3] }));
+    rect(svg, bx, y, w, bh, { fill:b[3], rx:3 });
+    if (i === 0) add(svg, T(bx + w + 8, y + bh / 2 + 4.5, b[2] + (nar ? ' append + fsync' : ' log append + fsync'), { fs:fs, w:700 }));
+    else add(svg, T(bx + w - 8, y + bh / 2 + 4.5, b[2] + ' persist', { anchor:'end', fs:fs, w:700, fill:onCol(b[3]) }));
+  });
+  var yN = yB + 12 + 2 * (bh + 10) + 10;
+  add(svg, T(RX, yN, '1M accounts · 20,000 txs/block · i7-11700F', { fs:fs - 1, fill:ink }));
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (Math.max(leftH, yN + 6)));
+}
+
+/* ====================================================================
+   F-ads · future work 3b: which authenticated data structure (qualitative)
+   ==================================================================== */
+/* marks: y = yes, p = partly, x = no; src 1 = from the Nurgle paper, 0 = our inference */
+var ADS = [
+  { n:'Merkle-Patricia trie', k:'MPT', s:'MPT · Ethereum, reth', m:'xxpx', src:'0001', cost:'deep paths, big proofs' },
+  { n:'Jellyfish Merkle tree', k:'JMT', s:'JMT · Aptos / Diem style', m:'ppyx', src:'0000', cost:'depth follows prefixes' },
+  { n:'Sparse Merkle tree', k:'Sparse MT', s:'full depth: 256 levels', m:'pxpy', src:'0000', cost:'many hashes per proof' },
+  { n:'Sorted Merkle accumulator', k:'Sorted acc.', s:'our light-client design', m:'yypy', src:'0000', cost:'rebuild per checkpoint' },
+  { n:'Verkle tree', k:'Verkle', s:'wide nodes', m:'yypp', src:'0100', cost:'node size, heavier crypto' }
+];
+function adsMark(svg, cx, cy, r, m, solid){
+  var col = css(m === 'y' ? '--good' : (m === 'p' ? '--warn-ink' : '--critical')), g = m === 'y' ? '✓' : (m === 'p' ? '~' : '✗');
+  add(svg, el('circle', { cx:cx, cy:cy, r:r, fill:col, 'fill-opacity': solid ? 0.9 : 0.1, stroke:col, 'stroke-width': solid ? 1.4 : 1.6, 'stroke-dasharray': solid ? null : '3 2.5' }));
+  add(svg, T(cx, cy + r * 0.42, g, { anchor:'middle', fs:r * 1.15, w:700, fill: solid ? onCol(col) : col }));
+}
+function fads(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), ac = css('--accent'), pl = css('--s1'), ev = css('--s2');
+  arrowDef(svg, 'aad', ink);
+  /* ---- workload strip: one batched writer, many readers ---- */
+  var sh = nar ? 40 : 48, y = nar ? 0 : 20, fsB = nar ? 10.5 : 13.5, fsS = nar ? 9.5 : 11.5;
+  function box(x, w, col, fo, t1, t2, sw){
+    rect(svg, x, y, w, sh, { fill:col, fo:fo, stroke:col, sw:sw || 1.5, rx:6 });
+    add(svg, T(x + w / 2, y + sh / 2 - (nar ? 2 : 3), t1, { anchor:'middle', fs:fsB, w:700 }));
+    add(svg, T(x + w / 2, y + sh / 2 + (nar ? 11 : 14), t2, { anchor:'middle', fs:fsS, fill:css('--ink-2') }));
+  }
+  var aw, bw, cw, ax, bx, cx;
+  if (!nar){ aw = 190; bw = 210; cw = 250; ax = 0; bx = Math.round((W - bw) / 2) - 20; cx = W - cw; }
+  else { aw = bw = cw = Math.floor((W - 36) / 3); ax = 0; bx = aw + 18; cx = W - cw; }
+  box(ax, aw, ev, 0.08, nar ? 'blocks' : 'certified blocks', nar ? 'certified' : 'from consensus (hot path)');
+  box(bx, bw, ac, 0.14, nar ? 'indexer' : 'indexer · ADS', nar ? 'ADS here' : 'balances + nonces', 2.2);
+  /* many readers: a stack of cards */
+  rect(svg, cx + 8, y - 8, cw - 8, sh, { fill:pl, fo:0.06, stroke:pl, sw:1, rx:6 });
+  rect(svg, cx + 4, y - 4, cw - 4, sh, { fill:pl, fo:0.06, stroke:pl, sw:1, rx:6 });
+  rect(svg, cx, y, cw - 8, sh, { fill:css('--plane'), stroke:pl, sw:1.5, rx:6 });
+  rect(svg, cx, y, cw - 8, sh, { fill:pl, fo:0.08, rx:6 });
+  add(svg, T(cx + (cw - 8) / 2, y + sh / 2 - (nar ? 2 : 3), nar ? 'readers' : 'many readers', { anchor:'middle', fs:fsB, w:700 }));
+  add(svg, T(cx + (cw - 8) / 2, y + sh / 2 + (nar ? 11 : 14), nar ? 'wallets …' : 'wallets · exchanges · light clients', { anchor:'middle', fs:fsS, fill:css('--ink-2') }));
+  arrow(svg, ax + aw + 2, y + sh / 2, bx - 3, y + sh / 2, 'aad', { sw:1.6 });
+  arrow(svg, cx - 3, y + sh / 2, bx + bw + 3, y + sh / 2, 'aad', { sw:1.6 });
+  var top;
+  if (!nar){
+    var m1 = (ax + aw + bx) / 2, m2 = (bx + bw + cx) / 2;
+    add(svg, T(m1, y + sh / 2 - 22, '1 batched write', { anchor:'middle', fs:12, w:700 }));
+    add(svg, T(m1, y + sh / 2 - 8, 'per checkpoint (K blocks)', { anchor:'middle', fs:11, fill:ink }));
+    add(svg, T(m2, y + sh / 2 - 22, 'many reads', { anchor:'middle', fs:12, w:700 }));
+    add(svg, T(m2, y + sh / 2 - 8, 'balances + proofs', { anchor:'middle', fs:11, fill:ink }));
+    add(svg, T(bx + bw / 2, y + sh + 20, 'off the consensus hot path · choose for reads', { anchor:'middle', fs:12, w:700, fill:ac }));
+    top = y + sh + 44;
+  } else {
+    add(svg, T(0, y + sh + 16, '1 batched write per K blocks → many reads', { fs:10, fill:ink }));
+    top = y + sh + 34;
+  }
+  /* ---- the grid ---- */
+  var lw = nar ? 104 : 278, ccw = nar ? (W - lw) / 4 : (W >= 960 ? 120 : 112), costX = lw + 4 * ccw + (nar ? 0 : 18);
+  var HD = nar ? [['short', 'proofs'], ['few', 'reads'], ['cheap', 'update'], ['robust', 'to keys']]
+               : [['short', 'proofs'], ['few reads', 'per proof'], ['cheap batch', 'update'], ['keys cannot', 'deepen paths']];
+  var fsH = nar ? 9.5 : 12, gy = top;
+  if (!nar){
+    /* group labels over the criteria */
+    [[0, 2, 'for readers'], [2, 3, 'for the writer'], [3, 4, 'against attackers']].forEach(function(g){
+      var x1 = lw + g[0] * ccw + 8, x2 = lw + g[1] * ccw - 8;
+      add(svg, T((x1 + x2) / 2, gy, g[2], { anchor:'middle', fs:11, fill:ink }));
+      add(svg, el('line', { x1:x1, x2:x2, y1:gy + 6, y2:gy + 6, stroke:css('--axis'), 'stroke-width':1.2 }));
+    });
+    gy += 24;
+  }
+  HD.forEach(function(h, j){
+    var hx = lw + (j + 0.5) * ccw;
+    add(svg, T(hx, gy, h[0], { anchor:'middle', fs:fsH, w:700 }));
+    add(svg, T(hx, gy + fsH + 3, h[1], { anchor:'middle', fs:fsH, w:700 }));
+  });
+  if (!nar) add(svg, T(costX, gy + fsH + 3, 'main cost', { fs:fsH, w:700, fill:ink }));
+  var ry0 = gy + 2 * fsH + 10, rh = nar ? 44 : 46, r = nar ? 11 : 13;
+  ADS.forEach(function(a, i){
+    var ry = ry0 + i * rh;
+    if (i % 2 === 0) rect(svg, 0, ry, W, rh, { fill:css('--surface-1'), rx:4 });
+    if (!nar){
+      add(svg, T(10, ry + rh / 2 - 3, a.n, { fs:14.5, w:700 }));
+      add(svg, T(10, ry + rh / 2 + 13, a.s, { fs:11.5, fill:ink }));
+      add(svg, T(costX, ry + rh / 2 + 4.5, a.cost, { fs:12, fill:css('--ink-2') }));
+    } else {
+      add(svg, T(4, ry + rh / 2 - 3, a.k, { fs:11.5, w:700 }));
+      add(svg, T(4, ry + rh / 2 + 11, a.cost, { fs:8.5, fill:ink }));
+    }
+    for (var j = 0; j < 4; j++) adsMark(svg, lw + (j + 0.5) * ccw, ry + rh / 2, r, a.m[j], a.src[j] === '1');
+  });
+  /* legend */
+  var ly = ry0 + ADS.length * rh + (nar ? 20 : 24), lx = nar ? 0 : 10, lfs = nar ? 9.5 : 12, lr = nar ? 7 : 8;
+  adsMark(svg, lx + lr, ly - lr / 2 - 1, lr, 'y', true);
+  var t1 = nar ? 'Nurgle paper' : 'from the Nurgle paper';
+  add(svg, T(lx + 2 * lr + 6, ly, t1, { fs:lfs }));
+  var lx2 = lx + 2 * lr + 6 + tw(t1, lfs) + (nar ? 12 : 22);
+  adsMark(svg, lx2 + lr, ly - lr / 2 - 1, lr, 'y', false);
+  var t2 = nar ? 'our inference' : 'our inference (most marks)';
+  add(svg, T(lx2 + 2 * lr + 6, ly, t2, { fs:lfs }));
+  add(svg, T(W, ly, nar ? '✓ yes ~ partly ✗ no' : '✓ yes   ~ partly   ✗ no · not built, not measured', { anchor:'end', fs:lfs, fill:ink }));
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (ly + 6));
+}
+
+/* ====================================================================
+   F-nur · backup: the Nurgle attack (He et al., IEEE S&P 2024)
+   ==================================================================== */
+var NCOST = [
+  { k:'Optimism', v:40, lab:'$40', row:0 },
+  { k:'BSC opt.', v:7000, lab:'$7.0k', row:1 },
+  { k:'BSC', v:198000, lab:'$198k', row:0 },
+  { k:'Ethereum opt.', n:'ETH opt.', v:413000, lab:'$413k', row:1 },
+  { k:'Ethereum', n:'ETH', v:11800000, lab:'$11.8M', row:0 }
+];
+function fnur(svg, W){
+  var nar = W < 640, ink = css('--ink-muted'), tg = css('--s1'), cr = css('--critical'), ax = css('--axis'), gd = css('--good'), ac = css('--accent');
+  arrowDef(svg, 'anu', ink);
+  var fsT = nar ? 11.5 : 13, fs = nar ? 10 : 12, dy = nar ? 24 : 26;
+  /* ---- trie: before / after (schematic) ---- */
+  var LP = nar ? W : 470, bxc = nar ? 64 : 120, axc = nar ? 196 : 300, y0 = nar ? 34 : 38;
+  add(svg, T(bxc, y0 - 18, 'before', { anchor:'middle', fs:fsT, w:700 }));
+  var B = nar ? 0 : 1;   /* builds (slide 17): 1 before · 2 pipeline · 3 after trie deepens · 4 costs + gas · 5 impact + cost axis */
+  bg(svg, 3 * B, function(){ add(svg, T(axc, y0 - 18, 'after', { anchor:'middle', fs:fsT, w:700 })); }, 'fade', 0, 280);
+  if (!nar){
+    add(svg, T(0, y0 + 4, 'layer 0', { fs:11, fill:ink }));
+    add(svg, T(0, y0 + 2 * dy + 4, 'layer 2', { fs:11, fill:ink }));
+  }
+  function edge(x1, y1, x2, y2, col, w, par){ add(par || svg, el('line', { x1:x1, y1:y1, x2:x2, y2:y2, stroke:col || ax, 'stroke-width':w || 1.3 })); }
+  function node(x, y, kind, par){
+    var rr = kind === 'root' ? 7 : (kind === 'br' ? 6 : 5.5);
+    var f = kind === 'tgt' ? tg : (kind === 'cr' ? cr : css('--plane')), s = kind === 'tgt' ? tg : (kind === 'cr' ? cr : css('--ink-muted'));
+    if (kind === 'br' || kind === 'root') add(par || svg, el('rect', { x:x - rr, y:y - rr, width:2 * rr, height:2 * rr, rx:2, fill:f, stroke:s, 'stroke-width':1.3 }));
+    else add(par || svg, el('circle', { cx:x, cy:y, r:rr, fill:f, stroke:s, 'stroke-width':1.3 }));
+  }
+  /* before: root → branch → target at layer 2 */
+  var sp = nar ? 30 : 40;
+  edge(bxc, y0, bxc - sp, y0 + dy); edge(bxc, y0, bxc, y0 + dy); edge(bxc, y0, bxc + sp, y0 + dy);
+  edge(bxc - sp, y0 + dy, bxc - sp, y0 + 2 * dy); edge(bxc + sp, y0 + dy, bxc + sp, y0 + 2 * dy);
+  edge(bxc, y0 + dy, bxc, y0 + 2 * dy, tg, 2.4);
+  node(bxc, y0, 'root'); node(bxc - sp, y0 + dy, 'br'); node(bxc, y0 + dy, 'br'); node(bxc + sp, y0 + dy, 'br');
+  node(bxc - sp, y0 + 2 * dy, 'lf'); node(bxc + sp, y0 + 2 * dy, 'lf'); node(bxc, y0 + 2 * dy, 'tgt');
+  add(svg, T(bxc, y0 + 2 * dy + (nar ? 20 : 24), 'target: layer 2', { anchor:'middle', fs:fs, w:700, fill:tg }));
+  /* after: a chain of branch nodes, one crafted leaf per shared nibble.
+     Drawn as an edge layer under a node layer; each layer holds one sub-group per build phase
+     (P0 top of the trie, P1 nibble 1, P2 the rest), and the target sinks layer by layer. */
+  var L = [0, 1, 2, 3, 'gap', 5, 6], yy = function(k){ return y0 + k * dy; }, last = L.length - 1;
+  var gE = add(svg, el('g', {})), gN = add(svg, el('g', {})), PD = 400;
+  var E = [], N = [];
+  for (var ph = 0; ph < 3; ph++){ E.push(B ? stepG(gE, 3, 'fade', ph * PD, 320) : gE); N.push(B ? stepG(gN, 3, 'fade', ph * PD, 320) : gN); }
+  edge(axc, yy(0), axc - sp, yy(1), null, null, E[0]); edge(axc, yy(0), axc + sp, yy(1), null, null, E[0]);
+  edge(axc - sp, yy(1), axc - sp, yy(2), null, null, E[0]); edge(axc + sp, yy(1), axc + sp, yy(2), null, null, E[0]);
+  edge(axc, yy(0), axc, yy(1), tg, 2.4, E[0]); edge(axc, yy(1), axc, yy(2), tg, 2.4, E[0]);
+  edge(axc, yy(2), axc, yy(3), tg, 2.4, E[1]);
+  edge(axc, yy(5), axc, yy(6), tg, 2.4, E[2]);
+  add(N[2], T(axc, yy(4) + 5, '⋮', { anchor:'middle', fs:16, w:700, fill:tg }));
+  edge(axc, yy(3), axc, yy(3) + 8, tg, 2.4, E[2]); edge(axc, yy(5) - 8, axc, yy(5), tg, 2.4, E[2]);
+  [2, 3, 5].forEach(function(k){ var p = k === 2 ? 1 : 2; edge(axc, yy(k), axc - sp, yy(k + 1), cr, 1.4, E[p]); node(axc - sp, yy(k + 1), 'cr', N[p]); });
+  node(axc, yy(0), 'root', N[0]); node(axc - sp, yy(1), 'br', N[0]); node(axc, yy(1), 'br', N[0]); node(axc + sp, yy(1), 'br', N[0]);
+  node(axc - sp, yy(2), 'lf', N[0]); node(axc + sp, yy(2), 'lf', N[0]);
+  [2, 3, 5].forEach(function(k){ node(axc, yy(k), 'br', N[k === 2 ? 1 : 2]); });
+  /* the target: drawn at its final layer, animated from layer 2 → 3 → x + 2 */
+  var gT = B ? stepG(gN, 3, 'kf', 0, 3 * PD) : gN;
+  node(axc, yy(last), 'tgt', gT);
+  var d0 = yy(last) - yy(2), d1 = yy(last) - yy(3);
+  gT._kf = [
+    { transform:'translate(0px,' + (-d0) + 'px)', opacity:0, offset:0 },
+    { transform:'translate(0px,' + (-d0) + 'px)', opacity:1, offset:0.2 },
+    { transform:'translate(0px,' + (-d0) + 'px)', opacity:1, offset:0.33 },
+    { transform:'translate(0px,' + (-d1) + 'px)', opacity:1, offset:0.5 },
+    { transform:'translate(0px,' + (-d1) + 'px)', opacity:1, offset:0.66 },
+    { transform:'translate(0px,0px)', opacity:1, offset:0.92 },
+    { transform:'translate(0px,0px)', opacity:1, offset:1 }
+  ];
+  /* bracket: the shared prefix */
+  bg(svg, 3 * B, function(){
+    var bk = axc + sp + (nar ? 10 : 14);
+    path(svg, 'M' + bk + ' ' + (yy(1) + 2) + 'h6V' + (yy(5) + 2) + 'h-6', { stroke:cr, sw:1.5 });
+    add(svg, T(bk + 12, yy(3) - 2, 'x shared', { fs:fs, w:700, fill:cr }));
+    add(svg, T(bk + 12, yy(3) + fs + 1, 'nibbles', { fs:fs, w:700, fill:cr }));
+    add(svg, T(axc + 14, yy(last) + 4.5, nar ? 'layer x + 2' : 'target: layer x + 2', { fs:fs, w:700, fill:tg }));
+    add(svg, T(axc + 14, yy(last) + fs + 7, 'e.g. 13 → 15', { fs:fs - 1, fill:ink }));
+  }, 'fade', 3 * PD + 60, 320);
+  /* legend under the trie */
+  var lg = yy(last) + (nar ? 34 : 38), lx = 0;
+  [['tgt', 'target account', tg], ['br', 'branch node', null], ['cr', 'crafted leaf', cr]].forEach(function(l){
+    bg(svg, l[0] === 'cr' ? 3 * B : 0, function(){
+      node(lx + 6, lg - 4, l[0]);
+      add(svg, T(lx + 16, lg, l[1], { fs:fs - 0.5, fill: l[2] || css('--ink-2') }));
+    }, 'fade', PD, 300);
+    lx += 16 + tw(l[1], fs - 0.5) + (nar ? 12 : 18);
+  });
+  bg(svg, 3 * B, function(){ add(svg, T(0, lg + fs + 8, 'schematic · the extra nodes persist', { fs:fs - 1, fill:ink })); }, 'fade', 3 * PD + 200, 300);
+  var leftH = lg + fs + 8;
+  /* ---- right (below on a phone): pipeline, who pays, gas ---- */
+  var RX = nar ? 0 : 510, RW = W - RX, top = nar ? leftH + 28 : 0;
+  bg(svg, 2 * B, function(){ add(svg, T(RX, top + 14, 'The attack', { fs:fsT, w:700, fill:css('--ink-2') })); }, 'fade', 0, 260);
+  var pg = nar ? 12 : 24, pw = (RW - 2 * pg) / 3, ph = nar ? 56 : 62, py = top + 26;
+  var PIPE = [['1 · grind', '1.90 G hashes/s', 'one RTX 3080'], ['2 · craft keys', 'long prefix shared', 'with the target'], ['3 · insert', 'ordinary txs', 'e.g. send 1 wei']];
+  PIPE.forEach(function(p, i){
+    var x = RX + i * (pw + pg), col = i === 0 ? css('--c-frame') : cr;
+    bg(svg, 2 * B, function(){
+      rect(svg, x, py, pw, ph, { fill:col, fo:0.08, stroke:col, sw:1.5, rx:6 });
+      add(svg, T(x + pw / 2, py + (nar ? 18 : 20), p[0], { anchor:'middle', fs:nar ? 11 : 13, w:700 }));
+      add(svg, T(x + pw / 2, py + (nar ? 34 : 38), p[1], { anchor:'middle', fs:fs - (nar ? 0.5 : 0.5), fill:css('--ink-2') }));
+      add(svg, T(x + pw / 2, py + (nar ? 47 : 53), p[2], { anchor:'middle', fs:fs - (nar ? 0.5 : 0.5), fill:css('--ink-2') }));
+    }, 'land', 120 + i * 420, 340);
+    if (i < 2) bg(svg, 2 * B, function(){ arrow(svg, x + pw + 2, py + ph / 2, x + pw + pg - 3, py + ph / 2, 'anu', { sw:1.5 }); }, 'draw', 400 + i * 420, 200);
+  });
+  var ay = py + ph + (nar ? 24 : 28);
+  bg(svg, 4 * B, function(){ add(svg, T(RX, ay, 'every later access to the target pays more:', { fs:fs, w:700 })); }, 'fade', 0, 280);
+  var cx0 = RX, cy0 = ay + 8, cfs = nar ? 10 : 11.5;
+  ['trie updates', 'verification', 'memory', 'disk writes'].forEach(function(c, i){
+    var w = tw(c, cfs) + 18;
+    if (cx0 + w > W){ cx0 = RX; cy0 += cfs + 15; }
+    bg(svg, 4 * B, function(){ cx0 += pill(svg, cx0, cy0, c, cr, cfs) + 8; }, 'fade', 100 + i * 80, 260);
+  });
+  var gyT = cy0 + cfs + 9 + (nar ? 24 : 28);
+  bg(svg, 4 * B, function(){ add(svg, T(RX, gyT, 'gas does not track it:', { fs:fs, w:700 })); }, 'fade', 450, 260);
+  var dotR = nar ? 4.5 : 5.5, dotP = nar ? 13 : 16;
+  [['tx A', 6], ['tx B', 9]].forEach(function(g, i){
+    var yr = gyT + (nar ? 20 : 24) + i * (nar ? 20 : 24), dx = RX + tw('tx A · 21,000 gas', fs) + 14;
+    bg(svg, 4 * B, function(){
+      add(svg, T(RX, yr + 4, g[0] + ' · 21,000 gas', { fs:fs }));
+      for (var d = 0; d < 6; d++) add(svg, el('circle', { cx:dx + d * dotP + dotR, cy:yr, r:dotR, fill:css('--ink-muted'), 'fill-opacity':0.55 }));
+    }, 'fade', 550 + i * 150, 280);
+    for (var d = 6; d < g[1]; d++){
+      bg(svg, 4 * B, function(){ add(svg, el('circle', { cx:dx + d * dotP + dotR, cy:yr, r:dotR, fill:cr, 'fill-opacity':0.9 })); }, 'fade', 1000 + (d - 6) * 120, 260);
+    }
+    bg(svg, 4 * B, function(){ add(svg, T(dx + 9 * dotP + 6, yr + 4, g[1] + ' trie nodes', { fs:fs, w:700, fill: i ? cr : css('--ink-1') })); }, 'fade', i ? 1360 : 700, 280);
+  });
+  var rightH = gyT + (nar ? 20 : 24) + (nar ? 20 : 24) + 10;
+  /* ---- bottom: impact + attacker cost (log scale) ---- */
+  var by = Math.max(leftH, rightH) + (nar ? 30 : 34);
+  var IW = nar ? W : 270, ih = nar ? 74 : 92;
+  bg(svg, 5 * B, function(){
+  rect(svg, 0, by, IW, ih, { fill:cr, fo:0.07, stroke:cr, sw:1.4, rx:6 });
+  add(svg, T(12, by + (nar ? 26 : 32), '+111 %', { fs:nar ? 20 : 26, w:700, fill:cr }));
+  add(svg, T(nar ? 100 : 12, by + (nar ? 24 : 52), nar ? 'node work, Ethereum' : 'node work, Ethereum blocks', { fs:fs - 0.5 }));
+  add(svg, T(nar ? 100 : 12, by + (nar ? 38 : 67), nar ? '#14.99M–#15M (model)' : '#14.99M–#15M (model)', { fs:fs - 0.5 }));
+  add(svg, T(12, by + (nar ? 62 : 83), 'testnets: stopped at +15 % / +18 %', { fs:fs - 1, fill:ink }));
+  }, 'fade', 0, 360);
+  var SX = nar ? 0 : IW + 40, SW = W - SX - (nar ? 0 : 6), sy = nar ? by + ih + 22 : by;
+  var lmin = 1, lmax = 8, axY = sy + (nar ? 60 : 66);
+  function X(v){ return SX + (Math.log10(v) - lmin) / (lmax - lmin) * SW; }
+  bg(svg, 5 * B, function(){
+  add(svg, T(SX, sy + 12, nar ? 'attacker cost · Table III · log scale' : 'attacker cost · paper, Table III, one-week average prices · log scale', { fs:fs - 0.5, w:700, fill:css('--ink-2') }));
+  add(svg, el('line', { x1:SX, x2:SX + SW, y1:axY, y2:axY, stroke:css('--ink-muted'), 'stroke-width':1.4 }));
+  [[10, '$10'], [1000, '$1k'], [100000, '$100k'], [10000000, '$10M']].forEach(function(t){
+    var x = X(t[0]);
+    add(svg, el('line', { x1:x, x2:x, y1:axY - 4, y2:axY + 4, stroke:css('--ink-muted'), 'stroke-width':1.2 }));
+    add(svg, T(x, axY + 16, t[1], { anchor: t[0] === 10 ? 'start' : 'middle', fs:fs - 1.5, fill:ink }));
+  });
+  }, 'fade', 300, 320);
+  /* full attack above the axis, the optimized variant below it */
+  var pfs = nar ? 10 : 11.5, ph2 = pfs + 9, rowY = [axY - (nar ? 26 : 30) - ph2, axY + (nar ? 24 : 26)];
+  NCOST.forEach(function(c, i){ bg(svg, 5 * B, function(){
+    var x = X(c.v), lab = (nar ? (c.n || c.k) + ' ' : c.k + ' ≈ ') + c.lab, w = tw(lab, pfs) + 14, h = ph2;
+    var px = Math.max(SX, Math.min(SX + SW - w, x - w / 2)), yP = rowY[c.row];
+    add(svg, el('line', { x1:x, x2:x, y1: c.row ? axY : yP + h, y2: c.row ? yP : axY, stroke:cr, 'stroke-width':1.2 }));
+    rect(svg, px, yP, w, h, { fill:css('--plane'), stroke:cr, sw:1.2, rx:h / 2 });
+    rect(svg, px, yP, w, h, { fill:cr, fo:0.1, rx:h / 2 });
+    add(svg, T(px + w / 2, yP + h / 2 + pfs * 0.36, lab, { anchor:'middle', fs:pfs, w:700 }));
+    add(svg, el('circle', { cx:x, cy:axY, r:4, fill:cr }));
+  }, 'fade', 500 + i * 110, 280); });
+  var endY = axY + (nar ? 24 : 26) + ph2 + (nar ? 18 : 20);
+  bg(svg, 5 * B, function(){ add(svg, T(SX, endY, nar ? 'optimized: 3.5 % of the cost, 54.66 % of the impact' : 'optimized variant: 3.5 % of the cost for 54.66 % of the impact', { fs:fs - 1, fill:ink })); }, 'fade', 1100, 300);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (Math.max(endY, by + ih) + 6));
+}
+
+/* backup header tables */
+function hdrTables(){
+  var com = css('--c-drop'), hook = css('--s2'), oth = css('--axis'), lc = css('--s1');
+  var role = { c:'commitment', h:'the hook', o:'' };
+  function half(rows){
+    return '<table><thead><tr><th>EVM field</th><th class="num">B</th><th>role</th></tr></thead><tbody>' + rows.map(function(f){
+      var col = f[2] === 'c' ? com : (f[2] === 'h' ? hook : oth);
+      return '<tr><td><span class="sw" style="background:' + col + '"></span>' + f[0] + '</td><td class="num">' + (f[0] === 'extra_data' ? '0–32' : f[1]) + '</td><td>' + role[f[2]] + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+  var lean = '<table><thead><tr><th>Lean header</th><th class="num">B</th><th style="text-transform:none">into c<sub>h</sub></th></tr></thead><tbody>' +
+    [['parent commitment c<sub>h−1</sub>', 32, 'direct'], ['number u64', 8, 'direct'], ['timestamp_ms u64', 8, 'direct'], ['n_txs u32', 4, 'via txs_hash'], ['each tx: 4 B len + 72 + 28N', '…', 'via txs_hash']].map(function(r){
+      return '<tr><td><span class="sw" style="background:' + lc + '"></span>' + r[0] + '</td><td class="num">' + r[1] + '</td><td>' + r[2] + '</td></tr>'; }).join('') + '</tbody></table>';
+  $('hdr-tabs').innerHTML = '<div>' + half(HD_F.slice(0, 11)) + '</div><div>' + half(HD_F.slice(11)) +
+    '<div style="height:.8em"></div>' + lean + '</div>';
+}
+
+/* ====================================================================
+   registry, deck navigation, theme
+   ==================================================================== */
+var FIGS = { f1:f1, fsec:fsec, f2:f2, f3:f3, f4:f4, f5:f5, f6:f6, f7:f7, f8:f8, f9:f9, f10:f10, fx:fx, fnet:fnet, fidx:fidx, fads:fads, fsum:fsum, f17:f17, fper:fper, fnur:fnur };
+var DECK = false;
+function figW(svg){ return DECK ? 1000 : Math.max(300, Math.min(1000, svg.parentNode.clientWidth)); }
+/* deck mode: draw at 1000 units, then narrow the design width (down to a per-figure floor) so the
+   figure fills its box: a narrower viewBox in the same box means bigger text */
+var FMIN = { f1:760, fsec:860, f2:840, f3:900, f4:800, f5:1000, f6:1000, f7:900, f8:1000, f9:800, f10:820, fx:800, fnet:900, fidx:860, fads:900, fsum:880, f17:760, fper:820, fnur:900 };
+function drawFig(id){
+  var svg = $(id); if (!svg) return; clear(svg);
+  if (!DECK){ FIGS[id](svg, figW(svg)); return; }
+  FIGS[id](svg, 1000);
+  var box = svg.parentNode, bw = box.clientWidth, bh = box.clientHeight;
+  if (!bw || !bh) return;
+  var H = svg.viewBox.baseVal.height, W2 = Math.round(Math.max(FMIN[id] || 1000, Math.min(1000, bw / bh * H)));
+  if (W2 < 1000){ clear(svg); FIGS[id](svg, W2); }
+}
+function drawOne(id){ drawFig(id); var svg = $(id); if (svg && BUILDS[id]) applyStatic(svg, effStep(id)); }
+/* builds run only in deck mode, when on; otherwise every figure shows its final state */
+function buildsLive(){ return DECK && buildsOn; }
+function effStep(id){ var n = BUILDS[id]; if (!buildsLive() || stepOf[id] == null) return n; return Math.max(1, Math.min(n, stepOf[id])); }
+function buildFig(i){
+  if (!buildsLive()) return null;
+  var sv = slides[i] && slides[i].querySelector('.fig > svg');
+  return sv && BUILDS[sv.id] ? sv.id : null;
+}
+function setStep(id, s, anim){
+  stepOf[id] = s; var svg = $(id);
+  applyStatic(svg, effStep(id));
+  if (anim) play(svg, effStep(id));
+  updateBar();
+}
+function go(dir){
+  var id = buildFig(cur);
+  if (id){
+    var s = effStep(id);
+    if (dir > 0 && s < BUILDS[id]){ setStep(id, s + 1, true); return; }
+    if (dir < 0 && s > 1){ setStep(id, s - 1, false); return; }
+  }
+  var j = cur + dir;
+  if (j < 0 || j >= slides.length) return;
+  show(j, 'nav', dir > 0 ? 'fwd' : 'back');
+}
+var flashT = null;
+function flash(msg){ $('ttl').textContent = msg; clearTimeout(flashT); flashT = setTimeout(function(){ flashT = null; updateBar(); }, 1600); }
+function toggleBuilds(){
+  buildsOn = !buildsOn;
+  try { localStorage.setItem('fastlane-builds', buildsOn ? 'on' : 'off'); } catch(e){}
+  Object.keys(BUILDS).forEach(function(id){ stepOf[id] = BUILDS[id]; drawOne(id); });
+  updateBar(); flash(buildsOn ? 'builds on' : 'builds off');
+}
+function drawAll(){ Object.keys(FIGS).forEach(drawOne); hdrTables(); }
+
+var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), cur = 0;
+function setMode(){
+  var want = window.matchMedia('(min-width: 761px) and (min-height: 500px)').matches;
+  if (want !== DECK || !document.documentElement.classList.contains('ready')){
+    DECK = want;
+    document.documentElement.classList.toggle('deck', DECK);
+    document.documentElement.classList.add('ready');
+  }
+}
+function updateBar(){
+  var id = buildFig(cur), s = id ? effStep(id) : 0, n = id ? BUILDS[id] : 0;
+  $('count').textContent = (cur + 1) + ' / ' + slides.length + (id ? ' · ' + s + '/' + n : '');
+  $('count').title = id ? 'build step ' + s + ' of ' + n : '';
+  $('prog').style.width = ((cur + 1) / slides.length * 100) + '%';
+  if (!flashT) $('ttl').textContent = slides[cur].getAttribute('data-title') || '';
+  $('b-prev').disabled = cur === 0 && s <= 1; $('b-next').disabled = cur === slides.length - 1 && s >= n;
+}
+function show(i, how, entry){
+  /* how: 'nav' = smooth scroll (scroll mode), 'jump' = instant scroll, 'none' = no scroll.
+     entry: 'fwd' = arrived from the previous slide (builds start at step 1); anything else = final state */
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  if (DECK){
+    slides.forEach(function(s, k){ s.classList.toggle('on', k === cur); });
+    var bid = buildFig(cur);
+    if (bid) stepOf[bid] = entry === 'fwd' ? 1 : BUILDS[bid];
+    Array.prototype.forEach.call(slides[cur].querySelectorAll('.fig > svg'), function(sv){ drawOne(sv.id); });
+    if (bid && entry === 'fwd') play($(bid), 1);
+  } else if (how === 'nav' || how === 'jump'){
+    slides[cur].scrollIntoView({ behavior: how === 'nav' ? 'smooth' : 'auto', block:'start' });
+  }
+  updateBar();
+  if (location.hash !== '#' + (cur + 1)){ try { history.replaceState(null, '', '#' + (cur + 1)); } catch(e){} }
+}
+function fromHash(){ var k = parseInt(String(location.hash).replace('#', ''), 10); return isNaN(k) ? 0 : k - 1; }
+$('b-prev').addEventListener('click', function(){ go(-1); });
+$('b-next').addEventListener('click', function(){ go(1); });
+window.addEventListener('hashchange', function(){ show(fromHash(), 'jump'); });
+function toggleNotes(){ var on = document.body.classList.toggle('show-notes'); $('b-notes').setAttribute('aria-pressed', String(on)); }
+$('b-notes').addEventListener('click', toggleNotes);
+function toggleTheme(){
+  var root = document.documentElement, c = root.getAttribute('data-theme');
+  if (!c){ try { c = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e){ c = 'light'; } }
+  var nx = c === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', nx);
+  try { localStorage.setItem('fastlane-theme', nx); } catch(e){}
+  drawAll();
+}
+$('b-theme').addEventListener('click', toggleTheme);
+document.addEventListener('keydown', function(e){
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  var t = e.target, tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  if ((tag === 'button' || tag === 'a') && (e.key === ' ' || e.key === 'Enter')) return;
+  var k = e.key, step = 0;
+  if (k === 'ArrowRight' || k === 'PageDown' || (k === ' ' && !e.shiftKey)) step = 1;
+  else if (k === 'ArrowLeft' || k === 'PageUp' || (k === ' ' && e.shiftKey)) step = -1;
+  else if (k === 'Home'){ e.preventDefault(); show(0, 'nav'); return; }
+  else if (k === 'End'){ e.preventDefault(); show(slides.length - 1, 'nav'); return; }
+  else if (k === 'n' || k === 'N'){ toggleNotes(); return; }
+  else if (k === 't' || k === 'T'){ toggleTheme(); return; }
+  else if (k === 'b' || k === 'B'){ toggleBuilds(); return; }
+  if (step){ e.preventDefault(); go(step); }
+});
+/* scroll mode: the counter follows the slide in view */
+if ('IntersectionObserver' in window){
+  var spy = new IntersectionObserver(function(es){
+    if (DECK) return;
+    es.forEach(function(en){ if (en.isIntersecting){ cur = slides.indexOf(en.target); updateBar(); try { history.replaceState(null, '', '#' + (cur + 1)); } catch(e){} } });
+  }, { rootMargin:'-40% 0px -55% 0px' });
+  slides.forEach(function(s){ spy.observe(s); });
+}
+try {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', drawAll); else if (mq.addListener) mq.addListener(drawAll);
+} catch(e){}
+var rz = null;
+window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(function(){ var was = DECK; setMode(); drawAll(); if (was !== DECK) show(cur, 'jump'); }, 120); });
+
+setMode();
+drawAll();
+show(fromHash(), location.hash ? 'jump' : 'none');
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ drawAll(); });
+</script>
+</body>
+</html>
