@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&display=swap">
 <style>
 :root{
-  color-scheme: light dark;
+  color-scheme: light;
   --font:"Computer Modern Typewriter", sans-serif;
   --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --plane:#ffffff; --surface-1:#fafafa;
@@ -23,26 +23,15 @@
   --barh:46px;
 }
 :root[data-theme="dark"]{
+  /* gruvbox-material dark, medium contrast, material foreground (sainnhe/gruvbox-material) */
   color-scheme: dark;
-  --plane:#16181b; --surface-1:#1e2125;
-  --ink-1:#e4e4e4; --ink-head:#ecead2; --ink-2:#d2d2d2; --ink-muted:#9da1a7;
-  --grid:#2d3136; --axis:#50555d; --ring:rgba(255,255,255,.17);
-  --s1:#5a9ef0; --s2:#f08552; --s3:#33c48d; --s4:#f2b33a;
-  --good:#45c845; --warning:#fab219; --critical:#f26b6b;
-  --accent:#9db2ff; --on-accent:#0d1020;
-  --hl:#22304a; --warn-ink:#e7b54a; --c-frame:#80858c; --c-drop:#b18cf2;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    color-scheme: dark;
-    --plane:#16181b; --surface-1:#1e2125;
-    --ink-1:#e4e4e4; --ink-head:#ecead2; --ink-2:#d2d2d2; --ink-muted:#9da1a7;
-    --grid:#2d3136; --axis:#50555d; --ring:rgba(255,255,255,.17);
-    --s1:#5a9ef0; --s2:#f08552; --s3:#33c48d; --s4:#f2b33a;
-    --good:#45c845; --warning:#fab219; --critical:#f26b6b;
-    --accent:#9db2ff; --on-accent:#0d1020;
-    --hl:#22304a; --warn-ink:#e7b54a; --c-frame:#80858c; --c-drop:#b18cf2;
-  }
+  --plane:#282828; --surface-1:#32302f;
+  --ink-1:#d4be98; --ink-head:#ddc7a1; --ink-2:#d4be98; --ink-muted:#a89984;
+  --grid:#3c3836; --axis:#5a524c; --ring:rgba(212,190,152,.18);
+  --s1:#7daea3; --s2:#e78a4e; --s3:#89b482; --s4:#d8a657;
+  --good:#a9b665; --warning:#d8a657; --critical:#ea6962;
+  --accent:#7daea3; --on-accent:#282828;
+  --hl:#374141; --warn-ink:#d8a657; --c-frame:#928374; --c-drop:#d3869b;
 }
 :root[data-theme="light"]{ color-scheme: light; }
 *{box-sizing:border-box}
@@ -2313,7 +2302,7 @@ function toggleNotes(){ var on = document.body.classList.toggle('show-notes'); $
 $('b-notes').addEventListener('click', toggleNotes);
 function toggleTheme(){
   var root = document.documentElement, c = root.getAttribute('data-theme');
-  if (!c){ try { c = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e){ c = 'light'; } }
+  if (!c) c = 'light';
   var nx = c === 'dark' ? 'light' : 'dark';
   root.setAttribute('data-theme', nx);
   try { localStorage.setItem('fastlane-theme', nx); } catch(e){}

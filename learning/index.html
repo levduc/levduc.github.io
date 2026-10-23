@@ -94,6 +94,20 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
   <div class="cards">
 
     <!-- To add a topic: copy one <article class="card"> block, put the page at learning/<slug>/. -->
+    <article class="card" id="aes-gcm">
+      <h3>AES-GCM, spelled out</h3>
+      <p class="src">Companion to Alfred Menezes, <em>Crypto 101: Building Blocks</em>, module 5 &ldquo;Authenticated encryption&rdquo; (V5 slides, cryptography101.ca, December 2024), with length bounds and algorithm steps from NIST SP 800-38D.</p>
+      <div class="meta">
+        <span><span class="badge done">slide deck</span></span>
+        <span>36 slides</span>
+        <span>covers V5a and V5b</span>
+      </div>
+      <p class="desc">Why confidentiality and authentication are separate goals, the three generic compositions, then AES-GCM itself: CTR mode, arithmetic in GF(2<sup>128</sup>), GMAC and Horner&rsquo;s rule, the three attacks on the simplified tag &mdash; including a full derivation of the (v+1)/2<sup>128</sup> forgery bound &mdash; and why one repeated IV ends the key. Animated step by step; press N for speaker notes.</p>
+      <div class="links">
+        <a class="btn primary" href="aes-gcm/talk/">[slides]</a>
+      </div>
+    </article>
+
     <article class="card" id="lattice">
       <h3>Learning Lattice Cryptography</h3>
       <p class="src">Companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; version last updated June 18, 2025).</p>
