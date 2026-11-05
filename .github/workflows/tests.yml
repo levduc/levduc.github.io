@@ -1,0 +1,65 @@
+name: tests
+
+# Runs the anchoring and validation tests, and checks the site still builds.
+#
+# Note: GitHub does not fire workflows for events created by GITHUB_TOKEN, so
+# this does NOT run on the pull requests that suggestion-to-pr.yml opens. On
+# those, the maintainer's review is the gate. To get a check on one, re-run this
+# workflow manually against the branch:
+#
+#     gh workflow run tests.yml --ref suggest/<issue-number>
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Anchoring and validation tests
+        run: python3 -I -m unittest discover -s .github/scripts -p 'test_*.py'
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      HUGO_VERSION: 0.157.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install Hugo ${{ env.HUGO_VERSION }} extended
+        run: |
+          set -euo pipefail
+          url="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
+          curl --fail --silent --show-error --location -o "$RUNNER_TEMP/hugo.deb" "$url"
+          sudo dpkg --install "$RUNNER_TEMP/hugo.deb"
+      - name: Build the site
+        env:
+          HUGO_PARAMS_SUGGESTREPO: ${{ github.repository }}
+        run: hugo --baseURL "https://levduc.github.io/"
+      - name: Wire the suggestion layer into the static pages
+        env:
+          REPO: ${{ github.repository }}
+        run: python3 -I .github/scripts/inject_suggest.py --public public --static static --repo "$REPO" --base-url "https://levduc.github.io/"
+
+  annotations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: The annotation checker rejects what it should
+        run: python3 -I .github/scripts/check_annotations.py --self-test
+      - name: Every committed annotation file must be a valid JSON array
+        run: python3 -I .github/scripts/check_annotations.py

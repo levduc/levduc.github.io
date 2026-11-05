@@ -1,0 +1,17 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{- /* A page with its own title gets a page-specific one; everything else keeps
+       the site title exactly as before, so the homepage is unchanged and an
+       untitled page (content/blogs) does not end up with an empty <title>. */ -}}
+{{ $siteTitle := printf "%s%s" .Site.Title (cond (ne .Site.Params.subtitle "") (printf " &middot; %s" .Site.Params.subtitle) "") }}
+<title>{{ if and (not .IsHome) .Title }}{{ .Title }} &middot; {{ .Site.Title }}{{ else }}{{ $siteTitle | safeHTML }}{{ end }}</title>
+{{- $desc := printf "%s — %s. %s" .Site.Title .Site.Params.subtitle .Site.Params.interests }}
+{{- if and (not .IsHome) (or .Description .Summary) }}
+  {{- $desc = cond (ne .Description "") .Description (.Summary | plainify) }}
+  {{- $desc = $desc | replaceRE `\s+` " " | truncate 160 }}
+{{- end }}
+<meta name="description" content="{{ $desc }}">
+<link rel="stylesheet" href="{{ "css/site.css" | relURL }}">
+{{- if and (eq .Section "posts") .File }}
+<link rel="stylesheet" href="{{ "css/inline-suggest.css" | relURL }}">
+{{- end }}

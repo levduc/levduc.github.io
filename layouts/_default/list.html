@@ -1,0 +1,11 @@
+{{ define "main" }}
+<section><div class="wrap">
+  <h2>{{ .Title }}</h2>
+  <ul class="rows">
+    {{ range .Pages }}
+    <li><span class="when">{{ .Date.Format "2006" }}</span>
+        <p class="what"><a href="{{ .Permalink }}">{{ .Title }}</a></p></li>
+    {{ end }}
+  </ul>
+</div></section>
+{{ end }}

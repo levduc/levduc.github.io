@@ -1,0 +1,9 @@
+Reader notes land here, one JSON file per page, named after the page's id
+(posts--<slug>.json for a post, pdag.json, learning--lattice.json, ...).
+Each file is written by .github/scripts/apply_suggestion.py via a pull request,
+and is fetched by static/js/inline-suggest.js when the page loads.
+
+README.json is an empty list and must stay. The workflow's add-paths pattern
+static/annotations/*.json has to match at least one tracked file, or git
+refuses the whole `git add` and no pull request is opened. No page id is
+upper-case, so it can never be a page's notes file.

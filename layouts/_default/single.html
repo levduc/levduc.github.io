@@ -1,0 +1,28 @@
+{{ define "main" }}
+<section><div class="wrap">
+  <p class="eyebrow">{{ .Date.Format "2 January 2006" }}</p>
+  <h2>{{ .Title }}</h2>
+{{- if and (eq .Section "posts") .File }}
+  {{- /* Posts carry what the suggestion layer needs: the Markdown source path
+         an edit would apply to, the repository issues are filed on, and where
+         this post's published reader notes live. The script does nothing unless
+         the first two are present. */ -}}
+  {{- $src := printf "content/%s" (replace .File.Path "\\" "/") }}
+  {{- $slug := path.BaseName .File.Path }}
+  <article class="post-body"
+           data-suggest-source="{{ $src }}"
+           data-suggest-repo="{{ .Site.Params.suggestrepo }}"
+           data-suggest-notes="{{ printf "annotations/posts--%s.json" $slug | relURL }}">
+    {{ .Content }}
+  </article>
+  <p class="suggest-hint">
+    Spotted a mistake? Select any sentence to suggest a correction &mdash; it
+    becomes a pull request on
+    <a href="https://github.com/{{ .Site.Params.suggestrepo }}">GitHub</a>.
+  </p>
+  <script src="{{ "js/inline-suggest.js" | relURL }}" defer></script>
+{{- else }}
+  {{ .Content }}
+{{- end }}
+</div></section>
+{{ end }}

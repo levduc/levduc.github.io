@@ -1,0 +1,10 @@
+# Hugo build output — built and deployed by GitHub Actions, never committed
+/public/
+/resources/_gen/
+.hugo_build.lock
+
+.DS_Store
+**/.DS_Store
+
+__pycache__/
+*.py[co]

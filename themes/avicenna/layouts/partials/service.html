@@ -1,0 +1,14 @@
+<div class="introduction">
+	{{ with .Site.Params.services}}
+    <h4><b>Academic Service</b></h4>
+	{{- range $index, $service := $.Site.Params.services -}}
+	<ul>
+		{{ range $elem_index, $item := $service.description }}
+		<li>
+			<p class="publications"> {{ $item.date }}:</p>
+			{{ $item.description | markdownify }}
+		</li>
+        {{- end -}}
+	</ul>
+	{{- end -}}
+	{{- end -}}

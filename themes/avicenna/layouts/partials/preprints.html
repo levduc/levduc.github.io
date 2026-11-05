@@ -1,0 +1,39 @@
+<div class="introduction">
+	{{ with .Site.Params.publications }}
+    <h4><b>Preprints</b></h4>
+
+	{{- range $index, $publications := $.Site.Params.publications -}}
+    <div class="year">{{ $publications.year }}</div>
+
+	<ul>
+		{{ range $elem_index, $publication := $publications.paper }}
+		<li>
+			<p class="publications"> {{ $publication.name }}, </p>
+			{{ $publication.dest | markdownify }}.
+
+			{{ if or $publication.link $publication.paper_link $publication.code_link }}
+			<span class="code_blog">
+				{{ with $publication.link }}
+				[<a href="{{ . }}">link</a>]
+				{{ end }}
+
+				{{ with $publication.paper_link }}
+				[<a href="{{ . }}">paper</a>]
+				{{ end }}
+
+				{{ with $publication.code_link }}
+				[<a href="{{ . }}">code</a>]
+				{{ end }}
+
+			</span>
+			{{ end }}
+
+			<span class="collaborators">
+				{{ $publication.authors | markdownify }}
+			</span>
+		</li>
+		{{ end }}
+	</ul>
+	{{- end -}}
+	{{- end -}}
+</div>

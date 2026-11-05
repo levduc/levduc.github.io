@@ -1,0 +1,151 @@
+name: suggestion to pull request
+
+# Turns an issue labelled `suggestion` into one of three outcomes:
+#   * a pull request that edits one sentence of a post or of a static page
+#     (static/<seg>/, static/<seg>/talk/, static/learning/<seg>/ and its talk/);
+#   * a pull request that adds a reader note under static/annotations/;
+#   * `manual`: the suggestion cannot be applied safely by script (for example
+#     it needs a hand edit), so no PR is opened. The issue gets the
+#     `needs-manual-edit` label and a comment explaining why.
+# A `not_anchored` suggestion is refused with a comment and nothing else.
+#
+# Threat model. The issue body is attacker-controlled, so:
+#   * it reaches the script as a FILE, written from an env var. It is never
+#     interpolated into a `run:` line, where `${{ }}` expansion would make it
+#     executable, and never into YAML, where it could add keys.
+#   * the trigger is `issues`, not a privileged pull-request trigger, and nothing here ever
+#     checks out or executes code from a fork or from the issue.
+#   * permissions are granted per job, not at the top of the file.
+#   * `add-paths` restricts what can be committed, independently of the
+#     allow-list the script already enforces. Its globs match one directory
+#     level each, but cannot exclude asset directories such as static/js/, so
+#     the script's allow-list remains the real gate.
+#
+# Nothing merges on its own. This workflow only ever opens a PR for review.
+
+on:
+  issues:
+    types: [opened, edited, labeled]
+
+permissions: {}
+
+concurrency:
+  # One run per issue; a quick edit supersedes the run it interrupted.
+  group: suggestion-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    # The label is applied by the issue form, so a hand-written issue without it
+    # is ignored. Re-labelling an existing issue is a deliberate way to retry.
+    if: contains(github.event.issue.labels.*.name, 'suggestion')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Optional spam gate. Inert unless the repository variable
+      # MIN_ACCOUNT_AGE_DAYS is set (Settings > Secrets and variables >
+      # Actions > Variables). Set it to e.g. 30 to ignore brand-new accounts.
+      - name: Ignore very new accounts
+        id: age
+        if: vars.MIN_ACCOUNT_AGE_DAYS != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTHOR: ${{ github.event.issue.user.login }}
+          MIN_DAYS: ${{ vars.MIN_ACCOUNT_AGE_DAYS }}
+        run: |
+          set -euo pipefail
+          created=$(gh api "users/$AUTHOR" --jq '.created_at')
+          age_days=$(( ( $(date -u +%s) - $(date -u -d "$created" +%s) ) / 86400 ))
+          echo "account age: ${age_days}d (minimum ${MIN_DAYS}d)"
+          if [ "$age_days" -lt "$MIN_DAYS" ]; then
+            echo "too_new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write the issue body to a file
+        if: steps.age.outputs.too_new != 'true'
+        env:
+          # Passing through the environment is the whole point: the value is
+          # expanded by the shell from a variable, never by Actions into source.
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: printf '%s' "$ISSUE_BODY" > "$RUNNER_TEMP/issue_body.txt"
+
+      - name: Locate the sentence and apply the suggestion
+        id: apply
+        if: steps.age.outputs.too_new != 'true'
+        env:
+          AUTHOR: ${{ github.event.issue.user.login }}
+          AUTHOR_ID: ${{ github.event.issue.user.id }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          python3 -I .github/scripts/apply_suggestion.py \
+            --body-file "$RUNNER_TEMP/issue_body.txt" \
+            --issue "$ISSUE_NUMBER" \
+            --author "$AUTHOR" \
+            --author-id "$AUTHOR_ID" \
+            --repo-root . \
+            --out-dir "$RUNNER_TEMP/suggestion-out"
+
+      - name: Explain on the issue if it could not be applied
+        if: steps.apply.outputs.status == 'not_anchored'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_PATH: ${{ steps.apply.outputs.comment_path }}
+        run: gh issue comment "$ISSUE_NUMBER" --body-file "$COMMENT_PATH"
+
+      - name: Flag for a hand edit
+        if: steps.apply.outputs.status == 'manual'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_PATH: ${{ steps.apply.outputs.comment_path }}
+        run: |
+          set -euo pipefail
+          # Adding a label that does not exist fails; --force makes creating it a
+          # no-op when it already exists.
+          gh label create needs-manual-edit --force --color d4c5f9 --description "A suggestion to apply by hand"
+          gh issue edit "$ISSUE_NUMBER" --add-label needs-manual-edit
+          gh issue comment "$ISSUE_NUMBER" --body-file "$COMMENT_PATH"
+
+      - name: Open the pull request
+        if: steps.apply.outputs.status == 'replace' || steps.apply.outputs.status == 'annotate'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ github.token }}
+          branch: ${{ steps.apply.outputs.branch }}
+          # The repository's own default branch, so this is correct in a fork
+          # or a staging copy without editing the workflow.
+          base: ${{ github.event.repository.default_branch }}
+          # A second, independent limit on what may change. The script already
+          # refuses anything outside these paths; this makes a bug in it
+          # unable to commit elsewhere. ":(glob)" makes "*" stop at "/": in
+          # git's default pathspec syntax it crosses directories, so
+          # static/*/index.html would also admit static/a/b/index.html.
+          # Every pattern must match at least one tracked file: the action runs
+          # one `git add` for all of them, and one miss stages nothing. That is
+          # why static/annotations/README.json exists.
+          add-paths: |
+            :(glob)content/posts/*.md
+            :(glob)static/*/index.html
+            :(glob)static/*/talk/index.html
+            :(glob)static/learning/*/index.html
+            :(glob)static/learning/*/talk/index.html
+            :(glob)static/annotations/*.json
+          commit-message: ${{ steps.apply.outputs.commit_message }}
+          title: ${{ steps.apply.outputs.pr_title }}
+          body-path: ${{ steps.apply.outputs.body_path }}
+          labels: |
+            suggestion
+            needs-review
+          reviewers: levduc
+          delete-branch: true
+          draft: false

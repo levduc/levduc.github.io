@@ -1,0 +1,282 @@
+baseURL = "https://levduc.github.io/"
+languageCode = "en-us"
+title = "Duc V. Le"
+timeout=3000
+
+[params]
+  subtitle= "Staff Research Engineer"
+  interests="Applied Cryptography, Privacy-Enhancing Technologies, Distributed Systems Security"
+  cv_name= "duc-resume.pdf"
+  # Repository that reader suggestions are filed against. CI overrides this
+  # with HUGO_PARAMS_SUGGESTREPO=<owner/repo>, so the same source is correct
+  # in a staging repo and here. The key has no underscore on purpose: Hugo
+  # env overrides do not reach param names containing one.
+  suggestrepo = "levduc/levduc.github.io"
+
+[[params.affilation]]
+  name = "Circle"
+  position = "Staff Research Engineer"
+  contact = "levduc112[at]gmail.com"
+
+
+[[params.introduction.paragraph]]
+  text=""" I am currently a staff research engineer at Circle. Previously, I was a staff research scientist at Visa Research.
+
+  I was a postdoctoral researcher at University of Bern, working with Professor  [Christian Cachin](https://crypto.unibe.ch/cc/).
+
+  I hold a PhD from Purdue University. I was advised by Professor [Aniket Kate](https://www.cs.purdue.edu/homes/akate/) and Professor [Mikhail Atallah](https://www.cs.purdue.edu/homes/mja/)"""
+
+[[params.areas]]
+  slug  = "offchain"
+  title = "Off-chain scalability & payment channels"
+  blurb = "Moving blockchain applications off-chain while keeping their on-chain guarantees, so the chain is paid for only when something goes wrong."
+
+[[params.areas]]
+  slug  = "privacy"
+  title = "Privacy-enhancing technologies"
+  blurb = "Unlinkability and confidentiality for blockchain transactions, and the models needed to reason about what they actually hide."
+
+[[params.areas]]
+  slug  = "consensus"
+  title = "Consensus, MEV & incentives"
+  blurb = "Security and incentive analysis of permissionless consensus, transaction ordering, and on-chain markets."
+
+[[params.areas]]
+  slug  = "crypto"
+  title = "Applied cryptography"
+  blurb = "Signature schemes, trusted-setup ceremonies, post-quantum migration, and how cryptography is used — and misused — in practice."
+
+[[params.publications]]
+  [[params.publications.paper]]
+    name = "SoK: Stablecoins in the Quantum Era"
+    authors = "Panagiotis Chatzigiannis, Navid Alamati, Suvradip Chakraborty, __Duc V. Le__"
+    dest  = "PQQS 2026"
+    area = "crypto"
+    paper_link = "papers/sok-stablecoins.pdf"
+    demo_link = "pq-stablecoin/"
+
+  [[params.publications.paper]]
+    name = "Preparing for the Quantum Era: Assessing Quantum Computing Risks to Blockchain Security"
+    authors = "__Duc V. Le__, Panos Chatzigiannis, Navid Alamati, Sunpreet Singh Arora, Anderson Nascimento, Timothy Conard, Noah Levine, Adam Clark, Cuy Sheffield"
+    dest  = "Visa Whitepaper 2026"
+    area = "crypto"
+    kind = "whitepaper"
+    paper_link = "papers/visa-quantum-risks.pdf"
+
+  [[params.publications.paper]]
+    name = "Circle's Post-Quantum Security Roadmap: Securing Blockchains, Smart Contracts, and Digital Assets for the Quantum Era"
+    authors = "Mira Belenkiy, __Duc V. Le__, Gordon Liao, Vipin Singh Sehrawat, Dragos Rotaru, Sergey Gorbunov, Milap Sheth, Jay Logelin, Anthony De Abreu, Dan Boneh"
+    dest  = "Circle Whitepaper 2026"
+    area = "crypto"
+    kind = "whitepaper"
+    paper_link = "papers/pq-roadmap.pdf"
+    demo_link = "circle-pqc/"
+
+  [[params.publications.paper]]
+    name = "Concave is the New Linear: Sybil Attacks Collapse Anti-Plutocratic DAO Voting"
+    authors = "Austin Bennett, Preston Vander Vos, Mira Belenkiy, __Duc V. Le__"
+    dest  = "arXiv 2026"
+    area = "consensus"
+    kind = "preprint"
+    paper_link = "papers/concave-dao.pdf"
+    demo_link = "concave/"
+
+  [[params.publications.paper]]
+    name = "Scalable Off-Chain Auctions"
+    authors = "Mohsen Minaei, Ranjit Kumaresan, Andrew Beams, Pedro Moreno-Sanchez, Yibin Yang, Srinivasan Raghuraman, Panagiotis Chatzigiannis, Mahdi Zamani, __Duc V. Le__"
+    dest  = "NDSS 2026"
+    area = "offchain"
+    paper_link = "papers/offchain-auctions.pdf"
+    demo_link = "auctions/"
+
+  [[params.publications.paper]]
+    name = "OptiBridge: A Trustless, Cost-Efficient Bridge Between the Lightning Network and Ethereum"
+    authors = "Pedro Moreno-Sanchez, __Duc V. Le__, Mohsen Minaei"
+    dest  = "ACNS 2026"
+    area = "offchain"
+    paper_link = "papers/optibridge.pdf"
+    demo_link = "optibridge/"
+
+  [[params.publications.paper]]
+    name = "Lite-PoT: Practical Powers-of-Tau Setup Ceremony"
+    authors = "Lucien K. L. Ng, Pedro Moreno-Sanchez, Mohsen Minaei, Panagiotis Chatzigiannis, Adithya Bhat, __Duc V. Le__"
+    dest  = "CCS 2025"
+    area = "crypto"
+    paper_link = "papers/lite-pot.pdf"
+    demo_link = "pot/"
+
+  [[params.publications.paper]]
+    name = "DTL: Data Tumbling Layer - A Composable Unlinkability Primitive for Smart Contracts"
+    authors = "Mohsen Minaei, Pedro Moreno Sanchez, Zhiyong Fang, Srinivasan Raghuraman, Navid Alamati, Panagiotis Chatzigiannis, Ranjit Kumaresan, __Duc V. Le__"
+    dest  = "AsiaCCS 2025"
+    area = "privacy"
+    paper_link = "papers/dtl.pdf"
+    demo_link = "dtl/"
+
+  [[params.publications.paper]]
+    name = "DSKE: Digital Signatures with Key Extraction"
+    authors = "Zhipeng Wang, Orestis Alpos, Alireza Kavousi, Harry W. H. Wong, Sze Yiu Chau, __Duc V. Le__, Christian Cachin"
+    dest  = "CT-RSA 2025"
+    area = "crypto"
+    paper_link = "papers/dske.pdf"
+    demo_link = "dske/"
+
+  [[params.publications.paper]]
+    name = "AUPCH: Auditable Unlinkable Payment Channel Hubs"
+    authors = "Pedro Moreno-Sanchez, Mohsen Minaei, Srinivasan Raghuraman, Panagiotis Chatzigiannis, __Duc V. Le__"
+    dest  = "CBT 2025"
+    area = "offchain"
+    paper_link = "papers/aupch.pdf"
+
+  [[params.publications.paper]]
+    name = "BlindPerm: Efficient MEV Mitigation with an Encrypted Mempool and Permutation"
+    authors = "Alireza Kavousi, __Duc V. Le__, Philipp Jovanovic, George Danezis"
+    dest  = "OPODIS 2025"
+    area = "consensus"
+    paper_link = "papers/blindperm.pdf"
+    demo_link = "blindperm/"
+
+  [[params.publications.paper]]
+    name = "A Plug-and-Play Long-Range Defense System for Proof-of-Stake Blockchains"
+    authors = "Lucien K.L. Ng, Panagiotis Chatzigiannis, __Duc V. Le__, Mohsen Minaei, Ranjit Kumaresan, Mahdi Zamani"
+    dest  = "ESORICS 2024"
+    area = "consensus"
+    paper_link = "papers/long-range.pdf"
+    demo_link = "plug-and-play/"
+
+  [[params.publications.paper]]
+    name = "Programmable Payment Channels"
+    authors = "Yibin Yang, Mohsen Minaei, Srinivasan Raghuraman, Ranjit Kumaresan, __Duc V. Le__, Mahdi Zamani"
+    dest  = "ACNS 2024"
+    area = "offchain"
+    paper_link = "papers/ppc.pdf"
+    demo_link = "ppc/"
+
+  [[params.publications.paper]]
+    name = "Towards Precise Reporting of Cryptographic Misuses"
+    authors = "Yikang Chen, Yibo Liu, Ka Lok Wu, __Duc V. Le__, Sze Yiu Chau"
+    dest  = "NDSS 2024"
+    area = "crypto"
+    paper_link = "papers/crypto-misuses.pdf"
+
+  [[params.publications.paper]]
+    name = "A Transaction-Level Model for Blockchain Privacy"
+    authors = "François-Xavier Wicht, Zhipeng Wang, __Duc V. Le__, Christian Cachin"
+    dest  = "FC 2024"
+    area = "privacy"
+    paper_link = "papers/txgraph-privacy.pdf"
+    demo_link = "pdag/"
+
+  [[params.publications.paper]]
+    name = "Pay Less for Your Privacy: Towards Cost-Effective On-Chain Mixers"
+    authors = "Zhipeng Wang, Marko Cirkovic, __Duc V. Le__, William Knottenbelt, Christian Cachin"
+    dest  = "AFT 2023"
+    area = "privacy"
+    paper_link = "papers/onchain-mixers.pdf"
+    demo_link = "pyramid/"
+
+  [[params.publications.paper]]
+    name = "Modeling Resources in Permissionless Longest-chain Total-order Broadcast"
+    authors = "Sarah Azouvi, Christian Cachin, __Duc V. Le__, Marko Vukolic, Luca Zanolini"
+    dest  = "OPODIS 2022"
+    area = "consensus"
+    paper_link = "papers/modeling-resources.pdf"
+    demo_link = "resource/"
+
+  [[params.publications.paper]]
+    name = "AMR: Autonomous Coin Mixer with Privacy Preserving Reward Distribution"
+    authors = "__Duc V. Le__, Arthur Gervais"
+    dest  = "AFT 2021"
+    area = "privacy"
+    paper_link = "papers/amr.pdf"
+    demo_link = "amr/"
+
+  [[params.publications.paper]]
+    name = "High-Frequency Trading on Decentralized On-Chain Exchanges"
+    authors = "Liyi Zhou, Kaihua Qin, Christof Ferreira Torres, __Duc V. Le__, Arthur Gervais"
+    dest  = "S&P Oakland 2021"
+    area = "consensus"
+    paper_link = "papers/hft-dex.pdf"
+    demo_link = "hft-dex/"
+
+  [[params.publications.paper]]
+    name = "T3: Scaling Oblivious Accesses to Large-Scale Blockchain"
+    authors = "__Duc V. Le__, Lizzy Tengana Hurtado, Adil Ahmad, Mohsen Minaei, Byoungyoung Lee, Aniket Kate"
+    dest  = "PETS 2020"
+    area = "privacy"
+    paper_link= "papers/t3.pdf"
+    code_link="https://github.com/TEE-3/T3"
+    demo_link = "t3/"
+
+  [[params.publications.paper]]
+    name = "DLSAG: Dual Linkable Spontaneous Anonymous Group Signatures"
+    authors = "Pedro Moreno-Sanchez, Arthur Blue, __Duc V. Le__, Sarang Noether, Brandon Goodell, Aniket Kate"
+    dest  = "Financial Crypto 2020"
+    area = "privacy"
+    code_link = "https://github.com/levduc/DLSAG-prototype-number"
+    paper_link = "papers/dlsag.pdf"
+    demo_link = "dlsag/"
+
+  [[params.publications.paper]]
+    name = "Flexible Digital Signatures"
+  	authors = "__Duc V. Le__, Mahimna Kelkar, Aniket Kate"
+  	dest  = "ESORICS 2019"
+    area = "crypto"
+    paper_link="papers/flexsign.pdf"
+    demo_link = "flexsign/"
+
+[[params.teachings]]
+  [[params.teachings.description]]
+     uni = "__Purdue University (Teaching Assistant)__"
+     name = "CS182 (Discrete Math), CS381 (Algorithms and Data Structures), CS555 (Cryptography), CS528 (Network Security)"
+
+[[params.talks]]
+  [[params.talks.description]]
+    date = "2025"
+    description = "CT-RSA 2025: Digital Signature with Key Extraction"
+  [[params.talks.description]]
+    date = "2023"
+    description = "IC3 Winter Retreat 2023: Modelling Resources in Permissionless Longest-chain Total-order Broadcast"
+  [[params.talks.description]]
+    date = "2022"
+    description = "OPODIS 2022: Modelling Resources in Permissionless Longest-chain Total-order Broadcast"
+  [[params.talks.description]]
+    date = "2019"
+    description = "Bitcoin 2019 (Scaling Bitcoin): T3: Scaling Oblivious Accesses to Large-scale blockchain; ESORICS 2019: Flexible Digital Signature"
+
+[[params.people]]
+  [[params.people.description]]
+  name = "__Lucien K. L. Ng__"
+  thesis = "Power of Tau ceremony optimization (CCS '25); Long-Range Defense for PoS Blockchains (ESORICS '24)"
+
+  [[params.people.description]]
+  name = "__François-Xavier Wicht (Master Student)__"
+  thesis = "Blockchain Privacy Notions Using the Transaction Graph Model (FC '24)"
+
+  [[params.people.description]]
+  name = "__Marko Cirkovic (Bachelor Student)__"
+  thesis = "Cost-Effective Onchain Mixers (AFT '23)"
+
+  [[params.people.description]]
+  name = "__Lizzy Tengana Hurtado__"
+  thesis = "Oblivious Database for Blockchain Clients (PETS '20)"
+
+[[params.services]]
+  [[params.services.description]]
+    date = "2026"
+    description = "CCS (PC), FC (PC)"
+  [[params.services.description]]
+    date = "2025"
+    description = "S&P (PC), CCS (PC), PETS (PC), ACNS (PC), AsiaCCS (PC)"
+  [[params.services.description]]
+    date = "2024"
+    description = "FC (PC), PETS (PC), CCS (PC)"
+  [[params.services.description]]
+    date = "2023"
+    description = "CCS (PC), FC (PC), NDSS (Student Support Committee), ConsensusDay (PC), SACMAT (PC), PETS (External Reviewer), SBC (External Reviewer)"
+  [[params.services.description]]
+    date = "2022"
+    description = "ACM TOPS (Reviewer), IEEE TDSC (Reviewer), ConsensusDay (PC), SACMAT (PC), S&P (Poster Jury)"
+  [[params.services.description]]
+    date = "2021"
+    description = "IEEE S&B (PC), EuroS&P (External Reviewer), CCS (Poster Jury)"

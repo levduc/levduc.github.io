@@ -1,0 +1,14 @@
+<div class="introduction">
+	{{ with .Site.Params.news}}
+    <h4><b>News</b></h4>
+	{{- range $index, $new := $.Site.Params.news -}}
+	<ul>
+		{{ range $elem_index, $item := $new.description }}
+		<li>
+			<p class="publications"> [{{ $item.date }}]</p>
+			{{ $item.description | markdownify }}
+		</li>
+        {{- end -}}
+	</ul>
+	{{- end -}}
+	{{- end -}}

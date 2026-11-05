@@ -1,0 +1,16 @@
+<div class="nav"><div class="wrap">
+  <a class="me" href="{{ "" | relURL }}">{{ .Site.Title }}</a>
+  <ul>
+    {{- /* Absolute, not bare "#about": these are homepage anchors and must
+           work from a post page too. */ -}}
+    <li><a href="{{ "" | relURL }}#about">About</a></li>
+    <li><a href="{{ "" | relURL }}#research">Research</a></li>
+    <li><a href="{{ "" | relURL }}#students">Students</a></li>
+    <li><a href="{{ "" | relURL }}#talks">Talks</a></li>
+    <li><a href="{{ "" | relURL }}#service">Service</a></li>
+    <li><a href="{{ "" | relURL }}#teaching">Teaching</a></li>
+    <li><a href="{{ "learning/" | relURL }}">Learning with AI</a></li>
+    <li><a href="{{ "posts/" | relURL }}">Notes</a></li>
+  </ul>
+  {{ with .Site.Params.cv_name }}<a class="cv" href="{{ . | relURL }}">[cv]</a>{{ end }}
+</div></div>

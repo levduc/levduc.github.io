@@ -1,0 +1,14 @@
+<div class="introduction">
+	{{ with .Site.Params.talks}}
+    <h4><b>Invited Talks</b></h4>
+	{{- range $index, $talk := $.Site.Params.talks -}}
+	<ul>
+		{{ range $elem_index, $item := $talk.description }}
+		<li>
+			<p class="publications"> {{ $item.date }}:</p>
+			{{ $item.description | markdownify }}
+		</li>
+        {{- end -}}
+	</ul>
+	{{- end -}}
+	{{- end -}}

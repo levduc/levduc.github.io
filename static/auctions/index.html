@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scalable Off-Chain Auctions</title>
+<meta name="description" content="NDSS 2026 — Sealed-bid blockchain auctions that run entirely off-chain when parties are honest, with O(k) on-chain cost when k bidders deviate.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:20px}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50;
+  background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.75rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:64ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head)}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin-bottom:18px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:210px; flex:1}
+.ctl label{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:14px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono);
+  font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.tip{position:fixed; pointer-events:none; opacity:0; transition:opacity .09s;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:250px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid)}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums}
+tr.hl td{background:var(--surface-1); font-weight:700}
+.pess{color:var(--critical); font-weight:700}
+
+/* ---------- the stack ---------- */
+.stackgrid{display:grid; grid-template-columns:minmax(0,330px) minmax(0,1fr);
+  gap:22px; align-items:start; margin-top:22px}
+.stack{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+.stack li{position:relative}
+.stack li:not(:last-child)::after{content:"builds on"; display:block;
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-muted); text-align:center; padding:5px 0 1px}
+.layer{width:100%; text-align:left; cursor:pointer; font:inherit;
+  background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:.65rem .8rem; display:block; color:var(--ink-1)}
+.layer:hover{border-color:var(--accent)}
+.layer[aria-pressed=true]{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+.layer .lname{display:block; font-weight:700; font-size:.98rem; color:var(--ink-head)}
+.layer .lsub{display:block; font-family:var(--mono); font-size:.74rem; color:var(--ink-muted); margin-top:.1rem}
+.layer .lcost{display:inline-block; font-family:var(--mono); font-size:.74rem;
+  margin-top:.35rem; color:var(--ink-2)}
+.layer .lcost.bad{color:var(--critical)}
+.layer .lcost.good{color:var(--good)}
+.layerbody{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1);
+  padding:18px; box-shadow:var(--shadow); transition:opacity .2s ease, transform .2s ease}
+.layerbody.swap{opacity:0; transform:translateY(6px)}
+.layerbody h3{margin:0 0 .2rem}
+.layerbody .who{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted); margin:0 0 .9rem}
+.layerbody dt{font-family:var(--mono); font-size:.72rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .2rem}
+.layerbody dd{margin:0 0 1rem; font-size:.94rem; color:var(--ink-2)}
+.layerbody dd:last-child{margin-bottom:0}
+.payoff{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px;
+  margin:24px 0 0; max-width:72ch}
+@media (prefers-reduced-motion: reduce){
+  .layerbody, .layerbody.swap{transition:none; opacity:1; transform:none}
+}
+
+/* ---------- hub & spoke ---------- */
+.hubgrid{display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:22px; align-items:start}
+.node{cursor:pointer}
+.node:focus-visible circle{outline:2px solid var(--accent); outline-offset:2px}
+.readout{display:flex; flex-direction:column; gap:12px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.5rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.statusline{display:flex; align-items:center; gap:.45rem; font-family:var(--mono);
+  font-size:.82rem; color:var(--ink-2)}
+.dot{width:9px; height:9px; border-radius:50%; flex:none}
+
+/* ---------- stages ---------- */
+.playrow{display:flex; align-items:center; gap:10px; margin:0 0 10px}
+.stagebar{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
+.stg{border:1px solid var(--ring); background:var(--surface-1); border-radius:3px;
+  padding:.5rem .4rem; cursor:pointer; text-align:center; font-size:.9rem;
+  font-family:var(--font); color:var(--ink-2); font-weight:700}
+.stg[aria-pressed=true]{background:var(--accent); border-color:var(--accent); color:#fff}
+.stg small{display:block; font-family:var(--mono); font-size:.7rem; font-weight:400; opacity:.85}
+.stagebody{margin-top:16px; border:1px solid var(--ring); border-radius:4px;
+  background:var(--surface-1); padding:18px; box-shadow:var(--shadow)}
+.stagebody h3{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+.chip{font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; border-radius:999px; padding:.1rem .55rem; border:1px solid currentColor}
+.chip.off{color:var(--good)} .chip.on{color:var(--critical)}
+.stagebody ul{margin:.5rem 0 0; padding-left:1.15rem; color:var(--ink-2); font-size:.95rem}
+.stagebody li{margin-bottom:.35rem}
+
+/* ---------- merkle ---------- */
+.mk{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,320px); gap:22px; align-items:start}
+.mono{font-family:var(--mono); font-size:.85rem}
+.proofrow{display:flex; align-items:center; gap:.5rem; padding:.28rem 0;
+  border-bottom:1px solid var(--grid); font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+input[type=number]{background:var(--plane); border:1px solid var(--ring); color:var(--ink-1);
+  border-radius:3px; padding:.4rem .6rem; font-family:var(--mono); font-size:.92rem; width:110px}
+.verdict{border-radius:4px; padding:12px 14px; font-size:.88rem; border:1px solid; margin-top:12px}
+.verdict.ok{color:var(--good); border-color:var(--good)}
+.verdict.bad{color:var(--critical); border-color:var(--critical)}
+.verdict b{display:block}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid);
+  font-size:.8rem; color:var(--ink-muted); text-align:right}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem}
+
+/* ---------- motion ---------- */
+@keyframes drift{to{stroke-dashoffset:-16}}
+.spoke-honest{animation:drift 2.6s linear infinite}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.3)}100%{transform:scale(1)}}
+.pop{transform-box:fill-box; transform-origin:center; animation:pop .5s ease}
+.stagebody{transition:opacity .22s ease, transform .22s ease}
+.stagebody.swap{opacity:0; transform:translateY(7px)}
+section.rv{opacity:0; transform:translateY(16px)}
+section.rv.in{opacity:1; transform:none;
+  transition:opacity .55s ease, transform .55s cubic-bezier(.22,1,.36,1)}
+@media (prefers-reduced-motion: reduce){
+  section.rv, section.rv.in{opacity:1; transform:none; transition:none}
+  .spoke-honest{animation:none}
+  .pop{animation:none}
+  .stagebody, .stagebody.swap{transition:none; opacity:1; transform:none}
+  html{scroll-behavior:auto}
+}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2.1rem}
+  .hubgrid,.mk,.stackgrid{grid-template-columns:1fr}
+  .stagebar{grid-template-columns:repeat(2,1fr)}
+  .seg{flex-wrap:wrap; max-width:100%}
+  .seg button{flex:1 1 auto; border-bottom:1px solid var(--ring)}
+  .controls .ctl{flex:1 1 100% !important; min-width:0}
+  .mk .readout .ro .mono{word-break:break-all}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#cost">Gas costs</a>
+    <a href="#ok">O(k)</a>
+    <a href="#ppc">Building block</a>
+    <a href="#stages">Protocol</a>
+    <a href="#merkle">Sealed bids</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">NDSS 2026</span>
+  <h1>Scalable Off-Chain Auctions</h1>
+  <p class="sub">Sealed-bid auctions that run <em>entirely off-chain</em> when everyone is honest — and cost only $O(k)$ on-chain when $k$ bidders misbehave, instead of $O(n)$.</p>
+  <p class="authors">
+    Mohsen Minaei<sup>1</sup>, Ranjit Kumaresan<sup>1</sup>, Andrew Beams<sup>1</sup>,
+    Pedro Moreno-Sanchez<sup>1,2</sup>, Yibin Yang<sup>3</sup>,
+    Srinivasan Raghuraman<sup>1,4</sup>, Panagiotis Chatzigiannis<sup>1</sup>,
+    Mahdi Zamani<sup>1</sup>, <span class="me">Duc V. Le</span><sup>1</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Visa Research &nbsp;·&nbsp; <sup>2</sup>IMDEA Software Institute &nbsp;·&nbsp; <sup>3</sup>Georgia Institute of Technology &nbsp;·&nbsp; <sup>4</sup>MIT</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/offchain-auctions.pdf">Paper (PDF)</a>
+    <a class="btn" href="#cite">BibTeX</a>
+  </div>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What the protocol buys you</h2>
+  <p class="lede">Blockchain auctions today are not small because demand is small. They are small because every extra bidder costs gas. We move the auction off-chain and put only the <em>misbehaviour</em> back on it.</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">On-chain calls, honest run</div>
+      <div class="v">4</div>
+      <p class="d">Deploy, start, submit sealed bids, reveal winner &mdash; independent of the number of bidders. Bidders themselves send <strong>zero</strong> on-chain transactions.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Bidders demonstrated</div>
+      <div class="v">1,024</div>
+      <p class="d">The state-of-the-art comparison point, Riggs-TC, exhausts the block gas limit at roughly <strong>20</strong>.</p>
+    </div>
+    <div class="tile">
+      <div class="k">On-chain complexity with k deviators</div>
+      <div class="v" style="font-size:1.75rem">$O(k)$, not $O(n)$</div>
+      <p class="d">Only the channels of the $k$ bidders who deviate ever touch the chain.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Why on-chain auctions stall at a few dozen bidders</h2>
+  <p class="lede">A sealed-bid auction needs every bidder to commit, then open, then be compared against every other bid. Done on-chain, each of those steps is a transaction, so the total cost is $O(n)$ in the number of bidders $n$ — and a single Ethereum block only holds about 30 million gas.</p>
+  <div class="callout">
+    <p style="margin:0">Worse: existing <em>off-chain</em> constructions (state channels, rollups) fall back to $O(n)$ on-chain work as soon as <strong>one</strong> participant stops cooperating, because the dispute path drags every participant's state on-chain. Our design isolates the dispute to the misbehaving party's own channel.</p>
+  </div>
+  <p>The construction combines three pieces: <strong>programmable payment channels</strong> between a hub (the auctioneer) and each participant, <strong>Merkle commitments</strong> that bind the set of sealed bids, and a <strong>zkSNARK</strong> that lets the hub prove the winner is correct without revealing any losing bid. The hub is treated as fully malicious: it cannot steal funds, censor a bid, or abort without being financially punished.</p>
+</div></section>
+
+<!-- ============ CHART A ============ -->
+<section id="cost"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 10 of the paper</p>
+  <h2>Total on-chain gas, six protocols</h2>
+  <p class="lede">Pick a bidder count. Bars are log-scale — each gridline is a factor of ten. The dashed rule is the Ethereum block gas limit; anything above it cannot fit in a single block.</p>
+
+  <div class="controls">
+    <div class="ctl" style="flex:0 0 auto; min-width:0">
+      <label id="nLbl">Number of bidders <span class="val" id="nVal">1024</span></label>
+      <div class="seg" role="group" aria-labelledby="nLbl" id="nSeg"></div>
+    </div>
+  </div>
+
+  <div class="chart">
+    <svg id="chartA" role="img" aria-labelledby="chartATitle"><title id="chartATitle">Total on-chain gas cost by protocol, log scale</title></svg>
+    <ul class="legend" id="legendA"></ul>
+  </div>
+
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div style="overflow-x:auto"><table id="tableA"></table></div>
+  </details>
+
+  <p class="note" style="margin-top:14px">Measured points only — the selector offers the four bidder counts that were actually benchmarked (128, 256, 512, 1024); nothing here is extrapolated. Our protocol's cost is flat because the zkSNARK verification and the Merkle root posting do not grow with $n$. Riggs-RP and Riggs-TC are plotted per the paper's extrapolation of their reported per-bidder gas (3,010,000 and 3,310,000 respectively), which is why both already exceed a single block at 128 bidders; the paper's protocol comparison separately reports Riggs-TC becoming infeasible at around 20 bidders.</p>
+</div></section>
+
+<!-- ============ CHART B ============ -->
+<section id="ok"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 11 of the paper</p>
+  <h2>What misbehaviour actually costs</h2>
+  <p class="lede">Fix the auction at 1,024 bidders and let $k$ of them deviate — refuse to open their sealed bid, or get censored by a malicious hub. Each one forces exactly one on-chain covenant registration. Drag to see where the linear $O(k)$ climb finally meets a protocol that pays $O(n)$ up front.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="kRange">Misbehaving bidders <span class="val" id="kVal">0</span> <span style="font-weight:400;color:var(--ink-muted)">of 1,024</span></label>
+      <input type="range" id="kRange" min="0" max="1024" value="0" step="1">
+    </div>
+  </div>
+
+  <div class="chart">
+    <svg id="chartB" role="img" aria-labelledby="chartBTitle"><title id="chartBTitle">Total on-chain gas as the number of misbehaving bidders grows</title></svg>
+    <ul class="legend" id="legendB"></ul>
+  </div>
+
+  <div class="tiles" style="margin-top:18px">
+    <div class="tile"><div class="k">Our total on-chain gas</div><div class="v" id="bOurs">2,441,430</div><p class="d" id="bOursD">All 1,024 bids settled off-chain.</p></div>
+    <div class="tile"><div class="k">Versus Riggs-TC</div><div class="v" id="bRatio">1,011×</div><p class="d">cheaper at the current number of deviators.</p></div>
+    <div class="tile"><div class="k">Break-even</div><div class="v">801</div><p class="d">Riggs-TC only wins once <strong>78%</strong> of all bidders misbehave.</p></div>
+  </div>
+
+  <p class="note" style="margin-top:16px"><strong>Data provenance.</strong> Base cost $2{,}441{,}430$ gas is the sum of the five optimistic on-chain operations in Table&nbsp;IV. Each deviator adds $3{,}029{,}708$ gas (registering the hub–bidder covenant) plus a $50{,}000$ gas hashing estimate, exactly as in the paper's malicious-bidder figure. The Riggs-TC reference line here is $2{,}410{,}000$ gas per bidder, the per-bidder figure used in that same figure; the six-protocol chart above uses the paper's other Riggs-TC accounting, $3{,}310{,}000$ gas per bidder. Each chart reproduces its own source figure rather than silently reconciling the two.</p>
+</div></section>
+
+<!-- ============ PPC BACKGROUND ============ -->
+<section id="ppc"><div class="wrap">
+  <p class="eyebrow">Background</p>
+  <h2>The building block: programmable payment channels</h2>
+  <p class="lede">The $O(k)$ result is not a cryptographic trick. It falls out of which
+  off-chain primitive the auction is built on. Four layers, each one adding something the
+  layer below could not express &mdash; click any of them.</p>
+
+  <div class="stackgrid">
+    <ol class="stack" id="stack"></ol>
+    <div class="layerbody" id="layerBody"></div>
+  </div>
+
+  <p class="payoff">Every layer but the last adds <em>expressiveness</em>. The last one adds
+  <em>isolation</em>: because a dispute is confined to the channel it happened in, the blast
+  radius of misbehaviour is one bidder rather than the whole auction. That is where $O(k)$
+  instead of $O(n)$ comes from.</p>
+
+  <h3 style="margin-top:28px">On-chain complexity, compared</h3>
+  <div style="overflow-x:auto"><table>
+    <thead><tr>
+      <th>Auction protocol</th><th class="num">All honest</th>
+      <th class="num">k bidders deviate</th><th class="num">Malicious auctioneer</th><th>Privacy</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>On-chain auction</td><td class="num">$O(n)$</td><td class="num">$O(n)$</td><td class="num">&mdash;</td><td>No</td></tr>
+      <tr><td>State channels</td><td class="num">$O(1)$</td><td class="num">$O(n)$</td><td class="num">&mdash;</td><td>No</td></tr>
+      <tr><td>Auction on a (zk)-rollup</td><td class="num">$O(n)$</td><td class="num">$O(n)$</td><td class="num">&mdash;</td><td>No</td></tr>
+      <tr class="hl"><td>This work</td><td class="num">$O(1)$</td><td class="num">$O(k)$</td><td class="num">$O(n)$</td><td>Yes</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:12px">Table I of the paper. A malicious auctioneer can force
+  $O(n)$ on-chain work, but only by answering an on-chain challenge from each of the $n$ bidders
+  itself &mdash; the asymmetry is what makes it irrational.</p>
+</div></section>
+
+<!-- ============ HUB & SPOKE ============ -->
+<section><div class="wrap">
+  <p class="eyebrow">Interactive</p>
+  <h2>Only the broken spokes touch the chain</h2>
+  <p class="lede">The hub holds one programmable payment channel with each bidder. Click any bidder to make it misbehave. Honest channels stay off-chain no matter how many there are; a deviating channel resolves on-chain, on its own, without dragging the others down with it. That is the whole of $O(k)$.</p>
+
+  <div class="hubgrid">
+    <div class="chart">
+      <svg id="hubSvg" role="img" aria-labelledby="hubTitle"><title id="hubTitle">Hub and spoke channel diagram; click a bidder to toggle misbehaviour</title></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--good)"></span> ✓ Honest — settles off-chain</li>
+        <li><span class="swatch" style="background:var(--critical)"></span> ✕ Deviating — forces an on-chain dispute</li>
+      </ul>
+    </div>
+    <div class="readout">
+      <div class="ro"><div class="k">On-chain calls</div><div class="v" id="hubTx">4</div>
+        <div class="statusline"><span class="dot" style="background:var(--good)"></span><span id="hubTxD">4 fixed hub calls + 0 disputes</span></div></div>
+      <div class="ro"><div class="k">Total on-chain gas</div><div class="v" id="hubGas">2,441,430</div></div>
+      <div class="ro"><div class="k">Bids kept private</div><div class="v" id="hubPriv">16 of 16</div>
+        <div class="statusline"><span class="dot" style="background:var(--good)"></span><span>Losing bids never revealed on-chain</span></div></div>
+      <div class="btns"><button class="btn" id="hubReset">Reset all to honest</button></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">Shown with 16 bidders for legibility; the argument does not depend on $n$. The four fixed hub calls are deploying the auction contract, starting the auction, submitting the sealed-bid root, and revealing the winner; the gas figure additionally includes the seller's one-off NFT approval (49,233 gas).</p>
+</div></section>
+
+<!-- ============ STAGES ============ -->
+<section id="stages"><div class="wrap">
+  <p class="eyebrow">Interactive</p>
+  <h2>Walk the protocol</h2>
+  <p class="lede">Five stages. Choose a scenario, then step through. Note where the dispute activity actually sits: challenges fire during <em>Opening</em>, and Rebuttal is the buffer that answers them — it is not a separate dispute phase.</p>
+
+  <div class="controls" style="margin-bottom:6px">
+    <div class="ctl" style="flex:0 0 auto">
+      <label id="scLbl">Scenario</label>
+      <div class="seg" role="group" aria-labelledby="scLbl" id="scSeg">
+        <button type="button" data-sc="honest" aria-pressed="true">Everyone honest</button>
+        <button type="button" data-sc="refuse" aria-pressed="false">A bidder won't open</button>
+        <button type="button" data-sc="censor" aria-pressed="false">The hub censors a bid</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="playrow"><button class="btn" id="stagePlay">▶ Play all five stages</button></div>
+  <div class="stagebar" id="stageBar"></div>
+  <div class="stagebody" id="stageBody"></div>
+</div></section>
+
+<!-- ============ MERKLE ============ -->
+<section id="merkle"><div class="wrap">
+  <p class="eyebrow">Interactive</p>
+  <h2>Why the hub cannot quietly drop your bid</h2>
+  <p class="lede">Your bid is sealed into a commitment, the commitments form a Merkle tree, and the hub posts only the root on-chain. The hub hands you back an inclusion proof — a short list of sibling hashes. If the hub later pretends you never bid, that proof is what the contract checks, and the hub loses its collateral.</p>
+
+  <div class="mk">
+    <div class="chart">
+      <svg id="mkSvg" role="img" aria-labelledby="mkTitle"><title id="mkTitle">Merkle tree of eight sealed bids with the inclusion path highlighted</title></svg>
+      <p class="note" style="margin-top:10px">Click any leaf to follow its path to the root.</p>
+    </div>
+    <div class="readout">
+      <div class="ro">
+        <div class="k">Your sealed bid</div>
+        <div style="display:flex; gap:8px; align-items:center; margin:.5rem 0">
+          <input type="number" id="bidIn" value="42" min="0" max="999" aria-label="Your bid amount">
+          <button class="btn" id="bidGo" style="padding:.45rem .8rem">Seal it</button>
+        </div>
+        <p class="note" style="margin:0">Commitment <span class="mono" id="mkCommit">—</span></p>
+      </div>
+      <div class="ro">
+        <div class="k">Inclusion proof</div>
+        <div id="mkProof"></div>
+      </div>
+      <div class="ro">
+        <div class="k">Root posted on-chain</div>
+        <div class="mono" id="mkRoot" style="font-size:.95rem; font-weight:650; margin-top:.3rem">—</div>
+      </div>
+      <div class="btns">
+        <button class="btn" id="mkOmit">Hub omits my bid →</button>
+        <button class="btn" id="mkReset">Reset</button>
+      </div>
+      <div id="mkVerdict"></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">The animation uses a deliberately simple stand-in hash so the tree structure is visible; the real construction uses the Poseidon hash function, chosen because it is cheap both inside an arithmetic circuit and inside a smart contract.</p>
+</div></section>
+
+<!-- ============ PROPERTIES ============ -->
+<section><div class="wrap">
+  <p class="eyebrow">Guarantees</p>
+  <h2>What the protocol promises</h2>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Property</th><th>What it means</th><th>How it is enforced</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Correctness</strong></td><td>The seller receives the highest bid; that bidder receives the asset.</td><td>zkSNARK proof of the winning condition, verified on-chain.</td></tr>
+      <tr><td><strong>Bid privacy</strong></td><td>No one — not even the hub — learns a bid during the bidding stage.</td><td>Fully sealed commitments; a uniform maximum-bid collateral so the locked amount leaks nothing.</td></tr>
+      <tr><td><strong>Post-auction privacy</strong></td><td>In the optimistic case, losing bids and bidder identities are never revealed.</td><td>Only the winner and winning amount leave the zero-knowledge proof.</td></tr>
+      <tr><td><strong>Bid binding</strong></td><td>A bidder cannot change a committed bid after seeing others.</td><td>The Merkle root fixes the bid set before any opening.</td></tr>
+      <tr><td><strong>Non-malleability</strong></td><td>The hub cannot favour a chosen bidder.</td><td>The hub never learns bids before the root is fixed.</td></tr>
+      <tr><td><strong>Liveness</strong></td><td>The auction terminates even under a malicious hub.</td><td>Covenant contracts let any party force settlement on-chain.</td></tr>
+      <tr><td><strong>Financial fairness</strong></td><td>Whoever deviates loses collateral.</td><td>The contract deterministically identifies the cheating party.</td></tr>
+      <tr><td><strong>Non-interactivity</strong></td><td>Bidders never talk to each other.</td><td>Hub-and-spoke topology; no bidder-to-bidder MPC.</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured</p>
+  <h2>Implementation and cost</h2>
+  <p class="lede">Circuits in Circom, Groth16 proofs via snarkjs, Poseidon hashing, ECDSA signatures. 1,156 lines of Solidity, plus Java and Python off-chain clients. Deployed to a private proof-of-work EVM chain (Hyperledger Besu 23.1.0); benchmarks on a 6-core 2.6 GHz Intel Core i7 with 16 GB of memory.</p>
+
+  <h3 style="margin-top:26px">Off-chain: zkSNARK setup and proving</h3>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Tree depth</th><th class="num">Constraints</th><th class="num">One-time setup</th><th class="num">Key size</th><th class="num">Proving time</th><th class="num">Bidders supported</th></tr></thead>
+    <tbody>
+      <tr><td>4</td><td class="num">14,444</td><td class="num">33.2 s</td><td class="num">7.9 MB</td><td class="num">3.07 s</td><td class="num">16</td></tr>
+      <tr><td>6</td><td class="num">54,626</td><td class="num">56.0 s</td><td class="num">30.0 MB</td><td class="num">6.14 s</td><td class="num">64</td></tr>
+      <tr><td>8</td><td class="num">213,896</td><td class="num">268.5 s</td><td class="num">118 MB</td><td class="num">17.49 s</td><td class="num">256</td></tr>
+      <tr><td>10</td><td class="num">849,518</td><td class="num">1001.3 s</td><td class="num">468 MB</td><td class="num">61.35 s</td><td class="num">1,024</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">These costs are off-chain and borne by the hub; the on-chain cost is unchanged by tree depth. Merkle-tree generation and bid verification add about 51 ms for 1,024 bidders.</p>
+
+  <h3 style="margin-top:26px">On-chain: gas per operation</h3>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Operation</th><th class="num">Gas</th><th>Invoked by</th><th>Case</th></tr></thead>
+    <tbody>
+      <tr><td>Deploying cryptographic libraries</td><td class="num">4,507,969</td><td>Hub</td><td>One-time setup</td></tr>
+      <tr><td>Deploying the auction contract</td><td class="num">1,449,003</td><td>Hub</td><td>Optimistic</td></tr>
+      <tr><td><span class="mono">approve</span> NFT transfer</td><td class="num">49,233</td><td>Seller</td><td>Optimistic</td></tr>
+      <tr><td>Start auction</td><td class="num">92,612</td><td>Hub</td><td>Optimistic</td></tr>
+      <tr><td>Submit sealed bids (Merkle root)</td><td class="num">87,138</td><td>Hub</td><td>Optimistic</td></tr>
+      <tr><td>Reveal winner (with zkSNARK proof)</td><td class="num">763,444</td><td>Hub</td><td>Optimistic</td></tr>
+      <tr class="hl"><td>Total, honest auction of any size (4 hub calls + seller approval)</td><td class="num">2,441,430</td><td>Hub + seller</td><td>Optimistic</td></tr>
+      <tr><td>Register hub–seller covenant</td><td class="num">459,140</td><td>Hub or seller</td><td class="pess">Pessimistic</td></tr>
+      <tr><td>Register hub–bidder covenant</td><td class="num">3,029,708</td><td>Hub or bidder</td><td class="pess">Pessimistic</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Opening a programmable payment channel costs 3,243,988 gas and closing it 146,908 gas. That is a one-time cost per participant, amortised across every auction and every other off-chain application that reuses the same channel — so it is not part of the per-auction figures above.</p>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{minaei2026scalable,
+  title     = {Scalable Off-Chain Auctions},
+  author    = {Minaei, Mohsen and Kumaresan, Ranjit and Beams, Andrew and
+               Moreno-Sanchez, Pedro and Yang, Yibin and Raghuraman, Srinivasan and
+               Chatzigiannis, Panagiotis and Zamani, Mahdi and Le, Duc V.},
+  booktitle = {Proceedings of the Network and Distributed System Security
+               Symposium (NDSS)},
+  year      = {2026}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Source code.</strong> The implementation is not yet public — institutional open-sourcing approval is still in progress. The paper contains detailed pseudocode for the core algorithms, and the authors are open to discussing controlled access for testing purposes. Please contact the corresponding author.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">Scalable Off-Chain Auctions · NDSS 2026 · Visa Research, IMDEA Software Institute, Georgia Institute of Technology, MIT.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* =======================================================================
+   Theme
+   ===================================================================== */
+/* Light only, like the rest of levduc.github.io. */
+
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+/* ---------- motion helpers ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+}
+function drawOn(lineEl, ms, delay){
+  if (REDUCED) return;
+  var L;
+  try { L = lineEl.getTotalLength(); } catch(e){ return; }
+  if (!L) return;
+  lineEl.setAttribute('stroke-dasharray', L);
+  lineEl.setAttribute('stroke-dashoffset', L);
+  setTimeout(function(){
+    tween(ms, function(p){ lineEl.setAttribute('stroke-dashoffset', L * (1 - p)); },
+      function(){ lineEl.removeAttribute('stroke-dasharray'); lineEl.removeAttribute('stroke-dashoffset'); });
+  }, delay || 0);
+}
+function fadeIn(node, ms, delay){
+  if (REDUCED) return;
+  node.setAttribute('opacity', 0);
+  setTimeout(function(){ tween(ms, function(p){ node.setAttribute('opacity', p); },
+    function(){ node.removeAttribute('opacity'); }); }, delay || 0);
+}
+function countTo(node, from, to, render, ms){
+  tween(ms || 520, function(p){ node.textContent = render(from + (to - from) * p); });
+}
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function compact(n){
+  if (n >= 1e9) return (n/1e9).toFixed(n >= 1e10 ? 0 : 1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(0) + 'k';
+  return String(Math.round(n));
+}
+
+/* tooltip */
+var tipEl = document.getElementById('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html;
+  tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+/* =======================================================================
+   Data — every figure below is taken verbatim from the paper / its
+   plotting notebook (figures/test.ipynb). Nothing is extrapolated.
+   ===================================================================== */
+var N_POINTS = [128, 256, 512, 1024];
+var GAS_LIMIT = 30000000;
+
+var SERIES_A = [
+  { key:'ours',  name:'Our off-chain auction', short:'Ours', slot:'--s1', v:[2392099, 2392227, 2392163, 2385073] },
+  { key:'nozk',  name:'Off-chain, without zkSNARKs', short:'No zkSNARK', slot:'--s2', v:[7732148, 13631265, 26273133, 53193341] },
+  { key:'naive', name:'Naive on-chain auction', short:'Naive', slot:'--s3', v:[19184482, 37084386, 72884194, 144483810] },
+  { key:'rrp',   name:'Riggs-RP', short:'Riggs-RP', slot:'--s4', v:N_POINTS.map(function(n){ return 3010000 * n; }) },
+  { key:'rtc',   name:'Riggs-TC', short:'Riggs-TC', slot:'--s5', v:N_POINTS.map(function(n){ return 3310000 * n; }) },
+  { key:'nsnrk', name:'Naive on-chain + general zkSNARK', short:'Naive + zk', slot:'--s6', v:N_POINTS.map(function(n){ return 103530000 * n; }) }
+];
+
+/* Malicious-bidder model (paper Fig. "malicious bidders", n = 1024) */
+var BASE_OPT      = 2441430;             /* sum of the five optimistic on-chain ops */
+var PER_DEVIATOR  = 3029708 + 50000;     /* covenant registration + hashing estimate */
+var RIGGS_B_PER   = 2410000;             /* per-bidder cost used in that figure */
+var N_B           = 1024;
+var RIGGS_B_TOTAL = RIGGS_B_PER * N_B;   /* 2,467,840,000 */
+var BREAK_EVEN    = Math.ceil((RIGGS_B_TOTAL - BASE_OPT) / PER_DEVIATOR);
+
+/* =======================================================================
+   Chart A — six protocols, horizontal log-scale bars
+   ===================================================================== */
+var nIdx = 3;
+(function buildSeg(){
+  var seg = document.getElementById('nSeg');
+  N_POINTS.forEach(function(n, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = n.toLocaleString('en-US');
+    b.setAttribute('aria-pressed', i === nIdx ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      nIdx = i;
+      Array.prototype.forEach.call(seg.children, function(c, j){
+        c.setAttribute('aria-pressed', j === i ? 'true' : 'false');
+      });
+      document.getElementById('nVal').textContent = n.toLocaleString('en-US');
+      drawA('update'); buildTableA();
+    });
+    seg.appendChild(b);
+  });
+})();
+
+var A_prev = {}, A_prevV = {};
+function drawA(mode){
+  mode = mode || 'static';
+  if (REDUCED && mode !== 'hidden') mode = 'static';
+  var svg = document.getElementById('chartA');
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 356 : 900;
+  var padL = narrow ? 88 : 250, padR = narrow ? 50 : 78;
+  var padT = narrow ? 30 : 26, padB = narrow ? 42 : 44;
+  var rowH = narrow ? 30 : 34, gap = narrow ? 9 : 10;
+  var H = padT + SERIES_A.length * rowH + padB;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  var vals = SERIES_A.map(function(s){ return s.v[nIdx]; });
+  var hi = Math.max.apply(null, vals.concat([GAS_LIMIT]));
+  var lo = 1e6;
+  var loL = Math.log10(lo), hiL = Math.log10(hi * 1.9);
+  function X(v){ return padL + (Math.log10(Math.max(v, lo)) - loL) / (hiL - loL) * (W - padL - padR); }
+
+  var grid = css('--grid'), axis = css('--axis'), muted = css('--ink-muted'),
+      ink1 = css('--ink-1'), ink2 = css('--ink-2'), surface = css('--surface-1');
+
+  /* gridlines, one per decade */
+  var eStep = narrow ? 2 : 1;
+  for (var e = 6; Math.pow(10, e) <= hi * 1.9; e += eStep){
+    var gx = X(Math.pow(10, e));
+    svg.appendChild(el('line', { x1:gx, y1:padT - 6, x2:gx, y2:H - padB, stroke:grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:gx, y:H - padB + 18, 'text-anchor':'middle',
+      'font-size':narrow ? 9 : 11, fill:muted, 'font-family':'inherit' }, compact(Math.pow(10, e))));
+  }
+  svg.appendChild(el('text', { x:(padL + W - padR) / 2, y:H - padB + 36, 'text-anchor':'middle',
+    'font-size':narrow ? 9.5 : 11, fill:muted, 'font-family':'inherit' }, 'Total on-chain gas (log scale)'));
+
+  /* block gas limit */
+  var lx = X(GAS_LIMIT);
+  svg.appendChild(el('line', { x1:lx, y1:padT - 14, x2:lx, y2:H - padB,
+    stroke:css('--critical'), 'stroke-width':2, 'stroke-dasharray':'5 4' }));
+  svg.appendChild(el('text', { x:narrow ? lx : Math.min(lx + 6, W - padR - 96), y:padT - 5,
+    'text-anchor':narrow ? 'middle' : 'start', 'font-size':narrow ? 9 : 10.5,
+    fill:css('--critical'), 'font-weight':650, 'font-family':'inherit' }, '30M block limit'));
+
+  /* baseline */
+  svg.appendChild(el('line', { x1:padL, y1:padT - 6, x2:padL, y2:H - padB, stroke:axis, 'stroke-width':1 }));
+
+  SERIES_A.forEach(function(s, i){
+    var y = padT + i * rowH, v = s.v[nIdx], c = css(s.slot);
+    var x2 = X(v), bw = Math.max(x2 - padL, 2), bh = rowH - gap;
+
+    svg.appendChild(el('text', { x:padL - (narrow ? 7 : 12), y:y + bh / 2 + 4, 'text-anchor':'end',
+      'font-size':narrow ? 10.5 : 12, fill:i === 0 ? ink1 : ink2, 'font-weight':i === 0 ? 650 : 400,
+      'font-family':'inherit' }, narrow ? s.short : s.name));
+
+    var toW = bw, toV = v;
+    var frW = mode === 'static' ? toW
+            : (mode === 'update' && A_prev[s.key] !== undefined ? A_prev[s.key] : 0);
+    var frV = mode === 'static' ? toV
+            : (mode === 'update' && A_prevV[s.key] !== undefined ? A_prevV[s.key] : 0);
+    A_prev[s.key] = toW; A_prevV[s.key] = toV;
+    var off = narrow ? 5 : 8;
+
+    var r = el('rect', { x:padL, y:y, width:Math.max(frW, 0.1), height:bh, rx:4, fill:c });
+    r.style.cursor = 'pointer';
+    r.addEventListener('mousemove', function(ev){
+      showTip(ev, '<b>' + s.name + '</b>' + fmt(v) + ' gas<br>' +
+        (v > GAS_LIMIT ? '<span style="color:' + css('--critical') + '">' +
+          (v / GAS_LIMIT).toFixed(1) + '× a full block</span>'
+        : 'fits in one block'));
+    });
+    r.addEventListener('mouseleave', hideTip);
+    svg.appendChild(r);
+
+    /* direct value label — required relief for the light-mode contrast warning */
+    var lbl = el('text', { x:padL + frW + off, y:y + bh / 2 + 4, 'font-size':narrow ? 9.5 : 11.5,
+      fill:i === 0 ? ink1 : ink2, 'font-weight':i === 0 ? 700 : 500,
+      'font-family':'inherit' }, mode === 'hidden' ? '' : compact(frV));
+    svg.appendChild(lbl);
+
+    if (mode === 'enter' || mode === 'update'){
+      var delay = mode === 'enter' ? i * 75 : 0;
+      var dur = mode === 'enter' ? 640 : 420;
+      setTimeout(function(){
+        tween(dur, function(t){
+          var w = frW + (toW - frW) * t;
+          r.setAttribute('width', Math.max(w, 0.1));
+          lbl.setAttribute('x', padL + w + off);
+          lbl.textContent = compact(frV + (toV - frV) * t);
+        });
+      }, delay);
+    }
+  });
+
+  /* legend */
+  var lg = document.getElementById('legendA');
+  lg.innerHTML = '';
+  SERIES_A.forEach(function(s){
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="swatch" style="background:' + css(s.slot) + '"></span>' + s.name;
+    lg.appendChild(li);
+  });
+}
+
+function buildTableA(){
+  var t = document.getElementById('tableA');
+  var head = '<thead><tr><th>Protocol</th>' +
+    N_POINTS.map(function(n){ return '<th class="num">' + n.toLocaleString('en-US') + ' bidders</th>'; }).join('') +
+    '</tr></thead>';
+  var body = '<tbody>' + SERIES_A.map(function(s){
+    return '<tr' + (s.key === 'ours' ? ' class="hl"' : '') + '><td>' + s.name + '</td>' +
+      s.v.map(function(v, i){
+        return '<td class="num"' + (i === nIdx ? ' style="font-weight:700"' : '') + '>' + fmt(v) + '</td>';
+      }).join('') + '</tr>';
+  }).join('') + '</tbody>';
+  t.innerHTML = head + body;
+}
+
+/* =======================================================================
+   Chart B — cost versus number of deviators
+   ===================================================================== */
+function oursAtK(k){ return BASE_OPT + k * PER_DEVIATOR; }
+var kTarget = 0, kDisplay = 0, kRaf = null, B_enter = false;
+
+function drawB(){
+  var svg = document.getElementById('chartB');
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 356 : 900, H = narrow ? 300 : 380;
+  var padL = narrow ? 48 : 74, padR = narrow ? 14 : 130;
+  var padT = narrow ? 34 : 26, padB = narrow ? 48 : 52;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  var yMax = Math.max(oursAtK(N_B), RIGGS_B_TOTAL) * 1.12;
+  function X(k){ return padL + k / N_B * (W - padL - padR); }
+  function Y(v){ return H - padB - v / yMax * (H - padT - padB); }
+
+  var grid = css('--grid'), axis = css('--axis'), muted = css('--ink-muted'),
+      ink1 = css('--ink-1'), surface = css('--surface-1');
+  var cOurs = css('--s1'), cRiggs = css('--s5');
+
+  /* y gridlines */
+  for (var i = 0; i <= 4; i++){
+    var v = yMax * i / 4, gy = Y(v);
+    svg.appendChild(el('line', { x1:padL, y1:gy, x2:W - padR, y2:gy, stroke:grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:padL - 10, y:gy + 4, 'text-anchor':'end', 'font-size':narrow ? 9 : 11,
+      fill:muted, 'font-family':'inherit' }, compact(v)));
+  }
+  /* x ticks at the paper's measured percentages */
+  (narrow ? [0, 20, 40, 60, 80, 100] : [0, 5, 10, 20, 40, 60, 80, 100]).forEach(function(p){
+    var k = Math.round(p / 100 * N_B), gx = X(k);
+    svg.appendChild(el('line', { x1:gx, y1:H - padB, x2:gx, y2:H - padB + 5, stroke:axis, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:gx, y:H - padB + 19, 'text-anchor':'middle', 'font-size':narrow ? 9 : 10.5,
+      fill:muted, 'font-family':'inherit' }, p + '%'));
+  });
+  svg.appendChild(el('text', { x:(padL + W - padR) / 2, y:H - 8, 'text-anchor':'middle',
+    'font-size':narrow ? 9.5 : 11, fill:muted, 'font-family':'inherit' }, narrow ? 'Share of bidders that misbehave' : 'Share of the 1,024 bidders that misbehave'));
+  if (!narrow) svg.appendChild(el('text', { x:16, y:H / 2, 'text-anchor':'middle', 'font-size':11, fill:muted,
+    'font-family':'inherit', transform:'rotate(-90 16 ' + (H / 2) + ')' }, 'Total on-chain gas'));
+
+  svg.appendChild(el('line', { x1:padL, y1:H - padB, x2:W - padR, y2:H - padB, stroke:axis, 'stroke-width':1 }));
+
+  /* Riggs-TC flat reference */
+  var riggsLine = el('line', { x1:padL, y1:Y(RIGGS_B_TOTAL), x2:W - padR, y2:Y(RIGGS_B_TOTAL),
+    stroke:cRiggs, 'stroke-width':2 });
+  svg.appendChild(riggsLine);
+  svg.appendChild(el('text', { x:narrow ? padL + 3 : W - padR + 8, y:Y(RIGGS_B_TOTAL) + (narrow ? -7 : 4),
+    'text-anchor':'start', 'font-size':narrow ? 10 : 11.5,
+    fill:cRiggs, 'font-weight':650, 'font-family':'inherit' }, 'Riggs-TC ' + compact(RIGGS_B_TOTAL)));
+
+  /* our rising line */
+  var oursLine = el('line', { x1:X(0), y1:Y(oursAtK(0)), x2:X(N_B), y2:Y(oursAtK(N_B)),
+    stroke:cOurs, 'stroke-width':2 });
+  svg.appendChild(oursLine);
+  svg.appendChild(el('text', { x:narrow ? W - padR : W - padR + 8, y:Y(oursAtK(N_B)) + (narrow ? -10 : 4),
+    'text-anchor':narrow ? 'end' : 'start', 'font-size':narrow ? 10 : 11.5,
+    fill:cOurs, 'font-weight':700, 'font-family':'inherit' }, 'Ours ' + compact(oursAtK(N_B))));
+
+  /* break-even marker */
+  var bx = X(BREAK_EVEN), by = Y(RIGGS_B_TOTAL);
+  var beG = el('g', {});
+  beG.appendChild(el('line', { x1:bx, y1:by, x2:bx, y2:H - padB, stroke:muted,
+    'stroke-width':1, 'stroke-dasharray':'3 4' }));
+  beG.appendChild(el('circle', { cx:bx, cy:by, r:5, fill:surface, stroke:muted, 'stroke-width':2 }));
+  beG.appendChild(el('text', { x:bx, y:by - 18, 'text-anchor':'middle', 'font-size':narrow ? 9 : 10.5,
+    fill:muted, 'font-weight':650, 'font-family':'inherit', stroke:surface,
+    'stroke-width':3.5, 'paint-order':'stroke' }, 'break-even k = ' + BREAK_EVEN));
+  svg.appendChild(beG);
+
+  /* live marker — follows kDisplay, which eases toward the slider value */
+  var k = kDisplay;
+  var mx = X(k), my = Y(oursAtK(k));
+  var mkG = el('g', {});
+  mkG.appendChild(el('line', { x1:mx, y1:padT, x2:mx, y2:H - padB, stroke:cOurs,
+    'stroke-width':1, 'stroke-dasharray':'2 3', opacity:.55 }));
+  mkG.appendChild(el('circle', { cx:mx, cy:my, r:7, fill:cOurs, stroke:surface, 'stroke-width':2 }));
+  mkG.appendChild(el('text', { x:mx, y:my - 16, 'text-anchor':'middle', 'font-size':narrow ? 10.5 : 12,
+    fill:ink1, 'font-weight':700, 'font-family':'inherit' }, compact(oursAtK(k)) + ' gas'));
+  svg.appendChild(mkG);
+
+  if (B_enter){
+    B_enter = false;
+    drawOn(riggsLine, 620, 0);
+    drawOn(oursLine, 820, 160);
+    fadeIn(beG, 380, 820);
+    fadeIn(mkG, 380, 980);
+  }
+
+  var lg = document.getElementById('legendB');
+  lg.innerHTML =
+    '<li><span class="swatch" style="background:' + cOurs + '"></span>Ours — 2,441,430 gas + 3,079,708 per deviator</li>' +
+    '<li><span class="swatch" style="background:' + cRiggs + '"></span>Riggs-TC — 2,410,000 gas × 1,024 bidders, paid regardless</li>';
+}
+
+function paintB(){
+  var kd = kDisplay, g = oursAtK(kd), kt = kTarget;
+  document.getElementById('kVal').textContent = kt.toLocaleString('en-US') +
+    ' (' + (kt / N_B * 100).toFixed(1) + '%)';
+  document.getElementById('bOurs').textContent = compact(g);
+  document.getElementById('bOursD').textContent = kt === 0
+    ? 'All 1,024 bids settled off-chain.'
+    : fmt(kt) + ' on-chain dispute' + (kt === 1 ? '' : 's') + ', ' + fmt(N_B - kt) + ' still off-chain.';
+  var ratio = RIGGS_B_TOTAL / g;
+  document.getElementById('bRatio').textContent = ratio >= 1
+    ? (ratio >= 10 ? Math.round(ratio) : ratio.toFixed(1)) + '×'
+    : (1 / ratio).toFixed(2) + '× worse';
+  drawB();
+}
+function kLoop(){
+  var d = kTarget - kDisplay;
+  if (Math.abs(d) < 0.4){ kDisplay = kTarget; paintB(); kRaf = null; return; }
+  kDisplay += d * 0.2;
+  paintB();
+  kRaf = requestAnimationFrame(kLoop);
+}
+(function(){
+  var r = document.getElementById('kRange');
+  r.addEventListener('input', function(){
+    kTarget = +r.value;
+    if (REDUCED){ kDisplay = kTarget; paintB(); return; }
+    if (!kRaf) kRaf = requestAnimationFrame(kLoop);
+  });
+  /* if rAF is throttled the eased catch-up can stall, so settle on release */
+  r.addEventListener('change', function(){
+    kTarget = +r.value;
+    setTimeout(function(){
+      if (kDisplay !== kTarget){ kDisplay = kTarget; paintB(); }
+    }, 700);
+  });
+})();
+
+/* =======================================================================
+   The stack \u2014 payment channel \u2192 state channel \u2192 PPC \u2192 this auction
+   ===================================================================== */
+var LAYERS = [
+  {
+    name:'Payment channel', sub:'Lightning and friends',
+    cost:'moves money only', tone:'',
+    buys:'Two parties lock funds in one on-chain contract, then exchange signed balance ' +
+         'updates directly with each other. Thousands of payments cost exactly two on-chain ' +
+         'transactions \u2014 one to open the channel, one to close it.',
+    pays:'It can only move money. There is no way to express &ldquo;pay me if this auction ' +
+         'says I won&rdquo;.'
+  },
+  {
+    name:'State channel', sub:'generic off-chain contracts',
+    cost:'$O(1)$ honest &middot; $O(n)$ disputed', tone:'bad',
+    buys:'Generalises the idea to arbitrary contract logic. The parties agree off-chain on the ' +
+         'contract\u2019s source and on a <span class="mono">CREATE2</span> salt, so they all know the ' +
+         'address the contract <em>would</em> have, and then exchange signed transactions against ' +
+         'it. Nothing is ever deployed while everyone cooperates.',
+    pays:'Disputes are all-or-nothing. If one participant misbehaves the contract is deployed and ' +
+         '<strong>every transaction exchanged off-chain is replayed on-chain</strong>. In a ' +
+         '1,024-bidder auction a single silent bidder drags all 1,024 interactions onto the ' +
+         'chain. That is the $O(n)$ in the table below.'
+  },
+  {
+    name:'Programmable payment channel', sub:'Kumaresan et al., ACNS 2024',
+    cost:'two parties, arbitrary programs', tone:'',
+    buys:'A payment channel that can run arbitrary programs between the two parties who share ' +
+         'it. The channel contract tracks each side\u2019s deposit, a monotonically increasing ' +
+         'credit, a receipt index, and an accumulator of promises not yet resolved. A ' +
+         '<strong>promise</strong> is a signed commitment to a piece of contract bytecode; a ' +
+         '<strong>covenant</strong> is two interlocked promises whose addresses are precomputed ' +
+         'with <span class="mono">CREATE2</span> so each is initialised with the other\u2019s. Together they ' +
+         'give the two parties a state channel.',
+    pays:'Two parties per channel. An $n$-party application has to be assembled out of pairwise ' +
+         'channels rather than one shared one \u2014 which turns out to be the point.'
+  },
+  {
+    name:'Hub-and-spoke auction', sub:'this paper',
+    cost:'$O(1)$ honest &middot; $O(k)$ disputed', tone:'good',
+    buys:'Instead of one $n$-party state channel, $n$ pairwise PPCs: the auctioneer holds one ' +
+         'channel with each bidder and one with the seller. A dispute with bidder $i$ registers ' +
+         'only bidder $i$\u2019s covenant \u2014 <strong>every other channel is untouched and stays ' +
+         'off-chain</strong>.',
+    pays:'The auctioneer becomes a coordination point. It is treated as fully malicious: it ' +
+         'cannot steal funds, censor a bid or abort without forfeiting collateral, and making ' +
+         'every bidder pay means answering an on-chain challenge from each of them itself.'
+  }
+];
+var layerIdx = LAYERS.length - 1;
+
+(function buildStack(){
+  var ol = document.getElementById('stack');
+  /* rendered top-down: the auction sits on top of the things it is built from */
+  for (var i = LAYERS.length - 1; i >= 0; i--){
+    (function(i){
+      var L = LAYERS[i];
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'layer';
+      b.setAttribute('aria-pressed', i === layerIdx ? 'true' : 'false');
+      b.dataset.i = i;
+      b.innerHTML = '<span class="lname">' + L.name + '</span>' +
+                    '<span class="lsub">' + L.sub + '</span>' +
+                    '<span class="lcost ' + L.tone + '">' + L.cost + '</span>';
+      b.addEventListener('click', function(){ layerIdx = i; renderLayer(true); });
+      li.appendChild(b); ol.appendChild(li);
+    })(i);
+  }
+})();
+
+function renderLayer(anim){
+  var ol = document.getElementById('stack');
+  Array.prototype.forEach.call(ol.querySelectorAll('.layer'), function(b){
+    b.setAttribute('aria-pressed', +b.dataset.i === layerIdx ? 'true' : 'false');
+  });
+  var body = document.getElementById('layerBody');
+  var L = LAYERS[layerIdx];
+  function paint(){
+    body.innerHTML = '<h3>' + L.name + '</h3><p class="who">' + L.sub + '</p>' +
+      '<dl><dt>What it buys</dt><dd>' + L.buys + '</dd>' +
+      '<dt>What it costs</dt><dd>' + L.pays + '</dd></dl>';
+    if (window.renderMathInElement) katexRender(body);
+  }
+  if (anim && !REDUCED){
+    body.classList.add('swap');
+    setTimeout(function(){ paint(); body.classList.remove('swap'); }, 190);
+  } else paint();
+}
+
+/* the stack assembles from the bottom up when it scrolls into view */
+function enterStack(){
+  if (REDUCED) return;
+  var items = document.querySelectorAll('#stack li');
+  for (var i = 0; i < items.length; i++){
+    (function(node, order){
+      node.style.opacity = 0;
+      node.style.transform = 'translateY(10px)';
+      setTimeout(function(){
+        tween(340, function(t){
+          node.style.opacity = t;
+          node.style.transform = 'translateY(' + (10 * (1 - t)).toFixed(2) + 'px)';
+        }, function(){ node.style.opacity = ''; node.style.transform = ''; });
+      }, order * 120);
+    })(items[i], items.length - 1 - i);
+  }
+}
+
+/* =======================================================================
+   Hub and spoke
+   ===================================================================== */
+var HUB_N = 16;
+var bad = new Array(HUB_N).fill(false);
+var flashIdx = -1, hubPrevK = 0;
+var HUB_S = 460, HUB_R = 172;
+function hubXY(i){
+  var a = -Math.PI / 2 + i * 2 * Math.PI / HUB_N;
+  return { x:HUB_S / 2 + HUB_R * Math.cos(a), y:HUB_S / 2 + HUB_R * Math.sin(a) };
+}
+/* a dispute travelling up the broken spoke to the chain */
+function hubPacket(i){
+  if (REDUCED) return;
+  var svg = document.getElementById('hubSvg'), c = hubXY(i);
+  var cx = HUB_S / 2, cy = HUB_S / 2;
+  var dot = el('circle', { cx:c.x, cy:c.y, r:5.5, fill:css('--critical') });
+  svg.appendChild(dot);
+  tween(560, function(t){
+    dot.setAttribute('cx', c.x + (cx - c.x) * t);
+    dot.setAttribute('cy', c.y + (cy - c.y) * t);
+    dot.setAttribute('r', 5.5 - 2 * t);
+  }, function(){ if (dot.parentNode) dot.parentNode.removeChild(dot); });
+}
+
+function drawHub(){
+  var svg = document.getElementById('hubSvg');
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+  var S = 460, cx = S / 2, cy = S / 2, R = 172;
+  svg.setAttribute('viewBox', '0 0 ' + S + ' ' + S);
+
+  var good = css('--good'), crit = css('--critical'), surface = css('--surface-1'),
+      ink1 = css('--ink-1'), ink2 = css('--ink-2'), muted = css('--ink-muted');
+
+  /* spokes first so nodes sit on top */
+  for (var i = 0; i < HUB_N; i++){
+    var a = -Math.PI / 2 + i * 2 * Math.PI / HUB_N;
+    var x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+    svg.appendChild(el('line', { x1:cx, y1:cy, x2:x, y2:y,
+      'class':bad[i] ? null : 'spoke-honest',
+      stroke:bad[i] ? crit : good, 'stroke-width':bad[i] ? 3 : 1.5,
+      'stroke-dasharray':bad[i] ? null : '4 4', opacity:bad[i] ? 1 : .6 }));
+  }
+
+  /* hub */
+  svg.appendChild(el('circle', { cx:cx, cy:cy, r:42, fill:surface, stroke:css('--s1'), 'stroke-width':2.5 }));
+  svg.appendChild(el('text', { x:cx, y:cy - 2, 'text-anchor':'middle', 'font-size':14,
+    'font-weight':700, fill:ink1, 'font-family':'inherit' }, 'Hub'));
+  svg.appendChild(el('text', { x:cx, y:cy + 14, 'text-anchor':'middle', 'font-size':10,
+    fill:muted, 'font-family':'inherit' }, 'auctioneer'));
+
+  for (var i = 0; i < HUB_N; i++){
+    (function(i){
+      var a = -Math.PI / 2 + i * 2 * Math.PI / HUB_N;
+      var x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+      var g = el('g', { class:'node', tabindex:0, role:'button',
+        'aria-label':'Bidder ' + (i + 1) + (bad[i] ? ', deviating' : ', honest') });
+      g.appendChild(el('circle', { cx:x, cy:y, r:17, 'class':i === flashIdx ? 'pop' : null,
+        fill:bad[i] ? crit : surface, stroke:bad[i] ? crit : good, 'stroke-width':2 }));
+      /* icon + label, never colour alone */
+      g.appendChild(el('text', { x:x, y:y + 5, 'text-anchor':'middle', 'font-size':13,
+        'font-weight':700, fill:bad[i] ? '#fff' : good, 'font-family':'inherit' },
+        bad[i] ? '✕' : '✓'));
+      function toggle(){ bad[i] = !bad[i]; flashIdx = i; syncHub(true); }
+      g.addEventListener('click', toggle);
+      g.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+      });
+      g.addEventListener('mousemove', function(ev){
+        showTip(ev, '<b>Bidder ' + (i + 1) + '</b>' + (bad[i]
+          ? 'Deviating — its covenant is registered on-chain (3,029,708 gas).'
+          : 'Honest — settles entirely off-chain, 0 gas.'));
+      });
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    })(i);
+  }
+}
+
+function syncHub(anim){
+  var k = bad.filter(Boolean).length;
+  var txEl = document.getElementById('hubTx'),
+      gasEl = document.getElementById('hubGas'),
+      privEl = document.getElementById('hubPriv');
+  if (anim && !REDUCED && k !== hubPrevK){
+    countTo(txEl, 4 + hubPrevK, 4 + k, function(x){ return String(Math.round(x)); }, 400);
+    countTo(gasEl, BASE_OPT + hubPrevK * PER_DEVIATOR, BASE_OPT + k * PER_DEVIATOR, fmt, 640);
+    countTo(privEl, HUB_N - hubPrevK, HUB_N - k,
+      function(x){ return Math.round(x) + ' of ' + HUB_N; }, 400);
+  } else {
+    txEl.textContent = 4 + k;
+    gasEl.textContent = fmt(BASE_OPT + k * PER_DEVIATOR);
+    privEl.textContent = (HUB_N - k) + ' of ' + HUB_N;
+  }
+  document.getElementById('hubTxD').textContent =
+    '4 fixed hub calls + ' + k + ' dispute' + (k === 1 ? '' : 's');
+  hubPrevK = k;
+  drawHub();
+  var f = flashIdx; flashIdx = -1;
+  if (anim && f >= 0 && bad[f]) hubPacket(f);
+}
+document.getElementById('hubReset').addEventListener('click', function(){
+  bad = new Array(HUB_N).fill(false); flashIdx = -1; syncHub(true);
+});
+
+/* =======================================================================
+   Protocol stages
+   ===================================================================== */
+var STAGES = [
+  { name:'Create',   sub:'on-chain setup' },
+  { name:'Bid',      sub:'sealed; root on-chain' },
+  { name:'Open',     sub:'challenges fire here' },
+  { name:'Rebuttal', sub:'dispute buffer' },
+  { name:'Settle',   sub:'zkSNARK proof' }
+];
+
+var STAGE_TEXT = {
+  honest: [
+    { d:false, b:['The seller and the hub agree the auction parameters and the asset off-chain.',
+                  'The hub deploys the auction contract, posting its own collateral — the amount it forfeits if the auction fails.',
+                  'The seller approves the NFT transfer. One hub call plus the seller\'s approval so far.'] },
+    { d:false, b:['Each bidder sends a <strong>fully sealed</strong> commitment to the hub — hidden even from the hub itself.',
+                  'Bidder and hub agree a collateral in their payment channel, forfeited by whoever misbehaves.',
+                  'The hub returns a signed inclusion confirmation and posts one Merkle root on-chain for the whole bid set. Cost does not grow with the number of bidders.'] },
+    { d:false, b:['Every bidder opens their sealed bid to the hub, off-chain.',
+                  'No challenge is raised, so nothing reaches the chain during this window.'] },
+    { d:false, b:['Nothing to rebut. The window simply elapses.',
+                  'This buffer exists only so that challenges raised during Opening have a guaranteed window in which to be answered.'] },
+    { d:false, b:['The hub submits the winning bid together with a zkSNARK proof that it really is the highest bid in the committed set.',
+                  'The asset goes to the winner, the payment to the seller, collateral back to everyone else.',
+                  '<strong>Losing bids and bidder identities are never revealed.</strong>',
+                  'Total: four on-chain hub calls plus the seller\'s NFT approval &mdash; 2,441,430 gas, for any number of bidders.'] }
+  ],
+  refuse: [
+    { d:false, b:['Identical to the honest run — the hub cannot predict who will deviate.'] },
+    { d:false, b:['Identical to the honest run. All bids are sealed and committed to one Merkle root.',
+                  'The deviating bidder has already locked collateral at this point. That is what makes the next stage safe.'] },
+    { d:true,  b:['One bidder simply goes quiet and never opens their sealed bid.',
+                  'The hub cannot compute the winner over a bid set containing an unopened commitment, so it invokes that bidder\'s covenant.',
+                  '<strong>Only that bidder\'s channel is touched.</strong> The other 1,023 channels are unaffected and stay off-chain.'] },
+    { d:true,  b:['The covenant is registered on-chain: 3,029,708 gas, charged against the silent bidder\'s collateral.',
+                  'The contract deterministically identifies who failed to act, so the honest party is never the one that pays.',
+                  'With $k$ such bidders this repeats $k$ times — the entire source of the $O(k)$ term.'] },
+    { d:false, b:['The auction proceeds exactly as before over the remaining bids.',
+                  'Liveness holds: a bidder who walks away cannot stop the auction, only pay for having tried.'] }
+  ],
+  censor: [
+    { d:false, b:['Identical to the honest run.'] },
+    { d:false, b:['The bidder submits a sealed bid and receives a <strong>signed inclusion confirmation</strong> from the hub.',
+                  'That signature is the bidder\'s evidence. The hub cannot take it back.',
+                  'A malicious hub now omits this bid from the Merkle root it posts on-chain.'] },
+    { d:true,  b:['The bidder checks the posted root against their confirmation and finds their bid missing.',
+                  'Instead of opening, the bidder <strong>challenges</strong> the hub on-chain, presenting the signed confirmation.',
+                  'This is why challenges belong to the Opening stage, not to a later phase.'] },
+    { d:true,  b:['The hub must either produce a valid inclusion proof for that bid, or fail.',
+                  'It cannot produce one — the bid was never in the tree.',
+                  'The contract concludes the hub cheated and <strong>forfeits the hub\'s collateral</strong> to the wronged bidder.'] },
+    { d:false, b:['Censorship is therefore never profitable: suppressing a bid costs the hub more than any advantage it could buy.',
+                  'The same mechanism covers a hub that attempts to deny service to a fraction of bidders — each affected bidder recovers through their own covenant.'] }
+  ]
+};
+
+var scenario = 'honest', stageIdx = 0;
+
+(function(){
+  var bar = document.getElementById('stageBar');
+  STAGES.forEach(function(s, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'stg';
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.innerHTML = s.name + '<small>' + s.sub + '</small>';
+    b.addEventListener('click', function(){ stopPlay(); stageIdx = i; renderStage(true); });
+    bar.appendChild(b);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#scSeg button'), function(b){
+    b.addEventListener('click', function(){
+      scenario = b.dataset.sc;
+      Array.prototype.forEach.call(document.querySelectorAll('#scSeg button'), function(o){
+        o.setAttribute('aria-pressed', o === b ? 'true' : 'false');
+      });
+      stopPlay(); renderStage(true);
+    });
+  });
+})();
+
+var playTimer = null;
+function stopPlay(){
+  if (!playTimer) return;
+  clearInterval(playTimer); playTimer = null;
+  document.getElementById('stagePlay').textContent = '▶ Play all five stages';
+}
+document.getElementById('stagePlay').addEventListener('click', function(){
+  if (playTimer){ stopPlay(); return; }
+  stageIdx = 0; renderStage(true);
+  this.textContent = '❚❚ Pause';
+  playTimer = setInterval(function(){
+    if (stageIdx >= STAGES.length - 1){ stopPlay(); return; }
+    stageIdx++; renderStage(true);
+  }, 2800);
+});
+
+function renderStage(anim){
+  Array.prototype.forEach.call(document.getElementById('stageBar').children, function(c, i){
+    c.setAttribute('aria-pressed', i === stageIdx ? 'true' : 'false');
+  });
+  var body = document.getElementById('stageBody');
+  function paint(){
+    var data = STAGE_TEXT[scenario][stageIdx];
+    body.innerHTML =
+      '<h3>' + STAGES[stageIdx].name +
+      '<span class="chip ' + (data.d ? 'on' : 'off') + '">' +
+        (data.d ? '✕ on-chain dispute' : '✓ no dispute') + '</span></h3>' +
+      '<ul>' + data.b.map(function(t){ return '<li>' + t + '</li>'; }).join('') + '</ul>';
+    if (window.renderMathInElement) katexRender(body);
+  }
+  if (anim && !REDUCED){
+    body.classList.add('swap');
+    setTimeout(function(){ paint(); body.classList.remove('swap'); }, 200);
+  } else paint();
+}
+
+/* =======================================================================
+   Merkle demo
+   ===================================================================== */
+var mkAnim = false;
+var LEAVES = [17, 63, 28, 91, 42, 55, 34, 76];
+var MY_LEAF = 4;
+var omitted = false, selLeaf = MY_LEAF;
+
+/* deliberately simple stand-in for Poseidon — legible, not secure */
+function h(a, b){
+  var x = (a * 31 + (b === undefined ? 7 : b * 17) + 1013) % 9973;
+  return x < 1000 ? x + 1000 : x;
+}
+function commit(bid){ return h(bid, 137); }
+
+function tree(){
+  var lv = LEAVES.map(function(b, i){
+    return (omitted && i === MY_LEAF) ? 0 : commit(b);
+  });
+  var levels = [lv];
+  while (levels[levels.length - 1].length > 1){
+    var prev = levels[levels.length - 1], next = [];
+    for (var i = 0; i < prev.length; i += 2) next.push(h(prev[i], prev[i + 1]));
+    levels.push(next);
+  }
+  return levels;
+}
+
+function drawMerkle(){
+  var svg = document.getElementById('mkSvg');
+  while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 356 : 560, H = narrow ? 250 : 290;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+  var levels = tree();
+  var ink1 = css('--ink-1'), ink2 = css('--ink-2'), muted = css('--ink-muted'),
+      grid = css('--grid'), surface = css('--surface-1'), acc = css('--s1'),
+      crit = css('--critical'), good = css('--good');
+
+  /* which nodes are on the path from selLeaf to the root */
+  var onPath = levels.map(function(){ return {}; });
+  var sib = levels.map(function(){ return {}; });
+  var idx = selLeaf;
+  for (var L = 0; L < levels.length; L++){
+    onPath[L][idx] = true;
+    if (L < levels.length - 1) sib[L][idx ^ 1] = true;
+    idx = idx >> 1;
+  }
+
+  var rowY = narrow ? [212, 154, 96, 38] : [246, 178, 110, 42];
+  var boxW = narrow ? 36 : 54, boxH = narrow ? 20 : 26;
+
+  function posX(L, i){
+    var count = levels[L].length;
+    var pad = narrow ? 12 : 20;
+    var span = W - pad * 2;
+    return pad + span * (i + 0.5) / count;
+  }
+
+  /* edges */
+  for (var L = 0; L < levels.length - 1; L++){
+    for (var i = 0; i < levels[L].length; i++){
+      var p = i >> 1;
+      var hot = onPath[L][i] && onPath[L + 1][p];
+      var edge = el('line', {
+        x1:posX(L, i), y1:rowY[L] - boxH / 2, x2:posX(L + 1, p), y2:rowY[L + 1] + boxH / 2,
+        stroke:hot ? acc : grid, 'stroke-width':hot ? 2 : 1
+      });
+      svg.appendChild(edge);
+      /* the inclusion path lights up one level at a time, leaf to root */
+      if (hot && mkAnim) drawOn(edge, 300, 140 + L * 190);
+    }
+  }
+
+  /* nodes */
+  for (var L = 0; L < levels.length; L++){
+    for (var i = 0; i < levels[L].length; i++){
+      (function(L, i){
+        var x = posX(L, i), y = rowY[L], v = levels[L][i];
+        var isMine = (L === 0 && i === selLeaf);
+        var isGone = (L === 0 && omitted && i === MY_LEAF);
+        var isSib = sib[L][i];
+        var isRoot = (L === levels.length - 1);
+        var stroke = isGone ? crit : (isMine ? acc : (isSib ? acc : (isRoot ? acc : grid)));
+        var fill = isMine ? acc : (isRoot ? surface : surface);
+
+        var g = el('g', {});
+        if (mkAnim && onPath[L][i] && L > 0) fadeIn(g, 260, 140 + (L - 1) * 190);
+        if (L === 0){ g.setAttribute('class', 'node'); g.setAttribute('tabindex', 0);
+          g.setAttribute('role', 'button');
+          g.setAttribute('aria-label', 'Sealed bid ' + (i + 1)); }
+        g.appendChild(el('rect', { x:x - boxW / 2, y:y - boxH / 2, width:boxW, height:boxH, rx:5,
+          'class':(mkAnim && isMine) ? 'pop' : null,
+          fill:fill, stroke:stroke, 'stroke-width':(isMine || isSib || isGone || isRoot) ? 2 : 1,
+          'stroke-dasharray':isGone ? '4 3' : null }));
+        g.appendChild(el('text', { x:x, y:y + (narrow ? 3.5 : 4), 'text-anchor':'middle',
+          'font-size':narrow ? 8.5 : 11,
+          'font-weight':isMine || isRoot ? 700 : 500,
+          fill:isMine ? '#fff' : (isGone ? crit : ink2),
+          'font-family':'ui-monospace,SFMono-Regular,Menlo,monospace' },
+          isGone ? 'dropped' : String(v)));
+        if (L === 0){
+          g.addEventListener('click', function(){ selLeaf = i; syncMerkle(true); });
+          g.addEventListener('keydown', function(e){
+            if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selLeaf = i; syncMerkle(true); }
+          });
+        }
+        svg.appendChild(g);
+      })(L, i);
+    }
+  }
+
+  /* row labels */
+  var names = ['sealed bids', '', '', 'root → on-chain'];
+  [0, 3].forEach(function(L){
+    svg.appendChild(el('text', { x:narrow ? 12 : 20, y:rowY[L] - boxH / 2 - (narrow ? 7 : 9),
+      'font-size':narrow ? 8.5 : 10,
+      fill:muted, 'font-weight':600, 'font-family':'inherit' }, names[L]));
+  });
+  if (selLeaf === MY_LEAF){
+    svg.appendChild(el('text', { x:posX(0, MY_LEAF), y:rowY[0] + boxH / 2 + 15,
+      'text-anchor':'middle', 'font-size':narrow ? 8.5 : 10, fill:acc, 'font-weight':650,
+      'font-family':'inherit' }, 'yours'));
+  }
+}
+
+function syncMerkle(anim){
+  mkAnim = !!anim && !REDUCED;
+  var levels = tree();
+  document.getElementById('mkCommit').textContent =
+    omitted && selLeaf === MY_LEAF ? 'never posted' : String(levels[0][selLeaf]);
+  document.getElementById('mkRoot').textContent = String(levels[levels.length - 1][0]);
+
+  /* proof = sibling at each level */
+  var rows = [], idx = selLeaf;
+  for (var L = 0; L < levels.length - 1; L++){
+    var s = idx ^ 1;
+    rows.push('<div class="proofrow"><span class="mono" style="color:var(--s1)">level ' + L +
+      '</span><span>sibling is ' + (idx % 2 === 0 ? 'right' : 'left') +
+      '</span><span class="mono" style="margin-left:auto;color:var(--ink-1)">' +
+      levels[L][s] + '</span></div>');
+    idx = idx >> 1;
+  }
+  var proofBox = document.getElementById('mkProof');
+  proofBox.innerHTML = rows.join('');
+  if (mkAnim){
+    Array.prototype.forEach.call(proofBox.children, function(row, n){
+      row.style.opacity = 0;
+      setTimeout(function(){
+        tween(300, function(t){ row.style.opacity = t; },
+          function(){ row.style.opacity = ''; });
+      }, 180 + n * 190);
+    });
+  }
+
+  var v = document.getElementById('mkVerdict');
+  if (omitted){
+    v.className = 'verdict bad';
+    v.innerHTML = '<b>✕ The hub dropped your bid.</b>The root it posted cannot be reached from your commitment — but you still hold the hub\'s <em>signed</em> inclusion confirmation. Present it on-chain and the contract sees the mismatch, rules against the hub, and awards you its collateral.';
+  } else {
+    v.className = 'verdict ok';
+    v.innerHTML = '<b>✓ Your bid is provably in the set.</b>' + (levels.length - 1) +
+      ' sibling hashes reproduce the posted root. For 1,024 bidders this proof is only 10 hashes long, whatever the auction\'s size.';
+  }
+  drawMerkle();
+  mkAnim = false;
+}
+
+document.getElementById('bidGo').addEventListener('click', function(){
+  var val = Math.max(0, Math.min(999, +document.getElementById('bidIn').value || 0));
+  LEAVES[MY_LEAF] = val;
+  selLeaf = MY_LEAF; omitted = false;
+  syncMerkle(true);
+});
+document.getElementById('mkOmit').addEventListener('click', function(){
+  omitted = true; selLeaf = MY_LEAF; syncMerkle(true);
+});
+document.getElementById('mkReset').addEventListener('click', function(){
+  omitted = false; selLeaf = MY_LEAF; LEAVES[MY_LEAF] = 42;
+  document.getElementById('bidIn').value = 42; syncMerkle(true);
+});
+
+/* =======================================================================
+   BibTeX copy
+   ===================================================================== */
+document.getElementById('copyBib').addEventListener('click', function(){
+  var b = this;
+  var t = document.getElementById('bibtex').textContent;
+  function done(){ b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   KaTeX + boot
+   ===================================================================== */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [
+      { left:'$$', right:'$$', display:true },
+      { left:'$',  right:'$',  display:false }
+    ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+}
+
+/* a theme change or a resize repaints everything, but must never replay an entrance */
+function redrawAll(){
+  drawA('static');
+  B_enter = false; drawB();
+  drawHub();
+  mkAnim = false; drawMerkle();
+}
+
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+drawA(hasIO ? 'hidden' : 'static');
+buildTableA(); paintB(); syncHub(false); syncMerkle(false); renderStage(false); renderLayer(false);
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.classList.add('rv'); });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      en.target.classList.add('in');
+      io.unobserve(en.target);
+      var id = en.target.id;
+      if (id === 'cost') setTimeout(function(){ drawA('enter'); }, 180);
+      else if (id === 'ok') setTimeout(function(){ B_enter = true; drawB(); }, 180);
+      else if (id === 'merkle') setTimeout(function(){ syncMerkle(true); }, 220);
+      else if (id === 'ppc') setTimeout(enterStack, 120);
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var rzT; window.addEventListener('resize', function(){ clearTimeout(rzT); rzT = setTimeout(redrawAll, 120); });
+</script>
+</body>
+</html>

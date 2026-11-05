@@ -1,0 +1,92 @@
+name: Suggest an edit
+description: Propose a correction or leave a comment anchored to a sentence. Normally opened for you by the "suggest" button on a post.
+title: "suggestion: "
+labels: ["suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reading closely.
+
+        This form is normally filled in for you: select text on a page and
+        press **suggest an edit**. If you got here by hand, that is fine too —
+        paste the sentence you mean into **Selected text**.
+
+        The last four fields are anchoring data. They tell the
+        automation *where* in the source your selection came from. **Please leave
+        them exactly as they are**, or your suggestion may not apply cleanly.
+
+  - type: textarea
+    id: comment
+    attributes:
+      label: Comment
+      description: >
+        What is wrong, unclear, or worth saying about this passage? Required
+        unless you suggest a rewrite. At most 800 characters.
+      placeholder: This claim needs a citation; the bound is stated for the 96-bit IV case only.
+    validations:
+      required: false
+
+  - type: textarea
+    id: replacement
+    attributes:
+      label: Suggested replacement
+      description: >
+        Optional. If you leave this empty, your comment is published as a
+        margin note next to the passage. If you fill it in, the automation
+        opens a pull request that replaces the passage with this text.
+        Plain text, about one sentence. At most 400 characters.
+    validations:
+      required: false
+
+  - type: textarea
+    id: about
+    attributes:
+      label: About you (recommended)
+      description: >
+        Your name, role and affiliation, and a link we can check (homepage,
+        Google Scholar, DBLP, ORCID). Not required, but suggestions that say
+        who they're from get read first. At most 200 characters.
+    validations:
+      required: false
+
+  - type: input
+    id: source
+    attributes:
+      label: Source (recommended if you're correcting a claim)
+      description: A paper, DOI or link that backs up a correction. At most 300 characters.
+    validations:
+      required: false
+
+  - type: input
+    id: file
+    attributes:
+      label: Source file
+      description: Do not edit. The page's source path.
+      placeholder: static/example/index.html
+    validations:
+      required: true
+
+  - type: textarea
+    id: exact
+    attributes:
+      label: Selected text
+      description: Do not edit. The sentence you selected, verbatim.
+    validations:
+      required: true
+
+  - type: textarea
+    id: prefix
+    attributes:
+      label: Preceding context
+      description: Do not edit. Used to disambiguate a sentence that occurs more than once.
+    validations:
+      required: false
+
+  - type: textarea
+    id: suffix
+    attributes:
+      label: Following context
+      description: Do not edit. Used to disambiguate a sentence that occurs more than once.
+    validations:
+      required: false

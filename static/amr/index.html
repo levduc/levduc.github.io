@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<link rel="icon" href="data:,">
+<title>AMR Coin Mixer</title>
+<meta name="description" content="AFT 2021 — AMR: a zk-SNARK coin mixer that pays its users, privately, for keeping their coins in the pool, and lends the pooled coins out to earn interest.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots, validated against #fafafa (light): adjacent CVD ΔE ≥ 9.1, normal ΔE ≥ 19.6.
+     s3/s4/s5 sit below 3:1 on the surface, so every chart carries direct labels and a table view. */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --good:#0ca30c; --critical:#d03b3b;
+  --accent:#00008b; --tint:rgba(0,0,139,.055);
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:#ffffff}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono)}
+.k .katex, .eyebrow .katex, th .katex{text-transform:none}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.vnote{margin-top:1.1rem}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:0}
+.ctl.grow{flex:1; min-width:220px}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px; margin:0}
+.ticks{display:flex; justify-content:space-between; font-family:var(--mono); font-size:.72rem; color:var(--ink-muted); padding:0 2px}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .75rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.chk{font-family:var(--mono); font-size:.84rem; color:var(--ink-2); display:flex; gap:.45rem; align-items:center; cursor:pointer}
+.chk input{accent-color:var(--accent); margin:0}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px 16px 12px; box-shadow:var(--shadow); min-width:0}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.chart h3{font-size:1rem}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.hollow{background:#fff !important; border:2px solid var(--ink-1); border-radius:50%}
+.swatch.dash{height:0; width:16px; border-top:2px dashed var(--ink-1); border-radius:0}
+.tip{position:fixed; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+.two{display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:14px; align-items:start}
+
+/* ---------- readouts ---------- */
+.readrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-top:16px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:11px 14px; background:var(--surface-1); min-width:0}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.45rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; line-height:1.25}
+.ro .d{font-family:var(--mono); font-size:.78rem; color:var(--ink-2); margin-top:.15rem}
+
+/* ---------- protocol walk ---------- */
+.walk{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,300px); gap:18px; align-items:start}
+.side{display:flex; flex-direction:column; gap:10px}
+.box{border:1px solid var(--ring); border-radius:4px; background:var(--surface-1); padding:10px 13px; min-width:0}
+.box .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700; margin-bottom:.3rem}
+.chips{display:flex; flex-wrap:wrap; gap:5px; min-height:24px}
+.chip{font-family:var(--mono); font-size:.8rem; border:1px solid var(--ink-1); background:#fff; border-radius:2px; padding:.05rem .45rem; white-space:nowrap}
+.chip.empty{border-style:dashed; color:var(--ink-muted); border-color:var(--axis)}
+.chip.bad{border-color:var(--critical); color:var(--critical); text-decoration:line-through}
+.kv{font-family:var(--mono); font-size:.82rem; color:var(--ink-2); display:grid; grid-template-columns:auto 1fr; gap:2px 10px}
+.kv b{color:var(--ink-1)}
+.steps{display:flex; gap:5px; flex-wrap:wrap; margin:12px 0 0}
+.steps button{width:22px; height:22px; border-radius:50%; border:1px solid var(--ring); background:#fff;
+  font-family:var(--mono); font-size:.7rem; color:var(--ink-muted); cursor:pointer; padding:0}
+.steps button.fail{border-color:var(--critical)}
+.steps button[aria-current=true]{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700}
+.log{font-family:var(--mono); font-size:.86rem; color:var(--ink-2); min-height:4.6em; margin:12px 0 0;
+  border-left:3px solid var(--accent); padding:.15rem 0 .15rem 12px}
+.log.fail{border-left-color:var(--critical)}
+.log .tag{font-weight:700; margin-right:.4rem}
+.log.fail .tag{color:var(--critical)}
+.log.ok .tag{color:var(--good)}
+.adv{font-family:var(--mono); font-size:.82rem; margin-top:8px; color:var(--ink-2); min-height:1.4em}
+.flow{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0 0 18px; padding:0; list-style:none; counter-reset:f}
+.flow li{counter-increment:f; border:1px solid var(--ring); border-radius:4px; padding:9px 12px 9px 40px; position:relative;
+  font-size:.9rem; background:var(--surface-1)}
+.flow li::before{content:counter(f); position:absolute; left:10px; top:9px; width:1.4rem; height:1.4rem; border-radius:50%;
+  border:1px solid var(--accent); color:var(--accent); font-family:var(--mono); font-weight:700; font-size:.78rem;
+  display:flex; align-items:center; justify-content:center}
+
+/* ---------- formula cards ---------- */
+.cards{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px}
+.card{border:1px solid var(--ring); border-radius:4px; padding:12px 15px; background:var(--surface-1)}
+.card .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.card .f{font-size:1.1rem; margin:.35rem 0}
+.card p{font-size:.9rem; margin:0}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; max-width:100%; position:relative}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.hl td{background:var(--surface-1); font-weight:700}
+td.sel{font-weight:700; background:var(--tint)}
+.badge{display:inline-block; font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; border:1px solid var(--ring); border-radius:3px; padding:0 .35rem; color:var(--ink-muted); white-space:nowrap}
+
+/* ---------- misc ---------- */
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:74ch}
+.prov{counter-reset:p; list-style:none; padding:0; margin:0}
+.prov li{counter-increment:p; position:relative; padding:0 0 0 2.2rem; margin:0 0 1.1rem; max-width:80ch}
+.prov li::before{content:counter(p); position:absolute; left:0; top:.05rem; font-family:var(--mono);
+  font-weight:700; font-size:.8rem; width:1.5rem; height:1.5rem; border:1px solid var(--accent); color:var(--accent);
+  border-radius:50%; display:flex; align-items:center; justify-content:center}
+.prov b{color:var(--ink-head)}
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+.katex{font-size:1.02em; text-transform:none; letter-spacing:0}
+code{font-family:var(--mono); font-size:.9em; word-break:break-all}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2rem}
+  .walk,.two,.cards{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr}
+  .ctl.grow{flex:1 1 100%; min-width:0}
+  .seg button{padding:.35rem .6rem}
+  .tile .v{font-size:1.7rem}
+}
+</style>
+</head>
+<body>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="home" href="../">← Duc V. Le</a>
+    <nav aria-label="Sections">
+      <a href="#problem">Problem</a>
+      <a href="#walk">Protocol</a>
+      <a href="#waiting">Waiting period</a>
+      <a href="#cost">Cost</a>
+      <a href="#compare">Compare</a>
+      <a href="#guarantees">Guarantees</a>
+      <a href="#results">Results</a>
+      <a href="#cite">Cite</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+<!-- ================================================================ HERO -->
+<section class="hero" id="top">
+  <span class="venue">AFT 2021 · ACM Advances in Financial Technologies</span>
+  <h1>AMR: Autonomous Coin Mixer with Privacy Preserving Reward Distribution</h1>
+  <p class="sub">A mixer is only as private as its crowd, and the crowd leaves when locked coins earn nothing.
+    AMR pays users, without linking the payment to their deposit, for keeping coins in the pool, and lends the pooled coins out so they earn interest while they wait.</p>
+  <p class="authors"><span class="me">Duc V. Le</span><sup>1</sup> &nbsp;·&nbsp; Arthur Gervais<sup>2</sup></p>
+  <p class="affils"><sup>1</sup>Purdue University &nbsp; <sup>2</sup>Imperial College London</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/amr.pdf">[Paper PDF]</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+    <a class="btn" href="https://youtu.be/-oAQlsRTF08">[Demo video]</a>
+  </div>
+  <p class="note vnote">Section, figure, definition and claim numbers on this page follow the linked PDF, arXiv:2010.01056v3 (June 2021).
+    The ACM camera-ready (DOI 10.1145/3479722.3480800) drops the Merkle-tree Figure 2, so its evaluation figures are numbered one lower, and it moves the discussion from Appendix A to Section 8.</p>
+</section>
+
+<!-- ================================================================ TILES -->
+<section id="tldr" aria-label="Headline numbers">
+  <p class="eyebrow">In three numbers</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Client proof time</div>
+      <div class="v"><span data-count="3.607" data-dec="3" id="tileProof">3.607</span> s</div>
+      <p class="d">to build a withdrawal proof with the Poseidon hash at Merkle depth $d=30$ on an Intel i5-7400 desktop (Fig. 8). MiMC takes 10.625 s.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Anonymity capacity</div>
+      <div class="v">$2^{30}$ leaves</div>
+      <p class="d">The pool can grow to $2^{d}$ deposits at constant system cost (§1). The evaluation uses $d=30$.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Throughput (paper's claim)</div>
+      <div class="v"><span data-count="66000" data-dec="0">66,000</span>+</div>
+      <p class="d">deposits per day "given Ethereum's transaction throughput (assuming no withdrawals)" (§1). The paper states this figure without a derivation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ PROBLEM -->
+<section id="problem">
+  <p class="eyebrow">The problem</p>
+  <h2>Mixers hide you in a crowd that has no reason to stay</h2>
+  <p class="lede">A mixer like Tornado Cash takes fixed-size deposits and later pays them out to fresh addresses. Nobody can tell which deposit a withdrawal came from.
+    Nobody, that is, except by guessing among the deposits still in the pool. That pool is the <em>anonymity set</em>: the more deposits sit in it, and the longer they stay, the weaker the guess.</p>
+  <p class="lede">But coins in a mixer earn nothing, so people withdraw soon after they deposit.
+    In Tornado Cash's 10 ETH pool, we counted 2,810 deposits and 2,606 withdrawals over eight months (§7.3).
+    Whenever withdrawals catch up with deposits, the anonymity set falls to zero.</p>
+  <div class="callout">
+    <p style="margin:0">AMR gives people two reasons to stay:
+      (1) anyone who proves their deposit is at least $t_{con}$ blocks old can claim a <strong>governance-token reward</strong>, without revealing which deposit is theirs, and
+      (2) the contract <strong>lends deposits to Aave or Compound</strong>. The interest goes to users who lock their governance tokens, so the people who contribute most to the anonymity set earn the most.
+      No server or operator is involved. Everything runs in one smart contract.</p>
+  </div>
+  <p class="lede">A reward is itself a transaction, though, and an observer will try to link it to a deposit.
+    So the reward must not shrink the crowd a withdrawal hides in. The next section shows how AMR ensures that.</p>
+</section>
+
+<!-- ================================================================ WALK -->
+<section id="walk">
+  <p class="eyebrow">Interactive · Figures 4–6 of the paper</p>
+  <h2>Walk the protocol: deposit, reward, withdraw</h2>
+  <p class="lede">Every deposit adds a commitment $\mathsf{cm}=H_p(k\,\|\,r)$ to a Merkle tree. The depositor keeps the note $(k,r)$ secret.
+    Spending a note means proving in zero knowledge that it sits under some root, and revealing its nullifier $\mathsf{sn}=H_p(k)$ so it cannot be spent twice.
+    Step through Alice's life in the pool, including the three ways a transaction gets rejected.</p>
+  <ol class="flow" aria-label="The six steps of Figure 1">
+    <li><b>Deposit:</b> a fixed amount $\mathsf{amt}$ goes into the contract.</li>
+    <li><b>Lend:</b> the contract deposits it into a lending platform $\Sigma$.</li>
+    <li><b>Reward:</b> prove a deposit is $\ge t_{con}$ blocks old and receive governance tokens.</li>
+    <li><b>Withdraw:</b> prove that some deposit is yours and receive $\mathsf{amt}$ at a fresh address.</li>
+    <li><b>Redeem:</b> the contract pulls the funds and accrued interest $R$ from $\Sigma$.</li>
+    <li><b>Share:</b> the interest goes to a pool $\Gamma_{\mathsf{AMR}}$ for token lockers.</li>
+  </ol>
+  <div class="controls">
+    <div class="btns">
+      <button class="btn" id="wBack" type="button">◀ Back</button>
+      <button class="btn primary" id="wNext" type="button">Next ▶</button>
+      <button class="btn" id="wPlay" type="button">Play</button>
+      <button class="btn" id="wReset" type="button">Reset</button>
+    </div>
+  </div>
+  <div class="walk">
+    <div class="chart">
+      <svg id="treeSvg" role="img" aria-label="Merkle tree of commitments held by the AMR contract"><title>Merkle tree of commitments</title></svg>
+      <ul class="legend" id="treeLegend">
+        <li><span class="swatch" style="background:var(--s1)"></span>honest deposit</li>
+        <li><span class="swatch" style="background:var(--s3)"></span>refreshed note (from a reward)</li>
+        <li><span class="swatch" style="background:var(--s2)"></span>adversary's deposit</li>
+        <li><span class="swatch hollow"></span>adversary's candidate set</li>
+      </ul>
+      <div class="steps" id="wSteps" aria-label="Steps"></div>
+      <div class="log" id="wLog" aria-live="polite"></div>
+      <div class="adv" id="wAdv"></div>
+    </div>
+    <div class="side">
+      <div class="box"><div class="k">Contract state</div>
+        <div class="kv" id="wState"></div></div>
+      <div class="box"><div class="k">Recent roots (withdrawals may use any of the last $k$)</div>
+        <div class="chips" id="wRoots"></div></div>
+      <div class="box"><div class="k">Reward roots</div>
+        <div class="kv" id="wRR"></div></div>
+      <div class="box"><div class="k">NullifierList</div>
+        <div class="chips" id="wNulls"></div></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">Toy instance for illustration: depth $d=3$, $k=3$ recent roots, $t_{con}=3$ blocks, and roots named by counter instead of hash values. The paper evaluates $d=10$ to $30$ and uses $k=1000$ in its front-running example.
+    The rules follow Figures 4–6: the reward-root rotation (if $\mathsf{Block.Height}-\mathsf{root}^{\mathsf{next}}.\mathsf{blockheight}\ge t_{con}$, then $\mathsf{root}^{\mathsf{curr}}\leftarrow\mathsf{root}^{\mathsf{next}}$ and $\mathsf{root}^{\mathsf{next}}\leftarrow\mathsf{root}_{new}$), a single NullifierList for rewards and withdrawals (§5.2), and $\mathsf{sn}=H_p(k_{dep})$ for both.</p>
+</section>
+
+<!-- ================================================================ WAITING -->
+<section id="waiting">
+  <p class="eyebrow">Interactive · Figure 9 of the paper</p>
+  <h2>How long should the reward make you wait?</h2>
+  <p class="lede">A reward proof reveals that its deposit is at least $t_{con}$ blocks old. That reduces the adversary's search to deposits made before $h-t_{con}$ (Claim 1).
+    A withdrawal loses nothing, because every reward adds a fresh commitment back to the tree (Claim 2). The designer's knob is $t_{con}$: the longer the wait, the more deposits arrive in the meantime.
+    To size it, we measured how many deposits Tornado Cash's 10 ETH pool received per window, from block 9,161,895 (25 December 2019) to block 10,726,597 (25 August 2020).</p>
+  <div class="controls">
+    <div class="ctl grow">
+      <label for="tcon">Waiting period $t_{con}$: <span class="val" id="tconVal">30,000 blocks</span></label>
+      <input type="range" id="tcon" min="0" max="5" step="1" value="5" aria-describedby="tconTicks">
+      <div class="ticks" id="tconTicks"><span>5k</span><span>10k</span><span>15k</span><span>20k</span><span>25k</span><span>30k</span></div>
+    </div>
+  </div>
+  <div class="two">
+    <div class="chart">
+      <h3>Average deposits per window of $t_{con}$ blocks</h3>
+      <svg id="waitSvg" role="img" aria-label="Bar chart: average Tornado Cash deposits per window length"><title>Average deposits per window</title></svg>
+      <p class="note" style="margin:8px 0 0">One series. Bar labels are the values printed on the axis of Figure 9.</p>
+    </div>
+    <div>
+      <div class="ro"><div class="k">Deposits arriving while you wait</div>
+        <div class="v" id="waitV">53.40</div>
+        <div class="d" id="waitD"></div></div>
+      <div class="cards" style="grid-template-columns:1fr; margin-top:12px">
+        <div class="card"><div class="k">Claim 1 · linking a reward</div>
+          <div class="f">$\mathsf{Adv}^{h}_{\mathcal A,rwd} &lt; \dfrac{1}{|\mathsf{AnomSet}^{h-t_{con}}|}+\mathsf{negl}(\lambda)$</div>
+          <p>The candidates are only the honest commitments that existed $t_{con}$ blocks ago.</p></div>
+        <div class="card"><div class="k">Claim 2 · linking a withdrawal</div>
+          <div class="f">$\mathsf{Adv}^{h}_{\mathcal A,wdr} = \dfrac{1}{|\mathsf{AnomSet}^{h}|}+\mathsf{negl}(\lambda)$</div>
+          <p>This is the same as a mixer without rewards. Each reward also adds a leaf, so the set grows.</p></div>
+      </div>
+    </div>
+  </div>
+  <details class="tbl"><summary>Table view: Figure 9</summary>
+    <div class="tscroll"><table id="waitTbl"><thead><tr><th class="num">$t_{con}$ (blocks)</th><th class="num">Average deposits per window</th></tr></thead><tbody></tbody></table></div>
+  </details>
+  <p class="note" style="margin-top:12px">Both claims assume secure primitives and that deposit addresses are independent and unlinkable (§6.1). The paper argues them informally, as proof sketches (§6).
+    The "approximately 4.5 days" for 30,000 blocks is the paper's own conversion. We do not convert the other windows to days.</p>
+</section>
+
+<!-- ================================================================ COST -->
+<section id="cost">
+  <p class="eyebrow">Interactive · Table 1, Figures 7 and 8 of the paper</p>
+  <h2>What each operation costs, by tree depth and hash</h2>
+  <p class="lede">The Merkle depth $d$ sets the capacity ($2^d$ leaves) and the price. A deposit hashes a path of length $d$ on-chain, so its gas grows with $d$.
+    Verifying a withdrawal is one Groth16 check, so it stays flat. A reward does both.
+    The hash inside the circuit, MiMC or Poseidon, changes the constraint count and therefore the client's proving time.</p>
+  <div class="controls">
+    <div class="ctl grow">
+      <label for="depth">Tree depth $d$: <span class="val" id="depthVal">30</span></label>
+      <input type="range" id="depth" min="0" max="4" step="1" value="4">
+      <div class="ticks"><span>10</span><span>15</span><span>20</span><span>25</span><span>30</span></div>
+    </div>
+    <div class="ctl"><span class="lbl">Hash $H_{2p}$</span><div class="seg" id="hashSeg" role="group" aria-label="Hash function"></div></div>
+    <label class="chk"><input type="checkbox" id="lendChk"> show lending-platform overhead</label>
+  </div>
+  <div class="two">
+    <div class="chart">
+      <h3>On-chain gas per operation</h3>
+      <svg id="gasSvg" role="img" aria-label="Line chart: gas per operation versus tree depth"><title>Gas per operation</title></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s1)"></span>Deposit</li>
+        <li><span class="swatch" style="background:var(--s2)"></span>Withdraw</li>
+        <li><span class="swatch" style="background:var(--s3)"></span>Reward</li>
+        <li><span class="swatch hollow"></span>hard-coded in the notebook, not deposit + withdraw</li>
+      </ul>
+    </div>
+    <div class="chart">
+      <h3>Client proof generation</h3>
+      <svg id="proofSvg" role="img" aria-label="Line chart: proof generation time versus tree depth"><title>Proof generation time</title></svg>
+      <ul class="legend">
+        <li><span class="swatch" style="background:var(--s4)"></span>MiMC</li>
+        <li><span class="swatch" style="background:var(--s5)"></span>Poseidon</li>
+      </ul>
+    </div>
+  </div>
+  <div class="readrow" id="costRO"></div>
+  <p class="note" style="margin-top:12px">Deployment gas is not plotted: it is a one-time cost of about 6–8M, which §7.2 gives for both hashes, and Figure 7 draws it as a single series.
+    Figure 7 also draws a single "Withdraw" series for both hashes. Gas values come from <code>graph/graph-generating.ipynb</code>, the notebook that plots Figure 7.</p>
+  <details class="tbl"><summary>Table view: Figure 7 gas and Figure 8 proof time</summary>
+    <div class="tscroll"><table id="costTbl"></table></div>
+  </details>
+</section>
+
+<!-- ================================================================ COMPARE -->
+<section id="compare">
+  <p class="eyebrow">Interactive · Section 8 of the paper</p>
+  <h2>Constant cost against ring-sized cost</h2>
+  <p class="lede">Möbius hides a sender in a ring signature, and its gas grows linearly with the ring. That caps its anonymity set at 24 ($8m$ gas to withdraw, §1).
+    Anonymous Zether reaches a ring of 64 at $48.7m$ gas per transfer, beyond the roughly $15m$ block gas limit of the time.
+    AMR's withdrawal verifies one constant-size proof, whatever the pool size.
+    Pick which AMR figure to compare against: the ratios the paper quotes depend on it.</p>
+  <div class="controls">
+    <div class="ctl"><span class="lbl">AMR reference values</span><div class="seg" id="refSeg" role="group" aria-label="AMR reference values"></div></div>
+  </div>
+  <div class="chart">
+    <svg id="cmpSvg" role="img" aria-label="Bar chart on a log scale: gas per transaction for AMR and related systems"><title>Gas per transaction, log scale</title></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>AMR</li>
+      <li><span class="swatch" style="background:var(--ink-muted)"></span>related systems, as quoted in the paper</li>
+      <li><span class="swatch dash"></span>block gas limit, about 15m (§8, "at the time of writing")</li>
+    </ul>
+  </div>
+  <div class="readrow" id="cmpRO"></div>
+  <details class="tbl"><summary>Table view</summary>
+    <div class="tscroll"><table id="cmpTbl"></table></div>
+  </details>
+  <p class="note" style="margin-top:12px">These are single values quoted in the paper, not measured curves. We draw no line through Möbius from its one point.
+    The operations differ: Zeth's number is proof verification only, and the Zether figures are per transfer. Ratios are our arithmetic on the selected values.</p>
+</section>
+
+<!-- ================================================================ GUARANTEES -->
+<section id="guarantees">
+  <p class="eyebrow">Guarantees</p>
+  <h2>What AMR promises, and under which assumptions</h2>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>Statement (§4.4)</th><th>How / where argued</th></tr></thead>
+    <tbody>
+      <tr><td><b>Correctness</b></td><td>(i) No $n$ withdrawals without $n$ earlier deposits. (ii) No reward without coins locked. (iii) A valid reward means at least one deposit has been locked for the required duration.</td>
+        <td>Forging a withdrawal breaks preimage resistance of $H_p$ or the zk-SNARK (§6.3). The nullifier $\mathsf{sn}=H_p(k)$ blocks double spends.</td></tr>
+      <tr><td><b>Privacy</b></td><td>Unlinkability of (i) deposit–withdrawal, (ii) deposit–reward, (iii) withdrawal–reward, against an adversary who sees every transaction.</td>
+        <td>Definitions 5–6 and Claims 1–2 (§6.1–6.2): a reward bound of $&lt;1/|\mathsf{AnomSet}^{h-t_{con}}|+\mathsf{negl}$ and a withdrawal bound of $1/|\mathsf{AnomSet}^{h}|+\mathsf{negl}$. These are informal sketches.</td></tr>
+      <tr><td><b>Availability</b></td><td>No one can stop clients from using the mixer, or from withdrawing once they have deposited.</td>
+        <td>The contract runs autonomously, with no operator to censor (§6.3). Congestion may delay it temporarily (§4.5), and a relayer may refuse to relay (Appendix A).</td></tr>
+      <tr><td><b>Front-running resilience</b></td><td>Concurrent deposits must not invalidate a pending withdrawal or reward.</td>
+        <td>The contract keeps the last $k$ roots. Invalidating a proof takes $\ge k$ front-run deposits, costing $k\times(\mathsf{amt}+\mathsf{fee}_{dep})$. With $k=1000$, $\mathsf{amt}=10$ and $\mathsf{fee}_{dep}=0.02$, that is 10,020 ether (§6.3).</td></tr>
+      <tr><td><b>Fair interest</b></td><td>Users who contribute more to the anonymity set receive more interest.</td>
+        <td>Interest flows to the pool $\Gamma_{\mathsf{AMR}}$ and is shared by locked governance tokens and lock time, adapting Curve's time-weight voting (§5.4, §6.2).</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:12px">Threat model (§4.5): computationally bounded adversaries corrupting at most 1/3 of consensus participants, with miner powers (reordering and injecting transactions).
+    Withdrawal and reward fees are paid through a non-adversarial relayer or an unlinkable funded address. The lending platforms are assumed secure.</p>
+</section>
+
+<!-- ================================================================ RESULTS -->
+<section id="results">
+  <p class="eyebrow">Measured</p>
+  <h2>Implementation and results</h2>
+  <p class="lede">The circuits are written in Circom and proven with Groth16 via snarkjs, with a Pedersen hash for $H_p$ and MiMC or Poseidon for $H_{2p}$.
+    The contract is 1,013 lines of Solidity. Measurements ran on an Intel Core i5-7400 @3.80 GHz with 32 GB RAM (§7.1).</p>
+
+  <h3 style="margin-top:1.2rem">Table 1 · zk-SNARK setup cost of the withdraw circuit</h3>
+  <div class="tscroll"><table>
+    <thead><tr><th class="num">Depth</th><th class="num">Constraints · Poseidon</th><th class="num">Constraints · MiMC</th><th class="num">Setup · Poseidon</th><th class="num">Setup · MiMC</th><th class="num">Keys · Poseidon</th><th class="num">Keys · MiMC</th></tr></thead>
+    <tbody id="t1body"></tbody>
+  </table></div>
+  <p class="note">$\mathsf{vk}_{wdr}=640$ B. Constraint counts equal $1{,}815+243d$ (Poseidon) and $1{,}815+1{,}323d$ (MiMC) exactly at all five depths (§7.2). We checked each row.</p>
+
+  <h3 style="margin-top:1.2rem">Lending-platform overhead (§7.2, the paper's estimate)</h3>
+  <p class="lede">From Etherscan and Compound's documentation: depositing into Aave or Compound costs about $0.3m$ gas. Redeeming costs under $0.2m$ (Aave) or under $0.1m$ (Compound). So expect about $+0.3m$ per AMR deposit and $+0.2m$ per withdrawal.</p>
+
+  <h3 style="margin-top:1.2rem">Tornado Cash 10 ETH pool (§7.3)</h3>
+  <p class="lede">From block 9,161,895 to 10,726,597: 2,810 deposits and 2,606 withdrawals. Figure 10 plots both as cumulative counts. Its time series is not in the paper's repository, so we do not redraw it.</p>
+
+  <h3 style="margin-top:1.2rem">Where the numbers disagree</h3>
+  <p class="lede">We reproduce each source as written. Where two places disagree, we show both and mark our own arithmetic.</p>
+  <ol class="prov">
+    <li><b>Headline gas.</b> The abstract and §1 say a deposit costs $1.2m$ gas ($\$31.95$), a withdrawal $0.3m$ ($\$9.12$) and a reward $1.5m$ ($\$41.07$), at 70 Gwei and $\$380.4$/ETH.
+      Figure 7 at $d=30$ gives deposit 1,482,672 (MiMC) or 1,288,077 (Poseidon), withdraw 378,090, and reward 1,860,762 (MiMC) or 1,666,167 (Poseidon).
+      §8's "32×" and "130×" against 48.7m gas match the Figure 7 MiMC values, not §1's. At the footnote's prices, $\$9.12$ corresponds to about 343K gas (our arithmetic).</li>
+    <li><b>Withdraw gas.</b> §7.2 says about 320,000 "for all tree depths and both choices of hash functions". Figure 7's values are 378,066 / 378,078 / 325,051 / 378,078 / 378,090 at $d=10$…$30$.</li>
+    <li><b>Reward gas.</b> §7.2 says a reward costs a deposit plus a withdrawal. That holds for every Figure 7 point except MiMC at $d=10$ (831,649 vs 912,086) and $d=20$ (1,302,969 vs 1,361,631), where the notebook hard-codes the value. Those two points are hollow on the chart.</li>
+    <li><b>Deposits during a 30,000-block wait.</b> §7.3 says "an additional 52". Figure 9's bar is labelled 53.40.</li>
+    <li><b>Poseidon speed-up.</b> §7.2 reports "a reduction of 3×" in proving time. Figure 8 gives 10.625 / 3.607 ≈ 2.9× at $d=30$ but 4.152 / 2.107 ≈ 2.0× at $d=10$ (our arithmetic).</li>
+    <li><b>ETH price.</b> §1 prices gas at $\$380.4$/ETH. §6.3 values 10,020 ether at "38m USD" and 20 ether at "76,000 USD", about $\$3{,}800$/ETH (our arithmetic).</li>
+  </ol>
+
+  <h3 style="margin-top:1.2rem">Code and deployment</h3>
+  <p class="lede">The paper does not publish its source code. As listed in the paper, AMR was deployed to the Ethereum Kovan testnet at
+    <code>0xdE992c4fBd0f39E5c0356e6365Bcfafa1e94970b</code>, and a demo video is at <a href="https://youtu.be/-oAQlsRTF08">youtu.be/-oAQlsRTF08</a>.</p>
+</section>
+
+<!-- ================================================================ CITE -->
+<section id="cite">
+  <p class="eyebrow">Cite</p>
+  <h2>Cite this work</h2>
+<pre class="bib" id="bibtex">@inproceedings{le2021amr,
+  title         = {{AMR}: Autonomous Coin Mixer with Privacy Preserving Reward Distribution},
+  author        = {Le, Duc V. and Gervais, Arthur},
+  booktitle     = {3rd ACM Conference on Advances in Financial Technologies (AFT '21)},
+  address       = {Arlington, VA, USA},
+  publisher     = {ACM},
+  year          = {2021},
+  doi           = {10.1145/3479722.3480800},
+  eprint        = {2010.01056},
+  archivePrefix = {arXiv}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib" type="button">Copy BibTeX</button></div>
+</section>
+
+</div>
+</main>
+<footer><div class="wrap">Duc V. Le · AFT 2021</div></footer>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function clear(svg){ while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild); }
+var MONO = 'Ubuntu Mono, monospace';
+
+/* ---------- motion: every animation goes through tween() ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+var TWEENS = {};
+/* keyed: a new tween on the same key cancels the old one */
+function tween(ms, step, done, key){
+  if (key && TWEENS[key]) TWEENS[key].stop();
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return { stop:function(){}, finish:function(){} }; }
+  var t0 = null, finished = false, stopped = false;
+  function finish(){ if (finished || stopped) return; finished = true; step(1); if (done) done(); if (key && TWEENS[key] === h) delete TWEENS[key]; }
+  function frame(t){
+    if (finished || stopped) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* force-settle if requestAnimationFrame is starved (throttled tab) */
+  setTimeout(finish, ms + 150);
+  var h = { stop:function(){ stopped = true; }, finish:finish };
+  if (key) TWEENS[key] = h;
+  return h;
+}
+function later(fn, ms){ if (REDUCED || !ms) fn(); else setTimeout(fn, ms); }
+function drawOn(path, ms, delay){
+  if (REDUCED) return;
+  var L; try { L = path.getTotalLength(); } catch(e){ return; }
+  if (!L) return;
+  path.setAttribute('stroke-dasharray', L); path.setAttribute('stroke-dashoffset', L);
+  later(function(){
+    tween(ms, function(p){ path.setAttribute('stroke-dashoffset', L * (1 - p)); },
+      function(){ path.removeAttribute('stroke-dasharray'); path.removeAttribute('stroke-dashoffset'); });
+  }, delay || 0);
+}
+function fadeIn(node, ms, delay){
+  if (REDUCED) return;
+  node.setAttribute('opacity', 0);
+  later(function(){ tween(ms, function(p){ node.setAttribute('opacity', p); },
+    function(){ node.removeAttribute('opacity'); }); }, delay || 0);
+}
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function mGas(v){ return (v / 1e6).toFixed(2) + 'M'; }
+
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+function segInit(id, items, sel, onPick){
+  var seg = $(id); seg.innerHTML = '';
+  items.forEach(function(it, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = it.label;
+    b.setAttribute('aria-pressed', i === sel ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(seg.children, function(c, j){ c.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+      onPick(i);
+    });
+    seg.appendChild(b);
+  });
+}
+
+/* =======================================================================
+   Data. All values verbatim from the paper (arXiv:2010.01056v3) or from
+   graph/graph-generating.ipynb, the notebook that draws Figures 7-9.
+   ===================================================================== */
+var DEPTHS = [10, 15, 20, 25, 30];
+var T1 = {                                   /* Table 1 */
+  cons:  { P:[4245, 5460, 6675, 7890, 9105],       M:[15045, 21660, 28275, 34890, 41505] },
+  setup: { P:[86.56, 107.34, 126.51, 146.41, 185.64], M:[246.99, 377.44, 465.27, 642.04, 729.03] },
+  keys:  { P:[4.3, 5.8, 7.3, 8.8, 10.8],           M:[7.3, 11.1, 13.8, 18.6, 21.4] }
+};
+var GAS = {                                  /* Figure 7 (notebook cells 1-7) */
+  deploy:  [6426403, 6840858, 7255313, 7669768, 8084055],
+  deposit: { M:[534020, 769682, 1036580, 1252822, 1482672], P:[469190, 684253, 881587, 1090741, 1288077] },
+  withdraw:[378066, 378078, 325051, 378078, 378090],
+  reward:  { M:[831649, 1147760, 1302969, 1630900, 1860762], P:[847256, 1062331, 1206638, 1468819, 1666167] }
+};
+var REWARD_HARDCODED = { M:[0, 2], P:[] };   /* indices where reward != deposit + withdraw */
+var PROOF = { M:[4.152, 7.325, 8.325, 9.709, 10.625], P:[2.107, 2.862, 3.058, 3.434, 3.607] };  /* Figure 8 */
+var TCON = [5000, 10000, 15000, 20000, 25000, 30000];                                        /* Figure 9 */
+var AVGDEP = ['8.90', '17.80', '26.70', '35.52', '44.50', '53.40'];
+
+/* sanity: Table 1 constraint formulas (§7.2) */
+DEPTHS.forEach(function(d, i){
+  if (T1.cons.P[i] !== 1815 + 243 * d || T1.cons.M[i] !== 1815 + 1323 * d) console.warn('Table 1 formula mismatch at d=' + d);
+});
+
+/* =======================================================================
+   Generic line chart: one y-axis, thin lines, >=8px markers, direct
+   labels, hover per point, crosshair at the selected depth.
+   ===================================================================== */
+function lineChart(svg, cfg, enter){
+  clear(svg);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 360 : (cfg.w || 560), H = narrow ? 270 : 320;
+  var padL = narrow ? 42 : 56, padR = narrow ? 64 : 84, padT = 18, padB = 44;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var n = cfg.x.length;
+  function X(i){ return padL + 14 + i * (W - padL - padR - 28) / (n - 1); }
+  function Y(v){ return H - padB - v / cfg.yMax * (H - padT - padB); }
+  var grid = css('--grid'), axis = css('--axis'), muted = css('--ink-muted'), ink = css('--ink-1'), surf = css('--surface-1');
+  var fs = narrow ? 11 : 12;
+  for (var v = 0; v <= cfg.yMax + 1e-9; v += cfg.yStep){
+    var gy = Y(v);
+    svg.appendChild(el('line', { x1:padL, y1:gy, x2:W - padR + 6, y2:gy, stroke:v === 0 ? axis : grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:padL - 7, y:gy + 4, 'text-anchor':'end', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, cfg.yFmt(v)));
+  }
+  cfg.x.forEach(function(lbl, i){
+    svg.appendChild(el('line', { x1:X(i), y1:H - padB, x2:X(i), y2:H - padB + 5, stroke:axis }));
+    svg.appendChild(el('text', { x:X(i), y:H - padB + 18, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, lbl));
+  });
+  svg.appendChild(el('text', { x:(padL + W - padR) / 2, y:H - 6, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, cfg.xTitle));
+  svg.appendChild(el('text', { x:padL - 4, y:padT - 6, 'text-anchor':'end', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, cfg.yTitle));
+  var cx = X(cfg.sel);
+  svg.appendChild(el('line', { x1:cx, y1:padT - 4, x2:cx, y2:H - padB, stroke:css('--accent'), 'stroke-width':1, 'stroke-dasharray':'2 3', opacity:.7 }));
+
+  var paths = [], dots = [];
+  /* resolve label collisions at the right edge */
+  var ends = cfg.series.map(function(s){ return { s:s, y:Y(s.vals[n - 1]) + 4 }; }).sort(function(a, b){ return a.y - b.y; });
+  for (var e = 1; e < ends.length; e++) if (ends[e].y - ends[e - 1].y < fs + 2) ends[e].y = ends[e - 1].y + fs + 2;
+  cfg.series.forEach(function(s){
+    var c = css(s.slot);
+    var d = s.vals.map(function(v, i){ return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(' ');
+    var p = el('path', { d:d, fill:'none', stroke:c, 'stroke-width':2, 'stroke-linejoin':'round' });
+    svg.appendChild(p); paths.push(p);
+    var g = el('g', {});
+    s.vals.forEach(function(v, i){
+      var hollow = s.hollow && s.hollow.indexOf(i) >= 0, isSel = i === cfg.sel;
+      g.appendChild(el('circle', { cx:X(i), cy:Y(v), r:isSel ? 6 : 4.5, fill:hollow ? '#fff' : c, stroke:hollow ? c : surf, 'stroke-width':hollow ? 2.2 : 2 }));
+    });
+    svg.appendChild(g); dots.push(g);
+    /* value label at the selected point */
+    var vy = Y(s.vals[cfg.sel]) + (s.below ? 18 : -10);
+    svg.appendChild(el('text', { x:X(cfg.sel), y:vy, 'text-anchor':cfg.sel === n - 1 ? 'end' : (cfg.sel === 0 ? 'start' : 'middle'),
+      'font-size':fs, fill:ink, 'font-weight':700, stroke:surf, 'stroke-width':3.5, 'paint-order':'stroke', 'font-family':MONO,
+      'data-probe':s.probe || null }, cfg.valFmt(s.vals[cfg.sel])));
+  });
+  ends.forEach(function(en){
+    svg.appendChild(el('text', { x:X(n - 1) + 10, y:en.y, 'text-anchor':'start', 'font-size':fs, fill:ink, 'font-weight':700, 'font-family':MONO }, en.s.short));
+  });
+  cfg.series.forEach(function(s){
+    s.vals.forEach(function(v, i){
+      var h = el('circle', { cx:X(i), cy:Y(v), r:11, fill:'transparent' });
+      h.style.cursor = 'pointer';
+      h.addEventListener('mousemove', function(ev){ showTip(ev, '<b>' + s.name + '</b>' + cfg.tipFmt(v, i, s)); });
+      h.addEventListener('mouseleave', hideTip);
+      svg.appendChild(h);
+    });
+  });
+  if (enter){
+    paths.forEach(function(p, k){ drawOn(p, 800, k * 110); });
+    dots.forEach(function(g, k){ fadeIn(g, 420, 380 + k * 110); });
+  }
+}
+
+/* =======================================================================
+   1. Protocol walk (toy instance of Figures 4-6)
+   ===================================================================== */
+var TD = 3, NLEAF = 8, KROOTS = 3, TCON_TOY = 3;
+var SCRIPT = [
+  { a:'setup' },
+  { a:'dep', who:'A', blk:1 },
+  { a:'dep', who:'B', blk:2 },
+  { a:'rwd', note:'A', blk:2 },
+  { a:'dep', who:'C', blk:4 },
+  { a:'dep', who:'D', blk:7 },
+  { a:'rwd', note:'A', blk:8 },
+  { a:'rwd', note:'A', blk:8, replay:true },
+  { a:'wdr', note:'A', blk:8, useLatest:true },
+  { a:'prep', note:'A2', blk:8 },
+  { a:'front', blk:9 },
+  { a:'wdr', note:'A2', blk:9, usePrepared:true },
+  { a:'wdr', note:'A2', blk:10, useLatest:true }
+];
+var NOTE_LEAF = { A:'cm_A', A2:"cm_A'" };
+
+function freshState(){
+  var r0 = { id:0, h:0, n:0 };
+  return { blk:0, leaves:[], roots:[r0], list:[0], curr:r0, next:r0, nulls:[], sigma:0, tokens:0, gammaTx:0,
+           prepared:null, cand:null, candN:0, candKind:'', status:'info', tag:'', msg:'', lastLeaf:-1, lastRoot:-1, spentNotes:{} };
+}
+function addLeaf(S, name, kind, blk){
+  S.leaves.push({ name:name, kind:kind });
+  var r = { id:S.roots.length, h:blk, n:S.leaves.length };
+  S.roots.push(r); S.list.push(r.id); if (S.list.length > KROOTS) S.list.shift();
+  if (blk - S.next.h >= TCON_TOY){ S.curr = S.next; S.next = r; }
+  S.lastLeaf = S.leaves.length - 1; S.lastRoot = r.id;
+  return r;
+}
+function leafIndex(S, note){ var nm = NOTE_LEAF[note]; for (var i = 0; i < S.leaves.length; i++) if (S.leaves[i].name === nm) return i; return -1; }
+function honestUnder(S, n){ var c = []; for (var i = 0; i < n; i++) if (S.leaves[i].kind !== 'adv') c.push(i); return c; }
+function snName(note){ return note === 'A' ? 'H(k_A)' : "H(k_A')"; }
+
+function applyStep(S, st){
+  S.cand = null; S.lastLeaf = -1; S.lastRoot = -1; S.status = 'ok'; S.blk = Math.max(S.blk, st.blk || 0);
+  if (st.a === 'setup'){
+    S.status = 'info'; S.tag = 'Setup';
+    S.msg = 'The contract starts with an empty tree (root#0), an empty NullifierList, and fixed amt, amt_rwd and t_con = ' + TCON_TOY + ' blocks. Both reward roots point at root#0.';
+    return;
+  }
+  if (st.a === 'dep'){
+    var r = addLeaf(S, 'cm_' + st.who, 'dep', st.blk); S.sigma++;
+    S.tag = 'Deposit ✓';
+    S.msg = (st.who === 'A' ? 'Alice' : st.who === 'B' ? 'Bob' : st.who === 'C' ? 'Carol' : 'Dave') +
+      ' sends amt with commitment cm_' + st.who + ' = H_p(k‖r) at block ' + st.blk + '. The contract appends it, stores root#' + r.id +
+      ', and lends amt to Σ.' + (S.next === r ? ' Block ' + st.blk + ' is ≥ t_con past the old next root, so the reward roots rotate: curr ← root#' + S.curr.id + '.' : '');
+    return;
+  }
+  if (st.a === 'rwd'){
+    var li = leafIndex(S, st.note), sn = snName(st.note);
+    if (S.nulls.indexOf(sn) >= 0){
+      S.status = 'fail'; S.tag = 'Rejected: nullifier spent';
+      S.msg = 'Alice replays a reward with the same note. Its nullifier ' + sn + ' is already in NullifierList, so each deposit earns at most one reward.';
+      return;
+    }
+    if (li >= S.curr.n){
+      S.status = 'fail'; S.tag = 'Rejected: too early';
+      S.msg = 'At block ' + st.blk + ', Alice asks for a reward. The proof must be against root^curr = root#' + S.curr.id + ' (block ' + S.curr.h +
+        '), which holds ' + S.curr.n + ' leaves and not cm_A. Her deposit is not yet t_con blocks old, so no valid proof exists.';
+      return;
+    }
+    S.cand = honestUnder(S, S.curr.n); S.candN = S.cand.length; S.candKind = 'rwd';
+    var usedRoot = S.curr.id;
+    S.nulls.push(sn); S.tokens++;
+    var r2 = addLeaf(S, "cm_A'", 'ref', st.blk);
+    S.tag = 'Reward ✓';
+    S.msg = 'At block ' + st.blk + ', Alice proves that cm_A is under root^curr = root#' + usedRoot + '. She reveals ' + sn + ', receives amt_rwd governance tokens, and adds a fresh commitment cm_A\' (root#' + r2.id + '). Her coins stay in the pool.';
+    return;
+  }
+  if (st.a === 'prep'){
+    S.status = 'info'; S.tag = 'Proof built';
+    S.prepared = S.list[S.list.length - 1];
+    S.msg = 'Alice builds a withdrawal proof for cm_A\' against the newest root, root#' + S.prepared + ', and broadcasts it. It is still in the mempool.';
+    return;
+  }
+  if (st.a === 'front'){
+    for (var m = 1; m <= 3; m++){ addLeaf(S, 'cm_M' + m, 'adv', st.blk); S.sigma++; }
+    S.lastLeaf = -2;
+    S.status = 'info'; S.tag = 'Front-running';
+    S.msg = 'Mallory sees Alice\'s transaction and gets k = ' + KROOTS + ' deposits mined first. Each one pushes an old root out of the recent-roots list. It costs Mallory k × (amt + fee).';
+    return;
+  }
+  if (st.a === 'wdr'){
+    var sn2 = snName(st.note);
+    if (S.nulls.indexOf(sn2) >= 0){
+      S.status = 'fail'; S.tag = 'Rejected: nullifier spent';
+      S.msg = 'Alice tries to withdraw with her original note (k_A, r). Withdrawals use the same nullifier H_p(k_A), which her reward already spent. After a reward, only the refreshed note cm_A\' can be withdrawn.';
+      return;
+    }
+    var root = st.usePrepared ? S.prepared : S.list[S.list.length - 1];
+    if (S.list.indexOf(root) < 0){
+      S.status = 'fail'; S.tag = 'Rejected: stale root';
+      S.msg = 'Alice\'s withdrawal lands. Its proof names root#' + root + ', which is no longer among the last k = ' + KROOTS + ' roots [' +
+        S.list.map(function(x){ return '#' + x; }).join(', ') + ']. She must rebuild the proof. With k = 1000 this attack needs 10,020 ether (§6.3).';
+      return;
+    }
+    var rn = S.roots[root].n;
+    S.cand = honestUnder(S, rn); S.candN = S.cand.length; S.candKind = 'wdr';
+    S.nulls.push(sn2); S.sigma--; S.gammaTx++;
+    S.tag = 'Withdraw ✓';
+    S.msg = 'Alice proves against root#' + root + ' and reveals ' + sn2 + '. The contract redeems from Σ, sends amt to her fresh address, sends R / NoDepositsLeft to Γ_AMR, and re-lends the rest.';
+    return;
+  }
+}
+var walk = { i:0, states:[], playing:null };
+(function build(){
+  var S = freshState();
+  SCRIPT.forEach(function(st){ applyStep(S, st); walk.states.push(JSON.parse(JSON.stringify(S))); });
+})();
+
+function drawTree(enter){
+  var S = walk.states[walk.i], svg = $('treeSvg');
+  clear(svg);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 360 : 620, H = narrow ? 250 : 290;
+  var padX = narrow ? 10 : 20, top = 30, bot = narrow ? 44 : 48;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var rowH = (H - top - bot) / TD;
+  function P(level, j){ var span = (W - 2 * padX) / (NLEAF >> level); return { x:padX + (j + 0.5) * span, y:top + (TD - level) * rowH }; }
+  var ink = css('--ink-1'), axis = css('--axis'), muted = css('--ink-muted'), acc = css('--accent'), surf = css('--surface-1');
+  var fill = { dep:css('--s1'), ref:css('--s3'), adv:css('--s2') };
+  var nL = S.leaves.length, fs = narrow ? 10 : 12;
+  var rLeaf = narrow ? 9 : 12, rNode = narrow ? 6 : 8;
+  /* edges */
+  for (var lv = 1; lv <= TD; lv++){
+    for (var j = 0; j < (NLEAF >> lv); j++){
+      var p = P(lv, j), used = (j << lv) < nL;
+      [0, 1].forEach(function(c){
+        var q = P(lv - 1, 2 * j + c), cu = ((2 * j + c) << (lv - 1)) < nL;
+        svg.appendChild(el('line', { x1:p.x, y1:p.y, x2:q.x, y2:q.y, stroke:cu ? ink : axis, 'stroke-width':cu ? 1.4 : 1, 'stroke-dasharray':cu ? null : '3 3', opacity:cu ? .75 : 1 }));
+      });
+      if (lv < TD) svg.appendChild(el('circle', { cx:p.x, cy:p.y, r:rNode, fill:used ? ink : '#fff', stroke:used ? ink : axis, 'stroke-width':1.3 }));
+    }
+  }
+  /* root */
+  var rp = P(TD, 0), lastR = S.roots[S.roots.length - 1];
+  svg.appendChild(el('circle', { cx:rp.x, cy:rp.y, r:rNode + 3, fill:nL ? acc : '#fff', stroke:acc, 'stroke-width':1.5 }));
+  svg.appendChild(el('text', { x:rp.x + rNode + 10, y:rp.y + 4, 'font-size':fs + 1, fill:ink, 'font-weight':700, 'font-family':MONO, id:'rootLbl' }, 'root#' + lastR.id));
+  /* path highlight for the newest leaf(s) */
+  var hiPaths = [];
+  var newLeaves = S.lastLeaf === -2 ? [nL - 3, nL - 2, nL - 1] : (S.lastLeaf >= 0 ? [S.lastLeaf] : []);
+  newLeaves.forEach(function(li){
+    var pts = []; for (var l = 0; l <= TD; l++){ var q = P(l, li >> l); pts.push(q.x.toFixed(1) + ' ' + q.y.toFixed(1)); }
+    var hp = el('path', { d:'M' + pts.join(' L'), fill:'none', stroke:acc, 'stroke-width':3, 'stroke-linecap':'round', opacity:.55 });
+    svg.appendChild(hp); hiPaths.push(hp);
+  });
+  /* candidate rings */
+  var ringG = el('g', {});
+  if (S.cand) S.cand.forEach(function(li){
+    var q = P(0, li);
+    ringG.appendChild(el('circle', { cx:q.x, cy:q.y, r:rLeaf + 5, fill:'none', stroke:ink, 'stroke-width':1.6, 'stroke-dasharray':'3 2' }));
+  });
+  svg.appendChild(ringG);
+  /* leaves */
+  var newNodes = [];
+  for (var i = 0; i < NLEAF; i++){
+    var q = P(0, i), lf = S.leaves[i];
+    if (lf){
+      var g = el('g', {});
+      g.appendChild(el('circle', { cx:q.x, cy:q.y, r:rLeaf, fill:fill[lf.kind], stroke:surf, 'stroke-width':2 }));
+      var lbl = lf.name.replace('cm_', '');
+      g.appendChild(el('text', { x:q.x, y:q.y + rLeaf + fs + 4, 'text-anchor':'middle', 'font-size':fs, fill:ink, 'font-weight':700, 'font-family':MONO }, 'cm_' + lbl));
+      svg.appendChild(g);
+      if (newLeaves.indexOf(i) >= 0) newNodes.push(g);
+      (function(lf, i){
+        var hit = el('circle', { cx:q.x, cy:q.y, r:rLeaf + 6, fill:'transparent' });
+        hit.addEventListener('mousemove', function(ev){ showTip(ev, '<b>' + lf.name + '</b>leaf ' + i + ' · ' + (lf.kind === 'dep' ? 'honest deposit' : lf.kind === 'ref' ? 'refreshed by a reward' : 'adversary deposit')); });
+        hit.addEventListener('mouseleave', hideTip);
+        svg.appendChild(hit);
+      })(lf, i);
+    } else {
+      svg.appendChild(el('circle', { cx:q.x, cy:q.y, r:rLeaf - 3, fill:'#fff', stroke:axis, 'stroke-dasharray':'3 3' }));
+    }
+  }
+  svg.appendChild(el('text', { x:padX, y:16, 'font-size':fs, fill:muted, 'font-family':MONO }, 'block ' + S.blk + ' · ' + nL + '/' + NLEAF + ' leaves'));
+  if (enter){
+    hiPaths.forEach(function(hp){ drawOn(hp, 520, 60); });
+    newNodes.forEach(function(g){ fadeIn(g, 380, 0); });
+    if (S.cand) fadeIn(ringG, 420, 300);
+  }
+}
+function syncWalk(enter){
+  var S = walk.states[walk.i];
+  drawTree(enter);
+  var log = $('wLog');
+  log.className = 'log ' + S.status;
+  log.innerHTML = '<span class="tag">' + (walk.i + 1) + '/' + SCRIPT.length + ' · ' + S.tag + '</span>' + S.msg;
+  var adv = $('wAdv');
+  if (S.cand){
+    adv.innerHTML = S.candKind === 'rwd'
+      ? 'Adversary\'s view: the reward came from one of the <b>' + S.candN + '</b> honest leaves under root^curr (Claim 1, toy count).'
+      : 'Adversary\'s view: the withdrawal came from one of the <b>' + S.candN + '</b> honest leaves. Mallory\'s own deposits do not count, and the spent cm_A is indistinguishable from the rest (Claim 2, toy count).';
+  } else adv.textContent = '';
+  $('wState').innerHTML = '<span>block height</span><b>' + S.blk + '</b>' +
+    '<span>leaves</span><b>' + S.leaves.length + ' of ' + NLEAF + '</b>' +
+    '<span>lent to Σ</span><b>' + S.sigma + ' × amt (+ interest R)</b>' +
+    '<span>Alice\'s tokens</span><b>' + S.tokens + ' × amt_rwd</b>' +
+    '<span>payouts to Γ</span><b>' + S.gammaTx + '</b>';
+  $('wRoots').innerHTML = S.list.map(function(id){ return '<span class="chip">#' + id + '</span>'; }).join('') +
+    (S.prepared !== null && S.list.indexOf(S.prepared) < 0 && walk.i >= 10 && walk.i <= 11 ? '<span class="chip bad">#' + S.prepared + '</span>' : '');
+  $('wRR').innerHTML = '<span>root^curr</span><b>root#' + S.curr.id + ' · block ' + S.curr.h + ' · ' + S.curr.n + ' leaves</b>' +
+    '<span>root^next</span><b>root#' + S.next.id + ' · block ' + S.next.h + '</b>';
+  $('wNulls').innerHTML = S.nulls.length ? S.nulls.map(function(s){ return '<span class="chip">' + s + '</span>'; }).join('') : '<span class="chip empty">empty</span>';
+  Array.prototype.forEach.call($('wSteps').children, function(b, j){ b.setAttribute('aria-current', j === walk.i ? 'true' : 'false'); });
+  $('wBack').disabled = walk.i === 0; $('wNext').disabled = walk.i === SCRIPT.length - 1;
+}
+(function initWalk(){
+  var box = $('wSteps');
+  SCRIPT.forEach(function(st, j){
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = j + 1;
+    if (walk.states[j].status === 'fail'){ b.className = 'fail'; b.title = 'Failure branch'; }
+    b.setAttribute('aria-label', 'Step ' + (j + 1) + ': ' + walk.states[j].tag);
+    b.addEventListener('click', function(){ stopPlay(); walk.i = j; syncWalk(true); });
+    box.appendChild(b);
+  });
+  $('wNext').addEventListener('click', function(){ stopPlay(); if (walk.i < SCRIPT.length - 1){ walk.i++; syncWalk(true); } });
+  $('wBack').addEventListener('click', function(){ stopPlay(); if (walk.i > 0){ walk.i--; syncWalk(true); } });
+  $('wReset').addEventListener('click', function(){ stopPlay(); walk.i = 0; syncWalk(true); });
+  $('wPlay').addEventListener('click', function(){
+    if (walk.playing){ stopPlay(); return; }
+    if (walk.i === SCRIPT.length - 1) walk.i = 0;
+    this.textContent = 'Pause'; syncWalk(true);
+    walk.playing = setInterval(function(){
+      if (walk.i >= SCRIPT.length - 1){ stopPlay(); return; }
+      walk.i++; syncWalk(true);
+    }, REDUCED ? 1200 : 2600);
+  });
+})();
+function stopPlay(){ if (walk.playing){ clearInterval(walk.playing); walk.playing = null; } $('wPlay').textContent = 'Play'; }
+
+/* =======================================================================
+   2. Waiting period (Figure 9)
+   ===================================================================== */
+var wait = { i:5, shown:null };
+function drawWait(scale){
+  var svg = $('waitSvg'); clear(svg);
+  var narrow = window.innerWidth < 620;
+  var W = narrow ? 360 : 520, H = narrow ? 250 : 290, padL = narrow ? 34 : 40, padR = 10, padT = 22, padB = 44;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var yMax = 60, n = TCON.length, fs = narrow ? 11 : 12;
+  function Y(v){ return H - padB - v / yMax * (H - padT - padB); }
+  var bw = (W - padL - padR) / n, grid = css('--grid'), axis = css('--axis'), muted = css('--ink-muted'), ink = css('--ink-1'), c = css('--s1');
+  for (var v = 0; v <= yMax; v += 20){
+    svg.appendChild(el('line', { x1:padL, y1:Y(v), x2:W - padR, y2:Y(v), stroke:v ? grid : axis }));
+    svg.appendChild(el('text', { x:padL - 6, y:Y(v) + 4, 'text-anchor':'end', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, v));
+  }
+  TCON.forEach(function(t, i){
+    var val = parseFloat(AVGDEP[i]) * scale, x = padL + i * bw + bw * 0.18, w = bw * 0.64, sel = i === wait.i;
+    var h = Math.max(0, Y(0) - Y(val)), r = Math.min(4, w / 2, h);
+    var d = 'M' + x + ' ' + Y(0) + ' V' + (Y(val) + r) + ' Q' + x + ' ' + Y(val) + ' ' + (x + r) + ' ' + Y(val) +
+      ' H' + (x + w - r) + ' Q' + (x + w) + ' ' + Y(val) + ' ' + (x + w) + ' ' + (Y(val) + r) + ' V' + Y(0) + ' Z';
+    svg.appendChild(el('path', { d:d, fill:c, opacity:sel ? 1 : .38 }));
+    svg.appendChild(el('text', { x:x + w / 2, y:Y(val) - 6, 'text-anchor':'middle', 'font-size':fs, fill:ink, 'font-weight':sel ? 700 : 400,
+      'font-family':MONO, 'data-probe':sel ? 'waitbar' : null }, scale >= 1 ? AVGDEP[i] : (parseFloat(AVGDEP[i]) * scale).toFixed(2)));
+    svg.appendChild(el('text', { x:x + w / 2, y:H - padB + 17, 'text-anchor':'middle', 'font-size':fs - 1, fill:sel ? ink : muted, 'font-weight':sel ? 700 : 400, 'font-family':MONO }, (t / 1000) + 'k'));
+    var hit = el('rect', { x:padL + i * bw, y:padT, width:bw, height:H - padT - padB, fill:'transparent' });
+    hit.style.cursor = 'pointer';
+    hit.addEventListener('mousemove', function(ev){ showTip(ev, '<b>t_con = ' + fmt(t) + ' blocks</b>' + AVGDEP[i] + ' deposits on average'); });
+    hit.addEventListener('mouseleave', hideTip);
+    hit.addEventListener('click', function(){ wait.i = i; $('tcon').value = i; syncWait(); });
+    svg.appendChild(hit);
+  });
+  svg.appendChild(el('text', { x:(padL + W) / 2, y:H - 6, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, 'window length t_con (blocks)'));
+}
+function syncWait(){
+  $('tconVal').textContent = fmt(TCON[wait.i]) + ' blocks';
+  $('waitV').textContent = AVGDEP[wait.i];
+  $('waitD').innerHTML = 'average deposits into the 10 ETH pool per window of ' + fmt(TCON[wait.i]) + ' blocks (Fig. 9)' +
+    (wait.i === 5 ? '. §7.3 reads this bar as "approximately 4.5 days" and "an additional 52 deposit transactions".' : '.');
+  drawWait(1);
+  Array.prototype.forEach.call($('waitTbl').tBodies[0].rows, function(r, j){ r.className = j === wait.i ? 'hl' : ''; });
+}
+(function initWait(){
+  $('waitTbl').tBodies[0].innerHTML = TCON.map(function(t, i){ return '<tr><td class="num">' + fmt(t) + '</td><td class="num">' + AVGDEP[i] + '</td></tr>'; }).join('');
+  $('tcon').addEventListener('input', function(){ wait.i = +this.value; syncWait(); });
+  $('tcon').addEventListener('change', function(){ wait.i = +this.value; syncWait(); });
+})();
+
+/* =======================================================================
+   3. Cost explorer (Table 1, Figures 7-8)
+   ===================================================================== */
+var cost = { di:4, h:'M', lend:false };
+function drawCost(enter){
+  var i = cost.di, h = cost.h;
+  lineChart($('gasSvg'), {
+    x:DEPTHS.map(String), sel:i, xTitle:'tree depth d', yTitle:'gas', yMax:2000000, yStep:500000,
+    yFmt:function(v){ return v ? (v / 1e6).toFixed(1) + 'M' : '0'; }, valFmt:function(v){ return fmt(v); },
+    tipFmt:function(v, j, s){ return 'd = ' + DEPTHS[j] + ': ' + fmt(v) + ' gas' + (s.hollow && s.hollow.indexOf(j) >= 0 ? '<br>hard-coded in the notebook' : ''); },
+    series:[
+      { name:'Deposit (' + (h === 'M' ? 'MiMC' : 'Poseidon') + ')', short:'Deposit', slot:'--s1', vals:GAS.deposit[h], probe:'gasDep' },
+      { name:'Withdraw', short:'Withdraw', slot:'--s2', vals:GAS.withdraw, below:true },
+      { name:'Reward (' + (h === 'M' ? 'MiMC' : 'Poseidon') + ')', short:'Reward', slot:'--s3', vals:GAS.reward[h], hollow:REWARD_HARDCODED[h] }
+    ]
+  }, enter);
+  lineChart($('proofSvg'), {
+    x:DEPTHS.map(String), sel:i, xTitle:'tree depth d', yTitle:'seconds', yMax:12, yStep:3, w:380,
+    yFmt:function(v){ return String(v); }, valFmt:function(v){ return v.toFixed(3) + ' s'; },
+    tipFmt:function(v, j){ return 'd = ' + DEPTHS[j] + ': ' + v.toFixed(3) + ' s'; },
+    series:[
+      { name:'MiMC', short:'MiMC', slot:'--s4', vals:PROOF.M },
+      { name:'Poseidon', short:'Poseidon', slot:'--s5', vals:PROOF.P, below:true }
+    ]
+  }, enter);
+}
+function syncCost(enter){
+  var i = cost.di, h = cost.h, d = DEPTHS[i], H = h === 'M' ? 'MiMC' : 'Poseidon';
+  $('depthVal').textContent = d;
+  var lend = cost.lend;
+  var ro = [
+    ['Capacity', fmt(Math.pow(2, d)), '$2^{' + d + '}$ leaves'],
+    ['Constraints · ' + H, fmt(T1.cons[h][i]), '$1{,}815+' + (h === 'M' ? '1{,}323' : '243') + '\\cdot' + d + '$ (Table 1)'],
+    ['Setup · ' + H, T1.setup[h][i].toFixed(2) + ' s', 'keys ' + T1.keys[h][i].toFixed(1) + ' MB (Table 1)'],
+    ['Proof time · ' + H, PROOF[h][i].toFixed(3) + ' s', 'client, Fig. 8'],
+    ['Deposit gas', fmt(GAS.deposit[h][i]), 'Fig. 7' + (lend ? ' · plus ≈0.3m for Σ (§7.2 estimate)' : '')],
+    ['Withdraw gas', fmt(GAS.withdraw[i]), 'Fig. 7, both hashes' + (lend ? ' · plus ≈0.2m for Σ (§7.2 estimate)' : '')],
+    ['Reward gas', fmt(GAS.reward[h][i]), REWARD_HARDCODED[h].indexOf(i) >= 0 ? 'Fig. 7 · hard-coded, not deposit + withdraw' : 'Fig. 7 · deposit + withdraw'],
+    ['Deployment gas', fmt(GAS.deploy[i]), 'Fig. 7, one-time']
+  ];
+  $('costRO').innerHTML = ro.map(function(r){ return '<div class="ro"><div class="k">' + r[0] + '</div><div class="v">' + r[1] + '</div><div class="d">' + r[2] + '</div></div>'; }).join('');
+  katexRender($('costRO'));
+  var rows = '<thead><tr><th class="num">d</th><th class="num">Deploy</th><th class="num">Deposit MiMC</th><th class="num">Deposit Poseidon</th><th class="num">Withdraw</th><th class="num">Reward MiMC</th><th class="num">Reward Poseidon</th><th class="num">Proof MiMC (s)</th><th class="num">Proof Poseidon (s)</th></tr></thead><tbody>';
+  DEPTHS.forEach(function(dd, j){
+    rows += '<tr' + (j === i ? ' class="hl"' : '') + '><td class="num">' + dd + '</td><td class="num">' + fmt(GAS.deploy[j]) + '</td><td class="num">' + fmt(GAS.deposit.M[j]) +
+      '</td><td class="num">' + fmt(GAS.deposit.P[j]) + '</td><td class="num">' + fmt(GAS.withdraw[j]) + '</td><td class="num">' + fmt(GAS.reward.M[j]) + (REWARD_HARDCODED.M.indexOf(j) >= 0 ? '*' : '') +
+      '</td><td class="num">' + fmt(GAS.reward.P[j]) + '</td><td class="num">' + PROOF.M[j].toFixed(3) + '</td><td class="num">' + PROOF.P[j].toFixed(3) + '</td></tr>';
+  });
+  $('costTbl').innerHTML = rows + '</tbody><caption style="caption-side:bottom; text-align:left" class="note">* hard-coded in the notebook, not deposit + withdraw.</caption>';
+  drawCost(enter);
+}
+(function initCost(){
+  segInit('hashSeg', [{ label:'MiMC' }, { label:'Poseidon' }], 0, function(j){ cost.h = j ? 'P' : 'M'; syncCost(true); });
+  $('depth').addEventListener('input', function(){ cost.di = +this.value; syncCost(false); });
+  $('depth').addEventListener('change', function(){ cost.di = +this.value; syncCost(false); });
+  $('lendChk').addEventListener('change', function(){ cost.lend = this.checked; syncCost(false); });
+})();
+
+/* =======================================================================
+   4. Comparison (Section 8), log scale
+   ===================================================================== */
+var REFS = [
+  { label:'Fig. 7 · d=30 MiMC', dep:1482672, wdr:378090 },
+  { label:'Fig. 7 · d=30 Poseidon', dep:1288077, wdr:378090 },
+  { label:'§1 headline', dep:1200000, wdr:300000 }
+];
+var cmp = { r:0 };
+function cmpRows(){
+  var R = REFS[cmp.r];
+  return [
+    { name:'AMR withdraw', v:R.wdr, amr:true, anon:'up to 2^30', op:'withdraw (verify proof)' },
+    { name:'AMR deposit', v:R.dep, amr:true, anon:'up to 2^30', op:'deposit (tree update)' },
+    { name:'Zeth', v:2000000, anon:'—', op:'zk-SNARK verification, estimate by Zeth authors' },
+    { name:'Zether', v:7800000, anon:'—', op:'transaction' },
+    { name:'Möbius', v:8000000, anon:'24 (ring)', op:'withdraw' },
+    { name:'Anon. Zether', v:48700000, anon:'64 (ring)', op:'transfer' }
+  ];
+}
+function drawCmp(scale){
+  var svg = $('cmpSvg'); clear(svg);
+  var narrow = window.innerWidth < 620, rows = cmpRows();
+  var W = narrow ? 360 : 900, rowH = narrow ? 40 : 38, padT = 30, padB = 34;
+  var padL = narrow ? 8 : 130, padR = narrow ? 14 : 110;
+  var H = padT + rows.length * rowH + padB;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var lo = 5, hi = 8, fs = narrow ? 11 : 12;
+  function X(v){ return padL + (Math.log10(v) - lo) / (hi - lo) * (W - padL - padR); }
+  var grid = css('--grid'), muted = css('--ink-muted'), ink = css('--ink-1'), surf = css('--surface-1');
+  [1e5, 1e6, 1e7, 1e8].forEach(function(t){
+    svg.appendChild(el('line', { x1:X(t), y1:padT - 4, x2:X(t), y2:H - padB, stroke:grid }));
+    svg.appendChild(el('text', { x:X(t), y:H - padB + 16, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, t >= 1e6 ? (t / 1e6) + 'M' : (t / 1e3) + 'K'));
+  });
+  svg.appendChild(el('text', { x:(padL + W - padR) / 2, y:H - 4, 'text-anchor':'middle', 'font-size':fs - 1, fill:muted, 'font-family':MONO }, 'gas per transaction (log scale)'));
+  var lim = X(15e6);
+  svg.appendChild(el('line', { x1:lim, y1:padT - 10, x2:lim, y2:H - padB, stroke:ink, 'stroke-width':1.4, 'stroke-dasharray':'6 4' }));
+  svg.appendChild(el('text', { x:lim, y:padT - 16, 'text-anchor':'middle', 'font-size':fs - 1, fill:ink, 'font-family':MONO }, '≈15M limit'));
+  rows.forEach(function(r, i){
+    var y0 = padT + i * rowH, bh = narrow ? 12 : 18, by = narrow ? y0 + 20 : y0 + (rowH - bh) / 2;
+    var v = Math.pow(10, lo + (Math.log10(r.v) - lo) * scale), x1 = X(v), x0 = X(1e5), w = Math.max(0, x1 - x0), rr = Math.min(4, w, bh / 2);
+    var d = 'M' + x0 + ' ' + by + ' H' + (x0 + w - rr) + ' Q' + (x0 + w) + ' ' + by + ' ' + (x0 + w) + ' ' + (by + rr) +
+      ' V' + (by + bh - rr) + ' Q' + (x0 + w) + ' ' + (by + bh) + ' ' + (x0 + w - rr) + ' ' + (by + bh) + ' H' + x0 + ' Z';
+    svg.appendChild(el('path', { d:d, fill:r.amr ? css('--s1') : muted }));
+    if (narrow){
+      svg.appendChild(el('text', { x:x0, y:y0 + 14, 'font-size':fs, fill:ink, 'font-weight':r.amr ? 700 : 400, 'font-family':MONO }, r.name + ' · ' + fmt(r.v)));
+    } else {
+      svg.appendChild(el('text', { x:padL - 8, y:by + bh / 2 + 4, 'text-anchor':'end', 'font-size':fs, fill:ink, 'font-weight':r.amr ? 700 : 400, 'font-family':MONO }, r.name));
+      svg.appendChild(el('text', { x:x1 + 6, y:by + bh / 2 + 4, 'font-size':fs, fill:ink, 'font-weight':700, stroke:surf, 'stroke-width':3, 'paint-order':'stroke', 'font-family':MONO,
+        'data-probe':i === 0 ? 'cmpAmr' : null }, fmt(r.v)));
+    }
+    var hit = el('rect', { x:0, y:y0, width:W, height:rowH, fill:'transparent' });
+    hit.addEventListener('mousemove', function(ev){ showTip(ev, '<b>' + r.name + '</b>' + fmt(r.v) + ' gas<br>' + r.op + '<br>anonymity set: ' + r.anon); });
+    hit.addEventListener('mouseleave', hideTip);
+    svg.appendChild(hit);
+  });
+}
+function syncCmp(animate){
+  var R = REFS[cmp.r];
+  var ratios = [
+    ['Anon. Zether ÷ AMR deposit', (48.7e6 / R.dep).toFixed(1) + '×', 'paper says ≈32×'],
+    ['Anon. Zether ÷ AMR withdraw', (48.7e6 / R.wdr).toFixed(1) + '×', 'paper says ≈130×'],
+    ['Zeth verify ÷ AMR withdraw', (2e6 / R.wdr).toFixed(1) + '×', 'paper says 5×']
+  ];
+  $('cmpRO').innerHTML = ratios.map(function(r){ return '<div class="ro"><div class="k">' + r[0] + '</div><div class="v">' + r[1] + '</div><div class="d">' + r[2] + ' · our arithmetic on "' + R.label + '"</div></div>'; }).join('');
+  $('cmpTbl').innerHTML = '<thead><tr><th>System</th><th>Operation</th><th class="num">Gas</th><th>Anonymity set</th></tr></thead><tbody>' +
+    cmpRows().map(function(r){ return '<tr><td>' + r.name + '</td><td>' + r.op + '</td><td class="num">' + fmt(r.v) + '</td><td>' + r.anon + '</td></tr>'; }).join('') + '</tbody>';
+  if (animate) tween(700, function(p){ drawCmp(p); }, function(){ drawCmp(1); }, 'cmp'); else drawCmp(1);
+}
+segInit('refSeg', REFS.map(function(r){ return { label:r.label }; }), 0, function(j){ cmp.r = j; syncCmp(false); });
+
+/* =======================================================================
+   Table 1, BibTeX
+   ===================================================================== */
+$('t1body').innerHTML = DEPTHS.map(function(d, i){
+  return '<tr><td class="num">' + d + '</td><td class="num">' + fmt(T1.cons.P[i]) + '</td><td class="num">' + fmt(T1.cons.M[i]) + '</td><td class="num">' + T1.setup.P[i].toFixed(2) +
+    ' s</td><td class="num">' + T1.setup.M[i].toFixed(2) + ' s</td><td class="num">' + T1.keys.P[i].toFixed(1) + ' MB</td><td class="num">' + T1.keys.M[i].toFixed(1) + ' MB</td></tr>';
+}).join('');
+
+$('copyBib').addEventListener('click', function(){
+  var b = this, t = $('bibtex').textContent;
+  function done(){ b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   KaTeX + boot
+   ===================================================================== */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters:[ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError:false, ignoredTags:['script','noscript','style','textarea','pre','code','option']
+  });
+}
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+function redrawAll(){ drawTree(false); drawCost(false); drawWait(1); drawCmp(1); }
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+syncWalk(false); syncWait(); syncCost(false); syncCmp(false);
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);
+      var sec = en.target, id = sec.id;
+      tween(650, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; }, 'sec-' + id);
+      if (id === 'cost') setTimeout(function(){ drawCost(true); }, 150);
+      else if (id === 'walk') setTimeout(function(){ drawTree(true); }, 100);
+      else if (id === 'compare') setTimeout(function(){ syncCmp(true); }, 150);
+      else if (id === 'waiting') setTimeout(function(){ tween(800, function(p){ drawWait(p); }, function(){ drawWait(1); }, 'wait'); }, 150);
+      else if (id === 'tldr'){
+        Array.prototype.forEach.call(sec.querySelectorAll('[data-count]'), function(node){
+          var target = +node.getAttribute('data-count'), dec = +node.getAttribute('data-dec');
+          function show(x){ node.textContent = dec ? x.toFixed(dec) : fmt(x); }
+          tween(1200, function(p){ show(target * p); }, function(){ show(target); }, 'count-' + target);
+        });
+      }
+    });
+  }, { threshold:0.06, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){ if (Math.abs(window.innerWidth - lastW) > 2){ lastW = window.innerWidth; redrawAll(); } }, 120);
+});
+</script>
+</body>
+</html>

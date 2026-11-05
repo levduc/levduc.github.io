@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concave is the New Linear</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Sybil attacks collapse anti-plutocratic DAO voting: on permissionless chains, a wallet-splitting attacker turns quadratic, power and logarithmic voting back into one-token-one-vote.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots, validated against #fafafa (light): QV, Log, Power, 4th */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --lin:#6b6b6b;
+  --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:#ffffff}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:72ch}
+.prov{border:1px solid var(--ring); border-left:3px solid var(--critical); background:var(--surface-1);
+  border-radius:4px; padding:12px 14px; margin-top:14px; font-size:.9rem}
+.prov b{font-family:var(--mono); font-size:.76rem; letter-spacing:.05em; text-transform:uppercase; color:var(--critical)}
+.prov p{margin:.35rem 0 0; font-size:.9rem}
+code,.mono{font-family:var(--mono); font-size:.9em}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-family:var(--mono); font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.75rem; font-weight:400; color:var(--ink-head)}
+.hero h1 small{display:block; font-size:1.45rem; margin-top:.45rem; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.9rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:0}
+.ctl.grow{flex:1 1 260px}
+.ctl label,.ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px; margin:0}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.seg button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible; touch-action:pan-y}
+.chart svg text{font-family:var(--mono)}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.line{height:3px; border-radius:2px; width:18px}
+.swatch.dash{height:0; width:18px; border-top:2px dashed var(--ink-1); background:none !important; border-radius:0}
+.swatch.dots{height:0; width:18px; border-top:2px dotted var(--ink-1); background:none !important; border-radius:0}
+.tip{position:fixed; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:270px; line-height:1.45}
+.tip b{display:block; margin-bottom:.15rem}
+.tip .row{display:flex; align-items:center; gap:.4rem}
+
+/* ---------- readouts ---------- */
+.ros{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-top:14px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:11px 13px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase;
+  letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.45rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; line-height:1.25}
+.ro .d{font-family:var(--mono); font-size:.78rem; color:var(--ink-2)}
+.ro.hl{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+td.res{white-space:nowrap; font-weight:700}
+tr.hl td{background:var(--surface-1); font-weight:700}
+.badge{display:inline-block; font-family:var(--mono); font-size:.72rem; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; border-radius:999px; padding:.05rem .5rem; border:1px solid currentColor; white-space:nowrap}
+.badge.neg{color:var(--critical)} .badge.muted{color:var(--ink-muted)}
+
+.grid2{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; align-items:start}
+.defs{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin-top:16px}
+.defs .card h3{font-size:1.02rem}
+.defs .card p{font-size:.92rem; margin:0}
+
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2); margin:0}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-family:var(--mono);
+  font-size:.8rem; color:var(--ink-muted); text-align:right}
+.nt{text-transform:none; letter-spacing:normal}
+.katex{font-size:1.04em; text-transform:none; letter-spacing:normal}
+
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2.05rem}
+  .hero h1 small{font-size:1.15rem}
+  h2{font-size:1.45rem}
+  .grid2{grid-template-columns:1fr}
+  .chart{padding:12px 10px 10px}
+  .seg button{padding:.35rem .6rem}
+  .tile .v{font-size:1.7rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#split">Splitter</a>
+    <a href="#even">Even split</a>
+    <a href="#cost">Attack cost</a>
+    <a href="#single">One wallet</a>
+    <a href="#plateau">Frictions</a>
+    <a href="#theory">Theory</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">Preprint 2026</span>
+  <h1>Concave is the New Linear<small>Sybil Attacks Collapse Anti-Plutocratic DAO Voting</small></h1>
+  <p class="sub">Quadratic and other concave voting rules are meant to curb whales. On a permissionless chain, a whale can split tokens across many wallets. We show that the best split gives back voting power that is <em>linear</em> in the budget, whatever the fees.</p>
+  <p class="authors">
+    Austin Bennett, Preston Vander Vos, Mira Belenkiy, <span class="me">Duc V. Le</span>
+  </p>
+  <p class="affils">Circle Research, USA</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/concave-dao.pdf">[Paper PDF]</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+    <a class="btn" href="https://arxiv.org/abs/2605.18990">[arXiv:2605.18990]</a>
+  </div>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section id="numbers"><div class="wrap">
+  <p class="eyebrow">In three numbers · Table 2</p>
+  <h2>What wallet splitting buys an attacker</h2>
+  <p class="lede">We replayed the ten most recent finalized proposals of five major DAOs and asked how much capital an attacker needs to match all the honest voting power on each one.</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Uniswap, quadratic voting</div>
+      <div class="v">\$74.9K</div>
+      <p class="d">Mean cost, tokens plus gas, to match every honest vote. The same control costs <strong>\$302.6M</strong> under linear voting.</p>
+    </div>
+    <div class="tile">
+      <div class="k">QV amplification, 5 DAOs</div>
+      <div class="v">1,172&times;&ndash;4,039&times;</div>
+      <p class="d">How many times cheaper the attack is under QV than under one-token-one-vote, from ZKsync to Uniswap.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Power rule, $\beta = 0.25$</div>
+      <div class="v">229,175&times;</div>
+      <p class="d">Uniswap under the steeper power rule $f(w)=w^{0.25}$: control for a mean of <strong>\$1.3K</strong>.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>A concave rule is only concave per wallet</h2>
+  <p class="lede">Most DAOs give one vote per token, so whoever holds the most tokens at snapshot time wins. Quadratic Voting (QV) is the best-known fix: a wallet holding $w$ tokens gets $\sqrt{w}$ votes. A whale with 10,000 tokens gets only $100$ votes, so many small holders together can outvote them.</p>
+  <p class="lede">But a wallet is just a keypair, and anyone can make as many as they like. Split the same 10,000 tokens into 100 wallets of 100 tokens each, and every wallet casts $10$ votes: $1{,}000$ in total. In general, $n$ wallets give $n\sqrt{w/n} = \sqrt{nw}$ votes.</p>
+  <p class="lede">Chains are not free, so each extra wallet costs a transfer ($s$) and a vote transaction ($v$). The paper shows these fees don't save the rule. The attacker picks the wallet size $w^*$ that maximises votes per token spent, $f(w)/(w+c)$ with $c = v+s$, and fills as many such wallets as the budget allows. Total power becomes $\kappa\,(a-p)$, which is linear in the budget $a$.</p>
+  <div class="callout"><p style="margin:0">Concavity discounts an attacker by a constant factor $\kappa$, but it gives <strong>no sublinear dampening</strong> at all. The honest voter who keeps one wallet still pays the concave discount; the attacker who splits does not.</p></div>
+</div></section>
+
+<!-- ============ SPLITTER ============ -->
+<section id="split"><div class="wrap">
+  <p class="eyebrow">Interactive · Lemma 9 and Theorem 10</p>
+  <h2>The wallet splitter</h2>
+  <p class="lede">Choose a budget and a voting rule. Each bar is the attacker's total vote count if the budget is split evenly across $n$ wallets, after paying $c$ per wallet. The best bar is the optimal split, and it sits right at the linear bound $\kappa a$ from Theorem 10.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="spRuleLbl">Voting rule</span>
+      <div class="seg" role="group" aria-labelledby="spRuleLbl" id="spRule"></div>
+    </div>
+    <div class="ctl grow">
+      <label for="spA">Attacker budget $a$ <span class="val nokatex" id="spAVal"></span></label>
+      <input type="range" id="spA" min="1" max="40" step="0.5" value="20">
+    </div>
+  </div>
+
+  <div class="chart nokatex">
+    <svg id="spSvg" role="img" aria-labelledby="spTitle"><title id="spTitle">Total votes as a function of the number of wallets</title></svg>
+    <ul class="legend" id="spLegend"></ul>
+  </div>
+  <div class="ros nokatex" id="spRos"></div>
+
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll nokatex"><table id="spTable"></table></div>
+  </details>
+
+  <p class="note" style="margin-top:14px">Model: Figure 3's Uniswap setup. Amounts are in USD. The per-wallet cost is $c = v + s$, where $v =$ <span class="nokatex" id="spV"></span> is 175,000 gas for <code>delegate</code> + <code>castVote</code> and $s =$ <span class="nokatex" id="spS"></span> is 65,000 gas for an ERC-20 <code>transfer</code>. Each is gas &times; gas price &times; ETH price, averaged over Uniswap's ten proposals in <code>data/processed/</code>. The setup cost $p$ and minimum balance $m$ are both $0$. The attacker's optimum is found by trying every whole number of wallets, as the paper's plotting script does. The single-wallet baseline is $f(a)$ with no fee, matching Table 1.</p>
+</div></section>
+
+<!-- ============ EVEN SPLIT ============ -->
+<section id="even"><div class="wrap">
+  <p class="eyebrow">Interactive · Lemma 8</p>
+  <h2>Why the attacker always splits evenly</h2>
+  <p class="lede">Take the paper's 10,000-token whale and four wallets. Drag a bar to move tokens between wallets; the total always stays 10,000. Under a concave rule, every uneven split loses votes. This is Jensen's inequality: the total $\sum_i f(w_i)$ can never beat $4\,f(10{,}000/4)$. Under the linear rule, how you split makes no difference.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="evRuleLbl">Voting rule</span>
+      <div class="seg" role="group" aria-labelledby="evRuleLbl" id="evRule"></div>
+    </div>
+    <div class="ctl">
+      <span class="lbl">Rebalance</span>
+      <div class="btns"><button class="btn" id="evEven" type="button">Split evenly</button><button class="btn" id="evOne" type="button">All in one wallet</button></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="chart nokatex">
+      <svg id="evSvg" role="img" aria-labelledby="evTitle"><title id="evTitle">Four wallets holding 10,000 tokens in total; drag to rebalance</title></svg>
+      <p class="note" style="margin:8px 0 0">Drag a bar, or focus it and use the &uarr;/&darr; keys (250 tokens a step).</p>
+    </div>
+    <div class="nokatex" id="evRos" style="display:flex; flex-direction:column; gap:12px"></div>
+  </div>
+  <p class="note" style="margin-top:14px">An illustration of Lemma 8, with no fees. The 10,000-token whale with $\sqrt{10{,}000} = 100$ votes is the paper's own example from the introduction.</p>
+</div></section>
+
+<!-- ============ COST CHART ============ -->
+<section id="cost"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 1 and Table 2</p>
+  <h2>What it costs to capture a real vote</h2>
+  <p class="lede">For each DAO, the grey bar is the mean capital needed to match all honest voting power under linear voting. Splitting doesn't help there. The coloured bar is the Sybil-optimal cost under the chosen concave rule, and each dot is one of the ten proposals. The scale is logarithmic: each gridline is a factor of ten.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="coRuleLbl">Concave rule</span>
+      <div class="seg" role="group" aria-labelledby="coRuleLbl" id="coRule"></div>
+    </div>
+  </div>
+
+  <div class="chart nokatex">
+    <svg id="coSvg" role="img" aria-labelledby="coTitle"><title id="coTitle">Mean attack cost per DAO, linear voting versus the selected concave rule, log scale</title></svg>
+    <ul class="legend" id="coLegend"></ul>
+  </div>
+  <details class="tbl"><summary>Show all 50 proposals as a table</summary>
+    <div class="tscroll nokatex"><table id="coTable"></table></div>
+  </details>
+  <p class="note" style="margin-top:14px">Source: <code>data/processed/&lt;dao&gt;_summary.csv</code>, column <code>attacker_cost_usd</code>. Each DAO's bar is the mean over its ten proposals, and the multiplier is the linear mean divided by the rule's mean, as in Table 2. All 20 cells of Table 2 reproduce exactly from these files.</p>
+</div></section>
+
+<!-- ============ SPLIT VS SINGLE ============ -->
+<section id="single"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 2</p>
+  <h2>Same money, one wallet versus many</h2>
+  <p class="lede">Is it the splitting or just the money? Fix the budget at the Sybil-optimal QV cost from Table 2. The grid is all honest QV voting power on the DAO. Switch between holding that budget in one wallet and splitting it across Sybil wallets.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="sgDaoLbl">DAO</span>
+      <div class="seg" role="group" aria-labelledby="sgDaoLbl" id="sgDao"></div>
+    </div>
+    <div class="ctl">
+      <span class="lbl" id="sgModeLbl">Budget held in</span>
+      <div class="seg" role="group" aria-labelledby="sgModeLbl" id="sgMode"></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="chart nokatex">
+      <svg id="sgSvg" role="img" aria-labelledby="sgTitle"><title id="sgTitle">Share of honest voting power captured by the attacker budget</title></svg>
+      <ul class="legend" id="sgLegend"></ul>
+    </div>
+    <div class="nokatex" id="sgRos" style="display:flex; flex-direction:column; gap:12px"></div>
+  </div>
+
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll nokatex"><table id="sgTable"></table></div>
+  </details>
+
+  <div class="prov">
+    <b>Provenance note</b>
+    <p>The paper gives the Uniswap single-wallet share as "$\approx 1/259$ ($0.38\%$)". The data gives $1/258.99 = 0.386\%$, which rounds to $0.39\%$. The page shows the value computed from the data. Each share is $\sqrt{a}/V_h$ for one proposal, averaged over ten proposals, as <code>plot_qv_voting_power_scatter.py</code> does. The multipliers match the ones printed on Figure 2: 259&times;, 140&times;, 190&times;, 359&times;, 240&times;.</p>
+  </div>
+</div></section>
+
+<!-- ============ PLATEAU ============ -->
+<section id="plateau"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 3 and Figure 4 (Appendix B)</p>
+  <h2>Fees lower the plateau, they don't remove it</h2>
+  <p class="lede">Votes per dollar on Uniswap. An honest voter's votes per dollar (dashed) fall towards zero as the balance grows. The attacker's curves flatten at a constant $\kappa$. Raising gas or adding a minimum balance lowers $\kappa$ but leaves the attacker linear. Hover or drag across the chart to read values.</p>
+
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="plRuleLbl">Voting rule</span>
+      <div class="seg" role="group" aria-labelledby="plRuleLbl" id="plRule"></div>
+    </div>
+  </div>
+
+  <div class="chart nokatex">
+    <svg id="plSvg" role="img" aria-labelledby="plTitle"><title id="plTitle">Voting power per dollar against amount voted, Uniswap</title></svg>
+    <ul class="legend" id="plLegend"></ul>
+  </div>
+  <details class="tbl"><summary>Show the plateau values $\kappa$ as a table</summary>
+    <div class="tscroll nokatex"><table id="plTable"></table></div>
+  </details>
+
+  <div class="prov">
+    <b>Provenance note: legend versus code</b>
+    <p>Figure 3's caption and legend describe the frictions as "doubled gas ($2c$)" and "$m = 2$". The script that draws it, <code>plot_attack_uni_vote_per_dollar_costs_kappa.py</code>, actually uses a <strong>3&times;</strong> gas multiplier for both "$2c$" curves and <strong>$m = 4$</strong> for the "$2c,\ m=2$" curve. This chart reproduces the curves the paper plots, labelled with the parameters actually used. The conclusion is the same either way: every curve still levels off at a positive $\kappa$.</p>
+  </div>
+</div></section>
+
+<!-- ============ THEORY ============ -->
+<section id="theory"><div class="wrap">
+  <p class="eyebrow">What the paper proves · Sections 3–5</p>
+  <h2>The results</h2>
+  <p class="lede">The model: an attacker with budget $a$ pays a one-time setup cost $p$, then $s$ to fund each wallet and $v$ for each vote. Each wallet must hold at least $m$. The quantity studied is the <em>Sybil-adjusted voting power</em> $V^*(a)$, the most votes any split can buy. A rule is <em>plutocratic</em> if $V^*(a) \ge \gamma\,a$ for large $a$.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Result</th><th>Statement</th><th>Holds for</th></tr></thead>
+    <tbody>
+      <tr><td class="res">Lemma 5</td><td>Cutting the budget into wallets of size $m$ gives $V^*(a) \ge \lfloor a/m \rfloor f(m)$.</td><td>any rule with $f(m) &gt; 0$</td></tr>
+      <tr><td class="res">Theorem 6</td><td>Every nontrivial rule is plutocratic: $V^*(a) \ge \tfrac{f(m)}{2m}\,a$ for $a \ge 2m$.</td><td>any nontrivial rule</td></tr>
+      <tr><td class="res">Theorem 7</td><td>Adding costs $(m, v, p, s)$ keeps it plutocratic: $V^*_C(a) = \Omega(a)$.</td><td>any linear cost scheme</td></tr>
+      <tr><td class="res">Lemma 8</td><td>For a fixed number of wallets, an even split maximises $\sum_i f(w_i)$ (Jensen).</td><td>concave $f$</td></tr>
+      <tr><td class="res">Lemma 9</td><td>With $n$ wallets, the best balance per wallet is $w^* = \frac{a-p}{n} - (v+s)$.</td><td>positive, concave, strictly increasing $f$</td></tr>
+      <tr><td class="res">Theorem 10</td><td>$V^*(W) \le \kappa\,(a-p)$ with $\kappa = \sup_{x \ge m} \frac{f(x)}{x+c}$, and $V^*(W)/(a-p) \to \kappa$ when the supremum is attained.</td><td>concave $f$, $c = v+s &gt; 0$</td></tr>
+      <tr><td class="res">Corollary 11</td><td>Closed forms for power, quadratic and logarithmic voting (Table 1, below).</td><td>$m$ slack at the optimum</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:28px">Table 1 · Single wallet versus Sybil-optimal power</h3>
+  <p class="note" style="margin:0 0 4px">$A = a - p$, $c = v + s$.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Voting rule</th><th>One wallet $V(W)$</th><th>Sybil-optimal $V^*(W)$</th></tr></thead>
+    <tbody>
+      <tr><td>Linear</td><td>$a$</td><td>$a$</td></tr>
+      <tr><td>Quadratic</td><td>$\sqrt{a}$</td><td>$\dfrac{a-p}{2\sqrt{v+s}}$</td></tr>
+      <tr><td>Power, $\beta \in (0,1)$</td><td>$a^{\beta}$</td><td>$\dfrac{(a-p)\,\beta^{\beta}(1-\beta)^{1-\beta}}{(v+s)^{1-\beta}}$</td></tr>
+      <tr><td>Logarithmic</td><td>$\ln(a+1)$</td><td>$\dfrac{(a-p)\,W_0\!\left(\frac{v+s-1}{e}\right)}{v+s-1}$</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:28px">What would help · Section 7</h3>
+  <div class="defs">
+    <div class="card"><h3>Proof-of-Personhood</h3><p>Binding votes to people caps the number of wallets. It is necessary but not sufficient: it breaks the linearity result only if acquiring credentials costs more than capturing the vote is worth.</p></div>
+    <div class="card"><h3>Economic friction</h3><p>Bonds, longer snapshot look-backs and age-weighted voting raise $p$ and $s$. By Theorem 10, they only lower the slope $\kappa$. Superlinear fees would need wallets linked to people, which is the identity problem again.</p></div>
+    <div class="card"><h3>Composite governance</h3><p>A bicameral design (a concave chamber plus a linear one) or an identity quorum (at least $k$ verified people must vote yes) stops Sybil splitting from being enough by itself.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured results · Section 6</p>
+  <h2>Table 2: mean attack cost, 50 proposals</h2>
+  <p class="lede">Mean capital in USD to match all participating honest voting power, over ten proposals per DAO. Parentheses give the Sybil amplification factor: how many times cheaper the attack is than under linear voting.</p>
+  <div class="tscroll nokatex"><table id="t2"></table></div>
+
+  <h3 style="margin-top:28px">Setup</h3>
+  <div class="tscroll"><table>
+    <tbody>
+      <tr><th>Data</th><td>Address-level votes from Tally for the ten most recent finalized proposals of ENS, Compound, Uniswap, Arbitrum and ZKsync, as of April 2026 (50 proposals).</td></tr>
+      <tr><th>Ethereum L1</th><td>ENS, Compound, Uniswap: $s$ = 65,000 gas (ERC-20 <code>transfer</code>), $v$ = 175,000 gas (<code>delegate</code> + <code>castVote</code>), at Etherscan gas prices on each proposal's creation date.</td></tr>
+      <tr><th>L2 rollups</th><td>Arbitrum, ZKsync: a conservative 500,000 gas for both splitting and voting, at historical L2 base fees.</td></tr>
+      <tr><th>Prices</th><td>CoinGecko spot prices on each proposal's creation date. The setup cost $p$ is set to $0$.</td></tr>
+      <tr><th>Method</th><td>For each proposal, sum the honest power $\sum_i f(w_i)$, solve $V^*(W) = \sum_i f(w_i)$ for the attacker budget $a$ using the closed forms, and convert to USD.</td></tr>
+      <tr><th>Caveat</th><td>Honest voters are assumed to keep their historical weights. A visible attack might bring out more defenders.</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Cite</p>
+  <h2>BibTeX</h2>
+  <div style="position:relative">
+<pre class="bib nokatex" id="bib">@misc{bennett2026concave,
+  title         = {Concave is the New Linear: Sybil Attacks Collapse
+                   Anti-Plutocratic {DAO} Voting},
+  author        = {Bennett, Austin and Vander Vos, Preston and
+                   Belenkiy, Mira and Le, Duc V.},
+  year          = {2026},
+  eprint        = {2605.18990},
+  archivePrefix = {arXiv}
+}</pre>
+  </div>
+  <div class="btns" style="margin-top:12px"><button class="btn" id="bibCopy" type="button">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:14px">arXiv v1 (2605.18990) was posted under an earlier subtitle, <em>"The Impossibility of Anti-Plutocratic DAO Governance"</em>, with a different author order. The PDF linked above is the current version.</p>
+  <p class="note">Code and data: the paper has no code or data availability statement, so no repository is linked here.</p>
+</div></section>
+
+<footer><div class="wrap">Duc V. Le · <a href="../">levduc.github.io</a></div></footer>
+
+<div class="tip nokatex" id="tip" role="tooltip"></div>
+
+<script>
+/* =======================================================================
+   Data - generated from data/processed/*_summary.csv in the paper repo.
+   mean / amp reproduce Table 2 exactly; single = mean of sqrt(a)/V_h
+   under QV (Figure 2); uni_v / uni_s = mean Uniswap vote / split gas
+   cost in USD (Figure 3 setup).
+   ===================================================================== */
+var D = {"daos": [{"key": "ens", "name": "ENS", "chain": 1, "props": [{"id": "95b7e3_32193910699583510191805100765941306153785098144960716714178124679398515702376", "date": "2025-12-16", "voters": 482, "cost": {"lin": 14090203.779684683, "qv": 5973.3307157049285, "log": 4783.7041889572365, "pow": 132.90189325436802}, "single": 0.0043204320950104135}, {"id": "95b7e3_55749099144243971799440687308450608384225109120486751685653209891316805274409", "date": "2026-01-27", "voters": 115, "cost": {"lin": 16448881.77087331, "qv": 11229.737106174172, "log": 5772.918474228887, "pow": 245.420188102702}, "single": 0.004725113484995467}, {"id": "95b7e3_107313977323541760723614084561841045035159333942448750767795024713131429640046", "date": "2026-02-07", "voters": 202, "cost": {"lin": 9553734.27965624, "qv": 8130.150559914368, "log": 3653.73055793464, "pow": 209.5069120955511}, "single": 0.005520072644129321}, {"id": "95b7e3_7432320732701654700329828389963546575346476886035742386260284098817526767149", "date": "2026-02-11", "voters": 233, "cost": {"lin": 8543048.28854944, "qv": 5542.888493982301, "log": 2843.926999726777, "pow": 125.0523037767017}, "single": 0.00514252803925329}, {"id": "95b7e3_69304512515872868228453463730257567312488838925636819022683533220991373699419", "date": "2026-02-12", "voters": 280, "cost": {"lin": 8035886.083435142, "qv": 5109.7676523898845, "log": 2713.983483434525, "pow": 117.6818555962115}, "single": 0.005124719847704236}, {"id": "95b7e3_28252712932062322633429808688780331957150867173093906455161078029287649387260", "date": "2026-02-25", "voters": 222, "cost": {"lin": 8632122.631652368, "qv": 6416.573093015625, "log": 2974.535792990393, "pow": 147.0072433985268}, "single": 0.005392185563928657}, {"id": "95b7e3_31038548146097859834078018568437840147798885401616129864120868194533406456350", "date": "2026-03-02", "voters": 137, "cost": {"lin": 8718311.039337741, "qv": 6674.957409345391, "log": 2866.3793929636126, "pow": 152.50644362590663}, "single": 0.0056181651678949614}, {"id": "95b7e3_14831140174897720265958605023745728013789151926234669357340635631180294168431", "date": "2026-03-11", "voters": 69, "cost": {"lin": 7963741.36415205, "qv": 6011.293098935884, "log": 2761.30171391383, "pow": 129.76558466249293}, "single": 0.005554499441663636}, {"id": "95b7e3_37471031935121384443990643698532486694478877174074595786824358199918042537243", "date": "2026-03-19", "voters": 63, "cost": {"lin": 7707112.888879645, "qv": 5743.932586090739, "log": 2540.889813368612, "pow": 121.80398249263446}, "single": 0.0058615851079996}, {"id": "95b7e3_103727552069485114370289118760519929157657207659236887832122369454255184795333", "date": "2026-04-07", "voters": 66, "cost": {"lin": 7628626.106339343, "qv": 5266.26001016495, "log": 2513.15689853855, "pow": 108.96189876989196}, "single": 0.005437283202265079}], "mean": {"lin": 9732166.823255997, "qv": 6609.889072571825, "log": 3342.4527316057065, "pow": 149.0608305774987}, "amp": {"lin": 1.0, "qv": 1472.364621615251, "log": 2911.684204605247, "pow": 65289.90067713405}, "single": 0.005269658459484466}, {"key": "compound", "name": "Compound", "chain": 1, "props": [{"id": "04c8c0_558", "date": "2026-04-02", "voters": 14, "cost": {"lin": 11540922.777396318, "qv": 5778.827357500949, "log": 2345.8750632607807, "pow": 82.7847213876003}, "single": 0.006757717020130977}, {"id": "04c8c0_559", "date": "2026-04-02", "voters": 14, "cost": {"lin": 11540922.777396318, "qv": 5778.827357500949, "log": 2345.8750632607807, "pow": 82.7847213876003}, "single": 0.006757717020130977}, {"id": "04c8c0_560", "date": "2026-04-02", "voters": 14, "cost": {"lin": 11540922.777396318, "qv": 5778.827357500949, "log": 2345.8750632607807, "pow": 82.7847213876003}, "single": 0.006757717020130977}, {"id": "04c8c0_561", "date": "2026-04-03", "voters": 16, "cost": {"lin": 11405527.927651651, "qv": 5320.61573676756, "log": 2311.738605473432, "pow": 74.02302675335734}, "single": 0.006520766257969505}, {"id": "04c8c0_562", "date": "2026-04-03", "voters": 13, "cost": {"lin": 11398207.009533692, "qv": 5278.405924129143, "log": 2195.514444385958, "pow": 71.65539696761064}, "single": 0.0065467866381528515}, {"id": "04c8c0_563", "date": "2026-04-08", "voters": 14, "cost": {"lin": 10424482.689663174, "qv": 6227.272611045928, "log": 2120.0545480456367, "pow": 98.9302191113013}, "single": 0.008104965640300202}, {"id": "04c8c0_564", "date": "2026-04-08", "voters": 18, "cost": {"lin": 11995219.282546796, "qv": 7346.289577237279, "log": 2536.817992969984, "pow": 118.35512853954684}, "single": 0.007462186438851595}, {"id": "04c8c0_565", "date": "2026-04-08", "voters": 20, "cost": {"lin": 11995222.280624611, "qv": 7347.831759080384, "log": 2539.996985116241, "pow": 119.04924086249947}, "single": 0.007461403306309146}, {"id": "04c8c0_566", "date": "2026-04-08", "voters": 18, "cost": {"lin": 11995219.750234442, "qv": 7346.396850355811, "log": 2537.2851069021985, "pow": 118.37767176021494}, "single": 0.007462131956705523}, {"id": "04c8c0_567", "date": "2026-04-08", "voters": 17, "cost": {"lin": 12042089.486285452, "qv": 7483.318397130125, "log": 2687.031290654966, "pow": 122.35240552400003}, "single": 0.007393549848137185}], "mean": {"lin": 11587873.675872877, "qv": 6368.661292824907, "log": 2396.606416333076, "pow": 97.10972536813316}, "amp": {"lin": 1.0, "qv": 1819.5148309940844, "log": 4835.1175215506955, "pow": 119327.6330660438}, "single": 0.007122494114681893}, {"key": "zksync", "name": "ZKsync", "chain": 324, "props": [{"id": "19e34f_22471812359223094779541460804735287481991027375586193607912523407322605938475", "date": "2025-09-26", "voters": 1656, "cost": {"lin": 43963498.16456723, "qv": 41502.50768139534, "log": 2169.170162261188, "pow": 2391.548795327223}, "single": 0.004104573431702256}, {"id": "f45746_8043865517871673466500920771587039178855876090726876272793935297016439640908", "date": "2025-10-15", "voters": 1561, "cost": {"lin": 39807928.878491215, "qv": 41135.88804187529, "log": 2025.3372735894293, "pow": 2388.712986945277}, "single": 0.004262313832512733}, {"id": "f45746_97314764080859415498674952864578860560861880297360481348949362100730414449748", "date": "2025-10-15", "voters": 1659, "cost": {"lin": 40876254.75852822, "qv": 43374.818812077, "log": 2196.3049782903868, "pow": 2593.670672750082}, "single": 0.004150849864579433}, {"id": "f45746_59956436467786828609747327435664724459335730934530897411573906572229159062327", "date": "2025-11-05", "voters": 1448, "cost": {"lin": 62046307.0000237, "qv": 44973.33635717877, "log": 2173.528782899333, "pow": 2162.8518062115686}, "single": 0.0036425400065095937}, {"id": "19e34f_56697539346434504259886089137844919991955896472242107434527974192173343556352", "date": "2025-11-10", "voters": 1279, "cost": {"lin": 51021513.01660927, "qv": 40698.61826684096, "log": 1847.350843863164, "pow": 1988.4554478153627}, "single": 0.003988078295822553}, {"id": "43b160_106273763076555939732473066377698909735843793351966221159383225521787704405222", "date": "2025-11-10", "voters": 1457, "cost": {"lin": 51632495.83692731, "qv": 42412.55777510074, "log": 2123.3546200985747, "pow": 2231.6095351287604}, "single": 0.003906665941759533}, {"id": "f45746_68452231205260788796569713423066878142593117468039270123415287058789227565934", "date": "2025-11-10", "voters": 1453, "cost": {"lin": 51640595.97589754, "qv": 42497.887587997466, "log": 2123.653532091975, "pow": 2234.916541484979}, "single": 0.003902741951726392}, {"id": "f45746_11346651454708934944378630759545485178332596023788781976003544088664832214798", "date": "2026-02-13", "voters": 1011, "cost": {"lin": 21687202.04267857, "qv": 16509.139335294214, "log": 626.7734405897332, "pow": 748.7256516136179}, "single": 0.004618691257980534}, {"id": "f45746_52899273737246738438218414127099712652047337592218084212368843786372445167418", "date": "2026-02-13", "voters": 1030, "cost": {"lin": 22058181.31009356, "qv": 16987.55435601083, "log": 643.3390417896754, "pow": 770.5749559269645}, "single": 0.00455318943074615}, {"id": "f45746_8950122199701470735770347707974232219581467243459743675708682806836533533051", "date": "2026-02-13", "voters": 1042, "cost": {"lin": 22058307.62459269, "qv": 17001.875661606027, "log": 648.2762305879455, "pow": 774.5742266948487}, "single": 0.004551271367232186}], "mean": {"lin": 40679228.460840926, "qv": 34709.41838753766, "log": 1657.7088906061406, "pow": 1828.5640619898684}, "amp": {"lin": 1.0, "qv": 1171.9939529567775, "log": 24539.428298515417, "pow": 22246.54268692847}, "single": 0.004168091538057137}, {"key": "arbitrum", "name": "Arbitrum", "chain": 42161, "props": [{"id": "43e5a4_13050485773425645466153415888358064378805606653363056526521393182333458879398", "date": "2025-06-03", "voters": 5967, "cost": {"lin": 80948086.3413667, "qv": 22422.9183549264, "log": 5892.13187518663, "pow": 988.6667147583156}, "single": 0.002157656571998688}, {"id": "8395b9_16288348195459185256236376597446433097934740027053618232242382845767010422421", "date": "2025-06-09", "voters": 428, "cost": {"lin": 30341832.89723044, "qv": 5925.421503137193, "log": 591.3802305545546, "pow": 123.88047706570626}, "single": 0.0041153049008182925}, {"id": "8395b9_71020107401388505040510993373598301285550678565865201408741893567942851985019", "date": "2025-06-16", "voters": 3380, "cost": {"lin": 76897058.70329393, "qv": 22282.746792392238, "log": 4907.691789646548, "pow": 842.2824777463544}, "single": 0.002138612921235995}, {"id": "8395b9_94423886836435773843507976898262621297544156552971145658873213763398017341229", "date": "2025-06-16", "voters": 3435, "cost": {"lin": 78951879.71814875, "qv": 22956.16517632922, "log": 4949.265649386502, "pow": 853.415736079836}, "single": 0.0021070113671257384}, {"id": "43e5a4_37638751032596392177176596241110468090299645534448966767963399982622616318705", "date": "2025-07-21", "voters": 2724, "cost": {"lin": 104582367.15217853, "qv": 28977.735764672158, "log": 5717.146651676546, "pow": 1009.8210572204644}, "single": 0.002277776714441197}, {"id": "8395b9_97685288731263391833044854304895851471157040105038894699042975271050068874277", "date": "2025-07-28", "voters": 3141, "cost": {"lin": 98001470.11701287, "qv": 28640.858811961, "log": 6137.015029638911, "pow": 1099.0027085392417}, "single": 0.0023230713661005283}, {"id": "8395b9_51852039695020109312343918128899814224888993575448130385109956762385891284115", "date": "2025-08-18", "voters": 2957, "cost": {"lin": 116606892.1135301, "qv": 35922.39004682696, "log": 6560.818801086762, "pow": 1284.6223090440617}, "single": 0.0023400573436413497}, {"id": "43e5a4_57495998481040869152703890521939307107269690440073097268210566577740258992963", "date": "2025-10-13", "voters": 2470, "cost": {"lin": 56309537.13936577, "qv": 40984.8669498225, "log": 4923.911467102716, "pow": 2287.499844366894}, "single": 0.003948742240718157}, {"id": "8395b9_53154361738756237993090798888616593723057470462495169047773178676976253908001", "date": "2025-12-01", "voters": 3015, "cost": {"lin": 55787394.87809061, "qv": 20001.218832282702, "log": 2451.698593457241, "pow": 763.7076668587156}, "single": 0.0027906858359437892}, {"id": "8395b9_112177996398925212273579485756315626637025938627124330171390356044681347897430", "date": "2026-02-23", "voters": 1560, "cost": {"lin": 23421602.28984668, "qv": 11987.15017939721, "log": 929.955287875484, "pow": 450.4054304179381}, "single": 0.0036412986222696207}], "mean": {"lin": 72184812.13500644, "qv": 24010.14724117476, "log": 4306.10153756119, "pow": 970.3304422097528}, "amp": {"lin": 1.0, "qv": 3006.4293821246306, "log": 16763.379011236495, "pow": 74391.98956864481}, "single": 0.0027840217884293355}, {"key": "uniswap", "name": "Uniswap", "chain": 1, "props": [{"id": "8724c3_86", "date": "2025-04-30", "voters": 233, "cost": {"lin": 238126253.7155839, "qv": 61278.50860007516, "log": 3481.123678043838, "pow": 811.0411670056197}, "single": 0.003656437614056433}, {"id": "8724c3_87", "date": "2025-04-30", "voters": 253, "cost": {"lin": 238126200.9791731, "qv": 61262.9032264187, "log": 3449.005114458267, "pow": 804.7254245668094}, "single": 0.003656903282829687}, {"id": "8724c3_88", "date": "2025-05-10", "voters": 190, "cost": {"lin": 190063569.98392797, "qv": 154886.91690507345, "log": 6269.907871275548, "pow": 3934.63033716105}, "single": 0.007139171682144588}, {"id": "8724c3_89", "date": "2025-05-29", "voters": 164, "cost": {"lin": 301903776.34703207, "qv": 163876.5968873569, "log": 6676.441173449095, "pow": 3210.802221669412}, "single": 0.005299160209054115}, {"id": "8724c3_90", "date": "2025-08-31", "voters": 149, "cost": {"lin": 514865677.3130408, "qv": 83912.97297797266, "log": 6535.047890926985, "pow": 900.8850856689148}, "single": 0.002975408345244453}, {"id": "8724c3_91", "date": "2025-09-01", "voters": 120, "cost": {"lin": 225107307.5383072, "qv": 116467.13454539963, "log": 5727.529951736584, "pow": 2402.2213835113184}, "single": 0.00688657774873694}, {"id": "8724c3_92", "date": "2025-12-16", "voters": 1626, "cost": {"lin": 219978164.5791383, "qv": 20235.262630132143, "log": 4494.305632288252, "pow": 283.3114859872125}, "single": 0.0023473672499368155}, {"id": "8724c3_93", "date": "2025-12-18", "voters": 2573, "cost": {"lin": 628399405.5909375, "qv": 45080.70145197624, "log": 8422.44583682178, "pow": 493.636871240332}, "single": 0.001491683828002679}, {"id": "8724c3_94", "date": "2026-02-24", "voters": 259, "cost": {"lin": 209976982.04556173, "qv": 16586.38054333839, "log": 1799.130415594124, "pow": 135.32770263740602}, "single": 0.0024630296299335904}, {"id": "8724c3_95", "date": "2026-02-25", "voters": 223, "cost": {"lin": 259743648.2845833, "qv": 25664.97067262577, "log": 1923.705346138565, "pow": 228.5905881506425}, "single": 0.0026961622030145307}], "mean": {"lin": 302629098.6377286, "qv": 74925.2348440369, "log": 4877.864291073304, "pow": 1320.5172267598718}, "amp": {"lin": 1.0, "qv": 4039.0810821971554, "log": 62041.31164361265, "pow": 229174.66921676128}, "single": 0.0038611901792953832}], "uni_v": 0.3809884473894973, "uni_s": 0.14150999474467044};
+
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function clear(svg){ while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild); }
+function $(id){ return document.getElementById(id); }
+
+/* ---------- motion: every animation goes through tween() ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  var h = { stopped:false, stop:function(){ h.stopped = true; } };
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return h; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished || h.stopped) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished || h.stopped) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+  return h;
+}
+function lerp(a, b, p){ return a + (b - a) * p; }
+
+/* ---------- formatting ---------- */
+function usd(x){
+  if (x >= 1e9) return '$' + (x / 1e9).toFixed(1) + 'B';
+  if (x >= 1e6) return '$' + (x / 1e6).toFixed(1) + 'M';
+  if (x >= 1e3) return '$' + (x / 1e3).toFixed(1) + 'K';
+  if (x >= 10)  return '$' + Math.round(x);
+  return '$' + x.toFixed(2);
+}
+function mult(k){ return Math.round(k).toLocaleString('en-US') + '×'; }
+function num(x, d){ return x.toLocaleString('en-US', { minimumFractionDigits:d, maximumFractionDigits:d }); }
+function chartWidth(svg){
+  var w = svg.parentNode.clientWidth;
+  var cs = getComputedStyle(svg.parentNode);
+  w -= parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  return Math.max(300, Math.round(w));
+}
+function niceStep(range, target){
+  var raw = range / target, pow = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / pow;
+  return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * pow;
+}
+
+/* ---------- tooltip ---------- */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (x < 8) x = 8;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+function sw(color, cls){ return '<span class="swatch' + (cls ? ' ' + cls : '') + '" style="background:' + color + '"></span>'; }
+
+/* ---------- segmented controls ---------- */
+function seg(id, items, cur, onPick){
+  var box = $(id); box.innerHTML = '';
+  items.forEach(function(it){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = it.label; b.setAttribute('aria-pressed', it.key === cur ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(box.children, function(c){ c.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true'); onPick(it.key);
+    });
+    box.appendChild(b);
+  });
+}
+function legend(id, items){
+  $(id).innerHTML = items.map(function(it){
+    return '<li>' + sw(it.color, it.cls) + it.label + '</li>';
+  }).join('');
+}
+
+/* =======================================================================
+   The model - voting rules, Lambert W, Sybil optimum (paper Sec. 5)
+   ===================================================================== */
+var BETA = 0.25;
+var RULES = {
+  lin: { key:'lin', label:'Linear', long:'Linear', slot:'--lin', f:function(w){ return w; } },
+  qv:  { key:'qv',  label:'QV', long:'Quadratic (QV)', slot:'--s1', f:function(w){ return Math.sqrt(w); } },
+  log: { key:'log', label:'Log', long:'Logarithmic', slot:'--s2', f:function(w){ return Math.log1p(w); } },
+  pow: { key:'pow', label:'Power β=0.25', long:'Power (β = 0.25)', slot:'--s3', f:function(w){ return Math.pow(w, BETA); } }
+};
+function col(r){ return css(RULES[r].slot); }
+
+function lambertW0(x){
+  var E = Math.E;
+  if (x < -1 / E) return NaN;
+  if (x === 0) return 0;
+  var w;
+  if (x < -0.3){ var p = Math.sqrt(2 * (E * x + 1)); w = -1 + p - p * p / 3 + 11 / 72 * p * p * p; }
+  else if (x < 1) w = x * (1 - x);
+  else w = Math.log(x) - Math.log(Math.log(x) + 1);
+  for (var i = 0; i < 60; i++){
+    var ew = Math.exp(w), f = w * ew - x;
+    var wn = w - f / (ew * (w + 1) - (w + 2) * f / (2 * w + 2));
+    if (Math.abs(wn - w) < 1e-15 * (1 + Math.abs(wn))){ w = wn; break; }
+    w = wn;
+  }
+  return w;
+}
+/* interior maximiser of g(w) = f(w)/(w+c)  (Corollary 11) */
+function wStar(r, c){
+  if (r === 'qv') return c;
+  if (r === 'pow') return c * BETA / (1 - BETA);
+  if (r === 'log'){
+    if (Math.abs(c - 1) < 1e-12) return Math.E - 1;
+    return (c - 1) / lambertW0((c - 1) / Math.E) - 1;
+  }
+  return Infinity;
+}
+function kappa(r, c, m){
+  if (r === 'lin') return 1;
+  var w = Math.max(wStar(r, c), m);
+  return RULES[r].f(w) / (w + c);
+}
+/* integer search, identical to _attacker_v_integer in the plotting script */
+function sybilBest(r, a, c, m){
+  if (a < c + m) return null;
+  var nmax = Math.floor(a / (m + c)), best = 0, bn = 0, f = RULES[r].f;
+  for (var n = 1; n <= nmax; n++){
+    var w = a / n - c;
+    if (w >= m && w > 0){ var v = n * f(w); if (v > best){ best = v; bn = n; } }
+  }
+  return bn ? { n:bn, v:best, w:a / bn - c } : null;
+}
+
+var V_UNI = D.uni_v, S_UNI = D.uni_s, C_UNI = V_UNI + S_UNI;
+$('spV').textContent = '$' + V_UNI.toFixed(3);
+$('spS').textContent = '$' + S_UNI.toFixed(3);
+
+/* =======================================================================
+   1. Wallet splitter
+   ===================================================================== */
+var SP = { rule:'qv', a:20, aTarget:20, shown:null, ymax:null, slide:null };
+function spTarget(r, a){
+  var c = C_UNI, f = RULES[r].f, nmax = Math.floor(a / c), vals = [];
+  for (var n = 1; n <= nmax; n++){ var w = a / n - c; vals.push(w > 0 ? n * f(w) : 0); }
+  var best = sybilBest(r, a, c, 0);
+  var k = kappa(r, c, 0);
+  var ymax = Math.max(k * a, f(a), best ? best.v : 0) * 1.14;
+  return { vals:vals, best:best, k:k, honest:f(a), ymax:ymax };
+}
+function spDraw(shown, ymax, T){
+  var svg = $('spSvg'); clear(svg);
+  var W = chartWidth(svg), narrow = W < 560;
+  var padL = narrow ? 40 : 52, padR = narrow ? 8 : 14, padT = 26, padB = 40;
+  var H = narrow ? 250 : 300;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - padL - padR, ih = H - padT - padB;
+  var N = shown.length, NB = Math.max(N, 1);
+  var bw = iw / NB, gap = bw > 6 ? 2 : (bw > 3 ? 1 : 0);
+  function Y(v){ return padT + ih - (v / ymax) * ih; }
+  var ink = css('--ink-1'), muted = css('--ink-muted'), grid = css('--grid'), axis = css('--axis'), plane = css('--plane');
+  var step = niceStep(ymax, narrow ? 4 : 5);
+  for (var t = 0; t <= ymax + 1e-9; t += step){
+    svg.appendChild(el('line', { x1:padL, x2:W - padR, y1:Y(t), y2:Y(t), stroke:grid, 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:padL - 6, y:Y(t) + 4, 'text-anchor':'end', 'font-size':11, fill:muted }, num(t, step < 1 ? 1 : 0)));
+  }
+  svg.appendChild(el('line', { x1:padL, x2:W - padR, y1:Y(0), y2:Y(0), stroke:axis, 'stroke-width':1 }));
+  var color = col(SP.rule);
+  var bestN = T.best ? T.best.n : 0;
+  for (var i = 0; i < N; i++){
+    var v = shown[i], n = i + 1;
+    var x = padL + i * bw + gap / 2, w = Math.max(bw - gap, 0.8);
+    var h = Math.max(0, Y(0) - Y(v));
+    var isBest = n === bestN;
+    var r = Math.min(4, w / 2, h);
+    var path = 'M' + x + ',' + Y(0) + 'V' + (Y(0) - h + r) + 'Q' + x + ',' + (Y(0) - h) + ' ' + (x + r) + ',' + (Y(0) - h) +
+               'H' + (x + w - r) + 'Q' + (x + w) + ',' + (Y(0) - h) + ' ' + (x + w) + ',' + (Y(0) - h + r) + 'V' + Y(0) + 'Z';
+    var bar = el('path', { d:path, fill:color, opacity:isBest ? 1 : 0.38 });
+    svg.appendChild(bar);
+    (function(n, v){
+      var hit = el('rect', { x:padL + (n - 1) * bw, y:padT, width:bw, height:ih, fill:'transparent' });
+      hit.addEventListener('pointermove', function(e){
+        var a = SP.a, wv = a / n - C_UNI;
+        showTip(e, '<b>' + n + ' wallet' + (n > 1 ? 's' : '') + (n === bestN ? ' · optimal' : '') + '</b>' +
+          'tokens per wallet: $' + num(Math.max(wv, 0), 3) + '<br>fees paid: $' + num(n * C_UNI, 2) +
+          '<br>total votes: ' + num(n * RULES[SP.rule].f(Math.max(wv, 0)), 2));
+      });
+      hit.addEventListener('pointerleave', hideTip);
+      svg.appendChild(hit);
+    })(n, v);
+  }
+  /* reference lines: kappa * a (Theorem 10) and one honest wallet f(a) */
+  function refLine(v, dash, label, anchorRight){
+    var y = Y(v);
+    svg.appendChild(el('line', { x1:padL, x2:W - padR, y1:y, y2:y, stroke:ink, 'stroke-width':1.5, 'stroke-dasharray':dash, 'pointer-events':'none' }));
+    var tx = el('text', { x:anchorRight ? W - padR : padL + 6, y:y - 6, 'text-anchor':anchorRight ? 'end' : 'start',
+      'font-size':12, fill:ink, 'paint-order':'stroke', stroke:css('--surface-1'), 'stroke-width':4, 'pointer-events':'none' }, label);
+    svg.appendChild(tx);
+  }
+  refLine(T.k * SP.a, '2 4', 'bound κ·a = ' + num(T.k * SP.a, 2), true);
+  refLine(T.honest, '6 4', 'one wallet f(a) = ' + num(T.honest, 2), false);
+  if (T.best && N){
+    var bx = padL + (bestN - 0.5) * bw, by = Y(shown[bestN - 1]);
+    svg.appendChild(el('text', { x:Math.min(Math.max(bx, padL + 40), W - padR - 40), y:Math.max(by - 22, 12), 'text-anchor':'middle', 'font-size':12, 'font-weight':700, fill:ink,
+      'paint-order':'stroke', stroke:css('--surface-1'), 'stroke-width':4, 'pointer-events':'none' }, 'n* = ' + bestN));
+  }
+  var xstep = N > 50 ? 10 : N > 20 ? 5 : N > 8 ? 2 : 1;
+  for (var n2 = 1; n2 <= N; n2++){
+    if (n2 !== 1 && n2 % xstep) continue;
+    svg.appendChild(el('text', { x:padL + (n2 - 0.5) * bw, y:H - padB + 16, 'text-anchor':'middle', 'font-size':11, fill:muted }, n2));
+  }
+  svg.appendChild(el('text', { x:padL + iw / 2, y:H - 6, 'text-anchor':'middle', 'font-size':12, fill:muted }, 'number of wallets n'));
+  svg.appendChild(el('text', { x:padL, y:12, 'font-size':12, fill:muted }, 'total votes'));
+}
+function spRos(T){
+  var a = SP.a, b = T.best, r = SP.rule;
+  var adv = b ? b.v / T.honest : 0;
+  $('spAVal').textContent = '$' + a.toFixed(2);
+  $('spRos').innerHTML =
+    '<div class="ro"><div class="k">One wallet, <span class="nt">f(a)</span></div><div class="v">' + num(T.honest, 2) + '</div><div class="d">votes, no fee</div></div>' +
+    '<div class="ro hl"><div class="k">Sybil optimum</div><div class="v">' + (b ? num(b.v, 2) : '–') + '</div><div class="d">' +
+      (b ? b.n + ' wallet' + (b.n > 1 ? 's' : '') + ' of $' + num(b.w, 3) : 'budget below one wallet') + '</div></div>' +
+    '<div class="ro"><div class="k">Splitting advantage</div><div class="v">' + (b ? num(adv, 2) + '×' : '–') + '</div><div class="d">' +
+      (r === 'lin' ? 'linear: splitting never helps' : 'grows without bound as a rises') + '</div></div>' +
+    '<div class="ro"><div class="k">Votes per $, <span class="nt">V*/a</span></div><div class="v">' + (b ? num(b.v / a, 3) : '–') + '</div><div class="d">plateau κ = ' + num(T.k, 3) + '</div></div>';
+}
+function spTable(){
+  var rows = ['qv', 'log', 'pow', 'lin'].map(function(r){
+    var T = spTarget(r, SP.a), b = T.best;
+    return '<tr><td>' + RULES[r].long + '</td><td class="num">' + num(T.honest, 2) + '</td><td class="num">' + (b ? b.n : '–') +
+      '</td><td class="num">' + (b ? '$' + num(b.w, 3) : '–') + '</td><td class="num">' + (b ? num(b.v, 2) : '–') + '</td><td class="num">' + num(T.k, 4) + '</td></tr>';
+  }).join('');
+  $('spTable').innerHTML = '<thead><tr><th>Rule (<span class="nt">a</span> = $' + SP.a.toFixed(2) + ')</th><th class="num"><span class="nt">f(a)</span></th><th class="num"><span class="nt">n*</span></th><th class="num"><span class="nt">w*</span></th><th class="num">V*</th><th class="num"><span class="nt">κ</span></th></tr></thead><tbody>' + rows + '</tbody>';
+}
+function spRender(anim){
+  var T = spTarget(SP.rule, SP.a);
+  spRos(T); spTable();
+  if (anim === 'enter' || anim === 'morph'){
+    var from = SP.shown || [], fromMax = SP.ymax || T.ymax, to = T.vals;
+    if (anim === 'enter') from = [];
+    if (SP.tw) SP.tw.stop();
+    SP.tw = tween(anim === 'enter' ? 900 : 420, function(p){
+      var cur = to.map(function(v, i){ return lerp(from[i] || 0, v, p); });
+      var ym = lerp(fromMax, T.ymax, p);
+      SP.shown = cur; SP.ymax = ym; spDraw(cur, ym, T);
+    });
+  } else if (anim === 'hidden'){
+    SP.shown = T.vals.map(function(){ return 0; }); SP.ymax = T.ymax; spDraw(SP.shown, SP.ymax, T);
+  } else {
+    if (SP.tw) SP.tw.stop();
+    SP.shown = T.vals; SP.ymax = T.ymax; spDraw(T.vals, T.ymax, T);
+  }
+}
+seg('spRule', ['qv', 'log', 'pow', 'lin'].map(function(k){ return { key:k, label:RULES[k].label }; }), SP.rule, function(k){
+  SP.rule = k; spLegend(); spRender('morph');
+});
+function spLegend(){
+  legend('spLegend', [
+    { color:col(SP.rule), label:RULES[SP.rule].long + ', total votes with n wallets' },
+    { color:'transparent', cls:'dash', label:'one wallet f(a)' },
+    { color:'transparent', cls:'dots', label:'bound κ·a (Theorem 10)' }
+  ]);
+}
+/* budget slider: eased catch-up through tween(), force-settled on change */
+var spInput = $('spA');
+spInput.addEventListener('input', function(){
+  SP.aTarget = parseFloat(spInput.value);
+  if (SP.slide) SP.slide.stop();
+  var from = SP.a, to = SP.aTarget;
+  SP.slide = tween(220, function(p){ SP.a = lerp(from, to, p); spRender('static'); });
+});
+spInput.addEventListener('change', function(){
+  if (SP.slide) SP.slide.stop();
+  SP.aTarget = parseFloat(spInput.value); SP.a = SP.aTarget; spRender('static');
+});
+
+/* =======================================================================
+   2. Even split (Lemma 8)
+   ===================================================================== */
+var EV = { rule:'qv', A:10000, w:[5500, 2500, 1500, 500], tw:null };
+function evDraw(){
+  var svg = $('evSvg'); clear(svg);
+  var W = chartWidth(svg), H = 260, padL = 8, padR = 8, padT = 34, padB = 34;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - padL - padR, ih = H - padT - padB, bw = iw / 4, color = col(EV.rule), f = RULES[EV.rule].f;
+  var ink = css('--ink-1'), muted = css('--ink-muted'), axis = css('--axis');
+  function Y(v){ return padT + ih - (v / EV.A) * ih; }
+  svg.appendChild(el('line', { x1:padL, x2:W - padR, y1:Y(EV.A / 4), y2:Y(EV.A / 4), stroke:css('--grid'), 'stroke-width':1, 'stroke-dasharray':'4 4' }));
+  svg.appendChild(el('text', { x:W - padR, y:Y(EV.A / 4) - 5, 'text-anchor':'end', 'font-size':11, fill:muted }, 'even: 2,500'));
+  svg.appendChild(el('line', { x1:padL, x2:W - padR, y1:Y(0), y2:Y(0), stroke:axis }));
+  EV.w.forEach(function(w, i){
+    var x = padL + i * bw + 10, bwi = bw - 20, h = Y(0) - Y(w), r = Math.min(4, h);
+    var g = el('g', { tabindex:0, role:'slider', 'aria-label':'Wallet ' + (i + 1), 'aria-valuemin':0, 'aria-valuemax':EV.A, 'aria-valuenow':Math.round(w), style:'cursor:ns-resize; outline:none' });
+    g.appendChild(el('rect', { x:padL + i * bw, y:padT - 30, width:bw, height:ih + 30, fill:'transparent' }));
+    if (h > 0.5){
+      g.appendChild(el('path', { d:'M' + x + ',' + Y(0) + 'V' + (Y(0) - h + r) + 'Q' + x + ',' + (Y(0) - h) + ' ' + (x + r) + ',' + (Y(0) - h) +
+        'H' + (x + bwi - r) + 'Q' + (x + bwi) + ',' + (Y(0) - h) + ' ' + (x + bwi) + ',' + (Y(0) - h + r) + 'V' + Y(0) + 'Z', fill:color }));
+    }
+    g.appendChild(el('rect', { x:x + bwi / 2 - 14, y:Y(w) - 3, width:28, height:6, rx:3, fill:ink }));
+    g.appendChild(el('text', { x:x + bwi / 2, y:Math.max(Y(w) - 16, 12), 'text-anchor':'middle', 'font-size':12, 'font-weight':700, fill:ink }, num(f(w), 1) + ' votes'));
+    g.appendChild(el('text', { x:x + bwi / 2, y:H - padB + 16, 'text-anchor':'middle', 'font-size':11, fill:muted }, num(Math.round(w), 0) + ' tok'));
+    g.addEventListener('keydown', function(e){
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight'){ evSet(i, EV.w[i] + 250); e.preventDefault(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowLeft'){ evSet(i, EV.w[i] - 250); e.preventDefault(); }
+    });
+    g.addEventListener('focus', function(){ g.firstChild.setAttribute('fill', 'rgba(0,0,139,.05)'); });
+    g.addEventListener('blur', function(){ g.firstChild.setAttribute('fill', 'transparent'); });
+    g.addEventListener('pointerdown', function(e){
+      e.preventDefault(); g.focus && g.focus();
+      var pt = svg.createSVGPoint();
+      function move(ev){
+        pt.x = ev.clientX; pt.y = ev.clientY;
+        var loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+        evSet(i, (padT + ih - loc.y) / ih * EV.A);
+      }
+      move(e);
+      function up(){ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    });
+    svg.appendChild(g);
+  });
+  evRos();
+}
+function evSet(i, v, keepFocus){
+  if (EV.tw) EV.tw.stop();
+  v = Math.max(0, Math.min(EV.A, v));
+  var rest = EV.A - v, others = 0;
+  EV.w.forEach(function(w, j){ if (j !== i) others += w; });
+  EV.w = EV.w.map(function(w, j){ return j === i ? v : (others > 1e-9 ? w * rest / others : rest / 3); });
+  var focused = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('aria-label');
+  evDraw();
+  if (focused){ var gs = $('evSvg').querySelectorAll('g[role=slider]'); Array.prototype.forEach.call(gs, function(g){ if (g.getAttribute('aria-label') === focused) g.focus(); }); }
+}
+function evTo(target){
+  if (EV.tw) EV.tw.stop();
+  var from = EV.w.slice();
+  EV.tw = tween(520, function(p){ EV.w = from.map(function(w, i){ return lerp(w, target[i], p); }); evDraw(); });
+}
+function evRos(){
+  var f = RULES[EV.rule].f, tot = EV.w.reduce(function(s, w){ return s + f(w); }, 0);
+  var bound = 4 * f(EV.A / 4), one = f(EV.A);
+  $('evRos').innerHTML =
+    '<div class="ro hl"><div class="k">Your split, <span class="nt">Σ f(wᵢ)</span></div><div class="v">' + num(tot, 2) + '</div><div class="d">' + num(100 * tot / bound, 1) + '% of the even-split maximum</div></div>' +
+    '<div class="ro"><div class="k">Even split, <span class="nt">4 f(2,500)</span></div><div class="v">' + num(bound, 2) + '</div><div class="d">the maximum for 4 wallets (Lemma 8)</div></div>' +
+    '<div class="ro"><div class="k">One wallet, <span class="nt">f(10,000)</span></div><div class="v">' + num(one, 2) + '</div><div class="d">' + (EV.rule === 'lin' ? 'linear: every split gives the same total' : 'even split = ' + num(bound / one, 2) + '× this') + '</div></div>';
+}
+seg('evRule', ['qv', 'log', 'pow', 'lin'].map(function(k){ return { key:k, label:RULES[k].label }; }), EV.rule, function(k){ EV.rule = k; evDraw(); });
+$('evEven').addEventListener('click', function(){ evTo([2500, 2500, 2500, 2500]); });
+$('evOne').addEventListener('click', function(){ evTo([10000, 0, 0, 0]); });
+
+/* =======================================================================
+   3. Attack cost per DAO (Figure 1 / Table 2)
+   ===================================================================== */
+var CO = { rule:'qv', p:1, tw:null, from:null };
+var CO_LO = 10, CO_HI = 1e9;
+(function(){
+  var mn = Infinity;
+  D.daos.forEach(function(d){ d.props.forEach(function(p){ ['qv', 'log', 'pow'].forEach(function(r){ mn = Math.min(mn, p.cost[r]); }); }); });
+  CO_LO = Math.pow(10, Math.floor(Math.log10(mn)));
+})();
+function coDraw(rFrom, rTo, p){
+  var svg = $('coSvg'); clear(svg);
+  var W = chartWidth(svg), narrow = W < 560;
+  var padL = narrow ? 70 : 96, padR = narrow ? 10 : 16, padT = 10, padB = 34, rowH = narrow ? 62 : 66;
+  var H = padT + D.daos.length * rowH + padB;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - padL - padR, lo = Math.log10(CO_LO), hi = Math.log10(CO_HI);
+  function X(v){ return padL + (Math.log10(Math.max(v, CO_LO)) - lo) / (hi - lo) * iw; }
+  var ink = css('--ink-1'), muted = css('--ink-muted'), grid = css('--grid'), plane = css('--surface-1');
+  var cFrom = col(rFrom), cTo = col(rTo);
+  for (var e = lo; e <= hi; e++){
+    var gx = X(Math.pow(10, e));
+    svg.appendChild(el('line', { x1:gx, x2:gx, y1:padT, y2:H - padB, stroke:grid }));
+    if (!narrow || e % 2 === 1 || e === hi) svg.appendChild(el('text', { x:gx, y:H - padB + 16, 'text-anchor':'middle', 'font-size':11, fill:muted }, usd(Math.pow(10, e)).replace('.0', '')));
+  }
+  svg.appendChild(el('text', { x:padL + iw / 2, y:H - 4, 'text-anchor':'middle', 'font-size':12, fill:muted }, narrow ? 'mean cost, USD (log scale)' : 'mean cost to match all honest votes (USD, log scale)'));
+  function bar(x0, x1, y, h, fill, tip){
+    var w = Math.max(x1 - x0, 1), r = Math.min(4, h / 2, w);
+    var b = el('path', { d:'M' + x0 + ',' + y + 'H' + (x0 + w - r) + 'Q' + (x0 + w) + ',' + y + ' ' + (x0 + w) + ',' + (y + r) +
+      'V' + (y + h - r) + 'Q' + (x0 + w) + ',' + (y + h) + ' ' + (x0 + w - r) + ',' + (y + h) + 'H' + x0 + 'Z', fill:fill });
+    b.addEventListener('pointermove', function(ev){ showTip(ev, tip); });
+    b.addEventListener('pointerleave', hideTip);
+    svg.appendChild(b); return b;
+  }
+  D.daos.forEach(function(d, i){
+    var y0 = padT + i * rowH + 6;
+    svg.appendChild(el('text', { x:padL - 10, y:y0 + 22, 'text-anchor':'end', 'font-size':13, 'font-weight':700, fill:ink }, d.name));
+    svg.appendChild(el('text', { x:padL - 10, y:y0 + 37, 'text-anchor':'end', 'font-size':10.5, fill:muted }, d.chain === 1 ? 'Ethereum' : d.chain === 324 ? 'ZKsync Era' : 'Arbitrum One'));
+    /* linear bar, grows on entrance */
+    var linX = lerp(X(CO_LO), X(d.mean.lin), CO.enterP);
+    bar(X(CO_LO), linX, y0, 16, css('--lin'), '<b>' + d.name + ' · Linear</b>mean ' + usd(d.mean.lin) + ' over 10 proposals');
+    if (CO.enterP > 0.7) svg.appendChild(el('text', { x:linX - 6, y:y0 + 12, 'text-anchor':'end', 'font-size':11.5, 'font-weight':700, fill:'#ffffff', 'pointer-events':'none' }, usd(d.mean.lin)));
+    /* rule bar: morphs in log space between rules */
+    var vLog = lerp(Math.log10(d.mean[rFrom]), Math.log10(d.mean[rTo]), p);
+    var rx = lerp(X(CO_LO), X(Math.pow(10, vLog)), CO.enterP);
+    var fill = p < 0.5 ? cFrom : cTo;
+    bar(X(CO_LO), rx, y0 + 19, 16, fill, '<b>' + d.name + ' · ' + RULES[rTo].long + '</b>mean ' + usd(d.mean[rTo]) + '<br>' + mult(d.amp[rTo]) + ' cheaper than linear');
+    var lbl = usd(d.mean[rTo]) + ' · ' + mult(d.amp[rTo]);
+    svg.appendChild(el('text', { x:rx + 6, y:y0 + 31, 'font-size':11.5, 'font-weight':700, fill:ink, opacity:CO.enterP,
+      'paint-order':'stroke', stroke:plane, 'stroke-width':3, 'pointer-events':'none' }, lbl));
+    /* per-proposal dots */
+    d.props.forEach(function(pr){
+      var dx = lerp(X(CO_LO), X(Math.pow(10, lerp(Math.log10(pr.cost[rFrom]), Math.log10(pr.cost[rTo]), p))), CO.enterP);
+      var c = el('circle', { cx:dx, cy:y0 + 45, r:4.5, fill:fill, stroke:plane, 'stroke-width':2, opacity:0.85 });
+      c.addEventListener('pointermove', function(ev){ showTip(ev, '<b>' + d.name + ' · ' + pr.date + '</b>' + pr.voters + ' voters<br>' + RULES[rTo].long + ': ' + usd(pr.cost[rTo]) + '<br>Linear: ' + usd(pr.cost.lin)); });
+      c.addEventListener('pointerleave', hideTip);
+      svg.appendChild(c);
+    });
+  });
+}
+CO.enterP = 1;
+function coRender(mode, from){
+  if (CO.tw) CO.tw.stop();
+  if (mode === 'hidden'){ CO.enterP = 0; coDraw(CO.rule, CO.rule, 1); return; }
+  if (mode === 'enter'){ CO.tw = tween(1000, function(p){ CO.enterP = p; coDraw(CO.rule, CO.rule, 1); }); return; }
+  if (mode === 'morph'){ CO.enterP = 1; CO.tw = tween(560, function(p){ coDraw(from, CO.rule, p); }); return; }
+  CO.enterP = 1; coDraw(CO.rule, CO.rule, 1);
+}
+seg('coRule', ['qv', 'log', 'pow'].map(function(k){ return { key:k, label:RULES[k].label }; }), CO.rule, function(k){
+  var from = CO.rule; CO.rule = k; coLegend(); coRender('morph', from);
+});
+function coLegend(){
+  legend('coLegend', [
+    { color:css('--lin'), label:'Linear (mean of 10)' },
+    { color:col(CO.rule), label:RULES[CO.rule].long + ' (mean; label = cost · amplification)' },
+    { color:col(CO.rule), cls:'dot', label:'one proposal' }
+  ]);
+  var lis = $('coLegend').querySelectorAll('.swatch'); if (lis[2]) lis[2].style.borderRadius = '50%';
+}
+function coTable(){
+  var rows = '';
+  D.daos.forEach(function(d){
+    d.props.forEach(function(p){
+      rows += '<tr><td>' + d.name + '</td><td>' + p.date + '</td><td class="num">' + p.voters + '</td><td class="num">' + usd(p.cost.lin) +
+        '</td><td class="num">' + usd(p.cost.qv) + '</td><td class="num">' + usd(p.cost.log) + '</td><td class="num">' + usd(p.cost.pow) + '</td></tr>';
+    });
+  });
+  $('coTable').innerHTML = '<thead><tr><th>DAO</th><th>Proposal date</th><th class="num">Voters</th><th class="num">Linear</th><th class="num">QV</th><th class="num">Log</th><th class="num">Power <span class="nt">β=0.25</span></th></tr></thead><tbody>' + rows + '</tbody>';
+}
+
+/* =======================================================================
+   4. One wallet versus many (Figure 2)
+   ===================================================================== */
+var SG = { dao:'uniswap', mode:'one', filled:1, tw:null };
+function sgDao(){ return D.daos.filter(function(d){ return d.key === SG.dao; })[0]; }
+function sgDraw(){
+  var d = sgDao(), N = Math.round(1 / d.single);
+  var svg = $('sgSvg'); clear(svg);
+  var W = chartWidth(svg), cols = W < 420 ? 20 : 24;
+  var cell = W / cols, rows = Math.ceil(N / cols), H = rows * cell + 4;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var on = col('qv'), onOne = css('--lin'), off = css('--grid');
+  var nFill = SG.filled;
+  for (var i = 0; i < N; i++){
+    var x = (i % cols) * cell, y = Math.floor(i / cols) * cell;
+    var lit = i < nFill;
+    svg.appendChild(el('rect', { x:x + 1, y:y + 1, width:cell - 2, height:cell - 2, rx:2,
+      fill:lit ? (SG.mode === 'one' && i === 0 ? onOne : on) : off }));
+  }
+}
+$('sgSvg').addEventListener('pointermove', sgTip); $('sgSvg').addEventListener('pointerleave', hideTip);
+function sgTip(e){
+  var d = sgDao();
+  showTip(e, '<b>' + d.name + ' · QV</b>grid = all honest votes V<sub>h</sub> (' + Math.round(1 / d.single) + ' cells)<br>one wallet: ' + num(100 * d.single, 3) + '% ≈ 1 cell<br>split: 100%');
+}
+function sgRos(){
+  var d = sgDao();
+  $('sgRos').innerHTML =
+    '<div class="ro"><div class="k">Budget (Table 2, QV mean)</div><div class="v">' + usd(d.mean.qv) + '</div><div class="d">' + d.name + ', same in both modes</div></div>' +
+    '<div class="ro' + (SG.mode === 'one' ? ' hl' : '') + '"><div class="k">In one wallet</div><div class="v">' + num(100 * d.single, 3) + '%</div><div class="d">of honest votes ≈ 1/' + num(1 / d.single, 2) + '</div></div>' +
+    '<div class="ro' + (SG.mode === 'split' ? ' hl' : '') + '"><div class="k">Split across Sybil wallets</div><div class="v">100%</div><div class="d">matches V<sub>h</sub> by construction</div></div>' +
+    '<div class="ro"><div class="k">Gap from splitting alone</div><div class="v">' + mult(1 / d.single) + '</div><div class="d">now lit: ' + SG.filled + ' of ' + Math.round(1 / d.single) + ' cells</div></div>';
+}
+function sgLegend(){
+  legend('sgLegend', [
+    { color:css('--lin'), label:'one wallet (≈ 1 cell)' },
+    { color:col('qv'), label:'Sybil split' },
+    { color:css('--grid'), label:'honest votes not matched' }
+  ]);
+}
+function sgAnimateTo(target, ms){
+  if (SG.tw) SG.tw.stop();
+  var from = SG.filled;
+  SG.tw = tween(ms, function(p){ SG.filled = Math.round(lerp(from, target, p)); sgDraw(); sgRos(); });
+}
+function sgRender(mode){
+  var N = Math.round(1 / sgDao().single), target = SG.mode === 'split' ? N : 1;
+  if (mode === 'hidden'){ SG.filled = 0; sgDraw(); sgRos(); return; }
+  if (mode === 'animate'){ sgAnimateTo(target, 900); return; }
+  if (SG.tw) SG.tw.stop();
+  SG.filled = target; sgDraw(); sgRos();
+}
+seg('sgDao', D.daos.map(function(d){ return { key:d.key, label:d.name }; }), SG.dao, function(k){ SG.dao = k; SG.filled = 0; sgRender('animate'); });
+seg('sgMode', [{ key:'one', label:'One wallet' }, { key:'split', label:'Sybil wallets' }], SG.mode, function(k){ SG.mode = k; sgRender('animate'); });
+function sgTable(){
+  $('sgTable').innerHTML = '<thead><tr><th>DAO</th><th class="num">Budget (QV mean)</th><th class="num">One wallet</th><th class="num">Split</th><th class="num">Gap</th></tr></thead><tbody>' +
+    D.daos.map(function(d){ return '<tr><td>' + d.name + '</td><td class="num">' + usd(d.mean.qv) + '</td><td class="num">' + num(100 * d.single, 3) + '% (1/' + num(1 / d.single, 2) + ')</td><td class="num">100%</td><td class="num">' + mult(1 / d.single) + '</td></tr>'; }).join('') + '</tbody>';
+}
+
+/* =======================================================================
+   5. Votes per dollar plateau (Figure 3 / Figure 4)
+   ===================================================================== */
+/* CONFIGS as in plot_attack_uni_vote_per_dollar_costs_kappa.py:
+   (c multiplier, m) = (1,0) (1,2) (3,0) (3,4); the paper's legend reads c/m=0, c/m=2, 2c/m=0, 2c/m=2 */
+var PL_CFG = [
+  { cm:1, m:0, slot:'--s1', label:'c, m = 0',       paper:'c, m = 0' },
+  { cm:1, m:2, slot:'--s2', label:'c, m = $2',      paper:'c, m = 2' },
+  { cm:3, m:0, slot:'--s3', label:'3c, m = 0',      paper:'"2c, m = 0"' },
+  { cm:3, m:4, slot:'--s4', label:'3c, m = $4',     paper:'"2c, m = 2"' }
+];
+var PL = { rule:'qv', drawP:1, tw:null, cache:{} };
+var PL_A = (function(){ var a = [], n = 1000; for (var i = 0; i < n; i++) a.push(0.01 + i * (40 - 0.01) / (n - 1)); return a; })();
+function plSeries(r){
+  if (PL.cache[r]) return PL.cache[r];
+  var f = RULES[r].f;
+  var out = {
+    lin: PL_A.map(function(a){ return a >= V_UNI ? 1 : NaN; }),
+    honest: PL_A.map(function(a){ return a >= C_UNI ? f(a) / a : NaN; }),
+    cfg: PL_CFG.map(function(cf){
+      var c = cf.cm * C_UNI;
+      return PL_A.map(function(a){ var b = sybilBest(r, a, c, cf.m); return b ? b.v / a : NaN; });
+    }),
+    kap: PL_CFG.map(function(cf){ return kappa(r, cf.cm * C_UNI, cf.m); })
+  };
+  PL.cache[r] = out; return out;
+}
+function plDraw(){
+  var svg = $('plSvg'); clear(svg);
+  var W = chartWidth(svg), narrow = W < 560;
+  var padL = narrow ? 36 : 46, padR = narrow ? 64 : 84, padT = 24, padB = 40, H = narrow ? 270 : 330;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var iw = W - padL - padR, ih = H - padT - padB, YMAX = 1.2;
+  function X(a){ return padL + a / 40 * iw; }
+  function Y(v){ return padT + ih - v / YMAX * ih; }
+  var ink = css('--ink-1'), muted = css('--ink-muted'), grid = css('--grid'), axis = css('--axis'), plane = css('--surface-1');
+  var clipId = 'plClip';
+  var defs = el('defs'); var cp = el('clipPath', { id:clipId }); cp.appendChild(el('rect', { x:padL, y:padT, width:iw, height:ih })); defs.appendChild(cp); svg.appendChild(defs);
+  for (var t = 0; t <= 1.2001; t += 0.2){
+    svg.appendChild(el('line', { x1:padL, x2:padL + iw, y1:Y(t), y2:Y(t), stroke:grid }));
+    svg.appendChild(el('text', { x:padL - 6, y:Y(t) + 4, 'text-anchor':'end', 'font-size':11, fill:muted }, t.toFixed(1)));
+  }
+  for (var a = 0; a <= 40; a += 10){
+    svg.appendChild(el('text', { x:X(a), y:H - padB + 16, 'text-anchor':'middle', 'font-size':11, fill:muted }, '$' + a));
+  }
+  svg.appendChild(el('line', { x1:padL, x2:padL + iw, y1:Y(0), y2:Y(0), stroke:axis }));
+  svg.appendChild(el('text', { x:padL + iw / 2, y:H - 4, 'text-anchor':'middle', 'font-size':12, fill:muted }, 'amount voted (USD)'));
+  svg.appendChild(el('text', { x:padL - 30, y:11, 'font-size':12, fill:muted }, 'votes per dollar'));
+  var S = plSeries(PL.rule);
+  function pathOf(ys){
+    var d = '', pen = false;
+    for (var i = 0; i < PL_A.length; i++){
+      var y = ys[i];
+      if (!isFinite(y)){ pen = false; continue; }
+      d += (pen ? 'L' : 'M') + X(PL_A[i]).toFixed(2) + ',' + Y(Math.min(y, YMAX + 0.3)).toFixed(2); pen = true;
+    }
+    return d;
+  }
+  var g = el('g', { 'clip-path':'url(#' + clipId + ')' }); svg.appendChild(g);
+  var paths = [];
+  paths.push(g.appendChild(el('path', { d:pathOf(S.lin), fill:'none', stroke:css('--lin'), 'stroke-width':2 })));
+  paths.push(g.appendChild(el('path', { d:pathOf(S.honest), fill:'none', stroke:ink, 'stroke-width':1.6, 'stroke-dasharray':'6 4' })));
+  PL_CFG.forEach(function(cf, i){ paths.push(g.appendChild(el('path', { d:pathOf(S.cfg[i]), fill:'none', stroke:css(cf.slot), 'stroke-width':2, 'stroke-linejoin':'round' }))); });
+  /* draw-on: reveal left to right through a clip rect driven by tween() */
+  var rv = el('clipPath', { id:'plReveal' }); var rvr = el('rect', { x:padL - 2, y:0, width:(iw + 4) * PL.drawP, height:H }); rv.appendChild(rvr); defs.appendChild(rv);
+  g.setAttribute('clip-path', 'url(#plReveal)');
+  var g2 = el('g', { 'clip-path':'url(#' + clipId + ')' }); svg.insertBefore(g2, g); g2.appendChild(g);
+  /* kappa labels on the right edge, de-collided */
+  var labs = [{ v:1, c:css('--lin'), t:'linear 1' }].concat(PL_CFG.map(function(cf, i){ return { v:S.kap[i], c:css(cf.slot), t:'κ ' + S.kap[i].toFixed(3) }; }));
+  labs.forEach(function(l){ l.y = Y(l.v); });
+  labs.sort(function(a, b){ return a.y - b.y; });
+  for (var k = 1; k < labs.length; k++) if (labs[k].y - labs[k - 1].y < 13) labs[k].y = labs[k - 1].y + 13;
+  labs.forEach(function(l){
+    svg.appendChild(el('line', { x1:padL + iw, x2:padL + iw + 6, y1:Y(l.v), y2:l.y, stroke:l.c, 'stroke-width':1.5, opacity:PL.drawP }));
+    svg.appendChild(el('rect', { x:padL + iw + 8, y:l.y - 4, width:8, height:8, rx:2, fill:l.c, opacity:PL.drawP }));
+    svg.appendChild(el('text', { x:padL + iw + 19, y:l.y + 4, 'font-size':11, fill:ink, opacity:PL.drawP }, l.t));
+  });
+  /* crosshair */
+  var cross = el('line', { x1:0, x2:0, y1:padT, y2:padT + ih, stroke:ink, 'stroke-width':1, opacity:0, 'pointer-events':'none' });
+  svg.appendChild(cross);
+  var dots = PL_CFG.map(function(cf){ var c = el('circle', { r:4.5, fill:css(cf.slot), stroke:plane, 'stroke-width':2, opacity:0, 'pointer-events':'none' }); svg.appendChild(c); return c; });
+  var hit = el('rect', { x:padL, y:padT, width:iw, height:ih, fill:'transparent' });
+  hit.addEventListener('pointermove', function(e){
+    var pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    var loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    var a = Math.max(0.01, Math.min(40, (loc.x - padL) / iw * 40));
+    var i = Math.round((a - 0.01) / (40 - 0.01) * (PL_A.length - 1)); a = PL_A[i];
+    cross.setAttribute('x1', X(a)); cross.setAttribute('x2', X(a)); cross.setAttribute('opacity', 0.5);
+    var html = '<b>amount voted $' + a.toFixed(2) + '</b>';
+    html += '<div class="row">' + sw(ink, 'dash') + 'honest ' + (isFinite(S.honest[i]) ? S.honest[i].toFixed(3) : '–') + '</div>';
+    PL_CFG.forEach(function(cf, j){
+      var v = S.cfg[j][i];
+      if (isFinite(v)){ dots[j].setAttribute('cx', X(a)); dots[j].setAttribute('cy', Y(v)); dots[j].setAttribute('opacity', 1); } else dots[j].setAttribute('opacity', 0);
+      html += '<div class="row">' + sw(css(cf.slot)) + cf.label + ': ' + (isFinite(v) ? v.toFixed(3) : 'too small') + '</div>';
+    });
+    showTip(e, html);
+  });
+  hit.addEventListener('pointerleave', function(){ hideTip(); cross.setAttribute('opacity', 0); dots.forEach(function(d){ d.setAttribute('opacity', 0); }); });
+  svg.appendChild(hit);
+}
+function plRender(mode){
+  if (PL.tw) PL.tw.stop();
+  if (mode === 'hidden'){ PL.drawP = 0; plDraw(); return; }
+  if (mode === 'enter'){ PL.tw = tween(1100, function(p){ PL.drawP = p; plDraw(); }); return; }
+  PL.drawP = 1; plDraw();
+}
+function plLegend(){
+  legend('plLegend', [{ color:css('--lin'), cls:'line', label:'Linear (1 vote per $)' }, { color:'transparent', cls:'dash', label:'Honest, one wallet' }]
+    .concat(PL_CFG.map(function(cf){ return { color:css(cf.slot), cls:'line', label:'Attacker ' + cf.label }; })));
+}
+function plTable(){
+  var rows = PL_CFG.map(function(cf){
+    return '<tr><td>' + cf.label + '</td><td>' + cf.paper + '</td>' + ['qv', 'log', 'pow'].map(function(r){ return '<td class="num">' + kappa(r, cf.cm * C_UNI, cf.m).toFixed(3) + '</td>'; }).join('') + '</tr>';
+  }).join('');
+  $('plTable').innerHTML = '<thead><tr><th>Config used (<span class="nt">c</span> = $' + C_UNI.toFixed(3) + ')</th><th>Paper legend</th><th class="num"><span class="nt">κ QV</span></th><th class="num"><span class="nt">κ Log</span></th><th class="num"><span class="nt">κ Power</span></th></tr></thead><tbody>' + rows + '</tbody>';
+}
+seg('plRule', ['qv', 'log', 'pow'].map(function(k){ return { key:k, label:RULES[k].label }; }), PL.rule, function(k){ PL.rule = k; plRender('enter'); });
+
+/* =======================================================================
+   Table 2
+   ===================================================================== */
+function t2(){
+  $('t2').innerHTML = '<thead><tr><th>Protocol</th><th class="num">Linear</th><th class="num">Quadratic</th><th class="num">Logarithmic</th><th class="num">Power (<span class="nt">β = 0.25</span>)</th></tr></thead><tbody>' +
+    D.daos.map(function(d){
+      return '<tr><td>' + d.name + '</td><td class="num">' + usd(d.mean.lin) + '</td>' + ['qv', 'log', 'pow'].map(function(r){
+        return '<td class="num">' + usd(d.mean[r]) + ' (' + mult(d.amp[r]) + ')</td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+}
+
+/* ---------- BibTeX copy ---------- */
+$('bibCopy').addEventListener('click', function(){
+  var b = $('bibCopy');
+  try { navigator.clipboard.writeText($('bib').textContent).then(function(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1400); }); } catch(e){}
+});
+
+/* ---------- maths: \$ in prose is money, never a delimiter ---------- */
+(function escapeMoney(){
+  var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), nodes = [];
+  while (walker.nextNode()) if (walker.currentNode.nodeValue.indexOf('\\$') !== -1) nodes.push(walker.currentNode);
+  nodes.forEach(function(n){
+    var parts = n.nodeValue.split('\\$'), frag = document.createDocumentFragment();
+    parts.forEach(function(p, i){
+      if (i){ var s = document.createElement('span'); s.className = 'nokatex usd'; s.textContent = '$'; frag.appendChild(s); }
+      if (p) frag.appendChild(document.createTextNode(p));
+    });
+    n.parentNode.replaceChild(frag, n);
+  });
+})();
+function katexRender(){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(document.body, {
+    delimiters:[{ left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false }],
+    throwOnError:false, ignoredClasses:['nokatex'],
+    ignoredTags:['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'option', 'svg']
+  });
+}
+window.addEventListener('load', katexRender);
+
+/* =======================================================================
+   Boot: static paint, then entrances on scroll (guarded tween, no CSS transitions)
+   ===================================================================== */
+spLegend(); coLegend(); sgLegend(); plLegend();
+coTable(); sgTable(); plTable(); t2();
+evDraw();
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+spRender(hasIO ? 'hidden' : 'static');
+coRender(hasIO ? 'hidden' : 'static');
+sgRender(hasIO ? 'hidden' : 'static');
+plRender(hasIO ? 'hidden' : 'static');
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(550, function(p){ sec.style.opacity = p; sec.style.transform = p >= 1 ? 'none' : 'translateY(' + (16 * (1 - p)).toFixed(2) + 'px)'; });
+      var id = sec.id;
+      if (id === 'split') setTimeout(function(){ spRender('enter'); }, 160);
+      else if (id === 'cost') setTimeout(function(){ coRender('enter'); }, 160);
+      else if (id === 'single') setTimeout(function(){ sgRender('animate'); }, 220);
+      else if (id === 'plateau') setTimeout(function(){ plRender('enter'); }, 160);
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+/* a resize repaints everything but never replays an entrance */
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  if (window.innerWidth === lastW) return; lastW = window.innerWidth;
+  clearTimeout(rzT);
+  rzT = setTimeout(function(){ spRender('static'); evDraw(); coRender('static'); sgRender('static'); plRender('static'); }, 120);
+});
+</script>
+</body>
+</html>

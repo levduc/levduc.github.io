@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OptiBridge</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="ACNS 2026 — A trustless bridge between the Lightning Network and Ethereum: the common case is one hash check, and the dispute contract is deployed only when someone misbehaves.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* validated categorical slots (dataviz validator, light, surface #fafafa, all-pairs PASS;
+     #1baf7a contrast 2.7:1 WARN -> relieved by direct value labels + table views) */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono); font-size:.9em}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem; max-width:72ch}
+.flag{color:var(--critical); font-family:var(--mono); font-weight:700}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.75rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn[disabled]{opacity:.4; cursor:default}
+.btn[disabled]:hover{border-color:var(--ring); color:var(--ink-1)}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head);
+  font-variant-numeric:tabular-nums}
+.tile .v small{font-size:.5em; font-weight:400; color:var(--ink-muted)}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:12px 18px; align-items:flex-end; margin-bottom:16px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:0}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px 16px 10px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.tip{position:fixed; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px; left:0; top:0}
+.tip b{display:block; margin-bottom:.15rem}
+.readrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-top:14px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:10px 14px; background:var(--surface-1)}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.3rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; line-height:1.3}
+.ro .s{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted)}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; max-width:100%}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tr.blk td{font-family:var(--mono); font-size:.74rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700; background:var(--surface-1)}
+tr.hl td{background:var(--surface-1); font-weight:700}
+.yes{color:var(--good); font-weight:700}
+.no{color:var(--critical); font-weight:700}
+.na{color:var(--ink-muted)}
+
+/* ---------- protocol walk-through ---------- */
+.pgrid{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:22px; align-items:start}
+.stepnav{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px}
+.dots{display:flex; gap:6px}
+.dots button{width:30px; height:30px; border-radius:50%; border:1px solid var(--ring);
+  background:var(--surface-1); font-family:var(--mono); font-size:.8rem; cursor:pointer; color:var(--ink-2); padding:0}
+.dots button[aria-current=step]{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:700}
+.dots button.done{border-color:var(--accent); color:var(--accent)}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px; box-shadow:var(--shadow)}
+.card h3 .n{font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); font-weight:700; margin-right:.4rem}
+.card p{font-size:.95rem}
+.gasline{display:flex; justify-content:space-between; gap:10px; font-family:var(--mono); font-size:.84rem;
+  border-top:1px solid var(--grid); padding:.35rem 0; color:var(--ink-2)}
+.gasline b{font-variant-numeric:tabular-nums; color:var(--ink-1)}
+.state{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px}
+.state li{display:flex; justify-content:space-between; gap:10px; font-family:var(--mono); font-size:.84rem;
+  border:1px solid var(--ring); border-radius:3px; padding:.35rem .6rem; background:var(--plane)}
+.state li span:first-child{color:var(--ink-muted)}
+.state li span:last-child{font-weight:700; text-align:right}
+.hashbox{margin-top:12px; border-top:1px solid var(--grid); padding-top:12px}
+.hashbox .row{display:flex; gap:8px; flex-wrap:wrap; margin:.4rem 0}
+input[type=text]{background:var(--plane); border:1px solid var(--ring); color:var(--ink-1);
+  border-radius:3px; padding:.4rem .6rem; font-family:var(--mono); font-size:.85rem; flex:1 1 180px; min-width:0}
+.hex{font-family:var(--mono); font-size:.78rem; word-break:break-all; color:var(--ink-2)}
+.verdict{border-radius:4px; padding:10px 12px; font-size:.86rem; border:1px solid; margin-top:10px; font-family:var(--mono)}
+.verdict.ok{color:var(--good); border-color:var(--good)}
+.verdict.bad{color:var(--critical); border-color:var(--critical)}
+
+/* ---------- game ---------- */
+.ggrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:22px; align-items:start}
+.who{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700; margin:0 0 .3rem}
+.region{display:inline-block; font-family:var(--mono); font-size:.72rem; font-weight:700;
+  border:1px solid var(--ink-muted); color:var(--ink-muted); border-radius:999px; padding:0 .5rem; margin-left:.4rem}
+.moves{display:flex; flex-direction:column; gap:8px; margin-top:10px}
+.move{text-align:left; font:inherit; font-size:.95rem; cursor:pointer; background:var(--plane);
+  border:1px solid var(--ring); border-radius:4px; padding:.55rem .75rem; color:var(--ink-1)}
+.move:hover{border-color:var(--accent)}
+.move.eq{box-shadow:inset 3px 0 0 var(--good)}
+.move .tag{float:right; font-family:var(--mono); font-size:.72rem; color:var(--good); font-weight:700}
+.trail{list-style:none; margin:0; padding:0; font-family:var(--mono); font-size:.8rem; color:var(--ink-2)}
+.trail li{padding:.25rem 0 .25rem 1.1rem; position:relative; border-bottom:1px dashed var(--grid)}
+.trail li::before{content:"→"; position:absolute; left:0; color:var(--ink-muted)}
+.trail li.off::before{color:var(--critical)}
+.trail li.on::before{color:var(--good)}
+.payoff{display:grid; grid-template-columns:auto 1fr 1fr; gap:4px 14px; font-family:var(--mono); font-size:.9rem;
+  align-items:center; margin:.5rem 0}
+.payoff .h{font-size:.72rem; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em; font-weight:700}
+.coin{display:inline-block; min-width:1.6em; text-align:center; border-radius:3px; padding:0 .25rem; font-weight:700}
+.coin.btc{background:#fff1e0; color:#8a4a00}
+.coin.eth{background:#ecebfa; color:#3b3a7a}
+.coin.zero{color:var(--ink-muted); font-weight:400}
+.pips{letter-spacing:.1em}
+.cmp{font-family:var(--mono); font-size:.82rem; margin-top:.6rem; color:var(--ink-2)}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem;
+  line-height:1.55; color:var(--ink-2); max-width:100%}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+ol.flags{padding-left:1.3rem; margin:.4rem 0 0; font-size:.92rem; max-width:80ch}
+ol.flags li{margin-bottom:.5rem; color:var(--ink-2)}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2.1rem}
+  .pgrid,.ggrid{grid-template-columns:1fr}
+  .seg{display:flex}
+  .seg button{flex:1 1 auto; border-bottom:1px solid var(--ring)}
+  th,td{padding:.4rem .4rem}
+}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#paths">Gas per path</a>
+    <a href="#protocol">Protocol</a>
+    <a href="#game">Incentives</a>
+    <a href="#split">Two contracts</a>
+    <a href="#properties">Properties</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">ACNS 2026</span>
+  <h1>OptiBridge</h1>
+  <p class="sub">A trustless, cost-efficient bridge between the Lightning Network and Ethereum. Lightning stays exactly as deployed today. When both channel peers are honest, Ethereum checks a single hash preimage, and the costly dispute contract is deployed only if someone misbehaves.</p>
+  <p class="authors">
+    Mohsen Minaei<sup>1</sup>, <span class="me">Duc V. Le</span><sup>1</sup>, Pedro Moreno-Sanchez<sup>1,2,3</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Visa Research &nbsp;·&nbsp; <sup>2</sup>IMDEA Software Institute &nbsp;·&nbsp; <sup>3</sup>MPI-SP</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/optibridge.pdf">Paper (PDF)</a>
+    <a class="btn" href="#cite">BibTeX</a>
+  </div>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section id="tldr"><div class="wrap">
+  <p class="eyebrow">In three numbers · Table 1</p>
+  <h2>What the optimistic design buys</h2>
+  <p class="lede">All gas figures are measured with Hardhat 2.17.4 and are the mean of three runs (standard deviation $&lt;0.1\%$). Alba's figures are the published values from Alba (NDSS'25), the prior Lightning–Ethereum bridge.</p>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Bridge contract deployment</div>
+      <div class="v">~73% <small>less gas</small></div>
+      <p class="d"><strong>1,215,315</strong> gas vs. Alba's <strong>4,513,248</strong>. The dispute logic is no longer part of the contract every user deploys.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Proof submission</div>
+      <div class="v">40,107 <small>gas</small></div>
+      <p class="d">vs. Alba's <strong>253,566</strong>-gas <span class="mono">submitProof</span>, the comparison the abstract makes. Alba's own <span class="mono">optimisticProof</span> costs a further 48,027.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Core dispute call</div>
+      <div class="v">196,438 <small>gas</small></div>
+      <p class="d">vs. Alba's <strong>515,860</strong>. When a dispute does happen, deploying the dispute contract costs <strong>2,785,514</strong> gas.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>A bridge needs to see the event. Lightning hides it.</h2>
+  <p class="lede">A bridge applies a state change on one chain once something has happened on another. Conventional designs assume that event is public: a lock transaction everyone can see and prove. Lightning breaks that assumption. Channel updates happen off-chain between two peers, and nobody else ever sees them.</p>
+  <p class="lede">Why you would want such a bridge anyway (the paper's example): Alice must pay Carol over Lightning, but her channel to Bob has only 5 coins of outbound capacity. Alice has funds on Ethereum. She locks collateral worth $\alpha$ in an Ethereum contract, Bob extends her $\alpha$ coins of credit in their channel, and she routes the payment to Carol through Bob. Once Bob is repaid in the channel, the contract must return Alice's collateral.</p>
+  <div class="callout">
+    <p style="margin:0 0 .5rem"><strong>Two ways this goes wrong</strong> (Section 1):</p>
+    <p style="margin:0 0 .4rem"><strong>Liveness.</strong> Alice locks her collateral, and Bob never extends the loan.</p>
+    <p style="margin:0"><strong>Safety.</strong> Alice repays, reaching channel state $s_n$, and uses $s_n$ to unlock her collateral. At the same time she closes the channel on Bitcoin with the older state $s_{n-1}$, where she still holds the $\alpha$ coins. She keeps both.</p>
+  </div>
+  <p class="lede">The prior work, Alba (NDSS'25), solves this by <em>changing Lightning</em>. Every channel state carries extra data in an <span class="mono">OP_RETURN</span> output, and earlier states are timelocked until the Ethereum side settles. That needs a new BOLT specification and updated Lightning implementations. It also uses one monolithic Ethereum contract that contains all the dispute logic, so honest users pay to deploy it every time.</p>
+  <p class="lede"><strong>OptiBridge's idea.</strong> Bob picks a secret $r_{bridge}$ and commits to $h_{bridge} = H(r_{bridge})$ up front. When he is repaid, he simply hands $r_{bridge}$ to Alice, and the Ethereum contract releases her collateral against the preimage. Everything needed to settle a dispute lives in a <em>second</em> contract, fixed in advance by its hash and deployed only when cooperation fails.</p>
+</div></section>
+
+<!-- ============ INTERACTIVE 1: PATH COSTS ============ -->
+<section id="paths"><div class="wrap">
+  <p class="eyebrow">Interactive · Table 1, summed per execution path</p>
+  <h2>What each way of finishing costs on Ethereum</h2>
+  <p class="lede">Pick how the bridge ends. Each bar is one on-chain call from Table 1, stacked as a running total. The legend separates calls that happen on every run from calls that exist only when there is a dispute. Branches (a)–(d) are the ones in Figure 1.</p>
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="pathLbl">Execution path</span>
+      <div class="seg" role="group" aria-labelledby="pathLbl" id="pathSeg"></div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="chartP" role="img" aria-labelledby="chartPTitle"><title id="chartPTitle">Cumulative gas per on-chain call for the selected execution path</title></svg>
+    <ul class="legend" id="legendP"></ul>
+  </div>
+  <div class="readrow" id="pathRead"></div>
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll"><table id="tableP"></table></div>
+  </details>
+  <p class="note" style="margin-top:14px">The paper reports per-call gas (Table 1) and does not sum it by path. The totals here add the Table 1 rows each path executes, following the call sequences in Figures 3–4. <span class="flag">⚑</span> marks <span class="mono">setup (dispute)</span> = 428,939: this is exactly the same as <span class="mono">setup (bridge)</span> and is suspected to be a copy error in the paper, so every dispute total includes a suspect value. The paper does not give Alba's call sequence for each dispute branch, so the dispute branches show no Alba total. Alba's matching per-call figures are in the table.</p>
+</div></section>
+
+<!-- ============ INTERACTIVE 2: PROTOCOL ============ -->
+<section id="protocol"><div class="wrap">
+  <p class="eyebrow">Interactive · Figures 1, 3 and 4</p>
+  <h2>Step through the protocol, then break it</h2>
+  <p class="lede">Alice is the prover, who borrows and repays. Bob is the verifier, who lends and holds the secret. Choose a path and step through it. The diagram, the asset readouts and the gas readout update at each step. On the optimistic path, the last step lets you try the contract's hash check yourself.</p>
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="scLbl">Path</span>
+      <div class="seg" role="group" aria-labelledby="scLbl" id="scSeg"></div>
+    </div>
+  </div>
+  <div class="stepnav">
+    <button class="btn" id="prevStep" aria-label="Previous step">&larr; Prev</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn" id="nextStep" aria-label="Next step">Next &rarr;</button>
+    <button class="btn" id="playStep">Play</button>
+  </div>
+  <div class="pgrid">
+    <div class="chart"><svg id="seq" role="img" aria-labelledby="seqTitle"><title id="seqTitle">Message sequence between Bob, Alice, Ethereum and Bitcoin</title></svg></div>
+    <div>
+      <div class="card" id="stepCard"></div>
+      <div class="card" style="margin-top:14px">
+        <p class="who" style="margin-bottom:.5rem">State after this step</p>
+        <ul class="state" id="stateList"></ul>
+      </div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">In the paper, $H$ is an abstract hash function. The demo computes SHA-256 in your browser only as an illustration. The paper does not say which hash the contract uses. Gas figures are Table 1's, under Table 1's function names (see the name mapping in <a href="#results">Results</a>).</p>
+</div></section>
+
+<!-- ============ INTERACTIVE 3: GAME ============ -->
+<section id="game"><div class="wrap">
+  <p class="eyebrow">Interactive · Figure 5 and Theorem 1</p>
+  <h2>Why nobody wants the dispute path</h2>
+  <p class="lede">Section 7.1 models the bridge as a game with perfect information: Alice (P) and Bob (V) take turns, and every move has an honest option, "go idle", or an attack. Play either side. Each ending shows what the paper's Figure 5 awards: who ends up with the loan (₿) and the collateral (Ξ), how many on-chain fee units it took, and how many time windows $\Delta$ it took. Theorem 1 says the green path is the <em>unique</em> subgame-perfect Nash equilibrium.</p>
+  <div class="stepnav">
+    <button class="btn" id="gReset">Restart</button>
+    <button class="btn primary" id="gEq">Play the equilibrium</button>
+    <button class="btn" id="gHint" aria-pressed="false">Mark equilibrium moves</button>
+  </div>
+  <div class="ggrid">
+    <div class="card" id="gNode"></div>
+    <div class="card">
+      <p class="who">Moves so far</p>
+      <ol class="trail" id="gTrail"></ol>
+    </div>
+  </div>
+  <details class="tbl"><summary>All twelve endings in Figure 5, as a table</summary>
+    <div class="tscroll"><table id="tableG"></table></div>
+  </details>
+  <p class="note" style="margin-top:14px">Fees and delays are counts of the coin and clock icons in Figure 5. They rank outcomes; they are not gas or time measurements. Lettered regions (a)–(d) match the shaded sub-games in the figure. Section 4.1 notes that the game abstracts away mempool congestion, fee volatility and MEV. The incentive result relies on rationality, but safety and liveness do not: an irrational deviator pays more on-chain but cannot steal funds.</p>
+</div></section>
+
+<!-- ============ INTERACTIVE 4: SPLIT CONTRACTS ============ -->
+<section id="split"><div class="wrap">
+  <p class="eyebrow">Interactive · Table 1, deployment rows</p>
+  <h2>Pay for the dispute code only when you dispute</h2>
+  <p class="lede">Alba puts the optimistic path and dispute resolution in one contract, so every bridge deploys all of it. OptiBridge's bridge contract only stores a commitment $h_{dispute} = H(C_{dispute})$ to the dispute contract's code. It deploys that code only when someone calls <span class="mono">InitDispute</span>. Switch the dispute on and off.</p>
+  <div class="controls">
+    <div class="ctl">
+      <span class="lbl" id="spLbl">Does a dispute happen?</span>
+      <div class="seg" role="group" aria-labelledby="spLbl" id="spSeg"></div>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="chartS" role="img" aria-labelledby="chartSTitle"><title id="chartSTitle">Contract deployment gas, Alba versus OptiBridge</title></svg>
+    <ul class="legend" id="legendS"></ul>
+  </div>
+  <div class="readrow" id="spRead"></div>
+  <details class="tbl"><summary>Show the numbers as a table</summary>
+    <div class="tscroll"><table>
+      <thead><tr><th>Contract</th><th>Deployed</th><th class="num">Gas</th></tr></thead>
+      <tbody>
+        <tr><td>Alba: monolithic contract</td><td>every run</td><td class="num">4,513,248</td></tr>
+        <tr><td>OptiBridge: bridge contract</td><td>every run</td><td class="num">1,215,315</td></tr>
+        <tr><td>OptiBridge: dispute contract</td><td>only on dispute</td><td class="num">2,785,514</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+  <p class="note" style="margin-top:14px">Deployment rows only. Setup and function calls are in the first chart. <span class="flag">Provenance:</span> the evaluation's "side-by-side" paragraph says OptiBridge "pays the 3.4&nbsp;M-gas dispute deployment only when a dispute occurs". Table 1, the abstract and the conclusion all give <strong>2,785,514</strong>. Even adding <span class="mono">setup (dispute)</span> gives 3,214,453, not 3.4M. This chart uses Table 1.</p>
+</div></section>
+
+<!-- ============ PROPERTIES ============ -->
+<section id="properties"><div class="wrap">
+  <p class="eyebrow">Guarantees</p>
+  <h2>What OptiBridge claims, and where</h2>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>OptiBridge</th><th>Alba (as the paper describes it)</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Safety: no wrapped state without the source event, and no release without repayment</td><td class="yes">✓</td><td class="na">not assessed</td><td class="mono">Def. 2, §7.2</td></tr>
+      <tr><td>Liveness: once repaid, Alice can reclaim the collateral <em>on her own</em></td><td class="yes">✓</td><td class="na">not assessed</td><td class="mono">Def. 3, §7.2</td></tr>
+      <tr><td>Trustless: no relays, oracles, operators or committees; only signatures and hash preimages</td><td class="yes">✓</td><td class="na">not assessed</td><td class="mono">§4.2, §6</td></tr>
+      <tr><td>Lightning unchanged: no <span class="mono">OP_RETURN</span>, custom outputs or extra timelocks</td><td class="yes">✓</td><td class="no">✗ needs extra state data and timelocked earlier states (new BOLT proposal)</td><td class="mono">§2.3, §6</td></tr>
+      <tr><td>Ethereum side uses only ordinary contract calls</td><td class="yes">✓</td><td class="na">not assessed</td><td class="mono">§6</td></tr>
+      <tr><td>Honest users never deploy the dispute logic</td><td class="yes">✓</td><td class="no">✗ one monolithic contract</td><td class="mono">§3, §6</td></tr>
+      <tr><td>Common-case Ethereum check</td><td>one hash preimage</td><td>two signatures on a sequence number, plus a full-channel-state <span class="mono">submitProof</span></td><td class="mono">§6</td></tr>
+      <tr><td>Honest optimistic path is the unique SPNE for rational players</td><td class="yes">✓</td><td class="na">not assessed</td><td class="mono">Thm. 1, App. A</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:12px">"Not assessed" means this paper does not evaluate Alba on that property. It is not a claim that Alba lacks it. Safety and liveness assume the synchrony bound of §4.1: the dispute window must satisfy $T_{DISPUTE} &gt; \delta_{BTC} + 2\,\delta_{ETH} + \Delta$. For example, with $\delta_{BTC}\approx$ 1 hour and $\delta_{ETH}\approx$ 15 minutes, the paper says $T_{DISPUTE}$ = 24 hours comfortably suffices. Like any Lightning user, honest parties must monitor the chain or delegate that job to a watchtower.</p>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured results · Table 1</p>
+  <h2>Gas usage, OptiBridge vs. Alba</h2>
+  <p class="lede">Reproduced as published. "—" means the function does not exist in that system. OptiBridge: Hardhat 2.17.4, a fresh contract instance for every call, <span class="mono">eth_estimateGas</span>, mean of three runs. Alba: values from its public proof of concept and its Table II.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Function</th><th class="num">OptiBridge</th><th class="num">Alba</th></tr></thead>
+    <tbody>
+      <tr class="blk"><td colspan="3">Optimistic</td></tr>
+      <tr><td class="mono">setup (bridge)</td><td class="num">428,939</td><td class="num">393,401</td></tr>
+      <tr><td class="mono">optimisticProof</td><td class="num">40,107</td><td class="num">48,027</td></tr>
+      <tr><td class="mono">submitProof</td><td class="num">—</td><td class="num">253,566</td></tr>
+      <tr class="blk"><td colspan="3">Dispute</td></tr>
+      <tr><td class="mono">bridgeTimeout</td><td class="num">36,971</td><td class="num">—</td></tr>
+      <tr><td class="mono">setup (dispute) <span class="flag">⚑</span></td><td class="num">428,939</td><td class="num">—</td></tr>
+      <tr><td class="mono">verifierCloseChannel</td><td class="num">183,993</td><td class="num">—</td></tr>
+      <tr><td class="mono">dispute</td><td class="num">196,438</td><td class="num">515,860</td></tr>
+      <tr><td class="mono">resolveDispute</td><td class="num">175,688</td><td class="num">168,046</td></tr>
+      <tr><td class="mono">settle</td><td class="num">30,279</td><td class="num">49,814</td></tr>
+      <tr class="blk"><td colspan="3">One-time deployment</td></tr>
+      <tr><td class="mono">bridge contract deployment</td><td class="num">1,215,315</td><td class="num">4,513,248</td></tr>
+      <tr><td class="mono">dispute contract deployment</td><td class="num">2,785,514</td><td class="num">—</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:28px">One function, several names</h3>
+  <p class="lede" style="font-size:.95rem">The table, the contract listing and the overview figure name the dispute functions differently. This page uses Table 1's names. The Fig. 2 "caller" checks are shown as printed. Two of them contradict the prose, as noted below.</p>
+  <div class="tscroll"><table>
+    <thead><tr><th>Table 1</th><th>Fig. 2 contract</th><th>Fig. 1 overview</th><th>Called by (Figs. 3–4 / §6 text)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">setup (bridge)</td><td class="mono">Init</td><td>Init</td><td>Alice</td></tr>
+      <tr><td class="mono">optimisticProof</td><td class="mono">OptimisticProof</td><td>—</td><td>Alice</td></tr>
+      <tr><td class="mono">setup (dispute)</td><td class="mono">InitDispute</td><td>—</td><td>whoever starts the dispute</td></tr>
+      <tr><td class="mono">verifierCloseChannel</td><td class="mono">VerifierCloseCh</td><td class="mono">VerifierCloseChannel</td><td>Alice <span class="flag">⚑ Fig. 2 requires caller == verifier</span></td></tr>
+      <tr><td class="mono">dispute</td><td class="mono">TriggerDispute</td><td class="mono">TriggerDispute</td><td>Alice</td></tr>
+      <tr><td class="mono">resolveDispute</td><td class="mono">ResDisputeVerifier</td><td class="mono">ResolveDisputeVerifier</td><td>Bob <span class="flag">⚑ Fig. 2 requires caller == prover</span></td></tr>
+      <tr><td class="mono">settle</td><td class="mono">ResDisputeProver</td><td class="mono">ResolveDisputeProver</td><td>Alice</td></tr>
+      <tr><td class="mono">bridgeTimeout</td><td class="mono">BridgeTimeout</td><td class="mono">BridgeTimeout</td><td>Bob (§6 prose calls it <span class="mono">timeoutBridge</span>)</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:28px">Where the paper disagrees with itself</h3>
+  <ol class="flags">
+    <li><strong>Dispute deployment.</strong> §6 says "3.4&nbsp;M-gas". Table 1, the abstract and the conclusion say 2,785,514.</li>
+    <li><strong><span class="mono">setup (dispute)</span> = 428,939</strong> is exactly the same as <span class="mono">setup (bridge)</span>. It is suspected to be a copy error.</li>
+    <li><strong>Headline comparison.</strong> The abstract compares OptiBridge's <span class="mono">optimisticProof</span> (40,107) with Alba's <span class="mono">submitProof</span> (253,566). §6 compares it with Alba's <span class="mono">optimisticProof</span> (48,027) and notes that Alba also needs <span class="mono">submitProof</span>. Both comparisons are reproduced here.</li>
+    <li><strong>Caller checks in Fig. 2</strong> contradict the protocol text for <span class="mono">VerifierCloseCh</span> and <span class="mono">ResDisputeVerifier</span> (see the mapping above).</li>
+  </ol>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@inproceedings{minaei2026optibridge,
+  title     = {{OptiBridge}: A Trustless, Cost-Efficient Bridge Between
+               the Lightning Network and Ethereum},
+  author    = {Minaei, Mohsen and Le, Duc V. and Moreno-Sanchez, Pedro},
+  booktitle = {Applied Cryptography and Network Security (ACNS)},
+  year      = {2026}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Source code.</strong> The paper has no code or data availability statement and does not link an OptiBridge implementation. The only repository it cites is Alba's, whose Bitcoin transaction-verification contracts OptiBridge reuses for $DS.\mathsf{Vrfy}$: <a href="https://github.com/ALBA-blockchain/ALBA-Protocol">github.com/ALBA-blockchain/ALBA-Protocol</a>.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">OptiBridge · ACNS 2026 · Visa Research, IMDEA Software Institute, MPI-SP.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+
+/* ---------- motion helpers: every animation goes through tween() ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+}
+function later(ms, fn){ if (REDUCED) fn(); else setTimeout(fn, ms); }
+function growBar(rect, w, ms, delay){
+  if (REDUCED){ rect.setAttribute('width', w); return; }
+  rect.setAttribute('width', 0);
+  later(delay || 0, function(){ tween(ms, function(p){ rect.setAttribute('width', Math.max(0, w * p)); }); });
+}
+function fadeIn(node, ms, delay){
+  if (REDUCED) return;
+  node.setAttribute('opacity', 0);
+  later(delay || 0, function(){ tween(ms, function(p){ node.setAttribute('opacity', p); },
+    function(){ node.removeAttribute('opacity'); }); });
+}
+function drawOn(lineEl, ms, delay){
+  if (REDUCED) return;
+  var L;
+  try { L = lineEl.getTotalLength(); } catch(e){ return; }
+  if (!L) return;
+  lineEl.setAttribute('stroke-dasharray', L);
+  lineEl.setAttribute('stroke-dashoffset', L);
+  later(delay || 0, function(){
+    tween(ms, function(p){ lineEl.setAttribute('stroke-dashoffset', L * (1 - p)); },
+      function(){ lineEl.removeAttribute('stroke-dasharray'); lineEl.removeAttribute('stroke-dashoffset'); });
+  });
+}
+function countTo(node, from, to, ms){
+  tween(ms || 520, function(p){ node.textContent = fmt(from + (to - from) * p); });
+}
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function compactM(n){ return n === 0 ? '0' : (n / 1e6) + 'M'; }
+function svgWidth(svg){
+  var w = svg.parentNode.clientWidth - 32;
+  return Math.max(260, Math.round(w));
+}
+
+/* tooltip */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html;
+  tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = Math.max(8, evt.clientX - r.width - 14);
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+}
+
+function segmented(container, options, current, onPick){
+  container.innerHTML = '';
+  options.forEach(function(o){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = o.label;
+    b.setAttribute('aria-pressed', o.key === current ? 'true' : 'false');
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(container.children, function(c){ c.setAttribute('aria-pressed', 'false'); });
+      b.setAttribute('aria-pressed', 'true');
+      onPick(o.key);
+    });
+    container.appendChild(b);
+  });
+}
+
+/* =======================================================================
+   Data — Table 1 of the paper (evaluation.tex), verbatim. Nothing estimated.
+   ===================================================================== */
+var GAS = {
+  bridgeDeploy:  { name:'bridge contract deployment',  ob:1215315, alba:4513248 },
+  setupBridge:   { name:'setup (bridge)',              ob:428939,  alba:393401 },
+  optProof:      { name:'optimisticProof',             ob:40107,   alba:48027 },
+  submitProof:   { name:'submitProof',                 ob:null,    alba:253566 },
+  bridgeTimeout: { name:'bridgeTimeout',               ob:36971,   alba:null, dispute:true },
+  setupDispute:  { name:'setup (dispute)',             ob:428939,  alba:null, dispute:true, flag:true },
+  verifierClose: { name:'verifierCloseChannel',        ob:183993,  alba:null, dispute:true },
+  dispute:       { name:'dispute',                     ob:196438,  alba:515860, dispute:true },
+  resolveDispute:{ name:'resolveDispute',              ob:175688,  alba:168046, dispute:true },
+  settle:        { name:'settle',                      ob:30279,   alba:49814, dispute:true },
+  disputeDeploy: { name:'dispute contract deployment', ob:2785514, alba:null, dispute:true }
+};
+
+/* call sequences per path, from Figs. 3-4; callers from Figs. 3-4 */
+var PATHS = [
+  { key:'opt', label:'Optimistic', long:'Both honest: Bob reveals r_bridge, Alice proves it',
+    rows:[['bridgeDeploy','Alice'],['setupBridge','Alice'],['optProof','Alice']],
+    alba:['bridgeDeploy','setupBridge','optProof','submitProof'] },
+  { key:'a', label:'(a) No repayment', long:'Alice never repays; Bob claims after T_bridge',
+    rows:[['bridgeDeploy','Alice'],['setupBridge','Alice'],['disputeDeploy','Bob'],['setupDispute','Bob'],['bridgeTimeout','Bob']] },
+  { key:'b', label:'(b) Bob closes early', long:'Bob closes the channel before repayment',
+    rows:[['bridgeDeploy','Alice'],['setupBridge','Alice'],['disputeDeploy','Alice'],['setupDispute','Alice'],['verifierClose','Alice']] },
+  { key:'c', label:'(c) Bob stalls', long:'Bob withholds r_bridge; Alice disputes and settles',
+    rows:[['bridgeDeploy','Alice'],['setupBridge','Alice'],['disputeDeploy','Alice'],['setupDispute','Alice'],['dispute','Alice'],['settle','Alice']] },
+  { key:'d', label:'(d) Alice races', long:'Alice disputes, then closes with s_{i-1}; Bob proves it',
+    rows:[['bridgeDeploy','Alice'],['setupBridge','Alice'],['disputeDeploy','Alice'],['setupDispute','Alice'],['dispute','Alice'],['resolveDispute','Bob']] }
+];
+function pathByKey(k){ for (var i = 0; i < PATHS.length; i++) if (PATHS[i].key === k) return PATHS[i]; }
+function sumRows(rows, col){ var s = 0; rows.forEach(function(r){ s += GAS[r][col]; }); return s; }
+/* one shared x-domain across all paths so switching keeps bars comparable */
+var P_MAX = 5500000;
+
+/* =======================================================================
+   Interactive 1 — cumulative gas per path
+   ===================================================================== */
+var pathKey = 'opt', pathPrevTotal = 0;
+function drawPaths(mode){
+  var svg = $('chartP'); while (svg.lastChild && svg.lastChild.nodeName !== 'title') svg.removeChild(svg.lastChild);
+  var W = svgWidth(svg), narrow = W < 560;
+  var P = pathByKey(pathKey);
+  var blocks = [{ who:'OptiBridge', rows:P.rows.map(function(r){ return { k:r[0], caller:r[1], col:'ob' }; }) }];
+  if (P.alba) blocks.push({ who:'Alba', rows:P.alba.map(function(k){ return { k:k, col:'alba' }; }) });
+  var labelW = narrow ? 0 : 205, valW = 76, rowH = narrow ? 40 : 26, barH = 13, headH = 30, axisH = 22;
+  var x0 = labelW, x1 = W - valW;
+  function sx(v){ return x0 + (x1 - x0) * v / P_MAX; }
+  var nRows = 0; blocks.forEach(function(b){ nRows += b.rows.length + 1; });
+  var H = axisH + blocks.length * headH + nRows * rowH + 6;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var gGrid = el('g', {}); svg.appendChild(gGrid);
+  var step = narrow ? 2000000 : 1000000;
+  for (var t = 0; t <= P_MAX; t += step){
+    gGrid.appendChild(el('line', { x1:sx(t), x2:sx(t), y1:axisH - 4, y2:H, stroke:css('--grid'), 'stroke-width':1 }));
+    gGrid.appendChild(el('text', { x:sx(t), y:12, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace',
+      'font-size':11, fill:css('--ink-muted') }, compactM(t)));
+  }
+  var y = axisH, idx = 0, anim = mode !== 'static';
+  blocks.forEach(function(b){
+    var total = 0;
+    svg.appendChild(el('text', { x:0, y:y + 20, 'font-family':'Ubuntu Mono, monospace', 'font-size':12,
+      'font-weight':700, fill:css('--ink-head'), 'letter-spacing':'.04em' }, b.who.toUpperCase()));
+    y += headH;
+    b.rows.forEach(function(r){
+      var g = GAS[r.k], v = g[r.col];
+      var color = r.col === 'alba' ? css('--s2') : (g.dispute ? css('--s3') : css('--s1'));
+      var by = narrow ? y + 18 : y + (rowH - barH) / 2;
+      var label = g.name + (g.flag && r.col === 'ob' ? ' ⚑' : '');
+      svg.appendChild(el('text', { x:narrow ? sx(total) : labelW - 10, y:narrow ? y + 13 : by + barH - 2,
+        'text-anchor':narrow ? 'start' : 'end', 'font-family':'Ubuntu Mono, monospace', 'font-size':12,
+        fill:g.flag && r.col === 'ob' ? css('--critical') : css('--ink-2') }, label));
+      if (narrow){ /* keep the label on-screen */
+        var lt = svg.lastChild; var over = sx(total) + label.length * 6.1 - x1;
+        if (over > 0) lt.setAttribute('x', Math.max(0, sx(total) - over));
+      }
+      var bw = Math.max(2, sx(total + v) - sx(total) - 2);
+      var rect = el('rect', { x:sx(total), y:by, height:barH, width:bw, rx:2, fill:color });
+      svg.appendChild(rect);
+      svg.appendChild(el('text', { x:W, y:by + barH - 2, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace',
+        'font-size':12, fill:css('--ink-1') }, fmt(v)));
+      var hit = el('rect', { x:0, y:y, width:W, height:rowH, fill:'transparent' });
+      (function(g, v, r){
+        hit.addEventListener('mousemove', function(e){
+          var alt = r.col === 'ob' ? (g.alba ? 'Alba: ' + fmt(g.alba) : 'Alba: —') : (g.ob ? 'OptiBridge: ' + fmt(g.ob) : 'OptiBridge: —');
+          showTip(e, '<b>' + g.name + (g.flag && r.col === 'ob' ? ' ⚑' : '') + '</b>' + fmt(v) + ' gas' +
+            (r.caller ? '<br>called by ' + r.caller : '') + '<br>' + alt +
+            (g.flag && r.col === 'ob' ? '<br><span style="color:#d03b3b">identical to setup (bridge); suspected copy error</span>' : ''));
+        });
+        hit.addEventListener('mouseleave', hideTip);
+      })(g, v, r);
+      svg.appendChild(hit);
+      if (anim) growBar(rect, bw, 420, 60 * idx);
+      total += v; y += rowH; idx++;
+    });
+    /* total row */
+    var tColor = b.who === 'Alba' ? css('--s2') : css('--s1');
+    var ty = narrow ? y + 18 : y + (rowH - barH) / 2;
+    svg.appendChild(el('line', { x1:0, x2:W, y1:y + 1, y2:y + 1, stroke:css('--axis'), 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:narrow ? 0 : labelW - 10, y:narrow ? y + 13 : ty + barH - 2, 'text-anchor':narrow ? 'start' : 'end',
+      'font-family':'Ubuntu Mono, monospace', 'font-size':12, 'font-weight':700, fill:css('--ink-1') }, 'total'));
+    var tw = Math.max(2, sx(total) - sx(0));
+    var trect = el('rect', { x:sx(0), y:ty, height:barH, width:tw, rx:2, fill:tColor, 'fill-opacity':0.35, stroke:tColor, 'stroke-width':1 });
+    svg.appendChild(trect);
+    svg.appendChild(el('text', { x:W, y:ty + barH - 2, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace',
+      'font-size':12, 'font-weight':700, fill:css('--ink-1') }, fmt(total)));
+    if (anim) growBar(trect, tw, 520, 60 * idx);
+    y += rowH; idx++;
+  });
+  /* legend: only entries that are on screen */
+  var leg = $('legendP'); leg.innerHTML = '';
+  var items = [['--s1','OptiBridge, every run']];
+  if (P.key !== 'opt') items.push(['--s3','OptiBridge, dispute only']);
+  if (P.alba) items.push(['--s2','Alba']);
+  items.forEach(function(it){
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="swatch" style="background:' + css(it[0]) + '"></span>' + it[1];
+    leg.appendChild(li);
+  });
+}
+function paintPathRead(animate){
+  var P = pathByKey(pathKey), tot = sumRows(P.rows.map(function(r){ return r[0]; }), 'ob');
+  var box = $('pathRead');
+  var html = '<div class="ro"><div class="k">OptiBridge total</div><div class="v" id="pTot">' + fmt(tot) + '</div><div class="s">' + P.rows.length + ' on-chain calls' + (P.key === 'opt' ? '' : ', incl. flagged ⚑ row') + '</div></div>';
+  if (P.alba){
+    var at = sumRows(P.alba, 'alba');
+    html += '<div class="ro"><div class="k">Alba total</div><div class="v">' + fmt(at) + '</div><div class="s">' + P.alba.length + ' on-chain calls</div></div>';
+    html += '<div class="ro"><div class="k">Difference</div><div class="v">' + fmt(at - tot) + '</div><div class="s">less gas for OptiBridge</div></div>';
+  } else {
+    var ded = 0; P.rows.forEach(function(r){ if (GAS[r[0]].dispute) ded += GAS[r[0]].ob; });
+    html += '<div class="ro"><div class="k">Dispute-only share</div><div class="v">' + fmt(ded) + '</div><div class="s">gas an honest run never spends</div></div>';
+    html += '<div class="ro"><div class="k">Path</div><div class="v" style="font-size:1rem">' + P.long.replace('s_{i-1}', 'sᵢ₋₁') + '</div></div>';
+  }
+  box.innerHTML = html;
+  if (animate) countTo($('pTot'), pathPrevTotal, tot, 520);
+  pathPrevTotal = tot;
+}
+function buildPathTable(){
+  var P = pathByKey(pathKey);
+  var h = '<thead><tr><th>Call</th><th>Caller</th><th class="num">OptiBridge gas</th><th class="num">Alba, same function</th></tr></thead><tbody>';
+  P.rows.forEach(function(r){
+    var g = GAS[r[0]];
+    h += '<tr><td class="mono">' + g.name + (g.flag ? ' <span class="flag">⚑</span>' : '') + '</td><td>' + r[1] + '</td><td class="num">' + fmt(g.ob) + '</td><td class="num">' + (g.alba ? fmt(g.alba) : '—') + '</td></tr>';
+  });
+  h += '<tr class="hl"><td>Total</td><td></td><td class="num">' + fmt(sumRows(P.rows.map(function(r){ return r[0]; }), 'ob')) + '</td><td class="num">' + (P.alba ? fmt(sumRows(P.alba, 'alba')) + ' (incl. submitProof)' : 'not given per branch') + '</td></tr>';
+  $('tableP').innerHTML = h + '</tbody>';
+}
+segmented($('pathSeg'), PATHS, pathKey, function(k){
+  pathKey = k; drawPaths('switch'); paintPathRead(true); buildPathTable();
+});
+
+/* =======================================================================
+   Interactive 2 — protocol step-through (Figs. 1, 3, 4)
+   ===================================================================== */
+var ACTORS = [ { k:'bob', n:'Bob (V)' }, { k:'alice', n:'Alice (P)' }, { k:'eth', n:'Ethereum' }, { k:'btc', n:'Bitcoin' } ];
+var COMMON = [
+  { t:'Bob commits to a secret',
+    b:'Bob samples $r_{bridge}$ and sends Alice only its hash $h_{bridge} = H(r_{bridge})$. Alice also fixes $h_{dispute} = H(C_{dispute})$, the hash of the dispute contract\'s code.',
+    items:[ { k:'self', at:'bob', l:'h = H(r_bridge)' }, { k:'msg', f:'bob', to:'alice', l:'h_bridge' } ],
+    st:{ coll:'with Alice', loan:'with Bob', disp:'not deployed' } },
+  { t:'Atomic setup',
+    b:'Alice deploys $SC_{bridging}$, which locks her collateral and stores $h_{bridge}$ and $h_{dispute}$ (①). Bob lends $\\alpha$ in the channel (②). An atomic swap couples the two, so both happen or neither does.',
+    items:[ { k:'msg', f:'alice', to:'eth', l:'deploy + Init' }, { k:'ln', l:'s_k: Bob → Alice  α' } ],
+    gas:['bridgeDeploy','setupBridge'],
+    st:{ coll:'locked in SC_bridging', loan:'lent to Alice', disp:'not deployed' } },
+  { t:'Ordinary Lightning use',
+    b:'The channel carries on as the Lightning spec defines. For example, Alice routes her payment to Carol through Bob. Ethereum is not touched.',
+    items:[ { k:'ln', l:'s_k+1 … s_i-1' } ],
+    st:{ coll:'locked in SC_bridging', loan:'lent to Alice', disp:'not deployed' } }
+];
+var BRANCH = {
+  opt:[
+    { t:'Alice repays in the channel',
+      b:'The pair move to state $s_i$, in which Alice pays $\\alpha$ back (③). This is a normal Lightning update: no extra outputs, timelocks or <span class="mono">OP_RETURN</span>.',
+      items:[ { k:'ln', l:'s_i: Alice → Bob  α' } ],
+      st:{ coll:'locked in SC_bridging', loan:'repaid to Bob', disp:'not deployed' } },
+    { t:'Bob releases the secret',
+      b:'Bob accepts the repayment and revokes $s_{i-1}$. He sends $r_{bridge}$ in the same message (Fig. 3, step 6).',
+      items:[ { k:'msg', f:'bob', to:'alice', l:'rev_B,i-1 + r_bridge' } ],
+      st:{ coll:'locked in SC_bridging', loan:'repaid to Bob', disp:'not deployed' } },
+    { t:'Optimistic proof',
+      b:'Alice calls <span class="mono">optimisticProof</span>$(r_{bridge})$ (④). The contract checks only <span class="mono">releaseHash == H(r_bridge)</span> and returns the collateral. The dispute contract is never deployed.',
+      items:[ { k:'msg', f:'alice', to:'eth', l:'optimisticProof(r)' } ],
+      gas:['optProof'], hash:true,
+      st:{ coll:'returned to Alice', loan:'repaid to Bob', disp:'never deployed' } }
+  ],
+  a:[
+    { t:'Alice does not repay',
+      b:'The channel never reaches $s_i$. Bob waits until the bridge deadline $T_{bridge}$ passes.',
+      items:[ { k:'self', at:'eth', l:'T_bridge expires' } ],
+      st:{ coll:'locked in SC_bridging', loan:'kept by Alice', disp:'not deployed' } },
+    { t:'Bob deploys the dispute contract',
+      b:'Only now does anyone pay for the dispute code. Bob calls <span class="mono">InitDispute</span>. The bridge checks the code against $h_{dispute}$ and deploys $SC_{dispute}$.',
+      items:[ { k:'msg', f:'bob', to:'eth', l:'InitDispute' } ],
+      gas:['disputeDeploy','setupDispute'],
+      st:{ coll:'locked (dispute)', loan:'kept by Alice', disp:'deployed' } },
+    { t:'Bob takes the collateral',
+      b:'<span class="mono">bridgeTimeout</span> sends the collateral to Bob, which compensates him for the unpaid loan.',
+      items:[ { k:'msg', f:'bob', to:'eth', l:'bridgeTimeout' } ],
+      gas:['bridgeTimeout'],
+      st:{ coll:'paid to Bob', loan:'kept by Alice', disp:'deployed' } }
+  ],
+  b:[
+    { t:'Bob closes the channel early',
+      b:'Bob publishes a state $s_j$ with $j &lt; i$ on Bitcoin, from before the repayment. This blocks Alice from repaying so that he can seize her collateral.',
+      items:[ { k:'msg', f:'bob', to:'btc', l:'close at s_j (j<i)' } ],
+      st:{ coll:'locked in SC_bridging', loan:'closed at s_j', disp:'not deployed' } },
+    { t:'Alice deploys the dispute contract',
+      b:'Alice monitors Bitcoin and sees the early close. She calls <span class="mono">InitDispute</span> (Fig. 4, Monitor Source Ledger).',
+      items:[ { k:'msg', f:'btc', to:'alice', l:'reads s_j' }, { k:'msg', f:'alice', to:'eth', l:'InitDispute' } ],
+      gas:['disputeDeploy','setupDispute'],
+      st:{ coll:'locked (dispute)', loan:'closed at s_j', disp:'deployed' } },
+    { t:'Alice proves Bob closed early',
+      b:'<span class="mono">verifierCloseChannel</span>$(s_j)$ checks that both parties signed the transaction and that its outputs are well formed. It then pays the escrow to Alice immediately.',
+      items:[ { k:'msg', f:'alice', to:'eth', l:'verifierCloseChannel' } ],
+      gas:['verifierClose'],
+      st:{ coll:'returned to Alice', loan:'closed at s_j', disp:'deployed' } }
+  ],
+  c:[
+    { t:'Bob stalls the repayment',
+      b:'After $s_{i-1}$, Bob neither completes $s_i$ nor sends $r_{bridge}$. Alice deploys $SC_{dispute}$ and posts her signed repayment state $s_i$ with <span class="mono">dispute</span>. This opens a window $T_{DISPUTE}$.',
+      items:[ { k:'msg', f:'alice', to:'eth', l:'InitDispute + dispute(s_i)' } ],
+      gas:['disputeDeploy','setupDispute','dispute'],
+      st:{ coll:'locked (dispute)', loan:'lent to Alice', disp:'deployed' } },
+    { t:'Bob takes the repayment on Bitcoin',
+      b:'Bob reads $s_i$ from the contract, adds his signature and closes the channel at $s_i$. That gives him his loan back.',
+      items:[ { k:'msg', f:'eth', to:'bob', l:'reads s_i' }, { k:'msg', f:'bob', to:'btc', l:'close at s_i' } ],
+      st:{ coll:'locked (dispute)', loan:'repaid to Bob (on-chain)', disp:'deployed' } },
+    { t:'Alice settles',
+      b:'$T_{DISPUTE}$ expires with no counter-proof, and Alice calls <span class="mono">settle</span>.',
+      items:[ { k:'self', at:'eth', l:'T_DISPUTE expires' }, { k:'msg', f:'alice', to:'eth', l:'settle' } ],
+      gas:['settle'],
+      st:{ coll:'returned to Alice', loan:'repaid to Bob (on-chain)', disp:'deployed' } }
+  ],
+  d:[
+    { t:'Alice disputes',
+      b:'The same opening as (c): Alice deploys $SC_{dispute}$ and posts $s_i$. There is now a subtlety: $s_{i-1}$ and $s_i$ are <em>both</em> valid and unrevoked.',
+      items:[ { k:'msg', f:'alice', to:'eth', l:'InitDispute + dispute(s_i)' } ],
+      gas:['disputeDeploy','setupDispute','dispute'],
+      st:{ coll:'locked (dispute)', loan:'lent to Alice', disp:'deployed' } },
+    { t:'Alice races with the older state',
+      b:'Bob tries to close at $s_i$. Alice tries to close at $s_{i-1}$, where she still holds the loan. Bitcoin records only one of the two. Suppose Alice\'s wins.',
+      items:[ { k:'msg', f:'bob', to:'btc', l:'close at s_i' }, { k:'msg', f:'alice', to:'btc', l:'close at s_i-1  ✓' } ],
+      st:{ coll:'locked (dispute)', loan:'kept by Alice (s_i-1)', disp:'deployed' } },
+    { t:'Bob proves the stale close',
+      b:'Within $T_{DISPUTE}$, Bob presents $s_{i-1}$ from Bitcoin as proof of Alice\'s misbehaviour. <span class="mono">resolveDispute</span> pays the collateral to him.',
+      items:[ { k:'msg', f:'btc', to:'bob', l:'reads s_i-1' }, { k:'msg', f:'bob', to:'eth', l:'resolveDispute(s_i-1)' } ],
+      gas:['resolveDispute'],
+      st:{ coll:'paid to Bob', loan:'kept by Alice (s_i-1)', disp:'deployed' } }
+  ]
+};
+var scKey = 'opt', stepIdx = 0, playing = null;
+function steps(){ return COMMON.concat(BRANCH[scKey]); }
+function sub(s){ /* plain-text subscripts for SVG labels */
+  return s.replace(/s_i-1/g, 'sᵢ₋₁').replace(/s_k\+1/g, 'sₖ₊₁').replace(/s_i/g, 'sᵢ').replace(/s_j/g, 'sⱼ')
+          .replace(/s_k/g, 'sₖ').replace(/rev_B,i-1/g, 'rev_B');
+}
+function drawSeq(animateLast){
+  var svg = $('seq'); while (svg.lastChild && svg.lastChild.nodeName !== 'title') svg.removeChild(svg.lastChild);
+  var W = svgWidth(svg), narrow = W < 420;
+  var pad = narrow ? 34 : 50, fs = narrow ? 10.5 : 12;
+  var X = {}; ACTORS.forEach(function(a, i){ X[a.k] = pad + i * (W - 2 * pad) / 3; });
+  var S = steps(), rows = [];
+  S.forEach(function(s, si){ s.items.forEach(function(it){ rows.push({ it:it, si:si }); }); });
+  var rowH = 38, top = 34, H = top + rows.length * rowH + 14;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var defs = el('defs', {});
+  ['on','off'].forEach(function(k){
+    var m = el('marker', { id:'ah-' + k, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:7, markerHeight:7, orient:'auto-start-reverse' });
+    m.appendChild(el('path', { d:'M0,0 L10,5 L0,10 z', fill:k === 'on' ? css('--accent') : '#b9b9b9' }));
+    defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+  ACTORS.forEach(function(a){
+    svg.appendChild(el('text', { x:X[a.k], y:14, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace',
+      'font-size':fs + 1, 'font-weight':700, fill:css('--ink-head') }, narrow ? a.n.replace(' (V)', '').replace(' (P)', '').replace('Ethereum','Eth.').replace('Bitcoin','BTC') : a.n));
+    svg.appendChild(el('line', { x1:X[a.k], x2:X[a.k], y1:22, y2:H - 4, stroke:css('--axis'), 'stroke-width':1, 'stroke-dasharray':'3 4' }));
+  });
+  var y = top;
+  rows.forEach(function(r){
+    var it = r.it, past = r.si < stepIdx, cur = r.si === stepIdx, future = r.si > stepIdx;
+    if (future){ y += rowH; return; }
+    var col = cur ? css('--accent') : '#b9b9b9', tcol = cur ? css('--ink-1') : css('--ink-muted');
+    var g = el('g', {}); svg.appendChild(g);
+    var cy = y + rowH / 2 + 6;
+    if (it.k === 'msg'){
+      var x1 = X[it.f], x2 = X[it.to], dir = x2 > x1 ? 1 : -1;
+      var line = el('line', { x1:x1 + dir * 3, x2:x2 - dir * 3, y1:cy, y2:cy, stroke:col, 'stroke-width':cur ? 2 : 1.5,
+        'marker-end':'url(#ah-' + (cur ? 'on' : 'off') + ')' });
+      g.appendChild(line);
+      g.appendChild(el('circle', { cx:x1, cy:cy, r:3, fill:col }));
+      g.appendChild(el('text', { x:(x1 + x2) / 2, y:cy - 6, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace',
+        'font-size':fs, fill:tcol, 'font-weight':cur ? 700 : 400 }, sub(it.l)));
+      if (cur && animateLast) drawOn(line, 420, 80);
+    } else if (it.k === 'ln'){
+      var xa = X.bob - 14, xb = X.alice + 14;
+      g.appendChild(el('rect', { x:xa, y:cy - 13, width:xb - xa, height:22, rx:4,
+        fill:cur ? '#eef0fb' : css('--plane'), stroke:col, 'stroke-width':1 }));
+      g.appendChild(el('text', { x:(xa + xb) / 2, y:cy + 2, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace',
+        'font-size':fs, fill:tcol, 'font-weight':cur ? 700 : 400 }, '⚡ ' + sub(it.l)));
+      if (cur && animateLast) fadeIn(g, 380, 60);
+    } else if (it.k === 'self'){
+      var xs = X[it.at], right = it.at === 'bob' || it.at === 'alice';
+      g.appendChild(el('circle', { cx:xs, cy:cy - 4, r:3.5, fill:col }));
+      g.appendChild(el('text', { x:right ? xs + 8 : xs - 8, y:cy, 'text-anchor':right ? 'start' : 'end',
+        'font-family':'Ubuntu Mono, monospace', 'font-size':fs, fill:tcol, 'font-weight':cur ? 700 : 400 }, sub(it.l)));
+      if (cur && animateLast) fadeIn(g, 380, 60);
+    }
+    y += rowH;
+  });
+}
+var R_BRIDGE = null, H_BRIDGE = null;
+function hex(buf){ return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ('0' + b.toString(16)).slice(-2); }).join(''); }
+function sha256hex(str){
+  if (!(window.crypto && crypto.subtle)) return Promise.reject(new Error('no WebCrypto'));
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(hex);
+}
+(function initSecret(){
+  var b = new Uint8Array(16);
+  try { crypto.getRandomValues(b); } catch(e){ for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256); }
+  R_BRIDGE = hex(b.buffer);
+  sha256hex(R_BRIDGE).then(function(h){ H_BRIDGE = h; var n = $('hBridge'); if (n) n.textContent = h; }, function(){});
+})();
+function gasSoFar(upto){
+  var S = steps(), s = 0; for (var i = 0; i <= upto; i++) (S[i].gas || []).forEach(function(k){ s += GAS[k].ob; }); return s;
+}
+function renderStep(animate){
+  var S = steps(), s = S[stepIdx];
+  var dots = $('dots'); dots.innerHTML = '';
+  S.forEach(function(_, i){
+    var b = document.createElement('button');
+    b.type = 'button'; b.textContent = i + 1; b.setAttribute('aria-label', 'Step ' + (i + 1));
+    if (i === stepIdx) b.setAttribute('aria-current', 'step'); else if (i < stepIdx) b.className = 'done';
+    b.addEventListener('click', function(){ stopPlay(); stepIdx = i; renderStep(true); });
+    dots.appendChild(b);
+  });
+  $('prevStep').disabled = stepIdx === 0; $('nextStep').disabled = stepIdx === S.length - 1;
+  var h = '<p class="who">Step ' + (stepIdx + 1) + ' of ' + S.length + (stepIdx >= 3 ? ' · ' + pathByKey(scKey).label : '') + '</p>' +
+          '<h3>' + s.t + '</h3><p>' + s.b + '</p>';
+  (s.gas || []).forEach(function(k){
+    var g = GAS[k];
+    h += '<div class="gasline"><span>' + g.name + (g.flag ? ' <span class="flag">⚑</span>' : '') + '</span><b>' + fmt(g.ob) + ' gas</b></div>';
+  });
+  var gs = gasSoFar(stepIdx);
+  h += '<div class="gasline"><span>Ethereum gas so far</span><b id="gasSoFar">' + fmt(gs) + '</b></div>';
+  if (s.hash){
+    h += '<div class="hashbox"><p class="who">Try the contract\'s check</p>' +
+      '<div class="hex">stored releaseHash = <span id="hBridge">' + (H_BRIDGE || '…') + '</span></div>' +
+      '<div class="row"><input type="text" id="guess" aria-label="Preimage to submit" placeholder="submit a preimage…" spellcheck="false"></div>' +
+      '<div class="row"><button class="btn" id="tryGuess">Submit</button><button class="btn" id="useSecret">Use the r_bridge Bob sent</button></div>' +
+      '<div id="verdict"></div></div>';
+  }
+  var card = $('stepCard'); card.innerHTML = h;
+  if (animate && !REDUCED){
+    card.style.opacity = 0;
+    tween(260, function(p){ card.style.opacity = p; card.style.transform = 'translateY(' + (6 * (1 - p)) + 'px)'; },
+      function(){ card.style.opacity = ''; card.style.transform = ''; });
+  }
+  katexRender(card);
+  if (s.hash){
+    $('useSecret').addEventListener('click', function(){ $('guess').value = R_BRIDGE; check(); });
+    $('tryGuess').addEventListener('click', check);
+    $('guess').addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); });
+  }
+  var st = s.st, sl = $('stateList');
+  sl.innerHTML = '<li><span>Collateral (Ethereum)</span><span>' + st.coll + '</span></li>' +
+    '<li><span>Loan α (Lightning)</span><span>' + sub(st.loan) + '</span></li>' +
+    '<li><span>SC_dispute</span><span>' + st.disp + '</span></li>';
+  drawSeq(animate);
+}
+function check(){
+  var v = $('guess').value.trim(), out = $('verdict');
+  sha256hex(v).then(function(h){
+    var ok = H_BRIDGE && h === H_BRIDGE;
+    out.innerHTML = '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">H(input) = ' + h.slice(0, 24) + '…<br>' +
+      (ok ? '✓ matches releaseHash: collateral released to Alice (40,107 gas)'
+          : '✗ Require(releaseHash == H(r)) fails: the call reverts. Without Bob\'s secret, Alice needs the dispute path.') + '</div>';
+  }, function(){
+    out.innerHTML = '<div class="verdict bad">This browser does not expose WebCrypto here, so the demo cannot hash.</div>';
+  });
+}
+function stopPlay(){ if (playing){ clearInterval(playing); playing = null; $('playStep').textContent = 'Play'; } }
+$('prevStep').addEventListener('click', function(){ stopPlay(); if (stepIdx > 0){ stepIdx--; renderStep(true); } });
+$('nextStep').addEventListener('click', function(){ stopPlay(); if (stepIdx < steps().length - 1){ stepIdx++; renderStep(true); } });
+$('playStep').addEventListener('click', function(){
+  if (playing){ stopPlay(); return; }
+  if (stepIdx >= steps().length - 1) stepIdx = -1;
+  this.textContent = 'Pause';
+  function adv(){ if (stepIdx >= steps().length - 1){ stopPlay(); return; } stepIdx++; renderStep(true); }
+  adv(); playing = setInterval(adv, 1700);
+});
+segmented($('scSeg'), PATHS, scKey, function(k){
+  stopPlay(); scKey = k; if (stepIdx < 3) stepIdx = 3; else stepIdx = Math.min(stepIdx, steps().length - 1);
+  renderStep(true);
+});
+
+/* =======================================================================
+   Interactive 3 — the game of Fig. 5, transcribed node by node.
+   Leaf payoffs: P/V = [holds loan BTC?, holds collateral ETH?], fee and
+   delay = icon counts in the figure (ordinal, not measurements).
+   ===================================================================== */
+var LEAF = {
+  O:  { P:[0,1], V:[1,0], fee:1, d:0, name:'Optimistic proof: everyone whole' },
+  E1: { P:[0,0], V:[1,0], fee:0, d:3, name:'Alice repaid but never claimed' },
+  E2: { P:[0,0], V:[1,1], fee:1, d:1, name:'Bob times out a repaid bridge' },
+  A1: { P:[1,0], V:[0,1], fee:3, d:1, name:'Bridge timeout: Bob takes collateral' },
+  A2: { P:[1,0], V:[0,0], fee:0, d:3, name:'Both idle: collateral stuck' },
+  B1: { P:[1,1], V:[0,0], fee:3, d:1, name:'Alice proves Bob closed early' },
+  C1: { P:[0,1], V:[1,0], fee:3, d:2, name:'Dispute resolved honestly' },
+  C2: { P:[0,0], V:[1,0], fee:3, d:3, name:'Alice abandons the dispute' },
+  C3: { P:[1,1], V:[0,0], fee:3, d:2, name:'Bob ignores the dispute' },
+  D1: { P:[1,0], V:[0,1], fee:3, d:1, name:'Bob proves Alice\'s stale close' },
+  D2: { P:[1,1], V:[0,0], fee:3, d:2, name:'Stale close goes unpunished' },
+  D3: { P:[1,0], V:[0,0], fee:3, d:3, name:'Stale close, nobody claims' }
+};
+var NODE = {
+  root:{ who:'V', region:null, opts:[ ['Reach state sᵢ with Alice','P1',true], ['Close the channel with sⱼ (j < i)','Bsub'] ] },
+  P1:  { who:'P', region:null, opts:[ ['Send σ_A,i','V2',true], ['Dispute with (tx_A,i, σ_A,i)','Cd'], ['Go idle','Asub'] ] },
+  V2:  { who:'V', region:null, opts:[ ['Send σ_B,i','P3',true], ['Go idle','Csub'], ['Close the channel with sⱼ (j < i)','Bsub'] ] },
+  P3:  { who:'P', region:null, opts:[ ['Send rev_A,i−1','V4',true], ['Go idle','Asub'] ] },
+  V4:  { who:'V', region:null, opts:[ ['Send rev_B,i−1 and r_bridge','P5',true], ['Go idle','Csub'], ['Close the channel with sⱼ (j < i)','Bsub'] ] },
+  P5:  { who:'P', region:null, opts:[ ['Optimistic proof with r_bridge','#O',true], ['Go idle','V6'] ] },
+  V6:  { who:'V', region:null, opts:[ ['Bridge timeout','#E2'], ['Go idle','#E1'] ] },
+  Asub:{ who:'V', region:'a', opts:[ ['Bridge timeout','#A1'], ['Go idle','#A2'] ] },
+  Bsub:{ who:'P', region:'b', opts:[ ['Dispute with sⱼ','#B1'], ['Go idle','Asub'] ] },
+  Csub:{ who:'P', region:'c', opts:[ ['Dispute with (tx_A,i, σ_A,i)','Cd'], ['Go idle','Asub'] ] },
+  Cd:  { who:'V', region:'c', opts:[ ['Submit sᵢ to close the channel','Pc'], ['Go idle','#C3'] ] },
+  Pc:  { who:'P', region:'c', opts:[ ['Dispute timeout (claim)','#C1'], ['Go idle','#C2'], ['Close the channel with sᵢ₋₁','Vd'] ] },
+  Vd:  { who:'V', region:'d', opts:[ ['Dispute with sᵢ₋₁','#D1'], ['Go idle','Pd'] ] },
+  Pd:  { who:'P', region:'d', opts:[ ['Dispute timeout (claim)','#D2'], ['Go idle','#D3'] ] }
+};
+var gCur = 'root', gTrail = [], gHint = false, gAuto = null;
+function coin(kind, has){ return has ? '<span class="coin ' + kind + '">' + (kind === 'btc' ? '₿' : 'Ξ') + '</span>' : '<span class="coin zero">0</span>'; }
+function pips(ch, n){ return n ? '<span class="pips">' + new Array(n + 1).join(ch) + '</span>' : '<span class="na">none</span>'; }
+function renderGame(animate){
+  var box = $('gNode'), h;
+  if (gCur.charAt(0) === '#'){
+    var L = LEAF[gCur.slice(1)], O = LEAF.O, isEq = gCur === '#O';
+    h = '<p class="who">Outcome · ' + (isEq ? '<span style="color:var(--good)">equilibrium</span>' : 'off the equilibrium path') + '</p>' +
+      '<h3>' + L.name + '</h3>' +
+      '<div class="payoff"><span></span><span class="h">Loan ₿</span><span class="h">Collateral Ξ</span>' +
+      '<span class="h">Alice (P)</span><span>' + coin('btc', L.P[0]) + '</span><span>' + coin('eth', L.P[1]) + '</span>' +
+      '<span class="h">Bob (V)</span><span>' + coin('btc', L.V[0]) + '</span><span>' + coin('eth', L.V[1]) + '</span></div>' +
+      '<div class="gasline"><span>on-chain fee units</span><b>' + pips('●', L.fee) + '</b></div>' +
+      '<div class="gasline"><span>time windows Δ</span><b>' + pips('◷', L.d) + '</b></div>';
+    if (!isEq){
+      var bits = [];
+      if (L.fee > O.fee) bits.push((L.fee - O.fee) + ' more fee unit' + (L.fee - O.fee > 1 ? 's' : ''));
+      if (L.d > O.d) bits.push(L.d + ' more time window' + (L.d > 1 ? 's' : ''));
+      h += '<p class="cmp">Compared with the equilibrium ending (Alice keeps her collateral, Bob gets the loan back, 1 fee unit, no delay): ' + (bits.length ? bits.join(', ') : 'same cost') + '.</p>';
+    }
+    h += '<div class="btns" style="margin-top:10px"><button class="btn" id="gBack">&larr; Undo last move</button></div>';
+  } else {
+    var N = NODE[gCur];
+    h = '<p class="who">' + (N.who === 'P' ? 'Alice (prover) moves' : 'Bob (verifier) moves') +
+      (N.region ? '<span class="region">sub-game ' + N.region + '</span>' : '') + '</p>' +
+      '<h3>What does ' + (N.who === 'P' ? 'Alice' : 'Bob') + ' do?</h3><div class="moves">';
+    N.opts.forEach(function(o, i){
+      var eq = gHint && o[2];
+      h += '<button class="move' + (eq ? ' eq' : '') + '" data-i="' + i + '">' + o[0] + (eq ? '<span class="tag">SPNE</span>' : '') + '</button>';
+    });
+    h += '</div>';
+    if (gTrail.length) h += '<div class="btns" style="margin-top:10px"><button class="btn" id="gBack">&larr; Undo last move</button></div>';
+  }
+  box.innerHTML = h;
+  if (animate && !REDUCED){
+    box.style.opacity = 0;
+    tween(240, function(p){ box.style.opacity = p; }, function(){ box.style.opacity = ''; });
+  }
+  Array.prototype.forEach.call(box.querySelectorAll('.move'), function(b){
+    b.addEventListener('click', function(){ stopAuto(); gMove(+b.getAttribute('data-i')); });
+  });
+  var bk = $('gBack'); if (bk) bk.addEventListener('click', function(){ stopAuto(); var t = gTrail.pop(); gCur = t.from; renderGame(true); });
+  var tr = $('gTrail'); tr.innerHTML = '';
+  if (!gTrail.length){ tr.innerHTML = '<li class="na" style="border:0">no moves yet: Bob moves first</li>'; }
+  gTrail.forEach(function(t){
+    var li = document.createElement('li'); li.className = t.eq ? 'on' : 'off';
+    li.textContent = (t.who === 'P' ? 'Alice: ' : 'Bob: ') + t.label;
+    tr.appendChild(li);
+  });
+}
+function gMove(i){
+  var N = NODE[gCur], o = N.opts[i];
+  gTrail.push({ from:gCur, who:N.who, label:o[0], eq:!!o[2] });
+  gCur = o[1]; renderGame(true);
+}
+function stopAuto(){ if (gAuto){ clearInterval(gAuto); gAuto = null; } }
+$('gReset').addEventListener('click', function(){ stopAuto(); gCur = 'root'; gTrail = []; renderGame(true); });
+$('gHint').addEventListener('click', function(){
+  gHint = !gHint; this.setAttribute('aria-pressed', gHint ? 'true' : 'false');
+  this.textContent = gHint ? 'Hide equilibrium moves' : 'Mark equilibrium moves'; renderGame(false);
+});
+$('gEq').addEventListener('click', function(){
+  stopAuto(); gCur = 'root'; gTrail = []; renderGame(true);
+  function adv(){
+    if (gCur.charAt(0) === '#'){ stopAuto(); return; }
+    var N = NODE[gCur], k = 0; N.opts.forEach(function(o, i){ if (o[2]) k = i; });
+    gMove(k);
+  }
+  if (REDUCED){ while (gCur.charAt(0) !== '#') adv(); return; }
+  gAuto = setInterval(adv, 650);
+});
+(function buildGameTable(){
+  var h = '<thead><tr><th>Ending</th><th>Region</th><th>Alice ₿ / Ξ</th><th>Bob ₿ / Ξ</th><th class="num">Fee units</th><th class="num">Δ windows</th></tr></thead><tbody>';
+  var reg = { O:'main', E1:'main', E2:'main', A1:'a', A2:'a', B1:'b', C1:'c', C2:'c', C3:'c', D1:'d', D2:'d', D3:'d' };
+  Object.keys(LEAF).forEach(function(k){
+    var L = LEAF[k];
+    h += '<tr' + (k === 'O' ? ' class="hl"' : '') + '><td>' + L.name + '</td><td class="mono">' + reg[k] + '</td>' +
+      '<td class="mono">' + (L.P[0] ? '₿' : '0') + ' / ' + (L.P[1] ? 'Ξ' : '0') + '</td>' +
+      '<td class="mono">' + (L.V[0] ? '₿' : '0') + ' / ' + (L.V[1] ? 'Ξ' : '0') + '</td>' +
+      '<td class="num">' + L.fee + '</td><td class="num">' + L.d + '</td></tr>';
+  });
+  $('tableG').innerHTML = h + '</tbody>';
+})();
+
+/* =======================================================================
+   Interactive 4 — deployment only: monolithic vs split contracts
+   ===================================================================== */
+var spKey = 'no';
+function drawSplit(mode){
+  var svg = $('chartS'); while (svg.lastChild && svg.lastChild.nodeName !== 'title') svg.removeChild(svg.lastChild);
+  var W = svgWidth(svg), narrow = W < 560;
+  var labelW = narrow ? 0 : 150, valW = 80, barH = 22, rowH = narrow ? 64 : 50, axisH = 22;
+  var MAX = 5000000, x0 = labelW, x1 = W - valW;
+  function sx(v){ return x0 + (x1 - x0) * v / MAX; }
+  var H = axisH + 2 * rowH + 4;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var step = narrow ? 2000000 : 1000000;
+  for (var t = 0; t <= MAX; t += step){
+    svg.appendChild(el('line', { x1:sx(t), x2:sx(t), y1:axisH - 4, y2:H, stroke:css('--grid'), 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:sx(t), y:12, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size':11, fill:css('--ink-muted') }, compactM(t)));
+  }
+  var on = spKey === 'yes';
+  var rows = [
+    { who:'Alba', segs:[{ v:GAS.bridgeDeploy.alba, c:'--s2', n:'monolithic contract (optimistic + dispute logic)' }] },
+    { who:'OptiBridge', segs:[{ v:GAS.bridgeDeploy.ob, c:'--s1', n:'bridge contract' }].concat(on ? [{ v:GAS.disputeDeploy.ob, c:'--s3', n:'dispute contract (deployed on demand)' }] : []) }
+  ];
+  var anim = mode !== 'static';
+  rows.forEach(function(r, ri){
+    var y = axisH + ri * rowH, by = narrow ? y + 20 : y + (rowH - barH) / 2, acc = 0;
+    svg.appendChild(el('text', { x:narrow ? 0 : labelW - 10, y:narrow ? y + 14 : by + barH / 2 + 4, 'text-anchor':narrow ? 'start' : 'end',
+      'font-family':'Ubuntu Mono, monospace', 'font-size':12.5, 'font-weight':700, fill:css('--ink-1') }, r.who));
+    r.segs.forEach(function(s, si){
+      var w = Math.max(2, sx(acc + s.v) - sx(acc) - (si < r.segs.length - 1 ? 2 : 0));
+      var rect = el('rect', { x:sx(acc), y:by, width:w, height:barH, rx:3, fill:css(s.c) });
+      svg.appendChild(rect);
+      (function(s){
+        rect.addEventListener('mousemove', function(e){ showTip(e, '<b>' + r.who + '</b>' + s.n + '<br>' + fmt(s.v) + ' gas'); });
+        rect.addEventListener('mouseleave', hideTip);
+      })(s);
+      var isNew = r.who === 'OptiBridge' && si === 1;
+      if (anim && (mode === 'enter' || isNew)) growBar(rect, w, 520, mode === 'enter' ? 120 * ri : 0);
+      acc += s.v;
+    });
+    svg.appendChild(el('text', { x:W, y:by + barH / 2 + 4, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace',
+      'font-size':12.5, 'font-weight':700, fill:css('--ink-1') }, fmt(acc)));
+  });
+  var leg = $('legendS'); leg.innerHTML = '';
+  [['--s2','Alba: one contract'],['--s1','OptiBridge: bridge contract']].concat(on ? [['--s3','OptiBridge: dispute contract']] : []).forEach(function(it){
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="swatch" style="background:' + css(it[0]) + '"></span>' + it[1];
+    leg.appendChild(li);
+  });
+}
+function paintSplitRead(){
+  var on = spKey === 'yes', ob = GAS.bridgeDeploy.ob + (on ? GAS.disputeDeploy.ob : 0), al = GAS.bridgeDeploy.alba;
+  $('spRead').innerHTML =
+    '<div class="ro"><div class="k">OptiBridge deploys</div><div class="v">' + fmt(ob) + '</div><div class="s">' + (on ? '1,215,315 + 2,785,514' : 'bridge contract only') + '</div></div>' +
+    '<div class="ro"><div class="k">Alba deploys</div><div class="v">' + fmt(al) + '</div><div class="s">always, dispute or not</div></div>' +
+    '<div class="ro"><div class="k">OptiBridge saves</div><div class="v">' + fmt(al - ob) + '</div><div class="s">' + (on ? 'deployment gas, even with a dispute' : 'deployment gas (the paper\'s "~73%")') + '</div></div>';
+}
+segmented($('spSeg'), [{ key:'no', label:'No: both honest' }, { key:'yes', label:'Yes: a dispute' }], spKey, function(k){
+  spKey = k; drawSplit('switch'); paintSplitRead();
+});
+
+/* =======================================================================
+   BibTeX copy
+   ===================================================================== */
+$('copyBib').addEventListener('click', function(){
+  var b = this, t = $('bibtex').textContent;
+  function done(){ b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy BibTeX'; }, 1600); }
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, function(){ b.textContent = 'Select the text above'; });
+  } else {
+    var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e){ b.textContent = 'Select the text above'; }
+    document.body.removeChild(ta);
+  }
+});
+
+/* =======================================================================
+   Boot: entrances via IntersectionObserver + the guarded tween
+   ===================================================================== */
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+function staticDraw(){ drawPaths('static'); drawSplit('static'); drawSeq(false); }
+paintPathRead(false); buildPathTable(); paintSplitRead(); renderStep(false); renderGame(false);
+staticDraw();
+
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.style.transform = 'translateY(16px)'; });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var sec = en.target; io.unobserve(sec);
+      tween(550, function(p){ sec.style.opacity = p; sec.style.transform = 'translateY(' + (16 * (1 - p)) + 'px)'; },
+        function(){ sec.style.opacity = ''; sec.style.transform = ''; });
+      if (sec.id === 'paths') setTimeout(function(){ drawPaths('enter'); }, 160);
+      else if (sec.id === 'split') setTimeout(function(){ drawSplit('enter'); }, 160);
+      else if (sec.id === 'protocol') setTimeout(function(){ drawSeq(true); }, 160);
+    });
+  }, { threshold:0.06, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+/* a resize repaints, but never replays an entrance */
+var rzT, lastW = window.innerWidth;
+window.addEventListener('resize', function(){
+  if (window.innerWidth === lastW) return; lastW = window.innerWidth;
+  clearTimeout(rzT); rzT = setTimeout(staticDraw, 120);
+});
+</script>
+</body>
+</html>

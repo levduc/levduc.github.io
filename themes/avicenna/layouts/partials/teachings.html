@@ -1,0 +1,17 @@
+<div class="introduction">
+	{{ with .Site.Params.teachings}}
+    <h4><b>Teaching</b></h4>
+
+	{{- range $index, $teachings := $.Site.Params.teachings -}}
+    <div class="year">{{ $teachings.year }}</div>
+
+	<ul>
+		{{ range $elem_index, $teaching := $teachings.description }}
+		<li>
+			<p class="publications"> {{ $teaching.uni | markdownify }}: </p>
+			{{ $teaching.name | markdownify }}.
+		</li>
+		{{ end }}
+	</ul>
+	{{- end -}}
+	{{- end -}}

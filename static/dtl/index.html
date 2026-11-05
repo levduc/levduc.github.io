@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>DTL: Data Tumbling Layer</title>
+<meta name="description" content="AsiaCCS 2025 — A composable unlinkability layer for smart contracts: commit data once, redeem an encrypted copy into another contract, with no link back to the commit.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* ---------- tokens: typography and colour matched to levduc.github.io ---------- */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots 1-3, validated against #fafafa (light): all hard checks pass,
+     contrast WARN on slot 3 -> relieved by direct value labels + table views */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+section:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{color:var(--ink-2); max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono)}
+.card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px; box-shadow:var(--shadow)}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:0; z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.75rem; font-weight:400; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; color:var(--ink-2); margin:.7rem 0 1.4rem; max-width:66ch}
+.venue{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--accent);
+  border:1px solid var(--accent); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; color:var(--ink-1); margin:0 0 .35rem; line-height:1.8}
+.authors sup{color:var(--ink-muted); font-size:.7em}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn[disabled]{opacity:.4; cursor:not-allowed; border-color:var(--ring); color:var(--ink-muted)}
+.btn.small{font-size:.8rem; padding:.25rem .6rem}
+.btn.danger{color:var(--critical); border-color:rgba(208,59,59,.45)}
+.btn.danger:hover{border-color:var(--critical)}
+
+/* ---------- stat tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.tile .v{font-size:2rem; font-weight:700; line-height:1.15; margin:.25rem 0 .2rem; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.tile .d{font-size:.88rem; color:var(--ink-2); margin:0; line-height:1.45}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; margin-bottom:18px}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:210px; flex:1}
+.ctl label{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; border:1px solid var(--ring); border-radius:3px; overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:18px 18px 12px; box-shadow:var(--shadow)}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:14px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:11px; height:11px; border-radius:2px; flex:none}
+.swatch.hatch{background:repeating-linear-gradient(45deg, var(--s2) 0 2px, transparent 2px 5px); border:1px dashed var(--s2)}
+.tip{position:fixed; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.tip b{display:block; margin-bottom:.15rem}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{position:relative; overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:.88rem; margin-top:10px}
+th,td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.78rem; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+td.c,th.c{text-align:center}
+tr.hl td{background:var(--surface-1); font-weight:700}
+caption{caption-side:top; text-align:left; font-family:var(--mono); font-size:.82rem; color:var(--ink-2); padding:0 0 .3rem}
+.flag{color:var(--critical); font-weight:700}
+
+/* ---------- tumbler playground ---------- */
+.tgrid{display:grid; grid-template-columns:minmax(0,250px) minmax(0,1fr) minmax(0,270px); gap:16px; align-items:start}
+.users{display:flex; flex-direction:column; gap:8px}
+.user{border:1px solid var(--ring); border-radius:4px; background:var(--plane); padding:.55rem .7rem}
+.user .nm{font-weight:700; color:var(--ink-head); display:flex; justify-content:space-between; align-items:baseline; gap:6px}
+.user .st{font-family:var(--mono); font-size:.72rem; color:var(--ink-muted)}
+.user .row{display:flex; gap:6px; margin-top:.35rem; flex-wrap:wrap}
+.user.mallory{border-color:rgba(208,59,59,.45)}
+.panel{border:1px solid var(--ring); border-radius:4px; background:var(--plane); padding:10px 12px}
+.panel h4{margin:0 0 .35rem; font-family:var(--mono); font-size:.74rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted)}
+.log{list-style:none; margin:0; padding:0; font-family:var(--mono); font-size:.76rem; color:var(--ink-2); min-height:1.4em}
+.log li{padding:.18rem 0; border-bottom:1px dashed var(--grid); word-break:break-all}
+.log li.empty{color:var(--ink-muted); border:0}
+.chips{display:flex; flex-wrap:wrap; gap:5px}
+.chipx{font-family:var(--mono); font-size:.74rem; border:1px solid var(--ring); border-radius:999px; padding:.05rem .5rem; background:var(--surface-1)}
+.chipx.cur{border-color:var(--s1); color:var(--s1); font-weight:700}
+.side{display:flex; flex-direction:column; gap:10px}
+.rel{margin-top:16px}
+.relrow{display:grid; grid-template-columns:22px minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:center;
+  padding:.4rem .5rem; border-bottom:1px solid var(--grid); font-size:.92rem}
+.relrow .why{font-size:.84rem; color:var(--ink-2)}
+.relrow .mk{font-family:var(--mono); font-weight:700; text-align:center}
+.relrow.ok{background:rgba(12,163,12,.07)} .relrow.ok .mk{color:var(--good)}
+.relrow.bad{background:rgba(208,59,59,.08)} .relrow.bad .mk{color:var(--critical)}
+.relrow.contract{font-style:normal}
+.relrow.arbonly{display:none}
+.arb .relrow.arbonly{display:grid}
+.arb .relrow.fixedonly{display:none}
+.relhead{font-family:var(--mono); font-size:.74rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); margin:.9rem 0 .2rem}
+.verdict{border-radius:4px; padding:10px 12px; font-size:.9rem; border:1px solid var(--ring); margin-top:12px; background:var(--plane)}
+.verdict.ok{color:#0a6e0a; border-color:var(--good)}
+.verdict.bad{color:#a52a2a; border-color:var(--critical)}
+.verdict b{display:block}
+.attacks{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+
+/* ---------- route builder ---------- */
+.flow{display:flex; flex-wrap:wrap; align-items:stretch; gap:6px; margin:14px 0 0}
+.fstep{flex:1 1 180px; border:1px solid var(--ring); border-left:4px solid var(--s1); border-radius:4px; background:var(--plane); padding:.5rem .7rem}
+.fstep .fl{font-family:var(--mono); font-size:.78rem; color:var(--ink-muted)}
+.fstep .fn{font-weight:700; color:var(--ink-head)}
+.fstep .fm{font-family:var(--mono); font-size:.8rem; color:var(--ink-2); margin-top:.2rem}
+.farrow{align-self:center; font-family:var(--mono); color:var(--ink-muted)}
+.provenance{border-left:3px solid var(--critical); padding:.2rem 0 .2rem 12px; margin:14px 0 0; font-size:.9rem}
+
+/* ---------- front-running ---------- */
+.frgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,280px); gap:20px; align-items:start}
+.readout{display:flex; flex-direction:column; gap:10px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:10px 12px; background:var(--plane)}
+.ro .k{font-family:var(--mono); font-size:.74rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.4rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums}
+.ro .s{font-family:var(--mono); font-size:.76rem; color:var(--ink-muted)}
+
+/* ---------- misc ---------- */
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px; overflow-x:auto; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:0 0 1rem}
+.three{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:8px}
+.three .card h3{font-size:1rem}
+.three .card p{font-size:.92rem; margin:0}
+ol.disc{padding-left:1.2rem; margin:.4rem 0 0} ol.disc li{margin-bottom:.6rem; font-size:.94rem}
+.dotc{font-size:1.05rem; line-height:1}
+.katex{text-transform:none; letter-spacing:0}
+
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+
+@media (max-width:860px){
+  .tgrid{grid-template-columns:1fr}
+  .users{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+}
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2.1rem}
+  .frgrid,.three{grid-template-columns:1fr}
+  .relrow{grid-template-columns:18px minmax(0,1fr); }
+  .relrow .why{grid-column:2}
+  .seg{flex-wrap:wrap; max-width:100%}
+  .seg button{flex:1 1 auto; border-bottom:1px solid var(--ring)}
+  .controls .ctl{flex:1 1 100% !important; min-width:0}
+  .farrow{display:none}
+  .katex-display{overflow-x:auto; overflow-y:hidden}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav>
+    <a href="#problem">Problem</a>
+    <a href="#tumbler">Tumbler</a>
+    <a href="#routes">Routes</a>
+    <a href="#baselines">Baselines</a>
+    <a href="#frontrun">Front-running</a>
+    <a href="#properties">Properties</a>
+    <a href="#results">Results</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="venue">AsiaCCS 2025</span>
+  <h1>DTL: Data Tumbling Layer</h1>
+  <p class="sub">A Composable Unlinkability for Smart Contracts. Users <em>commit</em> data to one tumbling contract, then <em>redeem</em> an encrypted copy into any other on-chain application &mdash; with the link to the original commit removed.</p>
+  <p class="authors">
+    Mohsen Minaei<sup>1</sup>, Pedro Moreno-Sanchez<sup>2,1,3</sup>, Zhiyong Fang<sup>4</sup>,
+    Srinivasan Raghuraman<sup>1,5</sup>, Navid Alamati<sup>1</sup>, Panagiotis Chatzigiannis<sup>1</sup>,
+    Ranjit Kumaresan<sup>1</sup>, <span class="me">Duc V. Le</span><sup>1</sup>
+  </p>
+  <p class="affils"><sup>1</sup>Visa Research &nbsp;·&nbsp; <sup>2</sup>IMDEA Software Institute &nbsp;·&nbsp; <sup>3</sup>MPI-SP &nbsp;·&nbsp; <sup>4</sup>Texas A&amp;M University &nbsp;·&nbsp; <sup>5</sup>MIT</p>
+  <div class="btns">
+    <a class="btn primary" href="../papers/dtl.pdf">Paper (PDF)</a>
+    <a class="btn" href="#cite">BibTeX</a>
+  </div>
+  <p class="note" style="margin-top:12px">The linked PDF is arXiv v1 (2503.04260, March 2025). Table 2's Mobius and AMR comparison columns on this page come from the later AsiaCCS version and are not in that PDF.</p>
+</div></header>
+
+<!-- ============ TL;DR ============ -->
+<section id="tldr"><div class="wrap">
+  <p class="eyebrow">In three numbers</p>
+  <h2>What one tumbling contract buys</h2>
+  <div class="tiles">
+    <div class="tile">
+      <div class="k">Anonymity set</div>
+      <div class="v">$2^{20}$</div>
+      <p class="d">Merkle tree of depth $20$ in every application (§7.1). Anonymous Zether's measured transfer uses a set of <strong>8</strong>.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Gas, unlinkable withdraw</div>
+      <div class="v" data-count="258467">258,467</div>
+      <p class="d">$\mathsf{C}_\mathsf{DTL} \rightarrow \mathsf{C}_\mathsf{Conf}$ (Table 3), against <strong>7,306,703</strong> for an Anonymous Zether transfer with 8 users.</p>
+    </div>
+    <div class="tile">
+      <div class="k">Slowest measured proof</div>
+      <div class="v">1.32 s</div>
+      <p class="d">Unlinkable withdraw (Table 3) on a 4-core i5-1137G7 laptop with 8&nbsp;GB of memory. Groth16, Circom, SnarkJS.</p>
+    </div>
+  </div>
+</div></section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Privacy tools that only do one job</h2>
+  <p class="lede">Ledgers publish senders, receivers and amounts. The privacy add-ons that exist &mdash; unlinkable mixers like AMR, confidential payments like Zether, stealth addresses &mdash; are each built for one function, usually moving money. None of them can be plugged into <em>other</em> contracts. The paper asks:</p>
+  <p class="callout"><em>How can we design privacy-enhancing solutions that can be composed with existing on-chain applications to enhance user privacy throughout the entire system?</em></p>
+  <div class="three">
+    <div class="card"><h3>① Commit</h3><p>User $u_i$ commits data $\mathsf{data}_i$ to the tumbling contract $\mathsf{C}_\mathsf{DTL}$. The contract adds a public key $\mathsf{cpk}$ to a Merkle tree.</p></div>
+    <div class="card"><h3>② Redeem</h3><p>Later, possibly from a fresh address, the user proves in zero knowledge that they own <em>some</em> leaf and receives $[\mathsf{data}_j]$, an encrypted copy of the data.</p></div>
+    <div class="card"><h3>③ Compose</h3><p>That copy flows straight into another contract: a payment, a confidential-balance contract (Zether), or a weighted vote. One layer, many applications.</p></div>
+  </div>
+  <p class="note" style="margin-top:14px">Two constructions: $\mathtt{DTL}_\mathsf{fixed}$ when every user commits the same data (a fixed coin, an equal vote), and $\mathtt{DTL}_\mathsf{arb}$ for arbitrary data such as amounts. Both are proved correct, unlinkable, and secure against one-more redemption, theft and slander (Theorems 1 and 2).</p>
+</div></section>
+
+<!-- ============ INTERACTIVE 1: TUMBLER ============ -->
+<section id="tumbler"><div class="wrap">
+  <p class="eyebrow">Interactive 1 · the tumbler</p>
+  <h2>Commit, redeem, and try to cheat</h2>
+  <p class="lede">Commit a few users into the tree, then redeem them to fresh addresses. The right-hand panel is everything the chain shows. Then try the three attacks. Each one is stopped by a specific line of the relation below.</p>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Construction">
+      <button type="button" data-mode="fixed" aria-pressed="true">DTL_fixed</button>
+      <button type="button" data-mode="arb" aria-pressed="false">DTL_arb</button>
+    </div>
+    <button class="btn small" id="tReset" type="button">Reset</button>
+  </div>
+  <div class="card" id="tCard">
+    <div class="tgrid">
+      <div class="users" id="tUsers"></div>
+      <div>
+        <div class="panel" style="padding:8px 8px 4px">
+          <h4>Merkle tree in $\mathsf{C}_\mathsf{DTL}$ (8 of $2^{20}$ leaves drawn)</h4>
+          <svg id="tTree" role="img" aria-label="Merkle tree of committed keys"></svg>
+        </div>
+        <div class="panel" style="margin-top:10px">
+          <h4>Recent roots $\mathsf{AccList}_{wdr}$ (demo keeps $k = 4$)</h4>
+          <div class="chips" id="tRoots"></div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="panel"><h4>What the chain sees · commits</h4><ul class="log" id="tCommits"></ul></div>
+        <div class="panel"><h4>What the chain sees · redeems</h4><ul class="log" id="tRedeems"></ul></div>
+        <div class="panel"><h4>$\mathsf{TagList}$</h4><div class="chips" id="tTags"></div></div>
+        <div class="panel"><h4>Adversary's best guess</h4><div class="mono" style="font-size:.84rem" id="tGuess"></div></div>
+      </div>
+    </div>
+
+    <div class="attacks">
+      <button class="btn small danger" id="aDouble" type="button">Alice redeems a second time</button>
+      <button class="btn small danger" id="aTheft" type="button">Mallory redeems Bob's leaf</button>
+      <button class="btn small danger" id="aSlander" type="button">Mallory burns Bob's tag first</button>
+    </div>
+    <div class="verdict" id="tVerdict" role="status" aria-live="polite">Start by committing Alice and Bob.</div>
+
+    <div class="rel" id="tRel">
+      <div class="relhead">Relation proved in zero knowledge (Eq. <span class="fixedonlytxt">1</span>)</div>
+      <div class="relrow" data-c="mk"><span class="mk">·</span><span>$\mathsf{MT}.\mathtt{Verify}(i, \mathsf{cpk}, \mathsf{st}, \mathsf{path})$</span><span class="why">$\mathsf{cpk}$ is a leaf of the committed tree. Which leaf stays hidden.</span></div>
+      <div class="relrow fixedonly" data-c="kg"><span class="mk">·</span><span>$\mathsf{cpk} = \mathsf{TAG}.\mathtt{TagKGen}(\mathsf{csk})$</span><span class="why">The prover knows the secret key behind that leaf.</span></div>
+      <div class="relrow" data-c="tag"><span class="mk">·</span><span>$\mathsf{tag} = \mathsf{TAG}.\mathtt{TagEval}(\mathsf{csk})$</span><span class="why">The tag is fixed by the key, so each key yields exactly one tag.</span></div>
+      <div class="relrow arbonly" data-c="kg2"><span class="mk">·</span><span>$\mathsf{cpk}' = \mathsf{TAG}.\mathtt{TagKGen}(\mathsf{csk})$</span><span class="why">As in the fixed case, but $\mathsf{cpk}'$ is used as commitment randomness.</span></div>
+      <div class="relrow arbonly" data-c="com"><span class="mk">·</span><span>$\mathsf{cpk} = \mathsf{COM}.\mathtt{Commit}(\mathsf{data}; \mathsf{cpk}')$</span><span class="why">The data is bound to the leaf but hidden by the commitment.</span></div>
+      <div class="relrow arbonly" data-c="enc"><span class="mk">·</span><span>$c = \mathtt{E}.\mathsf{Enc}(\mathsf{ek}, \mathsf{data}; r_\mathsf{enc})$</span><span class="why">The output is an encryption of the <em>same</em> data. Plaintext output would link redeem to commit.</span></div>
+      <div class="relrow arbonly" data-c="pred"><span class="mk">·</span><span>$P(\mathsf{data}) = 1$</span><span class="why">An application predicate, e.g. a range proof on an amount.</span></div>
+      <div class="relhead">Checks by the contract</div>
+      <div class="relrow contract" data-c="root"><span class="mk">·</span><span>$\mathsf{st} \in \mathsf{AccList}_{wdr}$</span><span class="why">The proof's root is one of the $k$ recent roots (see Interactive 4).</span></div>
+      <div class="relrow contract" data-c="dbl"><span class="mk">·</span><span>$\mathsf{tag} \notin \mathsf{TagList}$</span><span class="why">This tag has not been redeemed before.</span></div>
+    </div>
+    <p class="note" style="margin-top:10px">Hex strings here are illustrative stand-ins produced by a toy hash, not Poseidon/Pedersen outputs. The relation rows follow Eq. 1 ($\mathtt{DTL}_\mathsf{fixed}$) and Eq. 2 ($\mathtt{DTL}_\mathsf{arb}$) in §5.</p>
+  </div>
+</div></section>
+
+<!-- ============ INTERACTIVE 2: ROUTES ============ -->
+<section id="routes"><div class="wrap">
+  <p class="eyebrow">Interactive 2 · composed applications</p>
+  <h2>What each composed route costs</h2>
+  <p class="lede">Every application is a commit into $\mathsf{C}_\mathsf{DTL}$ followed by an unlinkable redeem into somewhere else. Pick a route. Segments are the measured per-transaction gas from Tables 2&ndash;4, and totals are sums of those entries.</p>
+  <div class="chart">
+    <svg id="rChart" role="img" aria-label="Stacked gas per route"></svg>
+    <ul class="legend">
+      <li><span class="swatch" style="background:var(--s1)"></span>Step 1 · commit into $\mathsf{C}_\mathsf{DTL}$</li>
+      <li><span class="swatch" style="background:var(--s2)"></span>Step 2 · unlinkable redeem</li>
+      <li><span class="swatch" style="background:var(--s3)"></span>Step 3 · reveal (once per candidate)</li>
+      <li><span class="swatch" style="background:none;border:1.5px dashed var(--critical)"></span>total claimed in §7 text</li>
+    </ul>
+    <div class="flow" id="rFlow"></div>
+    <div id="rNote"></div>
+    <details class="tbl"><summary>Show the numbers as a table</summary><div class="tscroll" id="rTable"></div></details>
+  </div>
+</div></section>
+
+<!-- ============ INTERACTIVE 3: BASELINES ============ -->
+<section id="baselines"><div class="wrap">
+  <p class="eyebrow">Interactive 3 · against prior work</p>
+  <h2>Anonymity set $2^{20}$ without the gas bill</h2>
+  <p class="lede">Mobius pays for its ring at withdrawal time, and Anonymous Zether pays for its anonymity set on every transfer. DTL's verification is a Groth16 check against a Merkle root, so its cost does not grow with the set. Prior-work numbers are the ones reported in those papers, as used in the paper's §7.</p>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Comparison">
+      <button type="button" data-b="fixed" aria-pressed="true">Fixed amount · Table 2</button>
+      <button type="button" data-b="conf" aria-pressed="false">Confidential · Table 3</button>
+    </div>
+  </div>
+  <div class="chart">
+    <svg id="bChart" role="img" aria-label="Gas comparison with prior work"></svg>
+    <ul class="legend" id="bLegend"></ul>
+    <p class="note" id="bNote" style="margin:10px 0 0"></p>
+    <details class="tbl"><summary>Show the numbers as a table</summary><div class="tscroll" id="bTable"></div></details>
+  </div>
+</div></section>
+
+<!-- ============ INTERACTIVE 4: FRONT-RUNNING ============ -->
+<section id="frontrun"><div class="wrap">
+  <p class="eyebrow">Interactive 4 · concurrency (Appendix, Theorem 3)</p>
+  <h2>How hard is it to knock out a withdrawal?</h2>
+  <p class="lede">Every deposit changes the Merkle root, so the contract keeps the $k$ most recent roots. A withdrawal proves against one of them, say the root at position $i$. An attacker who floods deposits can push that root out of the list. Theorem 3 says this takes exactly $k-i+1$ deposits. With the paper's Ethereum figures (a block gas limit of about $30\text{M}$ and $767{,}565$ gas per deposit), at most $B = 39$ deposits fit in one block.</p>
+  <div class="controls">
+    <div class="ctl"><label for="fk">Stored roots $k$: <span class="val" id="fkV">1000</span></label><input type="range" id="fk" min="10" max="2000" step="10" value="1000"></div>
+    <div class="ctl"><label for="fi">Position of your root $i$ (1 = newest): <span class="val" id="fiV">1</span></label><input type="range" id="fi" min="1" max="1000" step="1" value="1"></div>
+    <button class="btn primary" id="fRun" type="button">Run the attack</button>
+  </div>
+  <div class="frgrid">
+    <div class="chart"><svg id="fChart" role="img" aria-label="Root history under a deposit flood"></svg>
+      <p class="note" id="fStatus" style="margin:8px 0 0"></p></div>
+    <div class="readout">
+      <div class="ro"><div class="k">Deposits needed · $k-i+1$</div><div class="v" id="fDep">1,000</div></div>
+      <div class="ro"><div class="k">Blocks needed · $\lceil (k-i+1)/B \rceil$</div><div class="v" id="fBlk">26</div><div class="s" id="fTime">≈ 6.5 min at 15 s blocks</div></div>
+      <div class="ro"><div class="k">Attacker cost · $(k-i+1)\times \mathsf{fee}_{dep}$</div><div class="v" id="fEth">20 ETH</div><div class="s">at the paper's assumed $\mathsf{fee}_{dep}=0.02$ ETH</div></div>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">$B = \lfloor 30{,}000{,}000 / 767{,}565 \rfloor = 39$. The paper's worked example is $k = 1000$, $i = 1$: at least $26$ blocks (about $6.5$ minutes at $15$-second blocks) and $20$ ETH, which it prices at about \$36,000, to <em>temporarily</em> block one withdrawal. The honest user can just resubmit against a newer root. Block time, fee and gas limit are the paper's assumptions, not measurements.</p>
+</div></section>
+
+<!-- ============ PROPERTIES ============ -->
+<section id="properties"><div class="wrap">
+  <p class="eyebrow">Guarantees</p>
+  <h2>What is proved</h2>
+  <div class="tscroll"><table>
+    <thead><tr><th>Property</th><th>Meaning (from §1)</th><th class="c">$\mathtt{DTL}_\mathsf{fixed}$</th><th class="c">$\mathtt{DTL}_\mathsf{arb}$</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Correctness</strong></td><td>A user who committed data can redeem the same data for use in other applications.</td><td class="c">Thm 1</td><td class="c">Thm 2</td></tr>
+      <tr><td><strong>No one-more redemption</strong></td><td>A user who commits $n$ data inputs cannot redeem more than $n$ outputs.</td><td class="c">Thm 1</td><td class="c">Thm 2</td></tr>
+      <tr><td><strong>Theft prevention</strong></td><td>An adversary cannot use data previously committed by an honest user.</td><td class="c">Thm 1</td><td class="c">Thm 2</td></tr>
+      <tr><td><strong>Non-slanderability</strong></td><td>An adversary cannot stop an honest user from redeeming their committed data.</td><td class="c">Thm 1</td><td class="c">Thm 2</td></tr>
+      <tr><td><strong>Unlinkability</strong></td><td>An adversary with the contract's state cannot link a user's commit to their redeem. For arbitrary data, it cannot tell whether a specific committed item is the one being redeemed.</td><td class="c">Thm 1</td><td class="c">Thm 2</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Assumptions: Theorem 1 assumes a secure zk-SNARK, Merkle tree and tagging scheme. Theorem 2 adds a hiding and binding commitment scheme and IND-CPA encryption. Proofs are in the full version (arXiv 2503.04260).</p>
+
+  <h3 style="margin-top:26px">Table 1 · Comparison with previous works</h3>
+  <div class="tscroll"><table id="t1">
+    <thead><tr><th></th><th></th><th>Anonymity set</th><th class="c">Confidential amount</th><th class="c">Composability</th><th class="c">Availability</th><th>Applications</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+  <p class="note">● yes &nbsp; ○ no &nbsp; ◐ partially provided, i.e. it composes with only a <em>single</em> application. Off-chain solutions rely on servers that can go offline or misbehave, which hurts availability.</p>
+</div></section>
+
+<!-- ============ RESULTS ============ -->
+<section id="results"><div class="wrap">
+  <p class="eyebrow">Measured results</p>
+  <h2>Tables 2&ndash;4, as printed</h2>
+  <p class="lede">Groth16 over BN254 with Poseidon for the Merkle tree, Pedersen for tags and commitments, and ElGamal on Baby Jubjub for $\mathtt{DTL}_\mathsf{arb}$. The tree has depth $20$. Measured on a 4-core Intel i5-1137G7 with 8&nbsp;GB of memory.</p>
+  <div class="tscroll"><table>
+    <caption>Table 2 · Unlinkable fixed-amount payment. Mobius anonymity set 8; AMR and DTL up to $2^{20}$.</caption>
+    <thead><tr><th></th><th class="num">DTL Deposit</th><th class="num">DTL Withdraw</th><th class="num">Mobius Deposit</th><th class="num">Mobius Withdraw(8)</th><th class="num">AMR Deposit</th><th class="num">AMR Withdraw</th></tr></thead>
+    <tbody>
+      <tr><td>R1CS constraints</td><td class="num">-</td><td class="num">8,146</td><td class="num">-</td><td class="num">-</td><td class="num">-</td><td class="num">28,275</td></tr>
+      <tr><td>Proving time</td><td class="num">-</td><td class="num">1.15s</td><td class="num">-</td><td class="num">3.254ms</td><td class="num">-</td><td class="num">8.325s</td></tr>
+      <tr><td>Gas cost</td><td class="num">767,565</td><td class="num">233,375</td><td class="num">105,346</td><td class="num">2,685,712</td><td class="num">1,036,580</td><td class="num">325,051</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tscroll" style="margin-top:18px"><table>
+    <caption>Table 3 · Confidential and unlinkable payment. Anonymous Zether anonymity set 8; ours $2^{20}$.</caption>
+    <thead><tr><th></th><th class="num">Transparent deposit<br>addr → C_DTL</th><th class="num">Confidential deposit<br>C_Conf → C_DTL</th><th class="num">Unlinkable withdraw<br>C_DTL → C_Conf</th><th class="num">AZether<br>Transfer (8)</th></tr></thead>
+    <tbody>
+      <tr><td>R1CS constraints</td><td class="num">-</td><td class="num">8,671</td><td class="num">11,521</td><td class="num">-</td></tr>
+      <tr><td>Proving time</td><td class="num">-</td><td class="num">1.16s</td><td class="num">1.32s</td><td class="num">1.9s</td></tr>
+      <tr><td>Gas cost</td><td class="num">767,565</td><td class="num">1,051,112</td><td class="num">258,467</td><td class="num">7,306,703</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tscroll" style="margin-top:18px"><table>
+    <caption>Table 4 · Unlinkable weighted voting</caption>
+    <thead><tr><th></th><th class="num">Registration<br>addr_voter → C_DTL</th><th class="num">Unlinkable vote<br>C_DTL → C_Conf</th><th class="num">Reveal<br>addr_i → C_Conf</th></tr></thead>
+    <tbody>
+      <tr><td>R1CS constraints</td><td class="num">-</td><td class="num">11,521</td><td class="num">6,750</td></tr>
+      <tr><td>Proving time</td><td class="num">-</td><td class="num">1.19s</td><td class="num">1.03s</td></tr>
+      <tr><td>Gas cost</td><td class="num">767,565</td><td class="num">258,467</td><td class="num">291,151</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin-top:28px">Where the sources disagree</h3>
+  <ol class="disc">
+    <li><span class="flag">Gas for confidential → DTL → confidential.</span> The §7 text says the second payment route costs "approximately $1.8$m", and the abstract and conclusion say gas is under $1.8$ million. Table 3's entries for that route sum to $1{,}051{,}112$ + $258{,}467$ = $1{,}309{,}579$, and no table entry gives $1.8$m. The first route's text figure ("approximately $1$m") agrees with its sum, $1{,}026{,}032$. The linked arXiv v1 says "around $1.1$ to $1.8$ million gas". This page charts the table sums and shows the text claim as a marker.</li>
+    <li><span class="flag">Two proving times for one circuit.</span> The unlinkable withdraw (Table 3) and the unlinkable vote (Table 4) have the same constraint count ($11{,}521$) and the same gas ($258{,}467$), but their proving times are reported as $1.32$s and $1.19$s. Both are shown as printed.</li>
+    <li><span class="flag">Anonymous Zether's anonymity set.</span> Table 1 lists it as $<2^5$, while §7 quotes its cost for $64$ users ("rising to $36$m"). The $64$-user point is shown as a text-only marker.</li>
+    <li><span class="flag">Linked PDF version.</span> The PDF linked from this page (arXiv v1) has Table 3 with the Anonymous Zether column, but its Table 2 lacks the Mobius and AMR columns used here.</li>
+  </ol>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Reference</p>
+  <h2>Cite this work</h2>
+  <pre class="bib" id="bibtex">@misc{le2025dtldatatumblinglayer,
+  title         = {DTL: Data Tumbling Layer. A Composable Unlinkability for Smart Contracts},
+  author        = {Mohsen Minaei and Pedro Moreno-Sanchez and Zhiyong Fang and
+                   Srinivasan Raghuraman and Navid Alamati and Panagiotis Chatzigiannis and
+                   Ranjit Kumaresan and Duc V. Le},
+  year          = {2025},
+  eprint        = {2503.04260},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR},
+  url           = {https://arxiv.org/abs/2503.04260}
+}</pre>
+  <div class="btns"><button class="btn" id="copyBib" type="button">Copy BibTeX</button></div>
+  <p class="note" style="margin-top:18px"><strong>Source code.</strong> The paper has no code or data availability statement, so this page links no implementation. The evaluation (§7) used Circom circuits, SnarkJS for proving and for generating the Solidity verifiers, and the Truffle toolchain on a test network.</p>
+</div></section>
+
+<footer><div class="wrap">
+  <p style="margin:0">DTL: Data Tumbling Layer · AsiaCCS 2025 · Visa Research, IMDEA Software Institute, MPI-SP, Texas A&amp;M University, MIT.</p>
+</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function $(id){ return document.getElementById(id); }
+function clear(n){ while (n.firstChild) n.removeChild(n.firstChild); }
+
+/* ---------- motion: every animation goes through tween ---------- */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  if (REDUCED || ms <= 0){ step(1); if (done) done(); return; }
+  var t0 = null, finished = false;
+  function finish(){ if (finished) return; finished = true; step(1); if (done) done(); }
+  function frame(t){
+    if (finished) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  /* never leave a half-drawn frame if requestAnimationFrame is starved */
+  setTimeout(finish, ms + 150);
+}
+function later(ms, fn){ if (REDUCED) fn(); else setTimeout(fn, ms); }
+function fadeIn(node, ms, delay){
+  if (REDUCED) return;
+  node.style.opacity = 0;
+  later(delay || 0, function(){ tween(ms, function(p){ node.style.opacity = p; }, function(){ node.style.opacity = ''; }); });
+}
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function mfmt(n){ return (n/1e6).toFixed(n % 1e6 === 0 ? 0 : 1) + 'M'; }
+
+/* tooltip */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+function narrow(svg){ return (svg.parentNode.clientWidth || 800) < 560; }
+
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError: false,
+    ignoredTags: ['script','noscript','style','textarea','pre','code','option']
+  });
+  /* money is written \$ in the source (so auto-render never pairs it); show it as a plain $ */
+  root.normalize();
+  var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), t;
+  while ((t = w.nextNode())) if (t.nodeValue.indexOf('\\$') >= 0) t.nodeValue = t.nodeValue.split('\\$').join('$');
+}
+
+/* =======================================================================
+   Data - verbatim from evaluation.tex (Tables 2-4), relwork.tex (Table 1)
+   and extended-discussion.tex (Theorem 3). Nothing is extrapolated.
+   ===================================================================== */
+var DEPOSIT_GAS = 767565, BLOCK_GAS = 30000000, FEE_DEP = 0.02, BLOCK_SEC = 15;
+var B = Math.floor(BLOCK_GAS / DEPOSIT_GAS);   /* = 39, as in the paper */
+
+var ROUTES = [
+  { id:'fixed', name:'Unlinkable fixed-amount payment', src:'Table 2', steps:[
+      { n:'Deposit', f:'addr<sub>sender</sub> → C<sub>DTL</sub>', gas:767565, r1cs:null, t:null },
+      { n:'Withdraw', f:'C<sub>DTL</sub> → addr<sub>receiver</sub>', gas:233375, r1cs:8146, t:'1.15s' } ] },
+  { id:'t2c', name:'Transparent → unlinkable confidential', src:'Table 3', prose:{ v:1000000, lbl:'text: ≈1m' }, steps:[
+      { n:'Transparent deposit', f:'addr<sub>client</sub> → C<sub>DTL</sub>', gas:767565, r1cs:null, t:null },
+      { n:'Unlinkable withdraw', f:'C<sub>DTL</sub> → C<sub>Conf</sub>', gas:258467, r1cs:11521, t:'1.32s' } ] },
+  { id:'c2c', name:'Confidential → unlinkable confidential', src:'Table 3', prose:{ v:1800000, lbl:'text: ≈1.8m', flag:true }, steps:[
+      { n:'Confidential deposit', f:'C<sub>Conf</sub> → C<sub>DTL</sub>', gas:1051112, r1cs:8671, t:'1.16s' },
+      { n:'Unlinkable withdraw', f:'C<sub>DTL</sub> → C<sub>Conf</sub>', gas:258467, r1cs:11521, t:'1.32s' } ] },
+  { id:'vote', name:'Unlinkable weighted voting', src:'Table 4', steps:[
+      { n:'Registration', f:'addr<sub>voter</sub> → C<sub>DTL</sub>', gas:767565, r1cs:null, t:null },
+      { n:'Unlinkable vote', f:'C<sub>DTL</sub> → C<sub>Conf</sub>', gas:258467, r1cs:11521, t:'1.19s' },
+      { n:'Reveal', f:'addr<sub>i</sub> → C<sub>Conf</sub>', gas:291151, r1cs:6750, t:'1.03s', perCand:true } ] }
+];
+
+var BASE_FIXED = [
+  { sys:'DTL', anon:'2^20', dep:767565, wd:233375, wdN:'Withdraw', r1cs:'8,146', t:'1.15s' },
+  { sys:'Mobius', anon:'8', dep:105346, wd:2685712, wdN:'Withdraw(8)', r1cs:'-', t:'3.254ms' },
+  { sys:'AMR', anon:'up to 2^20', dep:1036580, wd:325051, wdN:'Withdraw', r1cs:'28,275', t:'8.325s' }
+];
+var BASE_CONF = [
+  { sys:'DTL', lbl:'DTL · transparent → confidential', anon:'2^20', gas:1026032, how:'sum of Table 3 (767,565 + 258,467)' },
+  { sys:'DTL', lbl:'DTL · confidential → confidential', anon:'2^20', gas:1309579, how:'sum of Table 3 (1,051,112 + 258,467)' },
+  { sys:'AZ', lbl:'Anonymous Zether · transfer, 8 users', anon:'8', gas:7306703, how:'Table 3' },
+  { sys:'AZ', lbl:'Anonymous Zether · 64 users', anon:'64', gas:36000000, how:'§7 text only: "rising to 36m"', prose:true }
+];
+
+var T1 = [
+  ['Privacy-preserving cryptocurrencies', [
+    ['Monero','$<2^4$','●','○','●','Unlinkable and Confidential Payment'],
+    ['Zerocoin','Any','○','○','●','Unlinkable and Confidential Payment'],
+    ['Zerocash','Any','●','○','●','Unlinkable and Confidential Payment'],
+    ['Quisquis','$2^4$','●','○','●','Unlinkable and Confidential Payment'],
+    ['Veksel','Any','●','○','●','Unlinkable and Confidential Payment'] ]],
+  ['Off-chain privacy solutions', [
+    ['TumbleBit','Any','○','○','○','Unlinkable Fixed-Amount Payment'],
+    ['A2L, A2L+','Any','○','○','○','Unlinkable Fixed-amount Payment'],
+    ['Blindhub','Any','●','○','○','Unlinkable and Confidential Payment'],
+    ['Accio','Any','●','○','○','Unlinkable and Confidential Payment'] ]],
+  ['On-chain privacy solutions', [
+    ['CoinShuffle/CoinShuffle++','Small','○','○','○','Unlinkable Fixed-Amount Payment'],
+    ['Mobius','$<10$','○','◐','●','Unlinkable Fixed-Amount Payment'],
+    ['AMR','Any','○','◐','●','Unlinkable Fixed-Amount Payment'],
+    ['Anonymous Zether','$<2^5$','●','◐','●','Unlinkable and Confidential Payment'] ]],
+  ['', [
+    ['Ours (DTL)','Any','●','●','●','Unlinkable Fixed-Amount Payment (§6.2), Unlinkable and Confidential Payment (§6.3), Unlinkable Weighted Voting (§6.4)'] ]]
+];
+(function buildT1(){
+  var tb = document.querySelector('#t1 tbody');
+  T1.forEach(function(g){
+    g[1].forEach(function(r, j){
+      var tr = document.createElement('tr');
+      if (r[0].indexOf('Ours') === 0) tr.className = 'hl';
+      var h = '<td class="note">' + (j === 0 ? g[0] : '') + '</td><td>' + r[0] + '</td><td>' + r[1] + '</td>' +
+        '<td class="c dotc">' + r[2] + '</td><td class="c dotc">' + r[3] + '</td><td class="c dotc">' + r[4] + '</td><td>' + r[5] + '</td>';
+      tr.innerHTML = h; tb.appendChild(tr);
+    });
+  });
+})();
+
+/* =======================================================================
+   Interactive 1 - tumbler playground
+   ===================================================================== */
+function toyHash(s){
+  var h1 = 0x811c9dc5, h2 = 0x1b873593;
+  for (var i = 0; i < s.length; i++){ var c = s.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619) >>> 0; h2 = Math.imul(h2 ^ c, 2246822507) >>> 0; }
+  return ('0000000' + h1.toString(16)).slice(-8) + ('0000000' + h2.toString(16)).slice(-8);
+}
+function short(h){ return '0x' + h.slice(0, 4) + '…' + h.slice(-3); }
+function rnd(){ var a = new Uint32Array(2); (window.crypto || window.msCrypto).getRandomValues(a); return a[0].toString(16) + a[1].toString(16); }
+
+var T = null, tMode = 'fixed';
+var NAMES = ['Alice','Bob','Carol','Dave'];
+function tInit(){
+  T = { users: NAMES.map(function(n, j){ return { name:n, addr:'0x' + toyHash(n).slice(0,4) + '…', idx:j, committed:false, redeemed:false, csk:null, cpk:null, tag:null, leaf:-1 }; }),
+        leaves:[], roots:[], tags:[], redeems:[], commits:[] };
+  tRenderUsers(); tDrawTree(null); tRenderChain(); tRelReset();
+  setVerdict('', 'Start by committing Alice and Bob.');
+  tSyncAttacks();
+}
+function tRenderUsers(){
+  var box = $('tUsers'); clear(box);
+  T.users.forEach(function(u){
+    var d = document.createElement('div'); d.className = 'user';
+    var st = !u.committed ? 'not committed' : (u.redeemed ? 'redeemed → fresh address' : 'committed · leaf ' + u.leaf);
+    d.innerHTML = '<div class="nm"><span>' + u.name + '</span><span class="st">' + u.addr + '</span></div>' +
+      '<div class="st">' + st + '</div><div class="row">' +
+      '<button class="btn small" data-act="commit" ' + (u.committed || T.leaves.length >= 8 ? 'disabled' : '') + '>Commit</button>' +
+      '<button class="btn small" data-act="redeem" ' + (!u.committed || u.redeemed ? 'disabled' : '') + '>Redeem</button></div>';
+    d.querySelector('[data-act=commit]').addEventListener('click', function(){ tCommit(u); });
+    d.querySelector('[data-act=redeem]').addEventListener('click', function(){ tRedeem(u); });
+    box.appendChild(d);
+  });
+  var m = document.createElement('div'); m.className = 'user mallory';
+  m.innerHTML = '<div class="nm"><span>Mallory</span><span class="st">adversary</span></div><div class="st">sees the whole chain, knows no one else\'s $\\mathsf{csk}$</div>';
+  box.appendChild(m); katexRender(m);
+}
+function merkleRoot(){
+  var lv = []; for (var i = 0; i < 8; i++) lv.push(T.leaves[i] ? T.leaves[i].cpk : '0');
+  while (lv.length > 1){ var nx = []; for (var j = 0; j < lv.length; j += 2) nx.push(toyHash(lv[j] + lv[j+1])); lv = nx; }
+  return lv[0];
+}
+function tCommit(u){
+  if (u.committed || T.leaves.length >= 8) return;
+  u.csk = rnd() + rnd();
+  var cpkp = toyHash('kgen' + u.csk);
+  u.cpk = tMode === 'fixed' ? cpkp : toyHash('com' + 'data_' + u.name + cpkp);
+  u.tag = toyHash('tag' + u.csk);
+  u.committed = true; u.leaf = T.leaves.length;
+  T.leaves.push({ cpk:u.cpk, owner:u.name });
+  var r = merkleRoot(); T.roots.unshift(r); if (T.roots.length > 4) T.roots.pop();
+  T.commits.push(u.addr + ' → leaf ' + u.leaf + ' · cpk ' + short(u.cpk));
+  tRenderUsers(); tDrawTree(u.leaf); tRenderChain();
+  setVerdict('', '<b>' + u.name + ' committed.</b> ' + (tMode === 'arb' ? 'The leaf is a commitment to ' + u.name + '\'s data, so the data itself stays hidden.' : 'The leaf is ' + u.name + '\'s public key; everyone can see who deposited.'));
+  tSyncAttacks();
+}
+function tRedeem(u){
+  if (!u.committed || u.redeemed) return;
+  var fresh = '0x' + toyHash('fresh' + u.csk).slice(0, 4) + '…';
+  tCheck(['mk', tMode === 'fixed' ? 'kg' : 'kg2', 'tag'].concat(tMode === 'arb' ? ['com','enc','pred'] : []).concat(['root','dbl']), null, function(){
+    u.redeemed = true; T.tags.push(u.tag);
+    T.redeems.push('tag ' + short(u.tag) + ' → ' + fresh + (tMode === 'arb' ? ' · c ' + short(toyHash('enc' + u.csk)) : ''));
+    tRenderUsers(); tRenderChain(true);
+    var n = T.leaves.length;
+    setVerdict('ok', '<b>Accepted.</b> The proof shows "I own one of the ' + n + (n === 1 ? ' leaf' : ' leaves') + '" without saying which. ' +
+      (tMode === 'arb' ? 'The output is a ciphertext $c$ under the receiving contract\'s key, ready for e.g. $\\mathsf{C}_\\mathsf{Conf}$.' : 'The fixed coin goes to a fresh address.'));
+  });
+}
+function tDoubleSpend(){
+  var a = T.users[0]; if (!a.redeemed) return;
+  tCheck(['mk', tMode === 'fixed' ? 'kg' : 'kg2', 'tag'].concat(tMode === 'arb' ? ['com','enc','pred'] : []).concat(['root','dbl']), 'dbl', function(){
+    setVerdict('bad', '<b>Rejected: no one-more redemption.</b> Alice\'s proof is valid, but $\\mathsf{tag} = \\mathtt{TagEval}(\\mathsf{csk})$ is deterministic, so she gets the same tag ' + short(a.tag) + ', which is already in $\\mathsf{TagList}$. One commit gives one redemption.');
+  });
+}
+function tTheft(){
+  var b = T.users[1]; if (!b.committed || b.redeemed) return;
+  tCheck(['mk', tMode === 'fixed' ? 'kg' : 'kg2'], tMode === 'fixed' ? 'kg' : 'kg2', function(){
+    setVerdict('bad', '<b>$\\bot$: theft prevention.</b> Mallory can point at Bob\'s leaf in the tree, but she cannot produce a $\\mathsf{csk}$ with $\\mathtt{TagKGen}(\\mathsf{csk}) = \\mathsf{cpk}_\\mathsf{Bob}$, so no proof exists and $\\mathtt{Redeem}$ returns $\\bot$. Bob\'s commit stays spendable only by Bob.');
+  });
+}
+function tSlander(){
+  var b = T.users[1]; if (!b.committed || b.redeemed) return;
+  tCheck(['mk', tMode === 'fixed' ? 'kg' : 'kg2', 'tag'], tMode === 'fixed' ? 'kg' : 'kg2', function(){
+    setVerdict('bad', '<b>Rejected: non-slanderability.</b> To block Bob, Mallory would have to get Bob\'s tag into $\\mathsf{TagList}$ first. That tag is $\\mathtt{TagEval}(\\mathsf{csk}_\\mathsf{Bob})$, which she can neither compute nor prove without Bob\'s key. $\\mathsf{TagList}$ is unchanged and Bob can still redeem.');
+  });
+}
+function tSyncAttacks(){
+  var a = T.users[0], b = T.users[1];
+  $('aDouble').disabled = !a.redeemed;
+  $('aTheft').disabled = !(b.committed && !b.redeemed);
+  $('aSlander').disabled = !(b.committed && !b.redeemed);
+  $('aDouble').title = a.redeemed ? '' : 'Commit and redeem Alice first';
+  $('aTheft').title = $('aSlander').title = (b.committed && !b.redeemed) ? '' : 'Needs Bob committed and not yet redeemed';
+}
+var tBusy = false;
+function tRelReset(){
+  Array.prototype.forEach.call(document.querySelectorAll('#tRel .relrow'), function(r){ r.classList.remove('ok','bad'); r.querySelector('.mk').textContent = '·'; });
+}
+function tCheck(rows, failAt, done){
+  if (tBusy) return; tBusy = true; tRelReset();
+  var i = 0;
+  (function nextRow(){
+    if (i >= rows.length){ tBusy = false; done(); tSyncAttacks(); return; }
+    var c = rows[i++], r = document.querySelector('#tRel .relrow[data-c="' + c + '"]');
+    var fail = (c === failAt);
+    r.classList.add(fail ? 'bad' : 'ok'); r.querySelector('.mk').textContent = fail ? '✗' : '✓';
+    r.style.opacity = 0.2;
+    tween(160, function(p){ r.style.opacity = 0.2 + 0.8 * p; }, function(){ r.style.opacity = ''; });
+    if (fail){ i = rows.length; }
+    later(170, nextRow);
+  })();
+}
+function setVerdict(kind, html){
+  var v = $('tVerdict'); v.className = 'verdict' + (kind ? ' ' + kind : ''); v.innerHTML = html; katexRender(v);
+  fadeIn(v, 260, 0);
+}
+function tRenderChain(animTag){
+  function fill(id, arr, empty){
+    var ul = $(id); clear(ul);
+    if (!arr.length){ var li = document.createElement('li'); li.className = 'empty'; li.textContent = empty; ul.appendChild(li); return; }
+    arr.forEach(function(s, j){ var li = document.createElement('li'); li.textContent = s; ul.appendChild(li); if (j === arr.length - 1) fadeIn(li, 300, 0); });
+  }
+  fill('tCommits', T.commits, 'no commits yet');
+  fill('tRedeems', T.redeems, 'no redeems yet');
+  var tg = $('tTags'); clear(tg);
+  if (!T.tags.length){ var s0 = document.createElement('span'); s0.className = 'note'; s0.textContent = 'empty'; tg.appendChild(s0); }
+  T.tags.forEach(function(t, j){ var s = document.createElement('span'); s.className = 'chipx'; s.textContent = short(t); tg.appendChild(s); if (animTag && j === T.tags.length - 1) fadeIn(s, 380, 0); });
+  var rt = $('tRoots'); clear(rt);
+  if (!T.roots.length){ var s1 = document.createElement('span'); s1.className = 'note'; s1.textContent = 'empty tree'; rt.appendChild(s1); }
+  T.roots.forEach(function(r, j){ var s = document.createElement('span'); s.className = 'chipx' + (j === 0 ? ' cur' : ''); s.textContent = (j + 1) + ': ' + short(r); rt.appendChild(s); });
+  var n = T.leaves.length, g = $('tGuess');
+  if (!T.redeems.length) g.textContent = n ? 'Nothing redeemed yet.' : '-';
+  else g.innerHTML = 'Each redeem could come from any of the <b>' + n + '</b> committed leaves, so a guess is right with probability 1/' + n + '. In the deployment, the set is up to 2<sup>20</sup> leaves.';
+}
+function tDrawTree(newLeaf){
+  var svg = $('tTree'), nw = narrow(svg); clear(svg);
+  var W = nw ? 340 : 440, H = nw ? 170 : 180; svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var levels = [8,4,2,1], pos = [], pad = 22, rows = [H - 26, H - 72, H - 118, 22];
+  levels.forEach(function(cnt, l){ var a = []; for (var i = 0; i < cnt; i++){ var span = (W - 2*pad) / cnt; a.push([pad + span*(i + .5), rows[l]]); } pos.push(a); });
+  var edges = el('g', {}), nodes = el('g', {});
+  svg.appendChild(edges); svg.appendChild(nodes);
+  var pathSet = {};
+  if (newLeaf !== null && newLeaf >= 0){ var ix = newLeaf; for (var l = 0; l < 4; l++){ pathSet[l + ':' + ix] = true; ix = ix >> 1; } }
+  for (var l2 = 0; l2 < 3; l2++){
+    pos[l2].forEach(function(p, i){
+      var q = pos[l2 + 1][i >> 1], on = pathSet[l2 + ':' + i];
+      var ln = el('line', { x1:p[0], y1:p[1], x2:q[0], y2:q[1], stroke: on ? 'var(--s1)' : 'var(--axis)', 'stroke-width': on ? 2.5 : 1.2 });
+      edges.appendChild(ln);
+      if (on && !REDUCED){ var L = Math.hypot(q[0]-p[0], q[1]-p[1]); ln.setAttribute('stroke-dasharray', L); ln.setAttribute('stroke-dashoffset', L);
+        (function(ln, L, d){ later(d, function(){ tween(260, function(t){ ln.setAttribute('stroke-dashoffset', L*(1-t)); }, function(){ ln.removeAttribute('stroke-dasharray'); ln.removeAttribute('stroke-dashoffset'); }); }); })(ln, L, 120 + l2*220);
+      }
+    });
+  }
+  pos.forEach(function(arr, l){
+    arr.forEach(function(p, i){
+      var filled = l === 0 ? !!T.leaves[i] : true, on = pathSet[l + ':' + i];
+      var c = el('circle', { cx:p[0], cy:p[1], r: l === 0 ? 11 : 8, fill: l === 0 ? (filled ? 'var(--s1)' : 'var(--plane)') : (on ? 'var(--s1)' : 'var(--surface-1)'),
+        stroke: l === 0 && !filled ? 'var(--axis)' : 'var(--s1)', 'stroke-width':1.5, 'stroke-dasharray': l === 0 && !filled ? '3 3' : null });
+      nodes.appendChild(c);
+      if (l === 0){
+        var t = el('text', { x:p[0], y:p[1] + 25, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size':10, fill:'var(--ink-muted)' }, filled ? T.leaves[i].cpk.slice(0,4) : 'leaf ' + i);
+        nodes.appendChild(t);
+        if (filled){
+          c.style.cursor = 'default';
+          (function(i){ c.addEventListener('mousemove', function(e){ showTip(e, '<b>leaf ' + i + '</b>cpk ' + short(T.leaves[i].cpk) + '<br>committed publicly by ' + T.leaves[i].owner); }); c.addEventListener('mouseleave', hideTip); })(i);
+        }
+        if (i === newLeaf && !REDUCED){ c.setAttribute('r', 0); tween(360, function(t){ c.setAttribute('r', 11 * t); }); }
+      }
+    });
+  });
+  var rootLbl = el('text', { x:pos[3][0][0] + 14, y:26, 'font-family':'Ubuntu Mono, monospace', 'font-size':11, fill:'var(--ink-1)' }, T.leaves.length ? 'st = ' + short(merkleRoot()) : 'st = empty');
+  svg.appendChild(rootLbl);
+}
+Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function(b){
+  b.addEventListener('click', function(){
+    tMode = b.getAttribute('data-mode');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    $('tCard').classList.toggle('arb', tMode === 'arb');
+    document.querySelector('.fixedonlytxt').textContent = tMode === 'arb' ? '2' : '1';
+    tInit();
+    setVerdict('', tMode === 'arb' ? '<b>$\\mathtt{DTL}_\\mathsf{arb}$:</b> each user commits their own data (e.g. an amount). The leaf becomes a commitment, and redeeming outputs an encryption of the same data.' : '<b>$\\mathtt{DTL}_\\mathsf{fixed}$:</b> every user commits the same data (e.g. one fixed coin).');
+  });
+});
+$('tReset').addEventListener('click', tInit);
+$('aDouble').addEventListener('click', tDoubleSpend);
+$('aTheft').addEventListener('click', tTheft);
+$('aSlander').addEventListener('click', tSlander);
+
+/* =======================================================================
+   Interactive 2 - route gas builder
+   ===================================================================== */
+var rSel = 2, rEntered = false;
+var SCOL = ['var(--s1)','var(--s2)','var(--s3)'];
+function drawRoutes(animate){
+  var svg = $('rChart'), nw = narrow(svg); clear(svg);
+  var W = nw ? 330 : 900, L = nw ? 4 : 12, R = nw ? 66 : 110, rowH = nw ? 70 : 54, top = 8;
+  var H = top + ROUTES.length * rowH + 30; svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var MAX = 2000000, x = function(v){ return L + (W - L - R) * v / MAX; };
+  var ticks = [0, 500000, 1000000, 1500000, 2000000];
+  ticks.forEach(function(t){
+    svg.appendChild(el('line', { x1:x(t), x2:x(t), y1:top, y2:H - 24, stroke:'var(--grid)' }));
+    svg.appendChild(el('text', { x:x(t), y:H - 8, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 11 : 12, fill:'var(--ink-muted)' }, t === 0 ? '0' : (t/1e6) + (nw ? 'M' : 'M gas')));
+  });
+  ROUTES.forEach(function(rt, ri){
+    var y0 = top + ri * rowH, by = y0 + (nw ? 21 : 20), bh = nw ? 20 : 22, sel = ri === rSel;
+    var g = el('g', { cursor:'pointer', opacity: sel ? 1 : 0.45, tabindex:0, role:'button', 'aria-label':rt.name });
+    g.appendChild(el('rect', { x:0, y:y0, width:W, height:rowH - 4, fill:'transparent' }));
+    g.appendChild(el('text', { x:L, y:y0 + 14, 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 12.5 : 13, 'font-weight': sel ? 700 : 400, fill:'var(--ink-1)' }, rt.name + ' · ' + rt.src));
+    var acc = 0, per = 0;
+    rt.steps.forEach(function(s, si){
+      var x0 = x(acc), w = x(acc + s.gas) - x0 - 2;
+      var rect = el('rect', { x:x0, y:by, width:Math.max(0, w), height:bh, rx:3, fill:SCOL[si], 'data-w':Math.max(0, w) });
+      rect.addEventListener('mousemove', function(e){ showTip(e, '<b>' + s.n + '</b>' + s.f + '<br>' + fmt(s.gas) + ' gas' + (s.r1cs ? '<br>' + fmt(s.r1cs) + ' R1CS · ' + s.t : '') + (s.perCand ? '<br>paid once per candidate' : '')); });
+      rect.addEventListener('mouseleave', hideTip);
+      g.appendChild(rect);
+      if (animate && sel && !REDUCED){ rect.setAttribute('width', 0); (function(rect, w, d){ later(d, function(){ tween(700, function(p){ rect.setAttribute('width', w * p); }); }); })(rect, Math.max(0, w), si * 250); }
+      acc += s.gas; if (!s.perCand) per += s.gas;
+    });
+    var lbl = rt.id === 'vote' ? fmt(per) + '/voter' : fmt(acc);
+    g.appendChild(el('text', { x:x(acc) + 6, y:by + bh/2 + 4, 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 12 : 12.5, 'font-weight':700, fill:'var(--ink-1)' }, nw && rt.id === 'vote' ? fmt(per) : lbl));
+    if (rt.prose){
+      var px = x(rt.prose.v);
+      g.appendChild(el('line', { x1:px, x2:px, y1:by - 5, y2:by + bh + 5, stroke:'var(--critical)', 'stroke-width':2, 'stroke-dasharray':'4 3' }));
+      if (nw) g.appendChild(el('text', { x:px + 3, y:by + bh + 16, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace', 'font-size':11.5, fill: rt.prose.flag ? 'var(--critical)' : 'var(--ink-muted)' }, rt.prose.lbl + (rt.prose.flag ? ' ≠ table sum' : '')));
+      else g.appendChild(el('text', { x:px + 4, y:by - 7, 'font-family':'Ubuntu Mono, monospace', 'font-size':11.5, fill: rt.prose.flag ? 'var(--critical)' : 'var(--ink-muted)' }, rt.prose.lbl + (rt.prose.flag ? ' ≠ table sum' : '')));
+    }
+    g.addEventListener('click', function(){ if (rSel !== ri){ rSel = ri; drawRoutes(true); renderFlow(true); } });
+    g.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); rSel = ri; drawRoutes(true); renderFlow(true); } });
+    svg.appendChild(g);
+  });
+}
+function renderFlow(anim){
+  var rt = ROUTES[rSel], f = $('rFlow'); clear(f);
+  rt.steps.forEach(function(s, si){
+    if (si){ var a = document.createElement('span'); a.className = 'farrow'; a.textContent = '→'; f.appendChild(a); }
+    var d = document.createElement('div'); d.className = 'fstep'; d.style.borderLeftColor = SCOL[si];
+    d.innerHTML = '<div class="fl">Step ' + (si + 1) + ' · ' + s.f + '</div><div class="fn">' + s.n + '</div><div class="fm">' + fmt(s.gas) + ' gas' +
+      (s.r1cs ? ' · ' + fmt(s.r1cs) + ' R1CS · ' + s.t : ' · no client proof listed') + (s.perCand ? '<br>once per candidate, not per voter' : '') + '</div>';
+    f.appendChild(d); if (anim) fadeIn(d, 320, si * 200);
+  });
+  var n = $('rNote'); n.innerHTML = '';
+  if (rt.id === 'c2c') n.innerHTML = '<p class="provenance"><strong>Provenance.</strong> §7 describes this route as costing "approximately $1.8$m", and the abstract and conclusion bound gas by $1.8$ million. Table 3\'s entries sum to $1{,}051{,}112$ + $258{,}467$ = $1{,}309{,}579$. No table entry gives $1.8$m, so the bar shows the table sum and the dashed line marks the text claim.</p>';
+  else if (rt.id === 't2c') n.innerHTML = '<p class="note" style="margin-top:12px">§7 text: "approximately $1$m". The Table 3 sum is $1{,}026{,}032$.</p>';
+  else if (rt.id === 'vote') n.innerHTML = '<p class="note" style="margin-top:12px">Registration + vote is $1{,}026{,}032$ gas per voter. The reveal ($291{,}151$) is paid once per candidate. The unlinkable vote reuses the withdraw circuit ($11{,}521$ constraints, $258{,}467$ gas), but Table 4 reports $1.19$s where Table 3 reports $1.32$s.</p>';
+  else n.innerHTML = '<p class="note" style="margin-top:12px">The deposit is a Merkle-tree insertion with no client proof. §8 notes that batching tree updates could cut about $0.5$m gas for a subtree of size $4$.</p>';
+  katexRender(n);
+}
+(function(){
+  var h = '<table><thead><tr><th>Route</th><th>Step</th><th class="num">Gas</th><th class="num">R1CS</th><th class="num">Proving</th><th>Source</th></tr></thead><tbody>';
+  ROUTES.forEach(function(rt){ rt.steps.forEach(function(s, si){
+    h += '<tr><td>' + (si ? '' : rt.name) + '</td><td>' + s.n + ' (' + s.f + ')</td><td class="num">' + fmt(s.gas) + '</td><td class="num">' + (s.r1cs ? fmt(s.r1cs) : '-') + '</td><td class="num">' + (s.t || '-') + '</td><td>' + rt.src + '</td></tr>'; }); });
+  h += '</tbody></table>'; $('rTable').innerHTML = h;
+})();
+
+/* =======================================================================
+   Interactive 3 - baselines
+   ===================================================================== */
+var bView = 'fixed';
+function drawBase(animate){
+  var svg = $('bChart'), nw = narrow(svg); clear(svg);
+  var W = nw ? 330 : 900, L = nw ? 4 : 12, R = nw ? 70 : 110;
+  var lg = $('bLegend'); clear(lg);
+  var bars = [];
+  if (bView === 'fixed'){
+    var MAX = 3000000, rowH = nw ? 76 : 72, top = 6, H = top + BASE_FIXED.length * rowH + 26;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    var x = function(v){ return L + (W - L - R) * v / MAX; };
+    [0,1000000,2000000,3000000].forEach(function(t){ svg.appendChild(el('line', { x1:x(t), x2:x(t), y1:top, y2:H - 22, stroke:'var(--grid)' })); svg.appendChild(el('text', { x:x(t), y:H - 6, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 11 : 12, fill:'var(--ink-muted)' }, t ? (t/1e6) + (nw ? 'M' : 'M gas') : '0')); });
+    BASE_FIXED.forEach(function(b, i){
+      var y0 = top + i * rowH;
+      svg.appendChild(el('text', { x:L, y:y0 + 13, 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 12.5 : 13, 'font-weight':700, fill:'var(--ink-1)' }, b.sys + ' · anonymity set ' + b.anon.replace('2^20', '2²⁰')));
+      [['dep', 'Deposit', 0], ['wd', b.wdN, 1]].forEach(function(k, j){
+        var y = y0 + 20 + j * (nw ? 25 : 23), v = b[k[0]], w = x(v) - L;
+        var r = el('rect', { x:L, y:y, width:w, height: nw ? 20 : 19, rx:3, fill:SCOL[k[2]] });
+        r.addEventListener('mousemove', function(e){ showTip(e, '<b>' + b.sys + ' · ' + k[1] + '</b>' + fmt(v) + ' gas' + (k[0] === 'wd' ? '<br>R1CS ' + b.r1cs + ' · proving ' + b.t : '')); });
+        r.addEventListener('mouseleave', hideTip);
+        svg.appendChild(r); bars.push([r, w]);
+        svg.appendChild(el('text', { x:x(v) + 5, y:y + 14, 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 12 : 12, fill:'var(--ink-1)' }, fmt(v)));
+      });
+    });
+    lg.innerHTML = '<li><span class="swatch" style="background:var(--s1)"></span>Deposit</li><li><span class="swatch" style="background:var(--s2)"></span>Withdraw</li>';
+    $('bNote').innerHTML = 'Table 2. Mobius\'s withdraw grows with its ring (8 here), while DTL and AMR withdraw against a $2^{20}$ set. The paper attributes DTL\'s edge over AMR mainly to Poseidon hashing. Mobius and AMR numbers are as reported in their papers.';
+  } else {
+    var MAX2 = 40000000, rowH2 = nw ? 52 : 46, top2 = 22, H2 = top2 + BASE_CONF.length * rowH2 + 26;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H2);
+    var x2 = function(v){ return L + (W - L - R) * v / MAX2; };
+    [0,10000000,20000000,30000000,40000000].forEach(function(t){ svg.appendChild(el('line', { x1:x2(t), x2:x2(t), y1:top2, y2:H2 - 22, stroke:'var(--grid)' })); svg.appendChild(el('text', { x:x2(t), y:H2 - 6, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 11 : 12, fill:'var(--ink-muted)' }, t ? (t/1e6) + 'M' : '0')); });
+    var lx = x2(BLOCK_GAS);
+    svg.appendChild(el('line', { x1:lx, x2:lx, y1:top2 - 4, y2:H2 - 22, stroke:'var(--ink-1)', 'stroke-width':1.5, 'stroke-dasharray':'5 4' }));
+    svg.appendChild(el('text', { x:lx - 4, y:top2 - 8, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 11.5 : 12, fill:'var(--ink-1)' }, nw ? 'block limit 30M' : 'Ethereum block limit 30M (§7)'));
+    var defs = el('defs', {}), pat = el('pattern', { id:'hatch', width:6, height:6, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)' });
+    pat.appendChild(el('rect', { width:2, height:6, fill:'var(--s2)' })); defs.appendChild(pat); svg.appendChild(defs);
+    BASE_CONF.forEach(function(b, i){
+      var y0 = top2 + i * rowH2, y = y0 + 17, v = b.gas, w = x2(v) - L;
+      svg.appendChild(el('text', { x:L, y:y0 + 12, 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 11.5 : 12.5, fill:'var(--ink-1)', 'paint-order':'stroke', stroke:'var(--surface-1)', 'stroke-width':4 }, (nw ? b.lbl.replace('Anonymous Zether', 'AZether').replace('transparent', 'transp.').replace('confidential', 'conf.').replace('confidential', 'conf.') : b.lbl) + ' · set ' + b.anon.replace('2^20', '2²⁰')));
+      var r = el('rect', { x:L, y:y, width:w, height: nw ? 18 : 18, rx:3, fill: b.prose ? 'url(#hatch)' : (b.sys === 'DTL' ? 'var(--s1)' : 'var(--s2)'),
+        stroke: b.prose ? 'var(--s2)' : null, 'stroke-dasharray': b.prose ? '4 3' : null });
+      r.addEventListener('mousemove', function(e){ showTip(e, '<b>' + b.lbl + '</b>' + (b.prose ? '≈36,000,000' : fmt(v)) + ' gas<br>' + b.how); });
+      r.addEventListener('mouseleave', hideTip);
+      svg.appendChild(r); bars.push([r, w]);
+      var txt = b.prose ? '≈36M (text)' : fmt(v);
+      var tx = x2(v) + 5, anchor = 'start';
+      if (tx + (nw ? 62 : 80) > W){ tx = x2(v) - 5; anchor = 'end'; }
+      svg.appendChild(el('text', { x:tx, y:y + 13, 'text-anchor':anchor, 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 12 : 12, 'font-weight':700, fill: anchor === 'end' ? 'var(--ink-1)' : 'var(--ink-1)', 'paint-order':'stroke', stroke: anchor === 'end' ? 'var(--surface-1)' : 'none', 'stroke-width':3 }, txt));
+    });
+    lg.innerHTML = '<li><span class="swatch" style="background:var(--s1)"></span>DTL (sum of Table 3 steps)</li><li><span class="swatch" style="background:var(--s2)"></span>Anonymous Zether (Table 3)</li><li><span class="swatch hatch"></span>Anonymous Zether, 64 users (§7 text only)</li>';
+    $('bNote').innerHTML = 'Anonymous Zether needs $7.3$m gas for $8$ users and, per §7, about $36$m for $64$, which is over the block limit. DTL\'s routes stay near $1$m with a set of up to $2^{20}$. Table 1 lists Anonymous Zether\'s set as $<2^5$, so the 64-user figure appears only in the text. Only these two Anonymous Zether points exist; no curve is drawn between them.';
+  }
+  katexRender($('bNote'));
+  if (animate && !REDUCED){ bars.forEach(function(b, j){ b[0].setAttribute('width', 0); later(j * 90, function(){ tween(650, function(p){ b[0].setAttribute('width', b[1] * p); }); }); }); }
+}
+(function(){
+  var h = '<table><thead><tr><th>System</th><th>Operation</th><th>Anonymity set</th><th class="num">Gas</th><th class="num">Proving</th><th>Source</th></tr></thead><tbody>';
+  BASE_FIXED.forEach(function(b){
+    h += '<tr><td>' + b.sys + '</td><td>Deposit</td><td>' + b.anon + '</td><td class="num">' + fmt(b.dep) + '</td><td class="num">-</td><td>Table 2</td></tr>';
+    h += '<tr><td>' + b.sys + '</td><td>' + b.wdN + '</td><td>' + b.anon + '</td><td class="num">' + fmt(b.wd) + '</td><td class="num">' + b.t + '</td><td>Table 2</td></tr>'; });
+  BASE_CONF.forEach(function(b){ h += '<tr><td colspan="2">' + b.lbl + '</td><td>' + b.anon + '</td><td class="num">' + (b.prose ? '≈36,000,000' : fmt(b.gas)) + '</td><td class="num">' + (b.sys === 'AZ' && !b.prose ? '1.9s' : '-') + '</td><td>' + b.how + '</td></tr>'; });
+  h += '</tbody></table>'; $('bTable').innerHTML = h;
+})();
+Array.prototype.forEach.call(document.querySelectorAll('[data-b]'), function(b){
+  b.addEventListener('click', function(){
+    bView = b.getAttribute('data-b');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-b]'), function(x){ x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    drawBase(true);
+  });
+});
+
+/* =======================================================================
+   Interactive 4 - front-running (Theorem 3 and its corollaries)
+   ===================================================================== */
+var fk = 1000, fi = 1, fAttack = 0, fRunning = false;
+function fNeeded(){ return fk - fi + 1; }
+function drawFront(){
+  var svg = $('fChart'), nw = narrow(svg); clear(svg);
+  var W = nw ? 300 : 600, H = 104, L = 14, R = 14, y = 28, h = 26;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var x = function(pos){ return L + (W - L - R) * (pos - 0.5) / fk; };   /* slot centre, 1..k */
+  svg.appendChild(el('rect', { x:L, y:y, width:W - L - R, height:h, rx:3, fill:'var(--plane)', stroke:'var(--axis)' }));
+  svg.appendChild(el('text', { x:L, y:y - 8, 'font-family':'Ubuntu Mono, monospace', 'font-size':11, fill:'var(--ink-muted)' }, 'AccList: position 1 (newest)'));
+  svg.appendChild(el('text', { x:W - R, y:y - 8, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace', 'font-size':11, fill:'var(--ink-muted)' }, 'k = ' + fmt(fk) + ' (oldest)'));
+  var aw = (W - L - R) * Math.min(fAttack, fk) / fk;
+  svg.appendChild(el('rect', { id:'fFill', x:L, y:y, width:aw, height:h, rx:3, fill:'var(--s2)', opacity:.85 }));
+  var pos = fi + fAttack, out = pos > fk;
+  var mx = out ? W - R + 2 : x(pos);
+  var mk = el('g', {});
+  mk.appendChild(el('line', { x1:mx, x2:mx, y1:y - 2, y2:y + h + 8, stroke: out ? 'var(--critical)' : 'var(--s1)', 'stroke-width':3 }));
+  mk.appendChild(el('circle', { cx:mx, cy:y + h + 12, r:5, fill: out ? 'var(--critical)' : 'var(--s1)' }));
+  var lbl = out ? (nw ? 'root evicted: proof rejected' : 'your root: evicted → proof rejected') : 'your root: position ' + fmt(pos);
+  mk.appendChild(el('text', { x: out ? W - R : Math.min(Math.max(mx, L + 80), W - R - 80), y:y + h + 34, 'text-anchor': out ? 'end' : 'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size': nw ? 13 : 12, 'font-weight':700, fill: out ? 'var(--critical)' : 'var(--ink-1)' }, lbl));
+  svg.appendChild(mk);
+  if (fAttack > 0) svg.appendChild(el('text', { x:L + 4, y:y + 17, 'font-family':'Ubuntu Mono, monospace', 'font-size':11, fill:'#fff', 'font-weight':700 }, aw > 120 ? fmt(fAttack) + ' attacker roots' : ''));
+  $('fStatus').textContent = fAttack ? ('Attacker deposits so far: ' + fmt(fAttack) + ' in ' + fmt(Math.ceil(fAttack / B)) + ' block(s).') : 'Press "Run the attack" to flood the contract with deposits.';
+}
+function fReadouts(animate){
+  var n = fNeeded(), blk = Math.ceil(n / B), sec = blk * BLOCK_SEC, eth = n * FEE_DEP;
+  function put(id, v, render){ var node = $(id); if (animate){ var from = parseFloat(node.getAttribute('data-v') || 0); tween(420, function(p){ node.textContent = render(from + (v - from) * p); }); } else node.textContent = render(v); node.setAttribute('data-v', v); }
+  put('fDep', n, fmt);
+  put('fBlk', blk, fmt);
+  put('fEth', eth, function(v){ return (Math.round(v * 100) / 100).toLocaleString('en-US', { maximumFractionDigits:2 }) + ' ETH'; });
+  $('fTime').textContent = '≈ ' + (sec >= 60 ? (Math.round(sec / 6) / 10) + ' min' : sec + ' s') + ' at 15 s blocks';
+}
+function fSync(animate){
+  fk = +$('fk').value; var fiEl = $('fi'); fiEl.max = fk; if (+fiEl.value > fk) fiEl.value = fk; fi = +fiEl.value;
+  $('fkV').textContent = fmt(fk); $('fiV').textContent = fmt(fi);
+  fAttack = 0; drawFront(); fReadouts(animate);
+}
+$('fk').addEventListener('input', function(){ fSync(false); });
+$('fi').addEventListener('input', function(){ fSync(false); });
+$('fk').addEventListener('change', function(){ fSync(false); });   /* settle */
+$('fi').addEventListener('change', function(){ fSync(false); });
+$('fRun').addEventListener('click', function(){
+  if (fRunning) return; fRunning = true; fAttack = 0;
+  var n = fNeeded();
+  tween(1600, function(p){ fAttack = Math.round(n * p); drawFront(); }, function(){ fAttack = n; drawFront(); fRunning = false; });
+});
+
+/* =======================================================================
+   Boot, entrances and resize
+   ===================================================================== */
+$('copyBib').addEventListener('click', function(){
+  var t = $('bibtex').textContent, btn = this;
+  function ok(){ btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy BibTeX'; }, 1400); }
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(ok, function(){}); else ok();
+});
+
+tInit(); renderFlow(false); fSync(false);
+window.addEventListener('load', function(){ katexRender(document.body); });
+
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+drawRoutes(false); drawBase(false); drawFront();
+if (hasIO){
+  var secs = document.querySelectorAll('section');
+  Array.prototype.forEach.call(secs, function(sec){ sec.style.opacity = 0; sec.setAttribute('data-rv', 'pending'); });
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      var s = en.target; io.unobserve(s);
+      s.setAttribute('data-rv', 'in');
+      tween(550, function(p){ s.style.opacity = p; s.style.transform = 'translateY(' + (16 * (1 - p)) + 'px)'; },
+        function(){ s.style.opacity = ''; s.style.transform = ''; s.setAttribute('data-rv', 'done'); });
+      var id = s.id;
+      if (id === 'routes'){ rEntered = true; later(180, function(){ drawRoutes(true); }); }
+      else if (id === 'baselines') later(180, function(){ drawBase(true); });
+      else if (id === 'tldr'){ var v = document.querySelector('[data-count]'); var to = +v.getAttribute('data-count'); tween(900, function(p){ v.textContent = fmt(to * p); }); }
+    });
+  }, { threshold:0.08, rootMargin:'0px 0px -5% 0px' });
+  Array.prototype.forEach.call(secs, function(sec){ io.observe(sec); });
+}
+
+var rzT, lastNarrow = null;
+window.addEventListener('resize', function(){ clearTimeout(rzT); rzT = setTimeout(function(){
+  drawRoutes(false); drawBase(false); drawFront(); tDrawTree(null);
+}, 120); });
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+name: build and deploy
+
+# Builds the Hugo site and publishes it to GitHub Pages.
+#
+# This replaces the old local `gen.sh` (hugo + scp). It runs on a push to main,
+# so merging a suggestion PR is what publishes it: review before merge is
+# review before publish. (The old built-HTML `master` branch is no longer
+# served; it is kept only as a rollback.)
+#
+# Deliberately NOT triggered by `pull_request`: a PR must never be able to
+# deploy. The only paths to a deploy are a push to main and a manual run.
+#
+# Two differences from the old gen.sh, both intentional:
+#   * no `-D`, so `draft: true` content is no longer published.
+#   * the base URL comes from the Pages API rather than config.toml, so the
+#     same workflow is correct in a project-site repo (served under a
+#     subdirectory) and in the levduc.github.io user-site repo (served at root).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      # Pinned. The author's local Hugo is a 0.157.0 dev build, which cannot be
+      # installed from a release, so CI uses the matching released version.
+      HUGO_VERSION: 0.157.0
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install Hugo ${{ env.HUGO_VERSION }} extended
+        run: |
+          set -euo pipefail
+          url="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
+          curl --fail --silent --show-error --location -o "$RUNNER_TEMP/hugo.deb" "$url"
+          sudo dpkg --install "$RUNNER_TEMP/hugo.deb"
+          hugo version
+
+      - name: Read the Pages configuration
+        id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
+
+      - name: Build
+        env:
+          HUGO_ENVIRONMENT: production
+          HUGO_PARAMS_SUGGESTREPO: ${{ github.repository }}
+          TZ: America/New_York
+        run: hugo --baseURL "${{ steps.pages.outputs.base_url }}/"
+
+      - name: Wire the suggestion layer into the static pages
+        env:
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+          REPO: ${{ github.repository }}
+        run: python3 -I .github/scripts/inject_suggest.py --public public --static static --repo "$REPO" --base-url "$BASE_URL/"
+
+      - name: Upload the built site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: ./public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

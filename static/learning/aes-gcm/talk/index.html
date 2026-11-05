@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AES-GCM, spelled out</title>
+<meta name="description" content="Authenticated encryption and AES-GCM, every step spelled out: CTR mode, GF(2^128), GMAC, Horner, the (v+1)/2^128 forgery bound, and why the IV must never repeat. AI-assisted study notes.">
+<script>try{var t=localStorage.getItem("aegcm-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<link rel="stylesheet" href="../../../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#767676;
+  --grid:#e8e8e8; --axis:#c4c4c4; --ring:rgba(0,0,0,.13);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --accent:#00008b; --on-accent:#ffffff;
+  --hl:#eef3fb; --warn-ink:#9a6a00; --c-frame:#8a8a8a; --c-drop:#8a5cd6;
+  --barh:46px;
+}
+:root[data-theme="dark"]{
+  /* gruvbox-material dark, medium contrast, material foreground (sainnhe/gruvbox-material) */
+  color-scheme: dark;
+  --plane:#282828; --surface-1:#32302f;
+  --ink-1:#d4be98; --ink-head:#ddc7a1; --ink-2:#d4be98; --ink-muted:#a89984;
+  --grid:#3c3836; --axis:#5a524c; --ring:rgba(212,190,152,.18);
+  --s1:#7daea3; --s2:#e78a4e; --s3:#89b482; --s4:#d8a657;
+  --good:#a9b665; --warning:#d8a657; --critical:#ea6962;
+  --accent:#7daea3; --on-accent:#282828;
+  --hl:#374141; --warn-ink:#d8a657; --c-frame:#928374; --c-drop:#d3869b;
+}
+:root[data-theme="light"]{ color-scheme: light; }
+*{box-sizing:border-box}
+body{margin:0; background:var(--plane); color:var(--ink-1); font-family:var(--font);
+  font-weight:300; font-size:17px; line-height:1.45; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.15; margin:0}
+p{margin:0 0 .8em; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono); font-size:.95em; background:var(--surface-1); padding:0 .25em; border-radius:2px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- slides: scroll mode (phone, narrow or short windows) ---------- */
+.slide{max-width:1000px; margin:0 auto; padding:30px 16px 34px; border-top:1px solid var(--grid); position:relative}
+.slide:first-of-type{border-top:0}
+.eyebrow{font-family:var(--mono); font-size:.78em; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700; margin:0 0 .3em}
+.slide h2{font-size:1.75em; font-weight:400; margin:0 0 .2em}
+.fig{position:relative; margin:.8em 0}
+.fig > svg{display:block; width:100%; height:auto; overflow:visible}
+.say{list-style:none; margin:.4em 0 0; padding:0; flex:none}
+.say li{font-size:1.06em; line-height:1.35; padding:.12em 0 .12em 1.1em; position:relative; color:var(--ink-1)}
+.say li::before{content:"›"; position:absolute; left:0; color:var(--accent); font-family:var(--mono); font-weight:700}
+.say b{color:var(--ink-head)}
+.tag{display:inline-block; font-family:var(--mono); font-size:.7em; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  border:1px solid currentColor; border-radius:3px; padding:0 .4em; vertical-align:.15em}
+.tag.plan{color:var(--warn-ink)} .tag.calc{color:var(--ink-muted)}
+.notes{display:none; font-family:var(--mono); font-size:.8em; line-height:1.45; color:var(--ink-2);
+  background:var(--surface-1); border:1px solid var(--ring); border-left:4px solid var(--s4); border-radius:4px; padding:10px 14px; margin-top:12px}
+.notes b{color:var(--ink-1)}
+.notes ul{margin:.2em 0 0; padding-left:1.1em}
+.notes li{margin:.15em 0}
+.notes::before{content:"Speaker notes"; display:block; font-weight:700; letter-spacing:.05em; text-transform:uppercase; font-size:.85em; color:var(--warn-ink); margin-bottom:.3em}
+body.show-notes .notes{display:block}
+
+/* title slide */
+.title-wrap h1{font-size:3.2em; font-weight:400}
+.title-slide{justify-content:center}
+.title-slide .title-wrap{text-align:center; margin:auto 0}
+.title-slide .title-wrap h1{font-size:4.2em; margin:0}
+.title-slide .title-wrap .sub{font-size:1.5em; margin:.4em 0 1.6em}
+.title-slide .title-wrap .who{font-size:1.25em; color:var(--ink-1)}
+.title-slide .title-wrap .when{font-family:var(--mono); font-size:.95em; color:var(--ink-muted); margin:.4em 0 0}
+.title-wrap .sub{font-size:1.35em; margin:.35em 0 .5em; color:var(--ink-2)}
+.title-wrap .who{font-family:var(--mono); font-size:.9em; color:var(--ink-muted); margin:0}
+.title-wrap .who b{color:var(--ink-1)}
+.divider{display:flex; flex-direction:column; justify-content:center}
+.divider h2{font-size:2.6em}
+
+/* trade-off panels */
+.tradeoff{display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:1.2em; align-items:start}
+.tpanel{border-radius:6px; padding:.8em 1.1em; border:2px solid; background:var(--surface-1)}
+.tpanel h3{font-size:1.25em; margin-bottom:.35em}
+.tpanel ul{list-style:none; margin:0; padding:0}
+.tpanel li{font-size:1.12em; line-height:1.3; padding:.26em 0 .26em 1.6em; position:relative; color:var(--ink-1)}
+.tpanel li::before{position:absolute; left:0; top:.2em; font-family:var(--mono); font-weight:700; font-size:1.15em}
+.tpanel.lose{border-color:var(--critical); background:color-mix(in srgb, var(--critical) 7%, var(--plane))}
+.tpanel.lose h3,.tpanel.lose li::before{color:var(--critical)}
+.tpanel.lose li::before{content:"✗"}
+.tpanel.lose li{font-size:1.28em}
+.tpanel.keep{border-color:var(--good); background:color-mix(in srgb, var(--good) 7%, var(--plane))}
+.tpanel.keep h3,.tpanel.keep li::before{color:var(--good)}
+.tpanel.keep li::before{content:"✓"}
+.tpanel.keep li{font-size:.98em}
+
+/* fan-out controls */
+.controls{display:flex; flex-wrap:wrap; gap:.6em 1.4em; align-items:flex-end; flex:none}
+.ctl{display:flex; flex-direction:column; gap:.2em; min-width:220px; flex:1}
+.ctl label,.ctl .lbl{font-family:var(--mono); font-size:.85em}
+.ctl .val{font-weight:700}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px; overflow:hidden; background:var(--surface-1)}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono); font-size:.85em;
+  padding:.3em .8em; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:var(--on-accent); font-weight:700}
+.ro4{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6em; flex:none; margin-top:.5em}
+.ro{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:.35em .7em}
+.ro .k{font-family:var(--mono); font-size:.72em; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+.ro .v{font-size:1.25em; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; line-height:1.2}
+.ro .d{font-size:.78em; font-family:var(--mono); color:var(--ink-muted)}
+
+/* summary */
+.sumlist{list-style:none; margin:0; padding:0; counter-reset:s}
+.sumlist li{counter-increment:s; position:relative; padding:.5em 0 .5em 2.6em; font-size:1.5em; line-height:1.3; color:var(--ink-1); border-bottom:1px solid var(--grid)}
+.sumlist li:last-child{border-bottom:0}
+.sumlist li::before{content:counter(s); position:absolute; left:0; top:.45em; width:1.7em; height:1.7em; border-radius:50%;
+  background:var(--accent); color:var(--on-accent); font-family:var(--mono); font-weight:700; font-size:.8em; display:flex; align-items:center; justify-content:center}
+.sumlist b{color:var(--ink-head)}
+
+/* backup tables */
+.bk{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.2em; align-items:start}
+table{width:100%; border-collapse:collapse; font-size:.74em}
+th,td{text-align:left; padding:.22em .45em; border-bottom:1px solid var(--grid); vertical-align:top}
+th{font-family:var(--mono); font-size:.9em; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted); font-weight:700}
+td{font-family:var(--mono)}
+td.num,th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.sw{display:inline-block; width:.7em; height:.7em; border-radius:2px; margin-right:.4em; vertical-align:-.05em}
+.cav{margin:0; padding-left:1.2em; columns:2; column-gap:2.2em}
+.cav li{margin:0 0 .55em; break-inside:avoid; font-size:.95em}
+.cav b{color:var(--ink-head)}
+
+/* ---------- control bar ---------- */
+.bar{position:fixed; left:0; right:0; bottom:0; height:var(--barh); display:flex; align-items:center; gap:8px; padding:0 14px;
+  background:var(--plane); border-top:1px solid var(--grid); z-index:40; font-family:var(--mono); font-size:14px}
+.bar .prog{position:absolute; left:0; top:-2px; height:3px; background:var(--accent); width:0; transition:width .25s}
+@media (prefers-reduced-motion: reduce){ .bar .prog{transition:none} }
+.bar button{font-family:var(--mono); font-size:14px; border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  height:32px; min-width:34px; padding:0 .7em; border-radius:3px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center}
+.bar button:hover{border-color:var(--accent); color:var(--accent)}
+.bar button:disabled{opacity:.35; cursor:default}
+.bar button[aria-pressed=true]{border-color:var(--accent); color:var(--accent); font-weight:700}
+.bar .count{min-width:4.2em; text-align:center; font-variant-numeric:tabular-nums; color:var(--ink-1)}
+.bar .ttl{flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ink-muted)}
+.bar .home{color:var(--ink-muted); white-space:nowrap}
+.bar .k{color:var(--ink-muted); font-size:12px}
+body{padding-bottom:calc(var(--barh) + 8px)}
+
+/* ---------- deck mode: one slide per viewport ---------- */
+html.deck, html.deck body{height:100%; overflow:hidden}
+html.deck body{padding-bottom:0; font-size:clamp(14px, calc(.9vw + .72vh), 30px)}
+html.deck .slide{position:fixed; left:0; right:0; top:0; bottom:var(--barh); max-width:none; margin:0; border:0;
+  display:none; flex-direction:column; padding:2.6vh 4.5vw 1.6vh}
+html.deck .slide.on{display:flex}
+html.deck .fig{flex:1 1 auto; min-height:0; margin:1.2vh 0}
+html.deck .fig > svg{position:absolute; inset:0; width:100%; height:100%}
+html.deck .fig.html{position:static; display:flex; flex-direction:column; justify-content:center}
+html.deck .title-wrap{flex:none}
+html.deck body.show-notes .slide.on .notes{position:fixed; left:4.5vw; right:4.5vw; bottom:calc(var(--barh) + 8px); max-height:46vh; overflow:auto;
+  z-index:30; box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:.72em}
+
+@media (max-width:760px){
+  .slide h2{font-size:1.45em}
+  .title-wrap h1{font-size:2.4em}
+  .title-wrap .sub{font-size:1.12em}
+  .tradeoff,.bk{grid-template-columns:minmax(0,1fr)}
+  .tpanel li,.tpanel.lose li{font-size:1em}
+  .ro4{grid-template-columns:minmax(0,1fr)}
+  .sumlist li{font-size:1.1em}
+  .cav{columns:1}
+  .bar .ttl,.bar .k,.bar .home{display:none}
+  .bar{justify-content:space-between}
+}
+
+/* ---------- math ---------- */
+.katex{font-size:1.04em}
+.eyebrow .katex,.tag .katex,th .katex{text-transform:none}
+.say li .katex{font-size:1.0em}
+.der{list-style:none;margin:.3em 0 0;padding:0}
+.der li{position:relative;padding:.2em 0 .2em 2.1em;font-size:1.02em;line-height:1.4;color:var(--ink-1)}
+.der li .n{position:absolute;left:0;top:.35em;font-family:var(--mono);font-size:.72em;font-weight:700;color:var(--accent);
+  border:1px solid var(--ring);border-radius:3px;padding:0 .3em;background:var(--surface-1)}
+.der li.cap{padding-left:2.1em;color:var(--ink-head);font-weight:400}
+.why{font-family:var(--mono);font-size:.84em;color:var(--ink-muted);padding-left:2.1em;margin:.05em 0 .25em}
+.box{border:1px solid var(--ring);background:var(--surface-1);border-radius:4px;padding:.5em .8em;margin:.4em 0}
+.hi{background:var(--hl);border-radius:3px;padding:0 .2em}
+.src{font-family:var(--mono);font-size:.78em;color:var(--ink-muted)}
+.fig.html table{font-size:.95em}
+.fig.html table th{font-size:.84em}
+.bk{gap:1.6em}
+</style>
+</head>
+<body>
+<!-- ============ 1 · title ============ -->
+<section class="slide title-slide" id="1" data-title="Title">
+  <div class="title-wrap">
+    <h1>AES-GCM, spelled out</h1>
+    <p class="sub">Authenticated encryption, every step</p>
+    <p class="who">Duc V. Le</p>
+    <p class="when">Study notes &middot; October 2026</p>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Companion to Alfred Menezes, <b>Crypto 101: Building Blocks, module 5 "Authenticated encryption"</b> (V5 slides, cryptography101.ca, December 2024). Page references below read "Menezes V5 p.N" and point at that 22-page deck.</li>
+      <li>Normative source for AES-GCM: <b>NIST SP 800-38D</b> (2007). Where this deck gives an exact length bound or a step of the algorithm, it comes from there.</li>
+      <li>These are AI-assisted study notes, not peer-reviewed. The original deck and the standard are the authority.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 2 · what this covers ============ -->
+<section class="slide" id="2" data-title="What this covers">
+  <p class="eyebrow">Roadmap</p>
+  <h2>Two halves</h2>
+  <div class="fig html">
+    <ul class="sumlist">
+      <li><b>Fundamental concepts.</b> Why confidentiality and authentication are separate goals, the three ways to combine them, and what "AE-secure" means.</li>
+      <li><b>AES-GCM.</b> CTR mode, arithmetic in $\mathrm{GF}(2^{128})$, GMAC, the forgery bound, and why the IV must never repeat.</li>
+    </ul>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Follows the source's own split into V5a and V5b (Menezes V5 p.2).</li>
+      <li>This version spells out the steps the source states without derivation: in particular the $(v+1)/2^{128}$ forgery bound, the reduction from "solve for $H$" to a full break, and the block-count limit $u \le 2^{32}-2$.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 3 · two goals ============ -->
+<section class="slide" id="3" data-title="Two different goals">
+  <p class="eyebrow">Fundamental concepts</p>
+  <h2>Confidentiality and authentication are different goals</h2>
+  <div class="fig"><svg id="fgoals" role="img" aria-label="Two panels. Confidentiality: the adversary learns nothing about the plaintext, given by encryption such as AES-CBC. Authentication: the adversary cannot change or forge a message, given by a MAC such as HMAC. Neither implies the other."></svg></div>
+  <ul class="say">
+    <li>Encryption hides <b>content</b>. A MAC binds content to a <b>key</b>.</li>
+    <li>Having one gives you nothing about the other.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.4. The examples named there are AES-CBC for encryption and HMAC for the MAC.</li>
+      <li>The source then asks: what if both are required? It adds, in parentheses, "which is more often the case than not". That is the motivation for the whole module.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 4 · malleability ============ -->
+<section class="slide" id="4" data-title="Encryption does not authenticate">
+  <p class="eyebrow">Fundamental concepts</p>
+  <h2>Encryption alone does not authenticate</h2>
+  <div class="fig"><svg id="fmall" role="img" aria-label="A row of ciphertext bits. The adversary flips one ciphertext bit without any key. Exactly one plaintext bit flips and nothing else changes. Bob decrypts and accepts."></svg></div>
+  <ul class="say">
+    <li>In CTR mode the ciphertext is the plaintext XOR a keystream.</li>
+    <li>So flipping a ciphertext bit flips <b>exactly</b> the matching plaintext bit.</li>
+    <li>Bob has no way to notice. This is why a MAC is a separate requirement.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>This slide is not in the source; it is the concrete reason behind the source's framing on p.4. The attack uses the CTR structure from Menezes V5 p.11: $C_i = \mathrm{AES}_k(J_i) \oplus M_i$, so $M_i = \mathrm{AES}_k(J_i) \oplus C_i$.</li>
+      <li>The attack needs no key and no knowledge of the plaintext. If the adversary <i>knows</i> the plaintext she can set it to any value she wants, by XORing in the difference.</li>
+      <li>The same malleability is what makes the IV-reuse attack later in this deck so damaging.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 5 · encrypt-and-MAC ============ -->
+<section class="slide" id="5" data-title="Encrypt-and-MAC">
+  <p class="eyebrow">Generic composition 1 of 3</p>
+  <h2>Encrypt-and-MAC: the tag is computed over the plaintext</h2>
+  <div class="fig"><svg id="feam" role="img" aria-label="The plaintext m goes two ways: encrypted under k1 to give c, and MACed under k2 to give t. Because most MACs are deterministic, equal plaintexts give equal tags, so the tag leaks whether two plaintexts are equal."></svg></div>
+  <ul class="say">
+    <li>Alice sends $(c, t)$ with $c = E_{k_1}(m)$ and $t = \mathrm{MAC}_{k_2}(m)$.</li>
+    <li>Bob decrypts $c$, then checks $t$ against the recovered $m$.</li>
+    <li><b>Not secure as a generic method.</b></li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.5. The source's reason: "the tag $\mathrm{MAC}_{k_2}(m)$ might leak some information about $m$."</li>
+      <li>Spelled out: a MAC is required to be unforgeable, not to hide its input. Most practical MACs are deterministic functions of $(k,m)$, so $m_1 = m_2 \Rightarrow t_1 = t_2$. An adversary who sees two transmissions learns whether the two plaintexts were equal, which already breaks semantic security.</li>
+      <li>Bob also decrypts <i>before</i> he authenticates, so a forged $c$ reaches his decryption routine. That is a second, separate problem.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 6 · encrypt-then-MAC ============ -->
+<section class="slide" id="6" data-title="Encrypt-then-MAC">
+  <p class="eyebrow">Generic composition 3 of 3</p>
+  <h2>Encrypt-then-MAC: the tag is computed over the ciphertext</h2>
+  <div class="fig"><svg id="fetm" role="img" aria-label="The plaintext m is encrypted under k1 to give c, then c is MACed under k2 to give t. Bob checks the tag first and only then decrypts. Proven secure if the encryption scheme and the MAC are each secure."></svg></div>
+  <ul class="say">
+    <li>Alice sends $(c, t)$ with $c = E_{k_1}(m)$ and $t = \mathrm{MAC}_{k_2}(c)$.</li>
+    <li>Bob <b>verifies first</b>, and decrypts only if the tag checks out.</li>
+    <li>Proven secure whenever $E$ and the MAC are each secure.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.6, which states the proof exists and the condition it needs.</li>
+      <li>Why the leak from Encrypt-and-MAC disappears: the tag is now a function of $c$, and $c$ already hides $m$. Equal plaintexts encrypted under different IVs give different ciphertexts, hence different tags.</li>
+      <li>Why verify-first matters: the decryption routine never runs on attacker-chosen input, so it cannot be used as an oracle. This is the property that padding-oracle attacks exploit when the order is reversed.</li>
+      <li>$k_1$ and $k_2$ must be independent keys.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 7 · the three compared ============ -->
+<section class="slide" id="7" data-title="The three compositions">
+  <p class="eyebrow">Generic composition &middot; summary</p>
+  <h2>Only one of the three is generically secure</h2>
+  <div class="fig"><svg id="fcmp" role="img" aria-label="Three rows. Encrypt-and-MAC with tag over m: insecure, the tag can leak information about m. MAC-then-Encrypt with c encrypting m concatenated with its MAC: secure for some encryption schemes, not generically. Encrypt-then-MAC with tag over c: generically secure."></svg></div>
+  <ul class="say">
+    <li>"Generic" means: secure for <b>every</b> secure $E$ and MAC, not just some.</li>
+    <li>Encrypt-then-MAC is the one to reach for.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Encrypt-and-MAC and Encrypt-then-MAC are Menezes V5 p.5–6. <b>MAC-then-Encrypt is not in the source deck</b>; it is added here because it is the third classical composition and the one used by older TLS CBC ciphersuites.</li>
+      <li>MAC-then-Encrypt is marked "~" rather than "✗": it is secure for some encryption modes but has no generic proof, and its real-world failures (padding oracles) come from Bob decrypting before he authenticates.</li>
+      <li>The classification of the three compositions is due to Bellare and Namprempre (2000) and Krawczyk (2001). That attribution is this deck's addition, not the source's.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 8 · AE security ============ -->
+<section class="slide" id="8" data-title="AE security">
+  <p class="eyebrow">Fundamental concepts</p>
+  <h2>What "AE-secure" asks for</h2>
+  <div class="fig"><svg id="faesec" role="img" aria-label="Two panels. One: semantic security under chosen-plaintext attack, the confidentiality half. Two: ciphertext integrity, where the adversary sees valid ciphertext-tag pairs for chosen plaintexts and cannot produce a new valid pair with a fresh ciphertext. Both must hold."></svg></div>
+  <ul class="say">
+    <li>Confidentiality: she cannot tell which plaintext she got.</li>
+    <li>Integrity: she cannot produce a <b>new</b> valid ciphertext.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.8, stated there as a two-part definition.</li>
+      <li>The condition $c \notin \{c_1,\dots,c_\ell\}$ is what makes the definition non-trivial: replaying a pair she already holds is not a forgery. She must produce a ciphertext she has never been given.</li>
+      <li>Note it is <i>ciphertext</i> integrity, not plaintext integrity. Forging a fresh ciphertext that decrypts to an already-seen plaintext still counts as a break.</li>
+      <li>Ciphertext integrity plus CPA security together imply security against chosen-<i>ciphertext</i> attack. The source does not state this; it is the standard reason the definition is framed this way.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 9 · AEAD ============ -->
+<section class="slide" id="9" data-title="Authenticated data">
+  <p class="eyebrow">Fundamental concepts</p>
+  <h2>Some data must be authenticated but not encrypted</h2>
+  <div class="fig"><svg id="faead" role="img" aria-label="A header block A and a payload block M side by side. A brace under both marks what is authenticated. A brace under the payload alone marks what is encrypted. The header travels in the clear."></svg></div>
+  <ul class="say">
+    <li>Routing and version fields must stay readable, but must not be changeable.</li>
+    <li>Schemes that support this take <b>additional authenticated data</b>, $A$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.7, which calls it "header" data and notes that many special-purpose AE schemes allow authenticating it without encrypting it.</li>
+      <li>SP 800-38D calls it AAD. AES-GCM also calls it the encryption context in some API documentation.</li>
+      <li>Concrete case: a packet header has to be read by a router that holds no key, yet an adversary must not be able to redirect the packet by rewriting it.</li>
+      <li>Length limits from SP 800-38D §5.2.1.1: $\mathrm{len}(A) \le 2^{64}-1$ bits.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 10 · divider ============ -->
+<section class="slide divider" id="10" data-title="AES-GCM">
+  <p class="eyebrow">Part two</p>
+  <h2>AES-GCM</h2>
+  <p class="sub">CTR mode for secrecy, GMAC for the tag</p>
+  <aside class="notes">Menezes V5 p.9 onwards. AES-GCM was designed by David McGrew and John Viega in 2004 and adopted as NIST SP 800-38D in 2007.</aside>
+</section>
+<!-- ============ 11 · overview ============ -->
+<section class="slide" id="11" data-title="AES-GCM overview">
+  <p class="eyebrow">AES-GCM</p>
+  <h2>Two parts, one key</h2>
+  <div class="fig html">
+    <ul class="sumlist">
+      <li><b>CTR mode</b> turns AES into a stream cipher and encrypts the payload.</li>
+      <li><b>GMAC</b> is a custom MAC built from arithmetic in $\mathrm{GF}(2^{128})$, and produces the tag.</li>
+    </ul>
+    <p class="src">Designed by David McGrew and John Viega, 2004. NIST standard SP 800-38D, 2007.</p>
+  </div>
+  <ul class="say">
+    <li>Both parts are driven by the same AES key $k$ and the same nonce.</li>
+    <li>This is <b>not</b> a generic composition: GMAC alone is not a secure MAC.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.10 for the designers, the date and the standard number.</li>
+      <li>The last bullet matters and is this deck's emphasis: $f_A(H)$ on its own is forgeable (see the security slides). GCM is secure because of how the two parts are glued, not because each is independently strong.</li>
+      <li>Key sizes: 128, 192 or 256 bits (Menezes V5 p.12 and p.20). The <i>block</i> is always 128 bits, and so is $H$.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 12 · CTR ============ -->
+<section class="slide" id="12" data-title="CTR mode">
+  <p class="eyebrow">AES-GCM &middot; encryption</p>
+  <h2>CTR mode encrypts counters, not data</h2>
+  <div class="fig"><svg id="fctr" role="img" aria-label="Three independent columns. Each takes a counter block J_i, applies AES under key k to get a keystream block, and XORs it with the plaintext block M_i to give the ciphertext block C_i. Counters advance by one across columns."></svg></div>
+  <ul class="say">
+    <li>$C_i = \mathrm{AES}_k(J_i) \oplus M_i$, one block at a time.</li>
+    <li>The columns do not depend on each other, so this <b>parallelizes</b>.</li>
+    <li>Decryption runs the same circuit: $M_i = \mathrm{AES}_k(J_i) \oplus C_i$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.11. Both directions are on that page; they are the same computation because XOR is its own inverse.</li>
+      <li><b>$\mathrm{AES}^{-1}$ is never used</b> (Menezes V5 p.12, note 5). An implementation only needs the forward direction, which halves the code and the table footprint.</li>
+      <li>Because it is a stream cipher, the ciphertext is exactly as long as the plaintext — no padding, so no padding oracle.</li>
+      <li>The cost of that: the ciphertext is malleable, which is the attack on slide 4. CTR gives confidentiality only; the tag is what adds integrity.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 13 · J0 ============ -->
+<section class="slide" id="13" data-title="J0 and the counter">
+  <p class="eyebrow">AES-GCM &middot; encryption</p>
+  <h2>Where the counters come from</h2>
+  <div class="fig"><svg id="fj0" role="img" aria-label="J0 is the 96-bit IV followed by 31 zero bits and a single one bit. The last 32 bits are a counter starting at 1. Encryption starts at inc32 of J0, counter 2, because J0 itself is reserved to mask the tag."></svg></div>
+  <ul class="say">
+    <li>$J_0 = IV \,\|\, 0^{31} \,\|\, 1$ when the IV is 96 bits.</li>
+    <li>Encryption starts at $\mathrm{inc32}(J_0)$ &mdash; counter&nbsp;2, not counter&nbsp;1.</li>
+    <li>$J_0$ is held back to mask the tag.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>$J_0$ construction: Menezes V5 p.11 and p.14; SP 800-38D §7.1 step 2 ("If len(IV)=96, then let $J_0 = IV \| 0^{31} \| 1$").</li>
+      <li>Encryption starting at $\mathrm{inc32}(J_0)$: SP 800-38D §7.1 step 3, "Let $C = \mathrm{GCTR}_K(\mathrm{inc32}(J_0), P)$". Menezes writes the same thing as $J_i \leftarrow J_{i-1} + 1$ starting from $J_0$.</li>
+      <li><b>If the IV is not 96 bits</b>, SP 800-38D computes $J_0 = \mathrm{GHASH}_H(IV \| 0^{s+64} \| [\mathrm{len}(IV)]_{64})$ instead. The 96-bit case is the only one where $J_0$ is formed directly, which is why it is recommended. Menezes covers only the 96-bit case.</li>
+      <li>$\mathrm{inc32}$ increments the rightmost 32 bits modulo $2^{32}$ and leaves the IV part untouched (SP 800-38D §6.2).</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 14 · the block limit ============ -->
+<section class="slide" id="14" data-title="Why u ≤ 2^32 − 2">
+  <p class="eyebrow">AES-GCM &middot; encryption</p>
+  <h2>Why the payload stops at $2^{32}-2$ blocks</h2>
+  <div class="fig"><svg id="fcnt" role="img" aria-label="A strip of the 2 to the 32 counter values. Counter 1 is J0, reserved as the tag mask. The remaining values are keystream blocks. The standard limits the plaintext to 2 to the 39 minus 256 bits, which divided by 128 is 2 to the 32 minus 2 blocks."></svg></div>
+  <ul class="say">
+    <li>The counter is only <b>32 bits</b> wide, and $J_0$ takes one value.</li>
+    <li>The standard caps the plaintext so the counter can never wrap back to $J_0$.</li>
+    <li>A wrap would repeat a keystream block &mdash; the same break as reusing an IV.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.11 states $u \le 2^{32}-2$ directly. SP 800-38D §5.2.1.1 states the bound as $\mathrm{len}(P) \le 2^{39}-256$ bits.</li>
+      <li><b>These agree.</b> $(2^{39}-256)/128 = 2^{32}-2$, since $2^{39}/2^7 = 2^{32}$ and $256/128 = 2$. <span class="tag calc">computed</span> &mdash; the division is this deck's arithmetic, both endpoints are sourced.</li>
+      <li>$2^{32}-2$ blocks is about 64 GiB per invocation, so the limit does not bite in practice. It is a correctness bound, not a performance one.</li>
+      <li>Other bounds from the same section: $\mathrm{len}(A) \le 2^{64}-1$ and $1 \le \mathrm{len}(IV) \le 2^{64}-1$ bits.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 15 · notes on CTR ============ -->
+<section class="slide" id="15" data-title="Notes on CTR">
+  <p class="eyebrow">AES-GCM &middot; encryption</p>
+  <h2>Six things to remember about CTR</h2>
+  <div class="fig html">
+    <ul class="cav">
+      <li><b>It is a stream cipher.</b> The keystream depends only on the key and the counters, never on the data.</li>
+      <li><b>Different IVs give different ciphertexts</b> for the same plaintext, as with CBC.</li>
+      <li><b>The IV must never repeat</b> under one key. The standard says this is hard to achieve in practice, and it is the sharpest edge in the whole mode.</li>
+      <li><b>It parallelizes</b>, unlike CBC encryption: every block is independent.</li>
+      <li><b>$\mathrm{AES}^{-1}$ is never needed</b>, in either direction.</li>
+      <li><b>The key may be 128, 192 or 256 bits.</b> The block, and $H$, stay 128 bits.</li>
+    </ul>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.12, all six, in the source's own order.</li>
+      <li>Point 3 is developed fully on the IV-reuse slide near the end of this deck.</li>
+      <li>Point 1 is why CTR is malleable (slide 4): the attacker can predict exactly how a ciphertext edit moves the plaintext, without knowing the keystream.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 16 · divider: the field ============ -->
+<section class="slide divider" id="16" data-title="GF(2^128)">
+  <p class="eyebrow">AES-GCM &middot; the tag</p>
+  <h2>Arithmetic in $\mathrm{GF}(2^{128})$</h2>
+  <p class="sub">What it means to multiply two 128-bit blocks</p>
+  <aside class="notes">Menezes V5 p.13. The field is named after Évariste Galois. GMAC needs multiplication of blocks; the next two slides define it and work one all the way through.</aside>
+</section>
+
+<!-- ============ 17 · blocks as polynomials ============ -->
+<section class="slide" id="17" data-title="Blocks as polynomials">
+  <p class="eyebrow">GF(2^128)</p>
+  <h2>A block <i>is</i> a polynomial</h2>
+  <div class="fig"><svg id="fpoly" role="img" aria-label="Five bits of a block with their indices. Each bit is the coefficient of the matching power of x, so bit zero is the constant term. Zero coefficients drop out, leaving a polynomial over GF(2)."></svg></div>
+  <ul class="say">
+    <li>Bit $a_i$ is the coefficient of $x^i$, so $a_0$ is the <b>constant</b> term.</li>
+    <li>Coefficients live in $\mathbb{Z}_2$: addition is XOR, and $1+1=0$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.13: $a = a_0a_1a_2\ldots a_{127}$ maps to $a(x) = a_0 + a_1x + a_2x^2 + \cdots + a_{127}x^{127} \in \mathbb{Z}_2[x]$.</li>
+      <li><b>Watch the bit order.</b> The first bit is the <i>lowest</i> power, which is the reverse of how integers are normally written. This "bit-reflected" convention is a well-known source of implementation bugs in GCM.</li>
+      <li>Adding two blocks is plain XOR, because coefficients add mod 2. It is multiplication that needs the field.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 18 · worked multiplication ============ -->
+<section class="slide" id="18" data-title="Multiplying blocks">
+  <p class="eyebrow">GF(2^128)</p>
+  <h2>Multiply, then reduce &mdash; worked all the way through</h2>
+  <div class="fig"><svg id="fgf4" role="img" aria-label="A full worked multiplication in the toy field GF(2 to the 4). a equals 1101 and b equals 1100 become polynomials, their product is computed with cancelling terms, the modulus x to the 4 equals 1 plus x is substituted, terms are collected mod 2, and the answer converts back to the bits 0111."></svg></div>
+  <ul class="say">
+    <li>$c = a \cdot b$ means $c(x) = a(x)\,b(x) \bmod f(x)$.</li>
+    <li>Shown in the toy field $\mathrm{GF}(2^4)$ so every step fits; GCM uses the same recipe.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Definition and the real modulus: Menezes V5 p.13, $f(x) = 1 + x + x^2 + x^7 + x^{128}$.</li>
+      <li><b>The worked example is this deck's own</b>, in $\mathrm{GF}(2^4)$ with $f(x) = 1 + x + x^4$, because the 128-bit case cannot be shown by hand. <span class="tag calc">computed</span></li>
+      <li>Full check: $a(x)b(x) = (1+x+x^3)(1+x) = 1 + x + x + x^2 + x^3 + x^4$. The two $x$ terms cancel, leaving $1 + x^2 + x^3 + x^4$. From $f(x)=0$ we get $x^4 = 1+x$, so the sum becomes $1 + x^2 + x^3 + 1 + x = x + x^2 + x^3$ after $1+1=0$. In bits, $a_0a_1a_2a_3 = 0111$.</li>
+      <li>Why "mod $f$": the product of two degree-$<$128 polynomials can reach degree 254, so it must be folded back into 128 bits. $f$ is irreducible, which is what makes the result a <i>field</i> — every nonzero block has an inverse, and a nonzero polynomial has at most its degree many roots. That last fact is what the forgery bound rests on.</li>
+      <li>Hardware does this with the PCLMUL instruction (Menezes V5 p.20, point 3).</li>
+    </ul>
+  </aside>
+</section>
+<!-- ============ 2 · GMAC recap ============ -->
+<section class="slide" id="19" data-title="GMAC: the tag">
+  <p class="eyebrow">Recap</p>
+  <h2>GMAC packs the message into one polynomial</h2>
+  <div class="fig"><svg id="fgmac" role="img" aria-label="The v blocks of A become the coefficients of a polynomial f_A of degree v plus one. The hash key H is AES of the zero block. The tag is AES of J0 exclusive-ored with f_A evaluated at H."></svg></div>
+  <ul class="say">
+    <li>Each 128-bit block of $A$ becomes one <b>coefficient</b>; the length block $L$ is the last one.</li>
+    <li>The secret evaluation point is $H = \mathrm{AES}_k(0^{128})$.</li>
+    <li>The tag is $t = \mathrm{AES}_k(J_0) \oplus f_A(H)$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.14. $f_A(x) = A_1x^{v+1} + A_2x^{v} + \cdots + A_{v-1}x^{3} + A_vx^{2} + Lx$, over $\mathrm{GF}(2^{128})$.</li>
+      <li>Note the lowest term is $Lx$, not $L$: every term carries at least one factor of $x$. Degree is $v+1$ where $v$ is the blocklength of $A$.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 20 · Horner ============ -->
+<section class="slide" id="20" data-title="Horner's rule">
+  <p class="eyebrow">AES-GCM &middot; the tag</p>
+  <h2>Evaluating $f_A(H)$ without ever forming a power</h2>
+  <div class="fig"><svg id="fhorner" role="img" aria-label="The polynomial for v equals 3, evaluated at H, then rewritten in nested Horner form, then the operation count: three additions and four multiplications. Below, the accumulator shown as five cells, one multiply-add per cell."></svg></div>
+  <ul class="say">
+    <li>Nesting turns powers of $H$ into one multiply per coefficient.</li>
+    <li>For blocklength $v$: $v$ additions and $v+1$ multiplications.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.15, including the $v=3$ worked example and the general count.</li>
+      <li>The source writes it as $f_A(H) = ((((((A_1 \cdot H) + A_2) \cdot H) + A_3) \cdot H) + L) \cdot H$. Note the final $\cdot H$: it is there because the lowest term is $Lx$, not $L$, so <i>every</i> term carries a factor of $H$.</li>
+      <li>Additions are free in hardware (XOR). The multiplications are the cost, which is why PCLMUL matters so much — see the performance slide.</li>
+      <li><b>The multiplication count is also the forgery bound.</b> $v+1$ multiplications, degree $v+1$, at most $v+1$ roots. The same number shows up in all three places.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 21 · guessing the tag ============ -->
+<section class="slide" id="21" data-title="Guessing the tag">
+  <p class="eyebrow">Security argument &middot; the simplified tag</p>
+  <h2>First attack: guess the tag outright</h2>
+  <div class="fig"><svg id="ftag" role="img" aria-label="A grid of every possible 128-bit tag value with one cell marked as the adversary's single guess. The success probability is one over 2 to the 128."></svg></div>
+  <ol class="der">
+    <li data-bstep="2"><span class="n">1</span>Drop the one-time pad for now and consider the simplified tag $t' = f_A(H)$. It is a single 128-bit value.</li>
+    <li data-bstep="3" data-bdelay="60"><span class="n">2</span>She submits one guess. Exactly one of the $2^{128}$ values is accepted, so $\Pr[\text{success}] = 1/2^{128}$.</li>
+    <li data-bstep="3" data-bdelay="140" class="cap"><span class="n">3</span>A rejected guess teaches her nothing: the verifier answers only accept or reject, and every other value stays equally likely.</li>
+  </ol>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.16, first bullet, which states the $1/2^{128}$ figure. The reasoning is spelled out here.</li>
+      <li>This is the baseline every MAC must beat: with a 128-bit tag, blind guessing cannot do better than $2^{-128}$ per attempt. The next slide shows that attacking $H$ instead does better — by a factor of up to $v+1$.</li>
+      <li>Strictly, $t'$ is uniform over the $2^{128}$ values only when $H$ is; here $H = \mathrm{AES}_k(0^{128})$ is modelled as uniform. The source states the bound without the qualifier.</li>
+      <li>Over $q$ verification attempts the chance grows to about $q/2^{128}$, which is why implementations cap failed attempts in some settings.</li>
+    </ul>
+  </aside>
+</section>
+<!-- ============ 3 · the bound ============ -->
+<section class="slide" id="22" data-title="Why (v+1)/2^128">
+  <p class="eyebrow">Security argument &middot; the simplified tag</p>
+  <h2>Guessing <span class="hi">$H$</span> succeeds with probability at most $\frac{v+1}{2^{128}}$</h2>
+  <div class="fig"><svg id="fbound" role="img" aria-label="The field GF(2 to the 128) drawn as a grid of cells. The polynomial g equals f_A of x plus f_A of H prime has degree v plus one, so at most v plus one cells are roots. The true H is one uniformly random cell, so it lands on a root with probability at most v plus one over 2 to the 128."></svg></div>
+  <ol class="der">
+    <li data-bstep="2"><span class="n">1</span>Strip the one-time pad and look at $t' = f_A(H)$ alone. The adversary wants $t'$ for a message $A$ of her choice, without knowing $H$.</li>
+    <li data-bstep="3" data-bdelay="60"><span class="n">2</span>She picks <b>one guess</b> $H'$ and outputs $t' = f_A(H')$. She wins exactly when $f_A(H') = f_A(H)$.</li>
+    <li data-bstep="4" data-bdelay="60"><span class="n">3</span>Put everything on one side: $g(x) = f_A(x) + f_A(H')$. In characteristic 2 subtraction <i>is</i> addition, so she wins iff $g(H) = 0$.</li>
+    <li data-bstep="5" data-bdelay="60"><span class="n">4</span>$g$ is <b>not the zero polynomial</b> and $\deg g = v+1$: adding the constant $f_A(H')$ changes only the $x^0$ term, and the leading term $A_1x^{v+1}$ survives.</li>
+    <li data-bstep="6" data-bdelay="60"><span class="n">5</span>A nonzero degree-$d$ polynomial over a <b>field</b> has at most $d$ roots. So at most $v+1$ of the $2^{128}$ elements are roots of $g$.</li>
+    <li data-bstep="7" data-bdelay="60" class="cap"><span class="n">6</span>$H = \mathrm{AES}_k(0^{128})$ is unknown and uniform, and she chose $H'$ <b>before</b> seeing it. So $\Pr[g(H) = 0] \le \dfrac{v+1}{2^{128}}$.</li>
+  </ol>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.16 states the bound; this slide is the derivation spelled out.</li>
+      <li><b>Why "at most".</b> A nonzero degree-$d$ polynomial over a field has at most $d$ roots <i>in that field</i>; $g$ may well have fewer than $v+1$. So the count of winning $H$ values is an upper bound, which is exactly what a security claim needs.</li>
+      <li><b>Why the leading term survives.</b> $f_A(H')$ is a constant, i.e. a degree-0 term. $f_A(x)$ has no constant term at all (its lowest term is $Lx$), so $g(x) = A_1x^{v+1} + \cdots + Lx + f_A(H')$. Nothing can cancel $A_1x^{v+1}$, assuming $A_1 \ne 0$.</li>
+      <li><b>Order of quantifiers matters.</b> She commits to $H'$ first, then $H$ is drawn. If she could pick $H'$ after seeing $H$ the probability would be 1. This is why the bound is over the randomness of $H$ (i.e. of the AES key).</li>
+      <li><b>Compare:</b> guessing the 128-bit tag directly succeeds with probability $1/2^{128}$ (Menezes V5 p.16). Guessing $H$ is <i>better</i> by a factor of up to $v+1$, because many different $H$ values can produce the same tag for this particular $A$. Longer messages give the adversary more roots to hit.</li>
+    </ul>
+  </aside>
+</section>
+<!-- ============ 23 · one pair breaks it ============ -->
+<section class="slide" id="23" data-title="One pair breaks it">
+  <p class="eyebrow">Security argument &middot; the simplified tag</p>
+  <h2>Third attack: one valid pair, and the guessing stops</h2>
+  <div class="fig"><svg id="fsolve" role="img" aria-label="She observes one valid message-tag pair, which gives the equation f_A of H equals t prime. Rewritten as f_A of x plus t prime equals zero, a degree v plus one equation in one unknown. Root-finding over the field is fast, so she recovers H and can forge anything."></svg></div>
+  <ul class="say">
+    <li>$A$ and $t'$ are both known. $H$ is the <b>only</b> unknown.</li>
+    <li>That makes it an equation to solve, not a value to guess.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.16, third bullet: "if the adversary sees a single valid message-tag pair $(A, t')$, she can solve the polynomial equation $f_A(H) = t'$ for $H$."</li>
+      <li><b>This is the punchline of the whole security slide.</b> The first two attacks are bounded by $1/2^{128}$ and $(v+1)/2^{128}$ — both negligible. This one is not a probability at all. It is why the simplified tag $t' = f_A(H)$ cannot be used as a MAC.</li>
+      <li>Root-finding over $\mathrm{GF}(2^{128})$ runs in polynomial time (Cantor–Zassenhaus and friends). The degree is $v+1$, so she gets at most $v+1$ candidate values for $H$ and can test each against the pair she holds. That candidate count is this deck's note, not the source's.</li>
+      <li>Nothing about AES is broken here. $H = \mathrm{AES}_k(0^{128})$ is still unknown <i>as a function of the key</i> — but she does not need the key, only $H$ itself.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 24 · the fix ============ -->
+<section class="slide" id="24" data-title="The one-time pad fix">
+  <p class="eyebrow">Security argument &middot; the fix</p>
+  <h2>Hide the polynomial value behind a one-time pad</h2>
+  <div class="fig"><svg id="fotp" role="img" aria-label="The polynomial value f_A of H is XORed with AES of J0 to produce the tag that is sent. The adversary never sees f_A of H, so she has no equation to solve. The pad must be fresh for every message."></svg></div>
+  <ul class="say">
+    <li>$t = \mathrm{AES}_k(J_0) \oplus f_A(H)$ &mdash; the real GMAC tag.</li>
+    <li>$\mathrm{AES}_k(J_0)$ is a <b>second secret</b>, fresh per nonce.</li>
+    <li>She sees $t$, never $f_A(H)$, so there is no equation in $H$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.16, last bullet: "To circumvent the aforementioned attack, a second secret $\mathrm{AES}_k(J_0)$ is used to hide $t'$ ... The secret $\mathrm{AES}_k(J_0)$ serves as a one-time pad for $t'$."</li>
+      <li>"One-time" is meant literally. The pad depends on $J_0$, which depends on the IV. A fresh IV gives a fresh pad; a repeated IV gives the same pad twice, and XORing two such tags cancels it exactly. That is the attack three slides on.</li>
+      <li>This is the Carter–Wegman construction: a universal hash of the message, masked by a pseudorandom pad. The attribution is this deck's addition.</li>
+      <li>So the three attacks end: guessing the tag, $1/2^{128}$; guessing $H$, at most $(v+1)/2^{128}$; solving for $H$, blocked by the pad — provided the IV never repeats.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 25 · inputs and outputs ============ -->
+<section class="slide" id="25" data-title="Inputs and outputs">
+  <p class="eyebrow">AES-GCM &middot; the full scheme</p>
+  <h2>What goes in and what comes out</h2>
+  <div class="fig html">
+    <div class="bk">
+      <div>
+        <p class="eyebrow">Input</p>
+        <table>
+          <tr><th>name</th><th>what</th><th>limit</th></tr>
+          <tr><td>$A$</td><td>authenticated, not encrypted</td><td>$\le 2^{64}-1$ bits</td></tr>
+          <tr><td>$M$</td><td>encrypted and authenticated</td><td>$\le 2^{39}-256$ bits</td></tr>
+          <tr><td>$IV$</td><td>the nonce</td><td>96 bits recommended</td></tr>
+          <tr><td>$k$</td><td>the AES key</td><td>128, 192 or 256 bits</td></tr>
+        </table>
+      </div>
+      <div>
+        <p class="eyebrow">Output</p>
+        <table>
+          <tr><th>name</th><th>what</th><th>size</th></tr>
+          <tr><td>$IV$</td><td>echoed back</td><td>96 bits</td></tr>
+          <tr><td>$A$</td><td>in the clear</td><td>unchanged</td></tr>
+          <tr><td>$C$</td><td>the ciphertext</td><td>same length as $M$</td></tr>
+          <tr><td>$t$</td><td>the tag</td><td>128 bits</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.17 for the input/output structure and $u \le 2^{32}-2$; SP 800-38D §5.2.1.1 for the exact bit-length bounds quoted here.</li>
+      <li>$2^{39}-256$ bits is the same limit as $2^{32}-2$ blocks — see slide 14.</li>
+      <li>The tag may be truncated to 120, 112, 104 or 96 bits (and 64 or 32 in restricted applications) per SP 800-38D Appendix C. This deck shows the full 128-bit tag throughout; truncation weakens the forgery bound.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 26 · encryption ============ -->
+<section class="slide" id="26" data-title="AES-GCM encryption">
+  <p class="eyebrow">AES-GCM &middot; the full scheme</p>
+  <h2>Encryption and authentication, side by side</h2>
+  <div class="fig"><svg id="fgcm" role="img" aria-label="Two panels. One: encrypt the payload with counters, C_i equals AES of J_i XOR M_i. Two: authenticate both the header and the ciphertext, with H equals AES of the zero block and the tag equal to AES of J0 XOR f of H. Below, the length block L and the four values sent to Bob."></svg></div>
+  <ul class="say">
+    <li>The tag covers $A$ and $C$ &mdash; this is <b>Encrypt-then-MAC</b> in spirit.</li>
+    <li>$H$ and the pad both come from the same key $k$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.18, all five steps, including $L = L_A \| L_M$ as 64-bit lengths.</li>
+      <li>Note the order in the source: encryption first, then authentication over the resulting $C$. GCM authenticates the ciphertext, not the plaintext, which is the composition shown to be generically secure on slide 7.</li>
+      <li>$H = \mathrm{AES}_k(0^{128})$ is the same for every message under a given key. Only the pad $\mathrm{AES}_k(J_0)$ changes per nonce. Implementations precompute $H$ and its multiples once per key.</li>
+      <li>Why $L$ is included at all: without it, messages that differ only by trailing structure could collide. The length block binds $|A|$ and $|M|$ into the tag.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 27 · the combined polynomial ============ -->
+<section class="slide" id="27" data-title="The combined polynomial">
+  <p class="eyebrow">AES-GCM &middot; the full scheme</p>
+  <h2>One polynomial over the header and the ciphertext</h2>
+  <div class="fig"><svg id="fac" role="img" aria-label="Three segments: the header blocks A1 to Av take the highest exponents, the ciphertext blocks C1 to Cu follow, and the length block L sits on x to the first power. The full polynomial has degree u plus v plus one."></svg></div>
+  <ul class="say">
+    <li>$A$ takes the top exponents, then $C$, then $L$ on $x^1$.</li>
+    <li>Degree $u+v+1$, so the forgery bound becomes $(u+v+1)/2^{128}$.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.18, the note at the bottom: $f_{A,C}(x) = A_1x^{u+v+1} + A_2x^{u+v} + \cdots + A_vx^{u+2} + C_1x^{u+1} + C_2x^{u} + \cdots + C_ux^{2} + Lx$.</li>
+      <li>The bound on slide 22 was stated for $f_A$ with degree $v+1$. The same argument applies verbatim to $f_{A,C}$ with degree $u+v+1$ — longer messages, slightly weaker bound. <span class="tag calc">computed</span>: the source states the bound only for the $f_A$ case.</li>
+      <li>SP 800-38D builds the same value as $\mathrm{GHASH}_H(A \| 0^v \| C \| 0^u \| [\mathrm{len}(A)]_{64} \| [\mathrm{len}(C)]_{64})$, where the zero strings are padding to a block boundary. <b>Careful:</b> in the standard $u$ and $v$ are the <i>padding</i> lengths, while Menezes uses $u$ and $v$ for the <i>blocklengths</i> of $M$ and $A$. Same letters, different meaning — see the notation backup slide.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 28 · decryption ============ -->
+<section class="slide" id="28" data-title="AES-GCM decryption">
+  <p class="eyebrow">AES-GCM &middot; the full scheme</p>
+  <h2>Verify first, decrypt second</h2>
+  <div class="fig"><svg id="fdec" role="img" aria-label="Bob receives IV, A, C and t, recomputes t prime, and compares it with t. On no, reject. On yes, then decrypt with M_i equals AES of J_i XOR C_i."></svg></div>
+  <ul class="say">
+    <li>Bob recomputes the tag from what he received, then compares.</li>
+    <li>On mismatch he <b>rejects</b>, and the decryption never runs.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.19. The source's step 2 is authentication and step 3 is decryption, in that order, with "if $t' \ne t$ then reject".</li>
+      <li>Bob uses $L = L_A \| L_C$ — the length of the <i>ciphertext</i>, which equals the length of the plaintext in a stream cipher, so this matches what Alice computed.</li>
+      <li>The comparison must be constant-time. A byte-by-byte early-exit comparison leaks how many leading bytes were right, which turns a $2^{-128}$ forgery into a per-byte search. The source does not raise this; it is a standard implementation requirement.</li>
+      <li>Releasing unverified plaintext breaks the guarantee. Streaming APIs that return data before the tag is checked are outside the model.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 29 · IV reuse ============ -->
+<section class="slide" id="29" data-title="IV reuse">
+  <p class="eyebrow">AES-GCM &middot; the sharpest edge</p>
+  <h2>Reusing one IV hands over the key material</h2>
+  <div class="fig"><svg id="fivr" role="img" aria-label="Two messages sent under the same IV give two tags that share the same one-time pad. XORing the tags cancels the pad and leaves a polynomial equation in H alone. Solving it gives H, and then the pad itself, so the adversary can forge anything under that IV."></svg></div>
+  <ul class="say">
+    <li>The same IV gives the same $J_0$, so the same pad twice.</li>
+    <li>XOR the two tags and the pad <b>cancels</b>.</li>
+    <li>What is left is the equation in $H$ that the pad existed to prevent.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.22, all four bullets, in the source's order. The source assumes $M_1$ and $M_2$ have the same blocklength and that the eavesdropper knows $M_1$.</li>
+      <li>Two separate disasters follow from one repeat. <b>Confidentiality:</b> the keystream repeats, so $C_1 \oplus C_2 = M_1 \oplus M_2$ and knowing $M_1$ gives $M_2$ — the slide-4 malleability, now for free. <b>Integrity:</b> the derivation on this slide gives $H$ and then the pad, so she can forge.</li>
+      <li>Why this is worse than it sounds: a 96-bit random IV collides after about $2^{48}$ messages by the birthday bound, which is reachable for a busy key. Counter-based IVs avoid it but break on VM snapshots, restarts and config cloning.</li>
+      <li>This is why AES-GCM-SIV exists: it derives the pad from the message as well, so a repeated nonce leaks only whether two messages were equal. Out of scope for the source deck; noted on the last backup slide.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 30 · features ============ -->
+<section class="slide" id="30" data-title="Features">
+  <p class="eyebrow">AES-GCM &middot; in practice</p>
+  <h2>Seven properties worth knowing</h2>
+  <div class="fig html">
+    <ul class="cav">
+      <li><b>It does both jobs</b> — authentication and encryption — in one pass.</li>
+      <li><b>Authentication only</b> is available by passing an empty $M$. That is GMAC.</li>
+      <li><b>Very fast on Intel and AMD</b>, thanks to the AES-NI and PCLMUL instructions.</li>
+      <li><b>Both directions parallelize.</b></li>
+      <li><b>It can stream</b>, processing data as it arrives.</li>
+      <li><b>Keys of 128, 192 or 256 bits.</b></li>
+      <li><b>It has a security proof</b> — eventually. See the next slide.</li>
+    </ul>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.20, all seven, in the source's order.</li>
+      <li>On streaming: the <i>sender</i> can stream safely. A receiver that streams must not release plaintext before the tag verifies — see the decryption slide.</li>
+      <li>On GMAC: with $M$ empty, $u=0$ and $f_{A,C}$ reduces to $f_A$, which is the construction on slide 19.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 31 · performance ============ -->
+<section class="slide" id="31" data-title="Performance">
+  <p class="eyebrow">AES-GCM &middot; in practice</p>
+  <h2>The special instructions are worth about 14&times;</h2>
+  <div class="fig html">
+    <table>
+      <tr><th>algorithm</th><th>block (bits)</th><th>key (bits)</th><th>digest (bits)</th><th>speed (MB/s)</th></tr>
+      <tr><td>ChaCha20</td><td>&mdash;</td><td>256</td><td>&mdash;</td><td>323</td></tr>
+      <tr><td>Triple-DES</td><td>64</td><td>168</td><td>&mdash;</td><td>21</td></tr>
+      <tr><td>AES-128</td><td>128</td><td>128</td><td>&mdash;</td><td>170</td></tr>
+      <tr><td>AES-128-NI</td><td>128</td><td>128</td><td>&mdash;</td><td>2426</td></tr>
+      <tr><td>AES-256</td><td>128</td><td>256</td><td>&mdash;</td><td>129</td></tr>
+      <tr><td>AES-256-NI</td><td>128</td><td>256</td><td>&mdash;</td><td>1830</td></tr>
+      <tr><td>GMAC</td><td>128</td><td>128</td><td>128</td><td>247</td></tr>
+      <tr><td>GMAC-PCLMUL</td><td>128</td><td>128</td><td>128</td><td>1741</td></tr>
+    </table>
+    <p class="src">Intel Xeon E3-1220 V2 at 3.10 GHz, 64-bit mode, 2018. Source: bearssl.org/speed.html, via Menezes V5 p.21.</p>
+  </div>
+  <ul class="say">
+    <li>GMAC: 247 &rarr; 1741 MB/s with PCLMUL. <span class="tag calc">computed</span> about 7.0&times;.</li>
+    <li>AES-128: 170 &rarr; 2426 MB/s with AES-NI. <span class="tag calc">computed</span> about 14.3&times;.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Every number in the table is from Menezes V5 p.21, which cites bearssl.org/speed.html and the 2018 Xeon E3-1220 V2 at 3.10 GHz.</li>
+      <li>The two ratios in the bullets are this deck's arithmetic: $2426/170 = 14.27$ and $1741/247 = 7.05$. <span class="tag calc">computed</span></li>
+      <li>The source warns, in its own footnote, that "relative speeds will likely be very different on other processors". These are 2018 numbers on one CPU — treat them as showing the <i>shape</i> of the effect, not current throughput.</li>
+      <li>Note what the table does <b>not</b> measure: a full AES-GCM encryption is roughly the AES cost plus the GMAC cost, and the table lists them separately.</li>
+      <li>ChaCha20 at 323 MB/s is the point of comparison for platforms without AES instructions, where it beats table-based AES.</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 32 · the proof ============ -->
+<section class="slide" id="32" data-title="The proof history">
+  <p class="eyebrow">AES-GCM &middot; in practice</p>
+  <h2>The proof took eight years to get right</h2>
+  <div class="fig"><svg id="fproof" role="img" aria-label="A timeline. 2004: McGrew and Viega design the mode. 2004: their security proof is wrong. 2007: NIST standardises it. 2012: Iwata, Ohashi and Minematsu fix the proof."></svg></div>
+  <ul class="say">
+    <li>NIST standardised the mode in 2007 &mdash; on a proof that was <b>wrong</b>.</li>
+    <li>The mode itself survived; only the argument needed repair.</li>
+  </ul>
+  <aside class="notes">
+    <ul>
+      <li>Menezes V5 p.20, point 7: "The original McGrew-Viega security proof (2004) was wrong. The proof was fixed in 2012 by Iwata-Ohashi-Minematsu."</li>
+      <li>No attack came out of the broken proof. The flaw was in the bound's derivation, not in the construction, and the repaired bound is close to the original claim.</li>
+      <li>The moral the source leaves implicit: a standard's security rests on a proof that people have to check, and checking took eight years here despite very wide deployment.</li>
+      <li>This deck does not state the repaired bound, because that would need the IOM paper rather than the source deck. <span class="tag plan">not sourced here</span></li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 33 · summary ============ -->
+<section class="slide" id="33" data-title="Summary">
+  <p class="eyebrow">Summary</p>
+  <h2>Five things to carry away</h2>
+  <div class="fig html">
+    <ul class="sumlist">
+      <li>Confidentiality and authentication are <b>separate</b>; encryption alone is malleable.</li>
+      <li>Of the three generic compositions, only <b>Encrypt-then-MAC</b> is generically secure.</li>
+      <li>GMAC packs the message into a polynomial and evaluates it at a secret point $H$.</li>
+      <li>Guessing $H$ wins with probability at most $\frac{v+1}{2^{128}}$ &mdash; but <b>one</b> valid unmasked pair gives $H$ outright. The one-time pad $\mathrm{AES}_k(J_0)$ is what stops that.</li>
+      <li>Therefore: <b>never repeat an IV</b>. It cancels the pad and ends the key.</li>
+    </ul>
+  </div>
+  <aside class="notes">The thread through the whole deck: every guarantee in GCM reduces to "the pad is fresh", and the pad is fresh exactly when the IV is unique.</aside>
+</section>
+
+<!-- ============ 34 · backup divider ============ -->
+<section class="slide divider" id="34" data-title="Backup">
+  <p class="eyebrow">Backup</p>
+  <h2>Backup slides</h2>
+  <p class="sub">Notation, and what this deck leaves out</p>
+  <aside class="notes">Two reference slides follow.</aside>
+</section>
+
+<!-- ============ 35 · notation ============ -->
+<section class="slide" id="35" data-title="Backup: notation">
+  <p class="eyebrow">Backup</p>
+  <h2>Notation reference</h2>
+  <div class="fig html">
+    <table>
+      <tr><th>symbol</th><th>meaning</th><th>size</th></tr>
+      <tr><td>$k$</td><td>the AES key</td><td>128, 192 or 256 bits</td></tr>
+      <tr><td>$IV$</td><td>the nonce, never repeated under one $k$</td><td>96 bits (recommended)</td></tr>
+      <tr><td>$J_0$</td><td>$IV \| 0^{31} \| 1$; its AES value masks the tag</td><td>128 bits</td></tr>
+      <tr><td>$J_i$</td><td>$\mathrm{inc32}(J_{i-1})$, the counter blocks</td><td>128 bits</td></tr>
+      <tr><td>$H$</td><td>$\mathrm{AES}_k(0^{128})$, the secret evaluation point</td><td>128 bits</td></tr>
+      <tr><td>$A$</td><td>additional authenticated data, $v$ blocks</td><td>$\le 2^{64}-1$ bits</td></tr>
+      <tr><td>$M$, $C$</td><td>plaintext and ciphertext, $u$ blocks</td><td>$\le 2^{39}-256$ bits</td></tr>
+      <tr><td>$L$</td><td>$L_A \| L_M$, the two lengths as 64-bit integers</td><td>128 bits</td></tr>
+      <tr><td>$f_{A,C}$</td><td>the message polynomial</td><td>degree $u+v+1$</td></tr>
+      <tr><td>$t$</td><td>$\mathrm{AES}_k(J_0) \oplus f_{A,C}(H)$, the tag</td><td>128 bits</td></tr>
+    </table>
+    <p class="src">Menezes V5 p.11, 14, 17, 18. Length bounds from NIST SP 800-38D §5.2.1.1.</p>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li><b>A naming clash to be careful about.</b> This deck follows Menezes: $u$ is the blocklength of $M$ and $v$ is the blocklength of $A$. In SP 800-38D, $u$ and $v$ are the number of <i>zero padding bits</i> appended to $C$ and $A$ respectively, inside $\mathrm{GHASH}_H(A \| 0^v \| C \| 0^u \| [\mathrm{len}(A)]_{64} \| [\mathrm{len}(C)]_{64})$. Same letters, different quantities. Reading the two documents side by side without noticing this is a reliable way to get confused.</li>
+      <li>$\mathrm{GF}(2^{128})$ uses $f(x) = 1 + x + x^2 + x^7 + x^{128}$ (Menezes V5 p.13).</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- ============ 36 · what is left out ============ -->
+<section class="slide" id="36" data-title="Backup: out of scope">
+  <p class="eyebrow">Backup</p>
+  <h2>What this deck leaves out</h2>
+  <div class="fig html">
+    <ul class="cav">
+      <li><b>The repaired security bound.</b> Iwata–Ohashi–Minematsu (2012) fixed the proof; this deck states only that it happened, because the bound itself needs the paper, not the source deck. <span class="tag plan">not sourced here</span></li>
+      <li><b>Nonce-misuse resistance.</b> AES-GCM-SIV (RFC 8452) derives the pad from the message too, so a repeated nonce leaks only message equality instead of the key material. <span class="tag plan">beyond the source</span></li>
+      <li><b>Tag truncation.</b> SP 800-38D Appendix C allows 96–120 bit tags, and 32 or 64 bits only in restricted applications. Shorter tags weaken the forgery bound directly. <span class="tag plan">beyond the source</span></li>
+      <li><b>Key commitment.</b> A GCM ciphertext can be made to decrypt validly under two different keys. This matters for some protocols and is not part of the AE definition on slide 8. <span class="tag plan">beyond the source</span></li>
+      <li><b>IVs that are not 96 bits.</b> SP 800-38D hashes those through GHASH to form $J_0$. Only the 96-bit case is shown here.</li>
+      <li><b>Multi-user and multi-key bounds</b>, and the cost of rekeying before the birthday limit.</li>
+    </ul>
+  </div>
+  <aside class="notes">
+    <ul>
+      <li>Each item is tagged with whether it is outside the source deck or outside what this deck sourced. Nothing here is presented as a result of the source.</li>
+      <li>The first four would each be worth a slide of their own; they are listed rather than guessed at.</li>
+    </ul>
+  </aside>
+</section>
+<nav class="bar" aria-label="Slide navigation">
+  <div class="prog" id="prog"></div>
+  <a class="home" href="../../">← Learning with AI</a>
+  <button type="button" id="b-prev" aria-label="Previous slide">‹</button>
+  <span class="count" id="count" aria-live="polite">1 / 23</span>
+  <button type="button" id="b-next" aria-label="Next slide">›</button>
+  <span class="ttl" id="ttl"></span>
+  <span class="k">N notes · T theme · B builds</span>
+  <button type="button" id="b-notes" aria-pressed="false" title="Speaker notes (N)">notes</button>
+  <button type="button" id="b-theme" aria-label="Switch between light and dark theme" title="Light / dark (T)">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+  </button>
+</nav>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+/* Every figure reads its colours from the CSS tokens at draw time, so light and dark both work.
+   Numbers: benchmark result files (2026-10-13), fleet run logs (2026-09-15 and 2026-09-25). */
+var SVGNS = 'http://www.w3.org/2000/svg', MONO = 'Ubuntu Mono';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+function hexLum(h){
+  h = String(h).replace('#', '').trim();
+  if (h.length === 3) h = h.split('').map(function(c){ return c + c; }).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return 0.5;
+  var v = [0, 2, 4].map(function(i){ var c = parseInt(h.substr(i, 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+/* text colour with the higher contrast on a filled shape */
+function onCol(h){ var L = hexLum(h); return (1.05 / (L + 0.05)) >= ((L + 0.05) / 0.0556) ? '#ffffff' : '#111111'; }
+function plainC(s){ return String(s).replace(/c_\{([^}]*)\}|c_h/g, function(m, g){ return 'c' + (g || 'h'); }); }
+function tw(s, fs){ return plainC(s).length * fs * 0.5; }   /* Ubuntu Mono: 0.5 em advance */
+function T(x, y, s, o){
+  o = o || {};
+  var a = { x:x, y:y, 'font-family':MONO, 'font-size':o.fs || 13, fill:o.fill || css('--ink-1') };
+  if (o.anchor) a['text-anchor'] = o.anchor;
+  if (o.w) a['font-weight'] = o.w;
+  if (o.rot) a.transform = 'rotate(' + o.rot + ' ' + x + ' ' + y + ')';
+  return el('text', a, s);
+}
+/* c_h, c_{h−1} as subscripts, with tspans (Firefox ignores baseline-shift) */
+function rich(x, y, s, o){
+  o = o || {};
+  var t = T(x, y, undefined, o), fs = o.fs || 13, low = false, re = /c_(\{[^}]*\}|h)/g, last = 0, m;
+  function add(txt, sub){
+    if (!txt) return;
+    var a = {};
+    if (sub){ a['font-size'] = fs * 0.75; if (!low){ a.dy = fs * 0.3; low = true; } }
+    else if (low){ a.dy = -fs * 0.3; low = false; }
+    t.appendChild(el('tspan', a, txt));
+  }
+  while ((m = re.exec(s))){ add(s.slice(last, m.index) + 'c', false); add(m[1].replace(/[{}]/g, ''), true); last = re.lastIndex; }
+  add(s.slice(last), false);
+  return t;
+}
+function arrowDef(svg, id, col){
+  var d = el('defs', {}), mk = el('marker', { id:id, viewBox:'0 0 10 10', refX:9, refY:5, markerWidth:7, markerHeight:7, orient:'auto-start-reverse' });
+  mk.appendChild(el('path', { d:'M0 0L10 5L0 10z', fill:col }));
+  d.appendChild(mk); svg.appendChild(d);
+}
+function add(svg, n){ svg.appendChild(n); return n; }
+function rect(svg, x, y, w, h, o){
+  o = o || {};
+  return add(svg, el('rect', { x:x, y:y, width:Math.max(0, w), height:Math.max(0, h), rx:o.rx === undefined ? 4 : o.rx, fill:o.fill || 'none',
+    'fill-opacity':o.fo === undefined ? null : o.fo, stroke:o.stroke || null, 'stroke-width':o.sw || (o.stroke ? 1.3 : null), 'stroke-dasharray':o.dash || null }));
+}
+function path(svg, d, o){
+  o = o || {};
+  return add(svg, el('path', { d:d, fill:o.fill || 'none', stroke:o.stroke || css('--ink-muted'), 'stroke-width':o.sw || 1.5,
+    'stroke-dasharray':o.dash || null, 'marker-end':o.mk ? 'url(#' + o.mk + ')' : null, 'stroke-linejoin':'round' }));
+}
+function arrow(svg, x1, y1, x2, y2, mk, o){ o = o || {}; o.mk = mk; return path(svg, 'M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2, o); }
+/* horizontal brace; dir = 1 opens downward under a span (tip down), -1 above a span (tip up) */
+function brace(svg, x1, x2, y, dir, col){
+  var m = (x1 + x2) / 2, r = 6 * dir;
+  path(svg, 'M' + x1 + ' ' + y + 'q0 ' + r + ' ' + Math.abs(r) + ' ' + r + 'H' + (m - Math.abs(r)) + 'q' + Math.abs(r) + ' 0 ' + Math.abs(r) + ' ' + r +
+    'q0 ' + (-r) + ' ' + Math.abs(r) + ' ' + (-r) + 'H' + (x2 - Math.abs(r)) + 'q' + Math.abs(r) + ' 0 ' + Math.abs(r) + ' ' + (-r), { stroke:col || css('--ink-muted'), sw:1.4 });
+  return m;
+}
+function kfmt(v){ return v >= 1000 ? (Math.round(v / 100) / 10) + 'k' : String(v); }
+
+/* ---------- builds: a figure tags groups with the step (1..N) from which they show ----------
+   bg() runs fn and wraps everything fn appended to svg into one tagged <g>.
+   kind: fade | growx (grow from the left) | land (slide in from the left + fade) | draw (path draw)
+   | kf (custom keyframes in g._kf). delay / dur in ms. The figure itself always draws the final
+   state; applyStatic() hides the groups above the current step, play() animates one step's groups. */
+var BUILDS = { f3:5, f6:4, f7:3, f8:6, fidx:7, fnet:5, fnur:5 }, stepOf = {}, buildsOn = true, MKN = 0;
+try { buildsOn = localStorage.getItem('aegcm-builds') !== 'off'; } catch(e){}
+function bAttrs(k, kind, delay, dur){ return { 'data-b':k, 'data-bk':kind || 'fade', 'data-bd':delay || 0, 'data-bt':dur || null }; }
+function bg(svg, k, fn, kind, delay, dur){
+  var n0 = svg.childNodes.length; fn();
+  if (!k) return null;
+  var g = el('g', bAttrs(k, kind, delay, dur));
+  while (svg.childNodes.length > n0) g.appendChild(svg.childNodes[n0]);
+  svg.appendChild(g); return g;
+}
+/* a group shown only before step k (it fades out at step k, after delay ms): for crossfades */
+function until(g, k, delay){ if (g && k){ g.setAttribute('data-bu', k); g.setAttribute('data-bud', delay || 0); } return g; }
+function stepG(par, k, kind, delay, dur){ return add(par, el('g', bAttrs(k, kind, delay, dur))); }
+function reducedMotion(){ try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } }
+function bHtml(svg){ var sl = svg.closest('.slide'); return sl ? sl.querySelectorAll('[data-bstep]') : []; }
+function applyStatic(svg, s){
+  Array.prototype.forEach.call(bHtml(svg), function(e){
+    if (e.getAnimations) e.getAnimations().forEach(function(a){ a.cancel(); });
+    e.style.visibility = Number(e.getAttribute('data-bstep')) > s ? 'hidden' : '';
+  });
+  Array.prototype.forEach.call(svg.querySelectorAll('g[data-b]'), function(g){
+    if (g.getAnimations) g.getAnimations({ subtree:true }).forEach(function(a){ a.cancel(); });
+    if (g._cl) g._cl();
+    var bu = Number(g.getAttribute('data-bu')) || 0;
+    g.style.visibility = (Number(g.getAttribute('data-b')) > s || (bu && s >= bu)) ? 'hidden' : '';
+  });
+}
+function drawIn(svg, g, o){
+  var vb = svg.viewBox.baseVal, defs = add(svg, el('defs', {})), ps = [];
+  Array.prototype.forEach.call(g.querySelectorAll('path, line'), function(p){
+    if (p.closest('marker')) return;
+    var d = p.tagName.toLowerCase() === 'line' ? 'M' + p.getAttribute('x1') + ' ' + p.getAttribute('y1') + 'L' + p.getAttribute('x2') + ' ' + p.getAttribute('y2') : p.getAttribute('d');
+    var id = 'bm' + (++MKN), m = el('mask', { id:id, maskUnits:'userSpaceOnUse', x:vb.x - 60, y:vb.y - 60, width:vb.width + 120, height:vb.height + 120 });
+    var mp = el('path', { d:d, fill:'none', stroke:'#ffffff', 'stroke-width':26, 'stroke-linejoin':'round', pathLength:1, 'stroke-dasharray':'1 2', 'stroke-dashoffset':0 });
+    m.appendChild(mp); defs.appendChild(m); p.setAttribute('mask', 'url(#' + id + ')'); ps.push(p);
+    if (mp.animate) mp.animate([{ strokeDashoffset:1 }, { strokeDashoffset:0 }], o);
+  });
+  var done = false;
+  g._cl = function(){ if (done) return; done = true; ps.forEach(function(p){ p.removeAttribute('mask'); }); if (defs.parentNode) defs.parentNode.removeChild(defs); g._cl = null; };
+  setTimeout(function(){ if (g._cl) g._cl(); }, o.delay + o.duration + 80);
+}
+function play(svg, s){
+  if (reducedMotion()) return;
+  Array.prototype.forEach.call(svg.querySelectorAll('g[data-b="' + s + '"]'), function(g){
+    if (!g.animate) return;
+    var kind = g.getAttribute('data-bk'), o = { duration:Number(g.getAttribute('data-bt')) || 400, delay:Number(g.getAttribute('data-bd')) || 0, easing:'ease-out', fill:'backwards' };
+    if (kind === 'growx'){ g.style.transformBox = 'fill-box'; g.style.transformOrigin = '0% 50%'; g.animate([{ transform:'scaleX(0)' }, { transform:'scaleX(1)' }], o); }
+    else if (kind === 'land') g.animate([{ opacity:0, transform:'translateX(-14px)' }, { opacity:1, transform:'translateX(0)' }], o);
+    else if (kind === 'draw') drawIn(svg, g, o);
+    else if (kind === 'kf' && g._kf){ o.easing = 'linear'; g.animate(g._kf, o); }
+    else g.animate([{ opacity:0 }, { opacity:1 }], o);
+  });
+  Array.prototype.forEach.call(bHtml(svg), function(e){
+    if (Number(e.getAttribute('data-bstep')) === s && e.animate) e.animate([{ opacity:0 }, { opacity:1 }], { duration:380, delay:Number(e.getAttribute('data-bdelay')) || 0, easing:'ease-out', fill:'backwards' });
+  });
+  /* groups that leave at this step: keep them up, fade them out, then hide */
+  Array.prototype.forEach.call(svg.querySelectorAll('g[data-bu="' + s + '"]'), function(g){
+    if (!g.animate || Number(g.getAttribute('data-b')) > s) return;
+    g.style.visibility = '';
+    var a = g.animate([{ opacity:1 }, { opacity:0 }], { duration:320, delay:Number(g.getAttribute('data-bud')) || 0, easing:'ease-out', fill:'forwards' });
+    a.onfinish = function(){ g.style.visibility = 'hidden'; a.cancel(); };
+  });
+}
+
+/* ====================================================================
+   F1 · title: one consensus, two lanes
+   ==================================================================== */
+function pill(svg, x, y, txt, col, fs, o){
+  o = o || {};
+  var w = tw(txt, fs) + 18, h = fs + 9;
+  rect(svg, x, y, w, h, { fill:col, fo:o.fo === undefined ? 0.13 : o.fo, stroke:col, sw:1.3, rx:h / 2, dash:o.dash });
+  add(svg, T(x + w / 2, y + h / 2 + fs * 0.36, txt, { anchor:'middle', fs:fs, w:700, fill:o.ink || col }));
+  return w;
+}
+/* ====================================================================
+   Math text in SVG: supports ^{...} and _{...}. Firefox ignores
+   baseline-shift, so shift with tspan dy and undo it afterwards.
+   ==================================================================== */
+function mT(x, y, s, o){
+  o = o || {};
+  var t = T(x, y, undefined, o), fs = o.fs || 13, re = /([\^_])\{([^}]*)\}/g, last = 0, m, off = 0;
+  function put(txt, kind){
+    if (txt === '' || txt == null) return;
+    var a = {}, want = kind === '^' ? -fs * 0.42 : (kind === '_' ? fs * 0.30 : 0);
+    if (kind) a['font-size'] = fs * 0.72;
+    if (want !== off){ a.dy = want - off; off = want; }
+    t.appendChild(el('tspan', a, txt));
+  }
+  while ((m = re.exec(s))){ put(s.slice(last, m.index), null); put(m[2], m[1]); last = re.lastIndex; }
+  put(s.slice(last), null);
+  return t;
+}
+/* width estimate for mT: exponents and braces do not count full width */
+function mw(s, fs){ return String(s).replace(/[\^_{}]/g, '').length * fs * 0.5; }
+
+/* ====================================================================
+   Shared drawing helpers for this deck
+   ==================================================================== */
+/* a labelled panel with a title strip */
+function panel(svg, x, y, w, h, title, col, o){
+  o = o || {};
+  rect(svg, x, y, w, h, { fill:col, fo:o.fo === undefined ? .10 : o.fo, stroke:col, rx:4, sw:1.4 });
+  if (title) add(svg, T(x + 10, y + 17, title, { fs:o.fs || 12, w:700, fill:col }));
+  return { x:x, y:y, w:w, h:h, cx:x + w / 2, cy:y + h / 2, r:x + w };
+}
+/* a small block of fixed width holding mono text, e.g. a 128-bit block */
+function blk(svg, x, y, w, h, txt, col, o){
+  o = o || {};
+  rect(svg, x, y, w, h, { fill:col, fo:o.fo === undefined ? .18 : o.fo, stroke:col, rx:3 });
+  add(svg, mT(x + w / 2, y + h / 2 + (o.dy === undefined ? 5 : o.dy), txt, { anchor:'middle', fs:o.fs || 13.5, w:700, fill:o.fill || css('--ink-head') }));
+  return { x:x, y:y, w:w, h:h, cx:x + w / 2, cy:y + h / 2, r:x + w, b:y + h };
+}
+/* a round-cornered "function" node, e.g. AES_k or MAC_k */
+function fnode(svg, x, y, w, h, txt, col){
+  rect(svg, x, y, w, h, { fill:col, fo:.92, stroke:col, rx:5 });
+  add(svg, mT(x + w / 2, y + h / 2 + 5, txt, { anchor:'middle', fs:13.5, w:700, fill:onCol(col) }));
+  return { x:x, y:y, w:w, h:h, cx:x + w / 2, cy:y + h / 2, r:x + w, b:y + h };
+}
+/* an XOR circle */
+function xor(svg, cx, cy, r, col){
+  col = col || css('--ink-1');
+  add(svg, el('circle', { cx:cx, cy:cy, r:r, fill:css('--plane'), stroke:col, 'stroke-width':1.4 }));
+  add(svg, el('line', { x1:cx - r * 0.62, x2:cx + r * 0.62, y1:cy, y2:cy, stroke:col, 'stroke-width':1.4 }));
+  add(svg, el('line', { x1:cx, x2:cx, y1:cy - r * 0.62, y2:cy + r * 0.62, stroke:col, 'stroke-width':1.4 }));
+  return { cx:cx, cy:cy, r:r };
+}
+/* verdict mark: ok / bad */
+function mark(svg, x, y, ok, txt, fs){
+  var col = ok ? css('--good') : css('--critical');
+  add(svg, T(x, y, ok ? '✓' : '✗', { fs:(fs || 16) * 1.15, w:700, fill:col }));
+  if (txt) add(svg, T(x + (fs || 16) * 0.95, y, txt, { fs:fs || 13, w:700, fill:col }));
+  return col;
+}
+
+function figW(svg){ return DECK ? 1000 : Math.max(300, Math.min(1000, svg.parentNode.clientWidth)); }
+
+/* ====================================================================
+   FGOALS · confidentiality and authentication are different goals
+   ==================================================================== */
+function fgoals(svg, W){
+  var nar = W < 700, ink = css('--ink-muted'), pw = nar ? W : (W - 36) / 2, ph = 150;
+  var y = 24, x2 = nar ? 0 : pw + 36, y2 = nar ? y + ph + 28 : y;
+
+  bg(svg, 1, function(){
+    var p = panel(svg, 0, y, pw, ph, 'CONFIDENTIALITY', css('--s1'));
+    add(svg, T(14, y + 48, 'the adversary learns nothing', { fs:14, fill:css('--ink-1') }));
+    add(svg, T(14, y + 68, 'about the plaintext', { fs:14, fill:css('--ink-1') }));
+    add(svg, mT(14, y + 100, 'given by: encryption, e.g. AES-CBC', { fs:12.5, w:700, fill:css('--s1') }));
+    add(svg, T(14, y + 122, 'hides the content', { fs:12, fill:ink }));
+  }, 'land', 0, 340);
+
+  bg(svg, 2, function(){
+    var p = panel(svg, x2, y2, pw, ph, 'AUTHENTICATION', css('--s2'));
+    add(svg, T(x2 + 14, y2 + 48, 'the adversary cannot change it', { fs:14, fill:css('--ink-1') }));
+    add(svg, T(x2 + 14, y2 + 68, 'or forge a new one', { fs:14, fill:css('--ink-1') }));
+    add(svg, mT(x2 + 14, y2 + 100, 'given by: a MAC, e.g. HMAC', { fs:12.5, w:700, fill:css('--s2') }));
+    add(svg, T(x2 + 14, y2 + 122, 'binds the content to the key', { fs:12, fill:ink }));
+  }, 'land', 0, 340);
+
+  var yb = (nar ? y2 + ph : y + ph) + 30;
+  bg(svg, 3, function(){
+    rect(svg, 0, yb, W, 42, { fill:css('--critical'), fo:.10, stroke:css('--critical'), rx:4 });
+    add(svg, T(14, yb + 26, nar ? 'Neither one implies the other.' : 'Neither one implies the other. Most applications need both at once.',
+      { fs:nar ? 13.5 : 15, w:700, fill:css('--critical') }));
+  }, 'fade', 120, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + 54));
+}
+
+/* ====================================================================
+   FMALL · encryption alone does not authenticate: CTR is malleable
+   ==================================================================== */
+function fmall(svg, W){
+  var nar = W < 720, ink = css('--ink-muted'), head = css('--ink-head');
+  var bw = nar ? 46 : 62, bh = 34, gap = 7, x0 = nar ? 0 : 54, y = 36;
+  var BITS = ['0', '1', '1', '0', '1', '0', '0', '1'];
+  var FLIP = 3;
+
+  add(svg, T(0, 14, 'one block of a CTR-mode ciphertext, bit by bit', { fs:12.5, fill:ink }));
+
+  /* step 1: ciphertext bits */
+  var cells = [];
+  bg(svg, 1, function(){
+    if (!nar) add(svg, T(x0 - 10, y + bh / 2 + 5, 'C', { anchor:'end', fs:14, w:700, fill:head }));
+    BITS.forEach(function(b, i){
+      var x = x0 + i * (bw + gap);
+      cells.push(x);
+      blk(svg, x, y, bw, bh, b, css('--s1'));
+    });
+  }, 'land', 0, 320);
+
+  /* step 2: the adversary flips one bit of the ciphertext */
+  var yf = y + bh + 30;
+  bg(svg, 2, function(){
+    var x = cells[FLIP];
+    rect(svg, x - 3, y - 3, bw + 6, bh + 6, { fill:'none', stroke:css('--critical'), sw:2.2, rx:4 });
+    add(svg, T(x + bw / 2, y - 10, 'flip', { anchor:'middle', fs:12, w:700, fill:css('--critical') }));
+    add(svg, T(0, yf + 4, 'the adversary flips one ciphertext bit. No key needed.', { fs:13, w:700, fill:css('--critical') }));
+  }, 'fade', 0, 300);
+
+  /* step 3: exactly one plaintext bit flips, nothing else moves */
+  var yp = yf + 26;
+  bg(svg, 3, function(){
+    if (!nar) add(svg, T(x0 - 10, yp + bh / 2 + 5, 'M', { anchor:'end', fs:14, w:700, fill:head }));
+    BITS.forEach(function(b, i){
+      var x = x0 + i * (bw + gap), flipped = i === FLIP;
+      var v = flipped ? (b === '0' ? '1' : '0') : b;
+      blk(svg, x, yp, bw, bh, v, flipped ? css('--critical') : css('--s3'), { fo: flipped ? .3 : .14 });
+    });
+    add(svg, mT(0, yp + bh + 22, 'M_{i} = AES_{k}(J_{i}) ⊕ C_{i} : one bit of C changes exactly one bit of M', { fs:12.5, fill:css('--ink-1') }));
+  }, 'land', 60, 340);
+
+  /* step 4: the receiver accepts it */
+  var yr = yp + bh + 46;
+  bg(svg, 4, function(){
+    rect(svg, 0, yr, W, 44, { fill:css('--critical'), fo:.10, stroke:css('--critical'), rx:4 });
+    mark(svg, 14, yr + 28, false, nar ? 'Bob decrypts it and accepts.' : 'Bob decrypts it and accepts. Encryption gave him no way to notice.', 14);
+  }, 'fade', 80, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yr + 56));
+}
+
+/* ====================================================================
+   FEAM · Encrypt-and-MAC, and why it is not secure
+   ==================================================================== */
+function feam(svg, W){
+  var nar = W < 760, ink = css('--ink-muted'), head = css('--ink-head');
+  arrowDef(svg, 'mke', css('--axis'));
+  var y = 30, mw2 = nar ? 54 : 70, fh = 34;
+  var xm = 0, xe = nar ? 86 : 150, xo = nar ? 190 : 330;
+
+  /* step 1: the plaintext goes two ways */
+  bg(svg, 1, function(){
+    blk(svg, xm, y + 28, mw2, fh, 'm', css('--s3'));
+    add(svg, T(xm, y + 10, 'plaintext', { fs:11.5, fill:ink }));
+  }, 'land', 0, 300);
+
+  /* step 2: encrypt it */
+  bg(svg, 2, function(){
+    arrow(svg, xm + mw2 + 4, y + 36, xe - 6, y + 20, 'mke', { stroke:css('--axis') });
+    var n = fnode(svg, xe, y + 2, nar ? 78 : 96, fh, 'E_{k1}', css('--s1'));
+    arrow(svg, n.r + 4, y + 19, xo - 6, y + 19, 'mke', { stroke:css('--axis') });
+    blk(svg, xo, y + 2, mw2, fh, 'c', css('--s1'));
+  }, 'fade', 0, 320);
+
+  /* step 3: MAC the same plaintext */
+  bg(svg, 3, function(){
+    arrow(svg, xm + mw2 + 4, y + 50, xe - 6, y + 70, 'mke', { stroke:css('--axis') });
+    var n = fnode(svg, xe, y + 54, nar ? 78 : 96, fh, 'MAC_{k2}', css('--s2'));
+    arrow(svg, n.r + 4, y + 71, xo - 6, y + 71, 'mke', { stroke:css('--axis') });
+    blk(svg, xo, y + 54, mw2, fh, 't', css('--s2'));
+    add(svg, mT(xo + mw2 + 12, y + 71, nar ? 'over m' : 'the tag is computed over the plaintext m', { fs:12.5, w:700, fill:css('--s2') }));
+  }, 'fade', 0, 320);
+
+  /* step 4: the leak */
+  var yb = y + 100;
+  bg(svg, 4, function(){
+    rect(svg, 0, yb, W, nar ? 70 : 52, { fill:css('--critical'), fo:.10, stroke:css('--critical'), rx:4 });
+    add(svg, mT(14, yb + 24, 'Most MAC schemes are deterministic: equal m give equal t.', { fs:nar ? 12.5 : 14, w:700, fill:css('--critical') }));
+    add(svg, T(14, yb + (nar ? 44 : 42), nar ? 'So t leaks whether two plaintexts are equal.' : 'So the tag leaks whether two plaintexts are equal — even though c hides them.', { fs:nar ? 12 : 13, fill:css('--ink-1') }));
+  }, 'fade', 60, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 82 : 64)));
+}
+
+/* ====================================================================
+   FETM · Encrypt-then-MAC: the tag covers the ciphertext
+   ==================================================================== */
+function fetm(svg, W){
+  var nar = W < 760, ink = css('--ink-muted');
+  arrowDef(svg, 'mkt', css('--axis'));
+  var y = 30, bwd = nar ? 52 : 66, fh = 34;
+  var xm = 0, xe = nar ? 80 : 130, xc = nar ? 176 : 290, xM = nar ? 0 : 392, xt = nar ? 176 : 560;
+
+  bg(svg, 1, function(){
+    blk(svg, xm, y, bwd, fh, 'm', css('--s3'));
+    arrow(svg, xm + bwd + 4, y + 17, xe - 6, y + 17, 'mkt', { stroke:css('--axis') });
+    var n = fnode(svg, xe, y, nar ? 76 : 92, fh, 'E_{k1}', css('--s1'));
+    arrow(svg, n.r + 4, y + 17, xc - 6, y + 17, 'mkt', { stroke:css('--axis') });
+    blk(svg, xc, y, bwd, fh, 'c', css('--s1'));
+  }, 'land', 0, 320);
+
+  var y2 = nar ? y + fh + 34 : y;
+  bg(svg, 2, function(){
+    if (nar) arrow(svg, xc + bwd / 2, y + fh + 4, xc + bwd / 2, y2 + 28 - 6, 'mkt', { stroke:css('--axis') });
+    else arrow(svg, xc + bwd + 4, y + 17, xM - 6, y + 17, 'mkt', { stroke:css('--axis') });
+    var mx = nar ? xc - 18 : xM;
+    var n = fnode(svg, mx, y2 + (nar ? 28 : 0), nar ? 88 : 104, fh, 'MAC_{k2}', css('--s2'));
+    arrow(svg, n.r + 4, y2 + (nar ? 45 : 17), (nar ? n.r + 50 : xt) - 6, y2 + (nar ? 45 : 17), 'mkt', { stroke:css('--axis') });
+    blk(svg, nar ? n.r + 50 : xt, y2 + (nar ? 28 : 0), bwd, fh, 't', css('--s2'));
+  }, 'fade', 0, 320);
+
+  var y3 = (nar ? y2 + 28 + fh : y + fh) + 28;
+  bg(svg, 3, function(){
+    add(svg, mT(0, y3 + 4, 'the tag is computed over the ciphertext c, not over m', { fs:13.5, w:700, fill:css('--s2') }));
+    add(svg, T(0, y3 + 24, 'Bob checks the tag first, and only then decrypts.', { fs:13, fill:css('--ink-1') }));
+  }, 'fade', 0, 300);
+
+  var y4 = y3 + 44;
+  bg(svg, 4, function(){
+    rect(svg, 0, y4, W, nar ? 66 : 50, { fill:css('--good'), fo:.10, stroke:css('--good'), rx:4 });
+    mark(svg, 14, y4 + 24, true, 'Proven secure, if E and the MAC are each secure.', 14);
+    add(svg, T(14, y4 + (nar ? 46 : 42), nar ? 'A forged c never reaches the decryption.' : 'A forged ciphertext never reaches decryption: there is nothing to leak.', { fs:nar ? 12 : 13, fill:css('--ink-1') }));
+  }, 'fade', 60, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y4 + (nar ? 78 : 62)));
+}
+
+/* ====================================================================
+   FCMP · the three generic compositions side by side
+   ==================================================================== */
+function fcmp(svg, W){
+  var nar = W < 700, ink = css('--ink-muted'), head = css('--ink-head');
+  var ROWS = [
+    { k:'Encrypt-and-MAC', s:'E&M', tag:'t = MAC(m)', ok:false, why:'the tag can leak information about m' },
+    { k:'MAC-then-Encrypt', s:'MtE', tag:'c = E(m ∥ MAC(m))', ok:null, why:'secure for some E, not generically' },
+    { k:'Encrypt-then-MAC', s:'EtM', tag:'t = MAC(c)', ok:true, why:'generically secure' }
+  ];
+  var y = 26, rh = nar ? 62 : 50, kw = nar ? 0 : 210, tw2 = nar ? 0 : 230;
+
+  add(svg, T(0, 12, 'three ways to combine an encryption scheme and a MAC', { fs:12.5, fill:ink }));
+
+  ROWS.forEach(function(r, i){
+    var yy = y + i * (rh + 8);
+    bg(svg, i + 1, function(){
+      var col = r.ok === true ? css('--good') : (r.ok === false ? css('--critical') : css('--s4'));
+      rect(svg, 0, yy, W, rh, { fill:col, fo:.09, stroke:col, rx:4 });
+      add(svg, T(14, yy + (nar ? 20 : 30), nar ? r.s : r.k, { fs:nar ? 13.5 : 15, w:700, fill:head }));
+      add(svg, mT(nar ? 14 : kw, yy + (nar ? 38 : 30), r.tag, { fs:nar ? 12.5 : 13.5, w:700, fill:col }));
+      var vx = nar ? 14 : kw + tw2;
+      var vy = nar ? yy + 56 : yy + 30;
+      if (r.ok === null){ add(svg, T(vx, vy, '~', { fs:16, w:700, fill:col })); add(svg, T(vx + 15, vy, r.why, { fs:12.5, w:700, fill:col })); }
+      else mark(svg, vx, vy, r.ok, r.why, 12.5);
+    }, 'land', 0, 320);
+  });
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y + ROWS.length * (rh + 8) + 10));
+}
+
+/* ====================================================================
+   FAESEC · the AE security definition: two conditions
+   ==================================================================== */
+function faesec(svg, W){
+  var nar = W < 760, ink = css('--ink-muted'), head = css('--ink-head');
+  var pw = nar ? W : (W - 30) / 2, ph = nar ? 150 : 168, y = 26;
+  var x2 = nar ? 0 : pw + 30, y2 = nar ? y + ph + 26 : y;
+
+  bg(svg, 1, function(){
+    panel(svg, 0, y, pw, ph, '1 · SEMANTIC SECURITY UNDER CPA', css('--s1'));
+    add(svg, T(14, y + 46, 'She may encrypt any plaintexts', { fs:13.5, fill:css('--ink-1') }));
+    add(svg, T(14, y + 65, 'she likes, then must not tell', { fs:13.5, fill:css('--ink-1') }));
+    add(svg, T(14, y + 84, 'which of two she got back.', { fs:13.5, fill:css('--ink-1') }));
+    add(svg, T(14, y + 112, 'this is the confidentiality half', { fs:12, w:700, fill:css('--s1') }));
+    add(svg, T(14, y + 132, 'it says nothing about forging', { fs:12, fill:ink }));
+  }, 'land', 0, 320);
+
+  bg(svg, 2, function(){
+    panel(svg, x2, y2, pw, ph, '2 · CIPHERTEXT INTEGRITY', css('--s2'));
+    add(svg, T(x2 + 14, y2 + 46, 'She sees valid pairs for', { fs:13.5, fill:css('--ink-1') }));
+    add(svg, mT(x2 + 14, y2 + 65, '(c_{1},t_{1}), …, (c_{ℓ},t_{ℓ})', { fs:13.5, w:700, fill:css('--s2') }));
+    add(svg, T(x2 + 14, y2 + 84, 'of her chosen plaintexts, and', { fs:13.5, fill:css('--ink-1') }));
+    add(svg, T(x2 + 14, y2 + 103, 'cannot produce a new valid', { fs:13.5, fill:css('--ink-1') }));
+    add(svg, mT(x2 + 14, y2 + 122, '(c,t) with c ∉ {c_{1}, …, c_{ℓ}}.', { fs:13.5, w:700, fill:css('--s2') }));
+    add(svg, T(x2 + 14, y2 + 146, 'this is the authentication half', { fs:12, w:700, fill:css('--s2') }));
+  }, 'land', 0, 320);
+
+  var yb = (nar ? y2 + ph : y + ph) + 26;
+  bg(svg, 3, function(){
+    rect(svg, 0, yb, W, nar ? 62 : 46, { fill:css('--good'), fo:.10, stroke:css('--good'), rx:4 });
+    add(svg, T(14, yb + 27, nar ? 'AE-secure = both conditions hold.' : 'An AE scheme is AE-secure when both conditions hold. Encrypt-then-MAC achieves this.',
+      { fs:nar ? 13 : 14.5, w:700, fill:css('--good') }));
+  }, 'fade', 80, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 74 : 58)));
+}
+
+/* ====================================================================
+   FAEAD · what is authenticated and what is encrypted
+   ==================================================================== */
+function faead(svg, W){
+  var nar = W < 700, ink = css('--ink-muted'), head = css('--ink-head');
+  var y = 34, h = 46, gap = 10;
+  var aw = nar ? W * 0.44 : W * 0.34, mw2 = nar ? W * 0.50 : W * 0.40;
+  var ax = 0, mx = aw + gap + (nar ? 0 : 30);
+
+  bg(svg, 1, function(){
+    blk(svg, ax, y, aw, h, 'A  (header)', css('--s4'), { fs:nar ? 12.5 : 14 });
+    add(svg, T(ax, y - 10, 'routing, versions, context', { fs:11.5, fill:ink }));
+  }, 'land', 0, 300);
+
+  bg(svg, 2, function(){
+    blk(svg, mx, y, mw2, h, 'M  (payload)', css('--s3'), { fs:nar ? 12.5 : 14 });
+    add(svg, T(mx, y - 10, 'the secret part', { fs:11.5, fill:ink }));
+  }, 'land', 60, 300);
+
+  var y3 = y + h + 26;
+  bg(svg, 3, function(){
+    var m1 = brace(svg, ax, mx + mw2, y3, 1, css('--s2'));
+    add(svg, T(m1, y3 + 24, 'authenticated: both', { anchor:'middle', fs:13.5, w:700, fill:css('--s2') }));
+    var m2 = brace(svg, mx, mx + mw2, y3 + 44, 1, css('--s1'));
+    add(svg, T(m2, y3 + 68, 'encrypted: the payload only', { anchor:'middle', fs:13.5, w:700, fill:css('--s1') }));
+    add(svg, T(ax, y3 + 68, nar ? 'A travels in clear' : 'A travels in the clear', { fs:12.5, w:700, fill:css('--s4') }));
+  }, 'fade', 0, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y3 + 86));
+}
+/* ====================================================================
+   FCTR · CTR mode: the counter drives a keystream, XORed into the data
+   ==================================================================== */
+function fctr(svg, W){
+  var nar = W < 760, ink = css('--ink-muted'), head = css('--ink-head');
+  arrowDef(svg, 'mkc', css('--axis'));
+  var n = nar ? 2 : 3, cw = nar ? 120 : 190, gap = nar ? 16 : 30, x0 = 0;
+  var yJ = 26, yA = yJ + 44, yK = yA + 48, yM = yK + 46, yC = yM + 48, bh = 32;
+
+  function col(i){ return css(i === 0 ? '--s1' : (i === 1 ? '--s3' : '--s4')); }
+
+  for (var i = 0; i < n; i++){
+    (function(i){
+      var x = x0 + i * (cw + gap), c = col(i), sub = String(i + 1);
+      /* step i+1: one whole column appears */
+      bg(svg, i + 1, function(){
+        blk(svg, x, yJ, cw, bh, 'J_{' + sub + '}', c, { fs:13.5 });
+        arrow(svg, x + cw / 2, yJ + bh + 2, x + cw / 2, yA - 4, 'mkc', { stroke:css('--axis'), sw:1.2 });
+        fnode(svg, x, yA, cw, bh, 'AES_{k}', css('--s1'));
+        arrow(svg, x + cw / 2, yA + bh + 2, x + cw / 2, yK - 4, 'mkc', { stroke:css('--axis'), sw:1.2 });
+        blk(svg, x, yK, cw, bh, 'keystream', c, { fs:12, fo:.12 });
+        var xr = xor(svg, x + cw / 2, yM + bh / 2, 11, head);
+        add(svg, mT(x + cw / 2 - 30 - (nar ? 6 : 14), yM + bh / 2 + 5, 'M_{' + sub + '}', { anchor:'end', fs:13.5, w:700, fill:css('--s3') }));
+        arrow(svg, x + cw / 2 - 26 - (nar ? 4 : 10), yM + bh / 2, x + cw / 2 - 13, yM + bh / 2, 'mkc', { stroke:css('--axis'), sw:1.2 });
+        arrow(svg, x + cw / 2, yK + bh + 2, x + cw / 2, yM + bh / 2 - 13, 'mkc', { stroke:css('--axis'), sw:1.2 });
+        arrow(svg, x + cw / 2, yM + bh / 2 + 13, x + cw / 2, yC - 4, 'mkc', { stroke:css('--axis'), sw:1.2 });
+        blk(svg, x, yC, cw, bh, 'C_{' + sub + '}', c, { fs:13.5 });
+      }, 'fade', 0, 340);
+    })(i);
+  }
+
+  /* the counter chain between columns */
+  bg(svg, 2, function(){
+    for (var i = 0; i + 1 < n; i++){
+      var x = x0 + i * (cw + gap);
+      arrow(svg, x + cw + 2, yJ + bh / 2, x + cw + gap - 4, yJ + bh / 2, 'mkc', { stroke:css('--s2'), sw:1.4 });
+      add(svg, T(x + cw + gap / 2, yJ - 7, '+1', { anchor:'middle', fs:11.5, w:700, fill:css('--s2') }));
+    }
+  }, 'fade', 120, 300);
+
+  /* closing line */
+  var yb = yC + bh + 26;
+  bg(svg, n, function(){
+    add(svg, mT(0, yb, 'C_{i} = AES_{k}(J_{i}) ⊕ M_{i}', { fs:nar ? 14 : 16, w:700, fill:head }));
+    add(svg, T(0, yb + 20, nar ? 'AES encrypts counters, never the data.' : 'AES is applied to the counters, never to the data. The columns are independent, so this parallelizes.', { fs:12.5, fill:ink }));
+  }, 'fade', 0, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + 34));
+}
+
+/* ====================================================================
+   FJ0 · how J0 is built from a 96-bit IV
+   ==================================================================== */
+function fj0(svg, W){
+  var nar = W < 720, ink = css('--ink-muted'), head = css('--ink-head');
+  var y = 40, bh = 42;
+  var wIV = W * (nar ? 0.46 : 0.52), wZ = W * (nar ? 0.34 : 0.30), wO = W - wIV - wZ;
+
+  bg(svg, 1, function(){
+    blk(svg, 0, y, wIV, bh, 'IV', css('--s1'), { fs:15 });
+    add(svg, T(0, y - 10, '96 bits, the nonce', { fs:11.5, fill:ink }));
+  }, 'land', 0, 300);
+
+  bg(svg, 2, function(){
+    blk(svg, wIV, y, wZ, bh, '0'.repeat(nar ? 10 : 16), css('--ink-muted'), { fs:11.5, fo:.12 });
+    add(svg, mT(wIV, y - 10, '31 zero bits', { fs:11.5, fill:ink }));
+    blk(svg, wIV + wZ, y, wO, bh, '1', css('--s2'), { fs:15 });
+    add(svg, T(wIV + wZ, y - 10, 'one', { fs:11.5, fill:ink }));
+  }, 'land', 60, 320);
+
+  var y2 = y + bh + 30;
+  bg(svg, 3, function(){
+    var m = brace(svg, wIV, W, y2, 1, css('--s2'));
+    add(svg, mT(m, y2 + 24, 'a 32-bit counter, starting at 1', { anchor:'middle', fs:13, w:700, fill:css('--s2') }));
+    add(svg, mT(0, y2 + 24, 'J_{0} = IV ∥ 0^{31} ∥ 1', { fs:nar ? 14 : 16, w:700, fill:head }));
+  }, 'fade', 0, 320);
+
+  var y3 = y2 + 52;
+  bg(svg, 4, function(){
+    rect(svg, 0, y3, W, nar ? 78 : 62, { fill:css('--surface-1'), stroke:css('--ring'), rx:4 });
+    add(svg, mT(14, y3 + 22, 'encryption starts at inc32(J_{0}), that is at counter 2', { fs:nar ? 12.5 : 14, w:700, fill:head }));
+    add(svg, T(14, y3 + 42, nar ? 'J₀ itself is reserved: it masks the tag.' : 'J₀ itself is never used as a keystream block. It is reserved to mask the tag.', { fs:12.5, fill:css('--ink-1') }));
+    if (nar) add(svg, T(14, y3 + 62, 'inc32 increments the last 32 bits only.', { fs:12, fill:ink }));
+    else add(svg, T(14, y3 + 58, 'inc32 increments only the rightmost 32 bits, modulo 2³². The IV part never changes.', { fs:12, fill:ink }));
+  }, 'fade', 60, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y3 + (nar ? 90 : 74)));
+}
+
+/* ====================================================================
+   FCNT · why the plaintext is limited to 2^32 - 2 blocks
+   ==================================================================== */
+function fcnt(svg, W){
+  var nar = W < 740, ink = css('--ink-muted'), head = css('--ink-head');
+  var y = 50, h = 44, n = nar ? 10 : 16, cw = (W - (n - 1) * 4) / n;
+
+  /* step 1: the counter values as a strip */
+  bg(svg, 1, function(){
+    add(svg, mT(0, y - 36, 'the 32-bit counter field: 2^{32} possible values', { fs:12.5, fill:ink }));
+    for (var i = 0; i < n; i++){
+      var x = i * (cw + 4), lab = i === 0 ? '0' : (i === 1 ? '1' : (i === n - 1 ? '2³²−1' : String(i)));
+      blk(svg, x, y, cw, h, lab, css('--grid'), { fs:11.5, fo:1, fill:css('--ink-1') });
+    }
+  }, 'fade', 0, 320);
+
+  /* step 2: counter 1 is J0, reserved */
+  bg(svg, 2, function(){
+    var x = cw + 4;
+    rect(svg, x - 2, y - 2, cw + 4, h + 4, { fill:css('--s2'), fo:.30, stroke:css('--s2'), sw:2, rx:3 });
+    add(svg, mT(x + cw / 2, y + h + 18, 'J_{0}', { anchor:'middle', fs:13, w:700, fill:css('--s2') }));
+    add(svg, T(x + cw / 2, y + h + 34, 'tag mask', { anchor:'middle', fs:11, fill:css('--s2') }));
+  }, 'fade', 0, 300);
+
+  /* step 3: the keystream blocks take the rest */
+  bg(svg, 3, function(){
+    for (var i = 2; i < n; i++){
+      var x = i * (cw + 4);
+      rect(svg, x, y, cw, h, { fill:css('--s3'), fo:.26, stroke:css('--s3'), rx:3 });
+    }
+    var m = brace(svg, 2 * (cw + 4), W, y - 8, -1, css('--s3'));
+    add(svg, T(m, y - 18, 'keystream blocks', { anchor:'middle', fs:12.5, w:700, fill:css('--s3') }));
+  }, 'fade', 0, 320);
+
+  /* step 4: the arithmetic */
+  var y4 = y + h + 56;
+  bg(svg, 4, function(){
+    rect(svg, 0, y4, W, nar ? 96 : 80, { fill:css('--critical'), fo:.09, stroke:css('--critical'), rx:4 });
+    add(svg, mT(14, y4 + 24, 'SP 800-38D: len(P) ≤ 2^{39} − 256 bits', { fs:nar ? 13 : 15, w:700, fill:css('--critical') }));
+    add(svg, mT(14, y4 + 46, '(2^{39} − 256) / 128 = 2^{32} − 2 blocks', { fs:nar ? 13 : 15, w:700, fill:head }));
+    add(svg, T(14, y4 + (nar ? 68 : 66), nar ? 'so the counter never returns to J₀' : 'so the counter can never wrap around and come back to J₀, which would repeat a keystream block', { fs:12, fill:ink }));
+    if (nar) add(svg, T(14, y4 + 86, 'and never repeats a keystream block', { fs:12, fill:ink }));
+  }, 'fade', 60, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y4 + (nar ? 108 : 92)));
+}
+
+/* ====================================================================
+   FPOLY · a 128-bit block read as a polynomial over GF(2)
+   ==================================================================== */
+function fpoly(svg, W){
+  var nar = W < 700, ink = css('--ink-muted'), head = css('--ink-head');
+  var BITS = ['1', '0', '1', '1', '0'];
+  var bw = nar ? 52 : 70, gap = 8, y = 36, bh = 38;
+
+  /* step 1: bits with their index */
+  var xs = [];
+  bg(svg, 1, function(){
+    add(svg, mT(0, y - 12, 'a = a_{0}a_{1}a_{2}…a_{127}, the bits of the block, left to right', { fs:12.5, fill:ink }));
+    BITS.forEach(function(b, i){
+      var x = i * (bw + gap); xs.push(x);
+      blk(svg, x, y, bw, bh, b, css('--s1'));
+      add(svg, mT(x + bw / 2, y + bh + 16, 'a_{' + i + '}', { anchor:'middle', fs:11.5, fill:ink }));
+    });
+    add(svg, T(BITS.length * (bw + gap) + 4, y + bh / 2 + 5, '…', { fs:16, fill:ink }));
+  }, 'land', 0, 320);
+
+  /* step 2: each bit is the coefficient of a power of x */
+  var y2 = y + bh + 54;
+  bg(svg, 2, function(){
+    var px = 0, fs = nar ? 14 : 17;
+    add(svg, mT(0, y2, 'a(x) =', { fs:fs, w:700, fill:head }));
+    px = mw('a(x) =', fs) + 10;
+    BITS.forEach(function(b, i){
+      var term = (i === 0 ? '1' : (i === 1 ? 'x' : 'x^{' + i + '}'));
+      var txt = (i ? '+ ' : '') + (b === '1' ? term : '0');
+      add(svg, mT(px, y2, txt, { fs:fs, w:700, fill: b === '1' ? css('--s1') : css('--ink-muted') }));
+      px += mw(txt, fs) + 8;
+    });
+    add(svg, mT(px, y2, '+ … + a_{127}x^{127}', { fs:fs, w:700, fill:head }));
+  }, 'fade', 0, 340);
+
+  /* step 3: drop the zero terms */
+  var y3 = y2 + 40;
+  bg(svg, 3, function(){
+    add(svg, mT(0, y3, 'a(x) = 1 + x^{2} + x^{3} + …', { fs:nar ? 14 : 17, w:700, fill:css('--s1') }));
+    add(svg, T(0, y3 + 22, nar ? 'bit i is the coefficient of xⁱ' : 'bit i is the coefficient of xⁱ. Note the first bit is the constant term, not the highest power.',
+      { fs:12.5, fill:ink }));
+  }, 'land', 0, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y3 + 36));
+}
+
+/* ====================================================================
+   FGF4 · a full worked multiplication, in the toy field GF(2^4)
+   ==================================================================== */
+function fgf4(svg, W){
+  var nar = W < 740, ink = css('--ink-muted'), head = css('--ink-head');
+  var fs = nar ? 13 : 15.5, y = 24, dy = nar ? 46 : 44;
+  var LINES = [
+    { k:1, l:'a = 1101',            r:'a(x) = 1 + x + x^{3}',                     c:'--s1', n:'read the bits as coefficients' },
+    { k:1, l:'b = 1100',            r:'b(x) = 1 + x',                             c:'--s1', n:'' },
+    { k:2, l:'multiply',            r:'a(x)·b(x) = 1 + x^{2} + x^{3} + x^{4}',    c:'--s3', n:'the two x terms cancel: x + x = 0' },
+    { k:3, l:'the modulus',         r:'f(x) = 1 + x + x^{4} = 0,  so  x^{4} = 1 + x', c:'--s2', n:'f is the toy field’s irreducible polynomial' },
+    { k:4, l:'substitute',          r:'= 1 + x^{2} + x^{3} + 1 + x',              c:'--s2', n:'replace x⁴ by 1 + x' },
+    { k:5, l:'collect, mod 2',      r:'= x + x^{2} + x^{3}',                      c:'--critical', n:'1 + 1 = 0' },
+    { k:5, l:'back to bits',        r:'a · b = 0111',                             c:'--critical', n:'' }
+  ];
+  var lw = nar ? 0 : 150;
+
+  LINES.forEach(function(L, i){
+    var yy = y + i * dy;
+    bg(svg, L.k, function(){
+      if (L.l) add(svg, T(0, yy + (nar ? 0 : 4), L.l, { fs:12, w:700, fill:ink }));
+      add(svg, mT(lw, yy + (nar ? 18 : 4), L.r, { fs:fs, w:700, fill:css(L.c) }));
+      if (L.n && !nar) add(svg, T(lw, yy + 22, L.n, { fs:11.5, fill:ink }));
+    }, 'land', 0, 320);
+  });
+
+  var yb = y + LINES.length * dy + 10;
+  bg(svg, 5, function(){
+    rect(svg, 0, yb, W, nar ? 60 : 46, { fill:css('--surface-1'), stroke:css('--ring'), rx:4 });
+    add(svg, mT(14, yb + (nar ? 22 : 28), nar ? 'GCM uses the same recipe in GF(2^{128})' : 'AES-GCM runs exactly this recipe in GF(2^{128})', { fs:nar ? 12.5 : 14, w:700, fill:head }));
+    add(svg, mT(14, yb + (nar ? 44 : 28) , nar ? 'with f(x) = 1+x+x^{2}+x^{7}+x^{128}' : '', { fs:12.5, w:700, fill:css('--s2') }));
+    if (!nar) add(svg, mT(W - 14, yb + 28, 'with f(x) = 1 + x + x^{2} + x^{7} + x^{128}', { anchor:'end', fs:14, w:700, fill:css('--s2') }));
+  }, 'fade', 60, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 72 : 58)));
+}
+/* ====================================================================
+   FGMAC · the blocks of A become coefficients of one polynomial
+   ==================================================================== */
+function fgmac(svg, W){
+  var nar = W < 680, ink = css('--ink-muted'), head = css('--ink-head');
+  var bw = nar ? 74 : 104, bh = 40, gap = nar ? 8 : 12, x0 = 0, y = 26;
+  var blocks = [{ k:'A₁', c:'--s1' }, { k:'A₂', c:'--s1' }, { k:'A₃', c:'--s1' }, { k:'L', c:'--s4' }];
+  arrowDef(svg, 'mkg', css('--axis'));
+
+  add(svg, T(0, 12, nar ? 'A = (A₁, A₂, A₃), v = 3' : 'the data to authenticate: A = (A₁, A₂, A₃), so v = 3 blocks, plus the length block L', { fs: nar ? 11.5 : 12.5, fill:ink }));
+
+  /* step 1: the blocks */
+  var cx = [];
+  blocks.forEach(function(b, i){
+    var x = x0 + i * (bw + gap), col = css(b.c);
+    cx.push(x + bw / 2);
+    bg(svg, 1, function(){
+      rect(svg, x, y, bw, bh, { fill:col, fo:.16, stroke:col, rx:3 });
+      add(svg, T(x + bw / 2, y + bh / 2 + 5, b.k, { anchor:'middle', fs:15, w:700, fill:head }));
+    }, 'land', i * 70, 320);
+  });
+  add(svg, T(x0 + 4 * (bw + gap) + 2, y + bh / 2 + 5, nar ? '128 bits each' : 'each block is 128 bits', { fs:11.5, fill:ink }));
+
+  /* step 2: they become coefficients */
+  var yp = y + bh + (nar ? 44 : 52);
+  bg(svg, 2, function(){
+    cx.forEach(function(x, i){ arrow(svg, x, y + bh + 4, x, yp - 20, 'mkg', { stroke:css('--axis'), sw:1.2 }); });
+    add(svg, T(0, yp - 26, 'become coefficients of one polynomial', { fs:12, fill:ink }));
+  }, 'fade', 0, 300);
+
+  var terms = [{ t:'A_{1}x^{v+1}', c:'--s1' }, { t:'+ A_{2}x^{v}', c:'--s1' }, { t:'+ A_{3}x^{2}', c:'--s1' }, { t:'+ Lx', c:'--s4' }];
+  var fs = nar ? 14 : 17, px = 0;
+  bg(svg, 2, function(){
+    add(svg, mT(0, yp, 'f_{A}(x) =', { fs:fs, w:700, fill:head }));
+    px = mw('f_{A}(x) =', fs) + 10;
+    terms.forEach(function(tm){
+      add(svg, mT(px, yp, tm.t, { fs:fs, w:700, fill:css(tm.c) }));
+      px += mw(tm.t, fs) + 8;
+    });
+  }, 'fade', 220, 340);
+
+  /* step 3: degree v+1 */
+  bg(svg, 3, function(){
+    var w1 = mw('A_{1}x^{v+1}', fs), bx = mw('f_{A}(x) =', fs) + 10;
+    var m = brace(svg, bx, bx + w1, yp + 10, 1, css('--critical'));
+    add(svg, mT(m, yp + 34, 'degree v+1', { anchor:'middle', fs:13.5, w:700, fill:css('--critical') }));
+    add(svg, T(m, yp + 50, 'the highest power', { anchor:'middle', fs:11.5, fill:ink }));
+  }, 'fade', 0, 320);
+
+  /* step 4: H and the tag */
+  var yt = yp + (nar ? 76 : 84);
+  bg(svg, 4, function(){
+    rect(svg, 0, yt, W, nar ? 76 : 58, { fill:css('--surface-1'), stroke:css('--ring'), rx:4 });
+    add(svg, mT(14, yt + 24, 'H = AES_{k}(0^{128})', { fs:nar ? 13 : 15, w:700, fill:css('--s3') }));
+    add(svg, T(14, yt + 42, 'the secret evaluation point', { fs:11.5, fill:ink }));
+    var tx = nar ? 14 : 330, ty = nar ? yt + 62 : yt + 24;
+    add(svg, mT(tx, ty, 't = AES_{k}(J_{0}) ⊕ f_{A}(H)', { fs:nar ? 13 : 15, w:700, fill:head }));
+    if (!nar) add(svg, T(tx, ty + 18, 'the tag: a one-time pad over the polynomial value', { fs:11.5, fill:ink }));
+  }, 'fade', 0, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yt + (nar ? 84 : 66)));
+}
+
+/* ====================================================================
+   FBOUND · why the forgery probability is at most (v+1)/2^128
+   Left: the algebra.  Right: the field as a grid of cells.
+   ==================================================================== */
+function fbound(svg, W){
+  var nar = W < 760, ink = css('--ink-muted'), head = css('--ink-head');
+  var crit = css('--critical'), blue = css('--s1'), good = css('--s3'), warn = css('--s2');
+
+  /* ---------- grid geometry: the field GF(2^128) ---------- */
+  var cols = nar ? 18 : 24, rows = nar ? 9 : 12, cell = nar ? 13 : 15, pad = 2.6;
+  var gw = cols * (cell + pad) - pad, gh = rows * (cell + pad) - pad;
+  var gx = nar ? 0 : W - gw, gy = nar ? 20 : 30;
+  var N = cols * rows;                            /* 5 marked cells = v+1 with v = 4 (illustration) */
+  var ROOTS = [0.17, 0.33, 0.52, 0.71, 0.86].map(function(f){ return Math.floor(f * N); });
+  var HCELL = Math.floor(0.62 * N), HPRIME = Math.floor(0.26 * N);
+  while (ROOTS.indexOf(HCELL) >= 0) HCELL++;      /* H is NOT drawn on a root: the bound is the chance it would be */
+
+  function cellXY(i){ return { x: gx + (i % cols) * (cell + pad), y: gy + Math.floor(i / cols) * (cell + pad) }; }
+
+  /* grid label + all cells (step 1) */
+  bg(svg, 1, function(){
+    add(svg, mT(gx, gy - 12, 'GF(2^{128}): every possible value of H', { fs:12.5, w:700, fill:head }));
+    for (var i = 0; i < cols * rows; i++){
+      var p = cellXY(i);
+      rect(svg, p.x, p.y, cell, cell, { fill:css('--grid'), rx:1.5 });
+    }
+    add(svg, mT(gx, gy + gh + 16, '2^{128} elements (grid shows ' + (cols * rows) + ')', { fs:11, fill:ink }));
+  }, 'fade', 0, 320);
+
+  /* ---------- left column: the algebra ---------- */
+  var lx = 0, ly = nar ? gy + gh + 66 : 34, fs = nar ? 13.5 : 15.5, lw = nar ? W : W - gw - 40;
+
+  /* step 2: f_A and its degree */
+  bg(svg, 2, function(){
+    add(svg, mT(lx, ly, 'f_{A}(x) = A_{1}x^{v+1} + ... + Lx', { fs:fs, w:700, fill:blue }));
+    add(svg, mT(lx, ly + 20, 'degree v+1 · no constant term', { fs:11.5, fill:ink }));
+  }, 'land', 0, 320);
+
+  /* step 3: the adversary's single guess H' */
+  var y3 = ly + 50;
+  bg(svg, 3, function(){
+    add(svg, mT(lx, y3, 'she guesses H′, outputs t′ = f_{A}(H′)', { fs:fs - 1, w:700, fill:warn }));
+    add(svg, T(lx, y3 + 19, 'one guess, committed before H is drawn', { fs:11.5, fill:ink }));
+    /* mark the guess on the grid */
+    var p = cellXY(HPRIME);
+    rect(svg, p.x - 1.5, p.y - 1.5, cell + 3, cell + 3, { fill:warn, stroke:warn, rx:2 });
+    add(svg, T(p.x + cell / 2, p.y - 7, 'H′', { anchor:'middle', fs:11.5, w:700, fill:warn }));
+  }, 'fade', 0, 320);
+
+  /* step 4: move to one side */
+  var y4 = y3 + 48;
+  bg(svg, 4, function(){
+    add(svg, mT(lx, y4, 'g(x) = f_{A}(x) + f_{A}(H′)', { fs:fs, w:700, fill:head }));
+    add(svg, T(lx, y4 + 19, 'she wins  ⟺  g(H) = 0', { fs:12.5, w:700, fill:crit }));
+    add(svg, T(lx, y4 + 36, 'in characteristic 2, minus = plus', { fs:11.5, fill:ink }));
+  }, 'land', 0, 320);
+
+  /* step 5: degree unchanged */
+  var y5 = y4 + 62;
+  bg(svg, 5, function(){
+    add(svg, mT(lx, y5, 'deg g = v+1,  g ≠ 0', { fs:fs, w:700, fill:crit }));
+    add(svg, mT(lx, y5 + 19, 'the added term is a constant; A_{1}x^{v+1} survives', { fs:11.5, fill:ink }));
+  }, 'fade', 0, 300);
+
+  /* step 6: at most v+1 roots, marked on the grid */
+  var y6 = y5 + 46;
+  bg(svg, 6, function(){
+    add(svg, T(lx, y6, 'a nonzero degree-d polynomial over a field', { fs:12.5, fill:css('--ink-1') }));
+    add(svg, T(lx, y6 + 17, 'has at most d roots', { fs:12.5, w:700, fill:good }));
+    ROOTS.forEach(function(i){
+      var p = cellXY(i);
+      rect(svg, p.x, p.y, cell, cell, { fill:good, rx:1.5 });
+    });
+    var pl = cellXY(ROOTS[ROOTS.length - 1]);
+    add(svg, mT(nar ? gx : gx + gw, gy + gh + 32, nar ? 'green: the ≤ v+1 roots of g (v+1 = 5)' : 'green: the ≤ v+1 roots of g  (drawn with v+1 = 5)', { anchor: nar ? 'start' : 'end', fs:11, w:700, fill:good }));
+  }, 'fade', 0, 340);
+
+  /* step 7: H is one uniform dart */
+  var y7 = y6 + 48;
+  bg(svg, 7, function(){
+    var p = cellXY(HCELL);
+    rect(svg, p.x - 2.5, p.y - 2.5, cell + 5, cell + 5, { fill:'none', stroke:crit, sw:2.4, rx:2 });
+    add(svg, T(p.x + cell / 2, p.y + cell + 14, 'H', { anchor:'middle', fs:12.5, w:700, fill:crit }));
+    add(svg, mT(lx, y7, nar ? 'H is uniform: it lands on green with' : 'H is uniform and unknown: it lands on a green cell', { fs:12.5, fill:css('--ink-1') }));
+    add(svg, mT(lx, y7 + 17, nar ? 'probability ≤ (v+1)/2^{128}' : 'with probability at most (v+1)/2^{128}', { fs:12.5, fill:css('--ink-1') }));
+    var bx = 0, by = y7 + 30, bwd = Math.min(lw, nar ? W : 360), bht = 48;
+    rect(svg, bx, by, bwd, bht, { fill:crit, fo:.10, stroke:crit, rx:4 });
+    add(svg, mT(bx + 12, by + 31, 'Pr[forgery]  ≤  (v+1) / 2^{128}', { fs:nar ? 15 : 18, w:700, fill:crit }));
+  }, 'fade', 0, 360);
+
+  var H = Math.max(nar ? y7 + 72 : y7 + 70, gy + gh + 44);
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+}
+
+function figW(svg){ return DECK ? 1000 : Math.max(300, Math.min(1000, svg.parentNode.clientWidth)); }
+
+/* ====================================================================
+   FHORNER · evaluating f_A(H) by nesting, and counting the operations
+   ==================================================================== */
+function fhorner(svg, W){
+  var nar = W < 760, ink = css('--ink-muted'), head = css('--ink-head');
+  var fs = nar ? 12.5 : 15, y = 26, dy = nar ? 42 : 40, lw = nar ? 0 : 118;
+  var LINES = [
+    { k:1, l:'the polynomial', r:'f_{A}(x) = A_{1}x^{4} + A_{2}x^{3} + A_{3}x^{2} + Lx', c:'--s1', n:'for v = 3 blocks of A' },
+    { k:2, l:'evaluate at H',  r:'f_{A}(H) = A_{1}H^{4} + A_{2}H^{3} + A_{3}H^{2} + LH', c:'--s1', n:'powers of H are expensive to form directly' },
+    { k:3, l:'nest it',        r:'= ((((A_{1}·H + A_{2})·H + A_{3})·H) + L)·H',          c:'--s3', n:'Horner’s rule: no power is ever formed' },
+    { k:4, l:'count',          r:'3 additions, 4 multiplications',                        c:'--s2', n:'v additions and v+1 multiplications in general' }
+  ];
+
+  LINES.forEach(function(L, i){
+    var yy = y + i * dy;
+    bg(svg, L.k, function(){
+      add(svg, T(0, yy + (nar ? 0 : 4), L.l, { fs:11.5, w:700, fill:ink }));
+      add(svg, mT(lw, yy + (nar ? 17 : 4), L.r, { fs:fs, w:700, fill:css(L.c) }));
+      if (!nar) add(svg, T(lw, yy + 21, L.n, { fs:11.5, fill:ink }));
+    }, 'land', 0, 320);
+  });
+
+  /* step 5: the running register, one multiply-add per cell */
+  var ys = y + LINES.length * dy + (nar ? 16 : 20);
+  bg(svg, 5, function(){
+    var STEPS = ['A₁', '·H + A₂', '·H + A₃', '·H + L', '·H'];
+    var cw = (W - (STEPS.length - 1) * 6) / STEPS.length, h = nar ? 34 : 38;
+    add(svg, T(0, ys - 8, 'the accumulator, left to right', { fs:11.5, fill:ink }));
+    STEPS.forEach(function(s, i){
+      var x = i * (cw + 6);
+      blk(svg, x, ys, cw, h, s, css(i === 0 ? '--s1' : '--s3'), { fs:nar ? 11.5 : 13 });
+    });
+    add(svg, mT(0, ys + h + 22, 'one multiplication in GF(2^{128}) per step, one addition (XOR) per coefficient', { fs:12.5, fill:css('--ink-1') }));
+  }, 'fade', 0, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (ys + (nar ? 76 : 82)));
+}
+
+/* ====================================================================
+   FTAG · guessing the 128-bit tag outright
+   ==================================================================== */
+function ftag(svg, W){
+  var nar = W < 700, ink = css('--ink-muted'), head = css('--ink-head');
+  var y = 34, n = nar ? 16 : 26, rows = nar ? 6 : 6, cell = nar ? 15 : 17, pad = 3;
+  var gw = n * (cell + pad) - pad, gh = rows * (cell + pad) - pad;
+  var N = n * rows, PICK = Math.floor(N * 0.46);
+
+  bg(svg, 1, function(){
+    add(svg, mT(0, y - 12, 'every possible 128-bit tag value', { fs:12.5, w:700, fill:head }));
+    for (var i = 0; i < N; i++){
+      var x = (i % n) * (cell + pad), yy = y + Math.floor(i / n) * (cell + pad);
+      rect(svg, x, yy, cell, cell, { fill:css('--grid'), rx:1.5 });
+    }
+    add(svg, mT(0, y + gh + 16, '2^{128} of them, exactly one is right', { fs:11, fill:ink }));
+  }, 'fade', 0, 320);
+
+  bg(svg, 2, function(){
+    var x = (PICK % n) * (cell + pad), yy = y + Math.floor(PICK / n) * (cell + pad);
+    rect(svg, x, yy, cell, cell, { fill:css('--good'), rx:1.5 });
+    rect(svg, x - 2.5, yy - 2.5, cell + 5, cell + 5, { fill:'none', stroke:css('--good'), sw:2.2, rx:2 });
+    add(svg, T(x + cell / 2, yy - 8, 'one guess', { anchor:'middle', fs:11.5, w:700, fill:css('--good') }));
+  }, 'fade', 0, 300);
+
+  var yb = y + gh + 38;
+  bg(svg, 3, function(){
+    rect(svg, 0, yb, nar ? W : 460, 48, { fill:css('--good'), fo:.10, stroke:css('--good'), rx:4 });
+    add(svg, mT(12, yb + 30, 'Pr[success] = 1 / 2^{128}', { fs:nar ? 15 : 18, w:700, fill:css('--good') }));
+    if (!nar) add(svg, T(480, yb + 20, 'she learns nothing from a wrong guess:', { fs:12.5, fill:css('--ink-1') }));
+    if (!nar) add(svg, T(480, yb + 38, 'the verifier only answers accept or reject', { fs:12.5, fill:css('--ink-1') }));
+  }, 'fade', 60, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 62 : 60)));
+}
+
+/* ====================================================================
+   FSOLVE · one valid pair turns the bound into a certainty
+   ==================================================================== */
+function fsolve(svg, W){
+  var nar = W < 740, ink = css('--ink-muted'), head = css('--ink-head');
+  var fs = nar ? 13 : 15.5, y = 28, dy = nar ? 44 : 46, lw = nar ? 0 : 150;
+  var LINES = [
+    { k:1, l:'she observes', r:'one valid pair (A, t′)', c:'--s1', n:'a single honest transmission is enough' },
+    { k:2, l:'which means', r:'f_{A}(H) = t′', c:'--s2', n:'A and t′ are known; H is the only unknown' },
+    { k:3, l:'rewrite', r:'f_{A}(x) + t′ = 0', c:'--s2', n:'a polynomial equation of degree v+1 in one unknown' },
+    { k:4, l:'solve it', r:'root-finding over GF(2^{128}) is fast', c:'--critical', n:'at most v+1 candidates, then test each' }
+  ];
+
+  LINES.forEach(function(L, i){
+    var yy = y + i * dy;
+    bg(svg, L.k, function(){
+      add(svg, T(0, yy + (nar ? 0 : 4), L.l, { fs:11.5, w:700, fill:ink }));
+      add(svg, mT(lw, yy + (nar ? 18 : 4), L.r, { fs:fs, w:700, fill:css(L.c) }));
+      if (!nar) add(svg, T(lw, yy + 22, L.n, { fs:11.5, fill:ink }));
+    }, 'land', 0, 320);
+  });
+
+  var yb = y + LINES.length * dy + 8;
+  bg(svg, 4, function(){
+    rect(svg, 0, yb, W, nar ? 72 : 56, { fill:css('--critical'), fo:.11, stroke:css('--critical'), rx:4 });
+    add(svg, mT(14, yb + 24, 'She now holds H, and can forge the simplified tag for any message.', { fs:nar ? 12.5 : 14.5, w:700, fill:css('--critical') }));
+    add(svg, T(14, yb + (nar ? 46 : 44), nar ? 'Not a 1-in-2¹²⁸ chance. A certainty.' : 'This is not a small probability any more. It is a complete break of the simplified tag.', { fs:12.5, fill:css('--ink-1') }));
+  }, 'fade', 80, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 84 : 68)));
+}
+
+/* ====================================================================
+   FOTP · the one-time pad that hides f_A(H)
+   ==================================================================== */
+function fotp(svg, W){
+  var nar = W < 740, ink = css('--ink-muted'), head = css('--ink-head');
+  arrowDef(svg, 'mko', css('--axis'));
+  var y = 34, bh = 38, bwd = nar ? 128 : 190;
+
+  bg(svg, 1, function(){
+    blk(svg, 0, y, bwd, bh, 'f_{A}(H)', css('--s1'), { fs:14 });
+    add(svg, T(0, y - 10, 'the polynomial value', { fs:11.5, fill:ink }));
+  }, 'land', 0, 300);
+
+  bg(svg, 2, function(){
+    var x2 = bwd + (nar ? 46 : 70);
+    xor(svg, bwd + (nar ? 23 : 35), y + bh / 2, 11, head);
+    blk(svg, x2, y, bwd, bh, 'AES_{k}(J_{0})', css('--s2'), { fs:14 });
+    add(svg, T(x2, y - 10, 'the one-time pad', { fs:11.5, fill:ink }));
+  }, 'fade', 0, 300);
+
+  bg(svg, 3, function(){
+    var x3 = 2 * bwd + (nar ? 92 : 140);
+    arrow(svg, x3 - (nar ? 22 : 34), y + bh / 2, x3 - 6, y + bh / 2, 'mko', { stroke:css('--axis') });
+    blk(svg, x3, y, nar ? 86 : 130, bh, 't', css('--s3'), { fs:15 });
+    add(svg, T(x3, y - 10, 'the tag that is sent', { fs:11.5, fill:ink }));
+  }, 'fade', 0, 300);
+
+  var yb = y + bh + 32;
+  bg(svg, 4, function(){
+    rect(svg, 0, yb, W, nar ? 92 : 74, { fill:css('--good'), fo:.10, stroke:css('--good'), rx:4 });
+    add(svg, mT(14, yb + 24, 'The adversary never sees f_{A}(H), so she has no equation to solve.', { fs:nar ? 12.5 : 14.5, w:700, fill:css('--good') }));
+    add(svg, T(14, yb + (nar ? 46 : 44), nar ? 'The pad must be fresh for every message.' : 'The pad must be fresh for every message — that is exactly what a unique IV buys.', { fs:12.5, fill:css('--ink-1') }));
+    add(svg, T(14, yb + (nar ? 66 : 62), nar ? 'Reuse it and the pad cancels out.' : 'Reuse an IV and the pad is the same twice, so XORing two tags cancels it. See the IV-reuse slide.', { fs:12, fill:ink }));
+  }, 'fade', 60, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 104 : 88)));
+}
+
+/* ====================================================================
+   FGCM · the whole of AES-GCM encryption on one diagram
+   ==================================================================== */
+function fgcm(svg, W){
+  var nar = W < 820, ink = css('--ink-muted'), head = css('--ink-head');
+  arrowDef(svg, 'mkG', css('--axis'));
+  var colW = nar ? W : (W - 40) / 2, y = 30, bh = 34;
+
+  /* left: CTR encryption of M */
+  bg(svg, 1, function(){
+    panel(svg, 0, y, colW, nar ? 126 : 142, '1 · ENCRYPT THE PAYLOAD', css('--s1'), { fo:.07 });
+    add(svg, mT(14, y + 44, 'J_{i} = inc32(J_{i−1}),  i = 1 … u', { fs:13, w:700, fill:css('--s1') }));
+    add(svg, mT(14, y + 68, 'C_{i} = AES_{k}(J_{i}) ⊕ M_{i}', { fs:13.5, w:700, fill:head }));
+    add(svg, T(14, y + 92, 'the ciphertext has the same length', { fs:11.5, fill:ink }));
+    add(svg, T(14, y + 110, 'as the plaintext', { fs:11.5, fill:ink }));
+  }, 'land', 0, 320);
+
+  /* right: the tag */
+  var x2 = nar ? 0 : colW + 40, y2 = nar ? y + 150 : y;
+  bg(svg, 2, function(){
+    panel(svg, x2, y2, colW, nar ? 126 : 142, '2 · AUTHENTICATE BOTH', css('--s2'), { fo:.07 });
+    add(svg, mT(x2 + 14, y2 + 44, 'H = AES_{k}(0^{128})', { fs:13, w:700, fill:css('--s3') }));
+    add(svg, mT(x2 + 14, y2 + 68, 't = AES_{k}(J_{0}) ⊕ f_{A,C}(H)', { fs:13.5, w:700, fill:head }));
+    add(svg, T(x2 + 14, y2 + 92, 'over the header A and the ciphertext C,', { fs:11.5, fill:ink }));
+    add(svg, T(x2 + 14, y2 + 110, 'never over the plaintext', { fs:11.5, fill:ink }));
+  }, 'land', 60, 320);
+
+  /* the length block */
+  var y3 = (nar ? y2 + 126 : y + 142) + 28;
+  bg(svg, 3, function(){
+    var w1 = colW * 0.46, w2 = colW * 0.46;
+    blk(svg, 0, y3, w1, bh, 'L_{A}', css('--s4'), { fs:13 });
+    blk(svg, w1 + 8, y3, w2, bh, 'L_{M}', css('--s4'), { fs:13 });
+    add(svg, mT(w1 + w2 + 22, y3 + bh / 2 + 5, 'L = L_{A} ∥ L_{M}, each a 64-bit length', { fs:12.5, w:700, fill:css('--s4') }));
+  }, 'fade', 0, 300);
+
+  /* what goes on the wire */
+  var y4 = y3 + bh + 30;
+  bg(svg, 4, function(){
+    var items = ['IV', 'A', 'C', 't'], cols = ['--s1', '--s4', '--s1', '--s3'];
+    var cw = (W - 3 * 8) / 4;
+    add(svg, T(0, y4 - 8, 'sent to Bob', { fs:11.5, fill:ink }));
+    items.forEach(function(it, i){
+      blk(svg, i * (cw + 8), y4, cw, bh + 4, it, css(cols[i]), { fs:14 });
+    });
+  }, 'land', 0, 320);
+
+  /* the glue */
+  var y5 = y4 + bh + 34;
+  bg(svg, 5, function(){
+    rect(svg, 0, y5, W, nar ? 62 : 46, { fill:css('--surface-1'), stroke:css('--ring'), rx:4 });
+    add(svg, T(14, y5 + (nar ? 24 : 28), nar ? 'One key, one nonce, both parts.' : 'One AES key and one nonce drive both halves. This is what makes GCM a dedicated AE scheme, not a composition.',
+      { fs:nar ? 12.5 : 13.5, w:700, fill:head }));
+    if (nar) add(svg, T(14, y5 + 44, 'A dedicated AE scheme, not a composition.', { fs:12, fill:ink }));
+  }, 'fade', 60, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y5 + (nar ? 74 : 58)));
+}
+
+/* ====================================================================
+   FAC · the combined polynomial: A first, then C, then L
+   ==================================================================== */
+function fac(svg, W){
+  var nar = W < 760, ink = css('--ink-muted'), head = css('--ink-head');
+  var SEG = [
+    { k:'A_{1} … A_{v}', c:'--s4', n:'the header blocks', e:'x^{u+v+1} … x^{u+2}' },
+    { k:'C_{1} … C_{u}', c:'--s1', n:'the ciphertext blocks', e:'x^{u+1} … x^{2}' },
+    { k:'L',        c:'--s2', n:'the length block',     e:'x^{1}' }
+  ];
+  var y = 40, bh = 46, gap = 8;
+  var ws = nar ? [0.40, 0.40, 0.20] : [0.42, 0.42, 0.16];
+
+  var x = 0;
+  SEG.forEach(function(s, i){
+    var w = (W - 2 * gap) * ws[i], xx = x;
+    bg(svg, i + 1, function(){
+      blk(svg, xx, y, w, bh, s.k, css(s.c), { fs:nar ? 12.5 : 14 });
+      add(svg, T(xx, y - 10, s.n, { fs:11.5, fill:ink }));
+      add(svg, mT(xx, y + bh + 20, s.e, { fs:12, w:700, fill:css(s.c) }));
+    }, 'land', i * 60, 320);
+    x += w + gap;
+  });
+
+  var yb = y + bh + 44;
+  bg(svg, 3, function(){
+    add(svg, mT(0, yb, 'f_{A,C}(x) = A_{1}x^{u+v+1} + … + A_{v}x^{u+2} + C_{1}x^{u+1} + … + C_{u}x^{2} + Lx',
+      { fs:nar ? 11.5 : 14.5, w:700, fill:head }));
+    add(svg, mT(0, yb + 24, 'degree u+v+1 · the exponents count down, L always lands on x', { fs:12, fill:ink }));
+  }, 'fade', 60, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + 40));
+}
+
+/* ====================================================================
+   FDEC · decryption verifies before it decrypts
+   ==================================================================== */
+function fdec(svg, W){
+  var nar = W < 740, ink = css('--ink-muted'), head = css('--ink-head');
+  arrowDef(svg, 'mkD', css('--axis'));
+  var y = 30, bh = 36, cw = nar ? W : 300;
+
+  bg(svg, 1, function(){
+    blk(svg, 0, y, cw, bh, 'receive (IV, A, C, t)', css('--s1'), { fs:nar ? 12.5 : 13.5, fo:.12 });
+  }, 'land', 0, 300);
+
+  var y2 = y + bh + 26;
+  bg(svg, 2, function(){
+    arrow(svg, cw / 2, y + bh + 2, cw / 2, y2 - 6, 'mkD', { stroke:css('--axis'), sw:1.2 });
+    blk(svg, 0, y2, cw, bh, 'recompute t′', css('--s2'), { fs:13.5, fo:.14 });
+    add(svg, mT(cw + 16, y2 + bh / 2 + 5, 't′ = AES_{k}(J_{0}) ⊕ f_{A,C}(H)', { fs:12.5, w:700, fill:css('--s2') }));
+  }, 'fade', 0, 300);
+
+  var y3 = y2 + bh + 26;
+  bg(svg, 3, function(){
+    arrow(svg, cw / 2, y2 + bh + 2, cw / 2, y3 - 6, 'mkD', { stroke:css('--axis'), sw:1.2 });
+    rect(svg, 0, y3, cw, bh, { fill:css('--critical'), fo:.14, stroke:css('--critical'), rx:3, sw:1.8 });
+    add(svg, mT(cw / 2, y3 + bh / 2 + 5, 't′ = t ?', { anchor:'middle', fs:15, w:700, fill:css('--critical') }));
+  }, 'fade', 0, 300);
+
+  var y4 = y3 + bh + 30;
+  bg(svg, 4, function(){
+    /* reject branch */
+    arrow(svg, cw * 0.25, y3 + bh + 2, cw * 0.25, y4 - 6, 'mkD', { stroke:css('--critical'), sw:1.3 });
+    add(svg, T(cw * 0.25 - 6, y3 + bh + 20, 'no', { anchor:'end', fs:12, w:700, fill:css('--critical') }));
+    blk(svg, 0, y4, cw * 0.46, bh, 'reject', css('--critical'), { fs:13.5, fo:.22 });
+    /* accept branch */
+    arrow(svg, cw * 0.75, y3 + bh + 2, cw * 0.75, y4 - 6, 'mkD', { stroke:css('--good'), sw:1.3 });
+    add(svg, T(cw * 0.75 + 6, y3 + bh + 20, 'yes', { fs:12, w:700, fill:css('--good') }));
+    blk(svg, cw * 0.54, y4, cw * 0.46, bh, 'then decrypt', css('--good'), { fs:13.5, fo:.22 });
+    add(svg, mT(nar ? 0 : cw + 16, y4 + (nar ? bh + 26 : bh / 2 + 5), 'M_{i} = AES_{k}(J_{i}) ⊕ C_{i}', { fs:12.5, w:700, fill:css('--good') }));
+  }, 'fade', 0, 340);
+
+  var yb = y4 + bh + (nar ? 48 : 30);
+  bg(svg, 4, function(){
+    rect(svg, 0, yb, W, nar ? 58 : 44, { fill:css('--surface-1'), stroke:css('--ring'), rx:4 });
+    add(svg, T(14, yb + (nar ? 22 : 27), nar ? 'The plaintext never leaves on a bad tag.' : 'Nothing about the plaintext leaves the box when the tag is wrong — not even an error that distinguishes why.',
+      { fs:nar ? 12.5 : 13, w:700, fill:head }));
+    if (nar) add(svg, T(14, yb + 42, 'Not even a distinguishing error.', { fs:12, fill:ink }));
+  }, 'fade', 120, 320);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 70 : 56)));
+}
+
+/* ====================================================================
+   FIVR · reusing an IV cancels the pad and leaks H
+   ==================================================================== */
+function fivr(svg, W){
+  var nar = W < 780, ink = css('--ink-muted'), head = css('--ink-head');
+  var fs = nar ? 12 : 14.5, y = 26, dy = nar ? 46 : 44, lw = nar ? 0 : 128;
+  var LINES = [
+    { k:1, l:'two messages', r:'(IV, A_{1}, C_{1}, t_{1})   and   (IV, A_{2}, C_{2}, t_{2})', c:'--s1', n:'the same IV, so the same J₀' },
+    { k:2, l:'the two tags', r:'t_{1} = AES_{k}(J_{0}) ⊕ f_{A1,C1}(H)', c:'--s2', n:'' },
+    { k:2, l:'', r:'t_{2} = AES_{k}(J_{0}) ⊕ f_{A2,C2}(H)', c:'--s2', n:'the same pad appears in both' },
+    { k:3, l:'XOR them', r:'t_{1} ⊕ t_{2} = f_{A1,C1}(H) ⊕ f_{A2,C2}(H)', c:'--critical', n:'the pad cancels: everything here is known except H' },
+    { k:4, l:'solve for H', r:'a polynomial equation in H alone', c:'--critical', n:'root-finding, then test the candidates' },
+    { k:5, l:'recover the pad', r:'AES_{k}(J_{0}) = t_{1} ⊕ f_{A1,C1}(H)', c:'--critical', n:'both parts of the secret are now hers' }
+  ];
+
+  LINES.forEach(function(L, i){
+    var yy = y + i * dy;
+    bg(svg, L.k, function(){
+      if (L.l) add(svg, T(0, yy + (nar ? 0 : 4), L.l, { fs:11.5, w:700, fill:ink }));
+      add(svg, mT(lw, yy + (nar ? 17 : 4), L.r, { fs:fs, w:700, fill:css(L.c) }));
+      if (L.n && !nar) add(svg, T(lw, yy + 21, L.n, { fs:11.5, fill:ink }));
+    }, 'land', 0, 320);
+  });
+
+  var yb = y + LINES.length * dy + 8;
+  bg(svg, 5, function(){
+    rect(svg, 0, yb, W, nar ? 74 : 58, { fill:css('--critical'), fo:.11, stroke:css('--critical'), rx:4 });
+    add(svg, T(14, yb + 24, nar ? 'She can now forge any message under this IV.' : 'She can now encrypt and authenticate any plaintext under this IV, up to the length of M₁.',
+      { fs:nar ? 12.5 : 14.5, w:700, fill:css('--critical') }));
+    add(svg, T(14, yb + (nar ? 48 : 44), nar ? 'One repeated IV ends the key.' : 'One repeated IV ends the security of that key. This is the sharpest edge in AES-GCM.', { fs:12.5, fill:css('--ink-1') }));
+  }, 'fade', 80, 340);
+
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (yb + (nar ? 86 : 70)));
+}
+
+/* ====================================================================
+   FPROOF · the security proof took eight years to get right
+   ==================================================================== */
+function fproof(svg, W){
+  var nar = W < 700, ink = css('--ink-muted'), head = css('--ink-head');
+  var y = 50, EV = [
+    { t:'2004', k:'McGrew–Viega design the mode', c:'--s1' },
+    { t:'2004', k:'their security proof is wrong', c:'--critical' },
+    { t:'2007', k:'NIST standardises it as SP 800-38D', c:'--s4' },
+    { t:'2012', k:'Iwata–Ohashi–Minematsu fix the proof', c:'--good' }
+  ];
+  var cw = nar ? W : (W - 3 * 14) / 4;
+
+  if (nar){
+    EV.forEach(function(e, i){
+      var yy = y + i * 54;
+      bg(svg, i + 1, function(){
+        rect(svg, 0, yy, W, 44, { fill:css(e.c), fo:.10, stroke:css(e.c), rx:4 });
+        add(svg, T(12, yy + 27, e.t, { fs:14, w:700, fill:css(e.c) }));
+        add(svg, T(66, yy + 27, e.k, { fs:12, fill:css('--ink-1') }));
+      }, 'land', 0, 320);
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y + EV.length * 54 + 6));
+    return;
+  }
+
+  add(svg, el('line', { x1:0, x2:W, y1:y - 16, y2:y - 16, stroke:css('--axis'), 'stroke-width':1.4 }));
+  EV.forEach(function(e, i){
+    var x = i * (cw + 14);
+    bg(svg, i + 1, function(){
+      add(svg, el('circle', { cx:x + cw / 2, cy:y - 16, r:5, fill:css(e.c) }));
+      rect(svg, x, y, cw, 76, { fill:css(e.c), fo:.10, stroke:css(e.c), rx:4 });
+      add(svg, T(x + cw / 2, y + 26, e.t, { anchor:'middle', fs:17, w:700, fill:css(e.c) }));
+      var words = e.k.split(' '), line = '', lines = [];
+      words.forEach(function(w){ if (line && (line + ' ' + w).length > 22){ lines.push(line); line = w; } else line = line ? line + ' ' + w : w; });
+      lines.push(line);
+      lines.forEach(function(L, j){ add(svg, T(x + cw / 2, y + 46 + j * 15, L, { anchor:'middle', fs:12, fill:css('--ink-1') })); });
+    }, 'land', 0, 320);
+  });
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (y + 92));
+}
+/* ---------- registry ---------- */
+BUILDS = { fgoals:3, fmall:4, feam:4, fetm:4, fcmp:3, faesec:3, faead:3,
+           fctr:3, fj0:4, fcnt:4, fpoly:3, fgf4:5,
+           fgmac:4, fhorner:5, ftag:3, fbound:7, fsolve:4, fotp:4,
+           fgcm:5, fac:3, fdec:4, fivr:5, fproof:4 };
+var FIGS = { fgoals:fgoals, fmall:fmall, feam:feam, fetm:fetm, fcmp:fcmp, faesec:faesec, faead:faead,
+             fctr:fctr, fj0:fj0, fcnt:fcnt, fpoly:fpoly, fgf4:fgf4,
+             fgmac:fgmac, fhorner:fhorner, ftag:ftag, fbound:fbound, fsolve:fsolve, fotp:fotp,
+             fgcm:fgcm, fac:fac, fdec:fdec, fivr:fivr, fproof:fproof };
+var FMIN = { fgoals:820, fmall:900, feam:880, fetm:920, fcmp:860, faesec:900, faead:820,
+             fctr:900, fj0:820, fcnt:900, fpoly:860, fgf4:880,
+             fgmac:820, fhorner:900, ftag:860, fbound:900, fsolve:880, fotp:900,
+             fgcm:940, fac:900, fdec:820, fivr:940, fproof:900 };
+var DECK = false;
+function renderMath(){ try{ if(window.renderMathInElement) renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false,ignoredTags:["script","noscript","style","textarea","option"]}); }catch(e){} }
+renderMath();
+function drawFig(id){
+  var svg = $(id); if (!svg) return; clear(svg);
+  if (!DECK){ FIGS[id](svg, figW(svg)); return; }
+  FIGS[id](svg, 1000);
+  var box = svg.parentNode, bw = box.clientWidth, bh = box.clientHeight;
+  if (!bw || !bh) return;
+  var H = svg.viewBox.baseVal.height, W2 = Math.round(Math.max(FMIN[id] || 1000, Math.min(1000, bw / bh * H)));
+  if (W2 < 1000){ clear(svg); FIGS[id](svg, W2); }
+}
+function drawOne(id){ drawFig(id); var svg = $(id); if (svg && BUILDS[id]) applyStatic(svg, effStep(id)); }
+/* builds run only in deck mode, when on; otherwise every figure shows its final state */
+function buildsLive(){ return DECK && buildsOn; }
+function effStep(id){ var n = BUILDS[id]; if (!buildsLive() || stepOf[id] == null) return n; return Math.max(1, Math.min(n, stepOf[id])); }
+function buildFig(i){
+  if (!buildsLive()) return null;
+  var sv = slides[i] && slides[i].querySelector('.fig > svg');
+  return sv && BUILDS[sv.id] ? sv.id : null;
+}
+function setStep(id, s, anim){
+  stepOf[id] = s; var svg = $(id);
+  applyStatic(svg, effStep(id));
+  if (anim) play(svg, effStep(id));
+  updateBar();
+}
+function go(dir){
+  var id = buildFig(cur);
+  if (id){
+    var s = effStep(id);
+    if (dir > 0 && s < BUILDS[id]){ setStep(id, s + 1, true); return; }
+    if (dir < 0 && s > 1){ setStep(id, s - 1, false); return; }
+  }
+  var j = cur + dir;
+  if (j < 0 || j >= slides.length) return;
+  show(j, 'nav', dir > 0 ? 'fwd' : 'back');
+}
+var flashT = null;
+function flash(msg){ $('ttl').textContent = msg; clearTimeout(flashT); flashT = setTimeout(function(){ flashT = null; updateBar(); }, 1600); }
+function toggleBuilds(){
+  buildsOn = !buildsOn;
+  try { localStorage.setItem('aegcm-builds', buildsOn ? 'on' : 'off'); } catch(e){}
+  Object.keys(BUILDS).forEach(function(id){ stepOf[id] = BUILDS[id]; drawOne(id); });
+  updateBar(); flash(buildsOn ? 'builds on' : 'builds off');
+}
+function drawAll(){ Object.keys(FIGS).forEach(drawOne); }
+
+var slides = Array.prototype.slice.call(document.querySelectorAll('.slide')), cur = 0;
+function setMode(){
+  var want = window.matchMedia('(min-width: 761px) and (min-height: 500px)').matches;
+  if (want !== DECK || !document.documentElement.classList.contains('ready')){
+    DECK = want;
+    document.documentElement.classList.toggle('deck', DECK);
+    document.documentElement.classList.add('ready');
+  }
+}
+function updateBar(){
+  var id = buildFig(cur), s = id ? effStep(id) : 0, n = id ? BUILDS[id] : 0;
+  $('count').textContent = (cur + 1) + ' / ' + slides.length + (id ? ' · ' + s + '/' + n : '');
+  $('count').title = id ? 'build step ' + s + ' of ' + n : '';
+  $('prog').style.width = ((cur + 1) / slides.length * 100) + '%';
+  if (!flashT) $('ttl').textContent = slides[cur].getAttribute('data-title') || '';
+  $('b-prev').disabled = cur === 0 && s <= 1; $('b-next').disabled = cur === slides.length - 1 && s >= n;
+}
+function show(i, how, entry){
+  /* how: 'nav' = smooth scroll (scroll mode), 'jump' = instant scroll, 'none' = no scroll.
+     entry: 'fwd' = arrived from the previous slide (builds start at step 1); anything else = final state */
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  if (DECK){
+    slides.forEach(function(s, k){ s.classList.toggle('on', k === cur); });
+    var bid = buildFig(cur);
+    if (bid) stepOf[bid] = entry === 'fwd' ? 1 : BUILDS[bid];
+    Array.prototype.forEach.call(slides[cur].querySelectorAll('.fig > svg'), function(sv){ drawOne(sv.id); });
+    if (bid && entry === 'fwd') play($(bid), 1);
+  } else if (how === 'nav' || how === 'jump'){
+    slides[cur].scrollIntoView({ behavior: how === 'nav' ? 'smooth' : 'auto', block:'start' });
+  }
+  updateBar();
+  if (location.hash !== '#' + (cur + 1)){ try { history.replaceState(null, '', '#' + (cur + 1)); } catch(e){} }
+}
+function fromHash(){ var k = parseInt(String(location.hash).replace('#', ''), 10); return isNaN(k) ? 0 : k - 1; }
+$('b-prev').addEventListener('click', function(){ go(-1); });
+$('b-next').addEventListener('click', function(){ go(1); });
+window.addEventListener('hashchange', function(){ show(fromHash(), 'jump'); });
+function toggleNotes(){ var on = document.body.classList.toggle('show-notes'); $('b-notes').setAttribute('aria-pressed', String(on)); }
+$('b-notes').addEventListener('click', toggleNotes);
+function toggleTheme(){
+  var root = document.documentElement, c = root.getAttribute('data-theme');
+  if (!c) c = 'light';
+  var nx = c === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', nx);
+  try { localStorage.setItem('aegcm-theme', nx); } catch(e){}
+  drawAll();
+}
+$('b-theme').addEventListener('click', toggleTheme);
+document.addEventListener('keydown', function(e){
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  var t = e.target, tag = t && t.tagName ? t.tagName.toLowerCase() : '';
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  if ((tag === 'button' || tag === 'a') && (e.key === ' ' || e.key === 'Enter')) return;
+  var k = e.key, step = 0;
+  if (k === 'ArrowRight' || k === 'PageDown' || (k === ' ' && !e.shiftKey)) step = 1;
+  else if (k === 'ArrowLeft' || k === 'PageUp' || (k === ' ' && e.shiftKey)) step = -1;
+  else if (k === 'Home'){ e.preventDefault(); show(0, 'nav'); return; }
+  else if (k === 'End'){ e.preventDefault(); show(slides.length - 1, 'nav'); return; }
+  else if (k === 'n' || k === 'N'){ toggleNotes(); return; }
+  else if (k === 't' || k === 'T'){ toggleTheme(); return; }
+  else if (k === 'b' || k === 'B'){ toggleBuilds(); return; }
+  if (step){ e.preventDefault(); go(step); }
+});
+/* scroll mode: the counter follows the slide in view */
+if ('IntersectionObserver' in window){
+  var spy = new IntersectionObserver(function(es){
+    if (DECK) return;
+    es.forEach(function(en){ if (en.isIntersecting){ cur = slides.indexOf(en.target); updateBar(); try { history.replaceState(null, '', '#' + (cur + 1)); } catch(e){} } });
+  }, { rootMargin:'-40% 0px -55% 0px' });
+  slides.forEach(function(s){ spy.observe(s); });
+}
+try {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', drawAll); else if (mq.addListener) mq.addListener(drawAll);
+} catch(e){}
+var rz = null;
+window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(function(){ var was = DECK; setMode(); drawAll(); if (was !== DECK) show(cur, 'jump'); }, 120); });
+
+setMode();
+drawAll();
+show(fromHash(), location.hash ? 'jump' : 'none');
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ drawAll(); });
+window.addEventListener("load", function(){ renderMath(); drawAll(); show(cur, "none"); });
+</script>
+</body>
+</html>

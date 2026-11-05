@@ -1,0 +1,167 @@
+{{ define "main" }}
+
+{{/* ---- flatten every paper into one slice ---- */}}
+{{ $papers := slice }}
+{{ range .Site.Params.publications }}
+  {{ range .paper }}{{ $papers = $papers | append . }}{{ end }}
+{{ end }}
+
+{{/* ---- masthead ---------------------------------------------------- */}}
+<header class="masthead"><div class="wrap">
+  <div class="row">
+    <div class="bio">
+      <h1>{{ .Site.Title }}</h1>
+      {{ range .Site.Params.affilation }}
+        <p class="role">{{ .position }}, {{ .name }}</p>
+        <p class="meta">
+          <span>{{ .contact }}</span>
+          {{ with $.Site.Params.cv_name }}<span><a href="{{ . | relURL }}">curriculum vitae</a></span>{{ end }}
+          <span>{{ len $papers }} publications</span>
+        </p>
+      {{ end }}
+    </div>
+    <img class="portrait" src="{{ "profile.jpg" | relURL }}" alt="Portrait of {{ .Site.Title }}">
+  </div>
+  {{ with .Site.Params.interests }}<p class="interests">{{ . }}</p>{{ end }}
+</div></header>
+
+{{/* ---- about ------------------------------------------------------- */}}
+<section id="about"><div class="wrap">
+  <p class="eyebrow">About</p>
+  {{ range .Site.Params.introduction.paragraph }}{{ .text | markdownify }}{{ end }}
+</div></section>
+
+{{/* ---- research ---------------------------------------------------- */}}
+<section id="research"><div class="wrap">
+  <p class="eyebrow">Research</p>
+  <h2>Publications by area</h2>
+  <p class="section-note">Grouped by topic rather than date. Whitepapers and preprints are
+  marked as such; everything else is peer reviewed.</p>
+
+  {{ range .Site.Params.areas }}
+    {{ $area := . }}
+    {{ $in := where $papers "area" $area.slug }}
+    {{ if $in }}
+    <div class="area">
+      <h3>{{ $area.title }} <span class="count">{{ len $in }}</span></h3>
+      {{ with $area.blurb }}<p class="blurb">{{ . }}</p>{{ end }}
+
+      {{/* split "NDSS 2026" into venue + year so the year can sit in the gutter */}}
+      {{ $rows := slice }}
+      {{ range $in }}
+        {{ $parts := split .dest " " }}
+        {{ $n := len $parts }}
+        {{ $last := index $parts (sub $n 1) }}
+        {{ $isYear := findRE "^(19|20)[0-9]{2}$" $last }}
+        {{ $yr := cond (gt (len $isYear) 0) $last "" }}
+        {{ $vn := cond (gt (len $isYear) 0) (delimit (first (sub $n 1) $parts) " ") .dest }}
+        {{ $rows = $rows | append (dict "p" . "yr" $yr "vn" $vn) }}
+      {{ end }}
+
+      {{ range sort $rows "yr" "desc" }}
+        {{ $p := .p }}
+        <div class="pub">
+          <span class="yr">{{ .yr }}</span>
+          <div>
+            <p class="ttl">
+              {{ with $p.paper_link }}<a href="{{ if hasPrefix . "http" }}{{ . }}{{ else }}{{ . | relURL }}{{ end }}">{{ $p.name }}</a>{{ else }}{{ $p.name }}{{ end }}
+            </p>
+            <p class="line">
+              <span class="venue">{{ .vn }}</span>
+              {{ with $p.kind }}<span class="badge">{{ . }}</span>{{ end }}
+              <span class="links">
+                {{ with $p.paper_link }}[<a href="{{ if hasPrefix . "http" }}{{ . }}{{ else }}{{ . | relURL }}{{ end }}">paper</a>]{{ end }}
+                {{ with $p.demo_link }}[<a href="{{ . | relURL }}">interactive</a>]{{ end }}
+                {{ with $p.code_link }}[<a href="{{ . }}">code</a>]{{ end }}
+                {{ with $p.link }}[<a href="{{ . }}">link</a>]{{ end }}
+              </span>
+            </p>
+            <p class="authors">{{ $p.authors | markdownify }}</p>
+          </div>
+        </div>
+      {{ end }}
+    </div>
+    {{ end }}
+  {{ end }}
+
+  {{/* anything without a recognised area still shows up rather than vanishing */}}
+  {{ $slugs := slice }}
+  {{ range .Site.Params.areas }}{{ $slugs = $slugs | append .slug }}{{ end }}
+  {{ $orphans := slice }}
+  {{ range $papers }}{{ if not (in $slugs (default "" .area)) }}{{ $orphans = $orphans | append . }}{{ end }}{{ end }}
+  {{ if $orphans }}
+  <div class="area">
+    <h3>Other <span class="count">{{ len $orphans }}</span></h3>
+    {{ range $orphans }}
+      <div class="pub">
+        <span class="yr"></span>
+        <div>
+          <p class="ttl">{{ .name }}</p>
+          <p class="line"><span class="venue">{{ .dest }}</span></p>
+          <p class="authors">{{ .authors | markdownify }}</p>
+        </div>
+      </div>
+    {{ end }}
+  </div>
+  {{ end }}
+</div></section>
+
+{{/* ---- students ---------------------------------------------------- */}}
+{{ with .Site.Params.people }}
+<section id="students"><div class="wrap">
+  <p class="eyebrow">Mentoring</p>
+  <h2>Students I have worked with</h2>
+  <ul class="rows plain">
+    {{ range . }}{{ range .description }}
+      <li>
+        <p class="what">{{ .name | markdownify }}
+          {{ with .thesis }}<span class="sub">{{ . }}</span>{{ end }}</p>
+      </li>
+    {{ end }}{{ end }}
+  </ul>
+</div></section>
+{{ end }}
+
+{{/* ---- talks ------------------------------------------------------- */}}
+{{ with .Site.Params.talks }}
+<section id="talks"><div class="wrap">
+  <p class="eyebrow">Talks</p>
+  <h2>Selected talks</h2>
+  <ul class="rows">
+    {{ range . }}{{ range .description }}
+      <li><span class="when">{{ .date }}</span>
+          <p class="what">{{ .description | markdownify }}</p></li>
+    {{ end }}{{ end }}
+  </ul>
+</div></section>
+{{ end }}
+
+{{/* ---- service ----------------------------------------------------- */}}
+{{ with .Site.Params.services }}
+<section id="service"><div class="wrap">
+  <p class="eyebrow">Service</p>
+  <h2>Programme committees and reviewing</h2>
+  <ul class="rows">
+    {{ range . }}{{ range .description }}
+      <li><span class="when">{{ .date }}</span>
+          <p class="what">{{ .description | markdownify }}</p></li>
+    {{ end }}{{ end }}
+  </ul>
+</div></section>
+{{ end }}
+
+{{/* ---- teaching ---------------------------------------------------- */}}
+{{ with .Site.Params.teachings }}
+<section id="teaching"><div class="wrap">
+  <p class="eyebrow">Teaching</p>
+  <h2>Teaching assistantships</h2>
+  <ul class="rows plain">
+    {{ range . }}{{ range .description }}
+      <li>
+          <p class="what">{{ .uni | markdownify }}<span class="sub">{{ .name }}</span></p></li>
+    {{ end }}{{ end }}
+  </ul>
+</div></section>
+{{ end }}
+
+{{ end }}

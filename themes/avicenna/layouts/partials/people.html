@@ -1,0 +1,15 @@
+<div class="introduction">
+	{{ with .Site.Params.people}}
+    <h4><b>People</b></h4>
+  <p>I worked with: </p>
+	{{- range $index, $people := $.Site.Params.people -}}
+	<ul>
+		{{ range $elem_index, $item := $people.description }}
+		<li>
+			<p class="publications"> {{ $item.name | markdownify}} on </p>
+			"{{ $item.thesis | markdownify }}"
+		</li>
+        {{- end -}}
+	</ul>
+	{{- end -}}
+	{{- end -}}
