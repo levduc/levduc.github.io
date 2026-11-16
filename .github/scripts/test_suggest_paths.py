@@ -90,7 +90,7 @@ class RealTreeTests(unittest.TestCase):
         for p, r in zip(found, refs):
             with self.subTest(path=p):
                 self.assertIsNotNone(r)
-        self.assertEqual(len(found), 24)
+        self.assertEqual(len(found), 25)   # 24 pages + the agentreputation/ redirect stub
         self.assertEqual(sum(1 for r in refs if r and r.kind == "deck"), 2)
 
 
