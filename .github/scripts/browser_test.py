@@ -925,7 +925,7 @@ def run(public: Path, shots: Path | None, plain: Path | None = None) -> int:
 
             before, after = errs_for(plain), errs_for(public)
             added = {r: sorted(after[r] - before[r]) for r in pages if after[r] - before[r]}
-            check(len(pages) == 24 and not added,
+            check(len(pages) == 26 and not added,
                   f"test 9g: {len(pages)} pages, injection adds no pageerror ({added})")
         browser.close()
 

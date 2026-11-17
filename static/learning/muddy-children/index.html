@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<link rel="icon" href="data:,">
+<title>The muddy children puzzle</title>
+<meta name="description" content="An animated explainer of the muddy children puzzle: why a sentence everyone already knows makes the whole picture of possible worlds collapse, floor by floor. AI-assisted, not peer-reviewed.">
+<link rel="stylesheet" href="../../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* tokens matched to levduc.github.io; child palette validated vs #fafafa (light) */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", sans-serif;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-muted:#8a8a8a;
+  --grid:#e8e8e8; --ring:rgba(0,0,0,.13);
+  --accent:#00008b;
+  --warn-bg:#fff8e6; --warn-rule:#c98a00;
+  --c0:#2a78d6; --c1:#eb6834; --c2:#1baf7a; --c3:#eda100; --c4:#e87ba4;
+  --mud:#7a5230;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:var(--plane)}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{margin:0; background:var(--plane); color:var(--ink-1); font-family:var(--font); font-weight:300;
+  font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0}
+h2{font-size:1.6rem; font-weight:400; margin:0 0 .8rem}
+p{margin:0 0 1rem}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+ul{margin:0 0 1rem; padding-left:1.4rem}
+li{margin:.25rem 0}
+strong{font-weight:700}
+.mono{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+
+/* top bar */
+.topbar{position:sticky; top:0; z-index:60; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .in{max-width:1000px; margin:0 auto; padding:0 16px; display:flex; align-items:center; gap:14px; height:46px}
+.topbar .back{font-family:var(--mono); font-size:.9rem; white-space:nowrap}
+.topbar .me{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:12px; flex:1; overflow-x:auto; scrollbar-width:none; justify-content:flex-end; position:relative}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-1); font-size:.86rem; white-space:nowrap}
+.topbar nav a.on{color:var(--accent); font-weight:700}
+@media (max-width:700px){ .topbar nav{display:none} }
+
+.wrap{max-width:1000px; margin:0 auto; padding:0 16px}
+.prose > p, .prose > ul, .prose > h2{max-width:72ch}
+.hero{padding:44px 0 18px}
+.hero h1{font-size:2.5rem; font-weight:400}
+.hero .sub{font-size:1.1rem; margin:.8rem 0 .6rem; max-width:68ch}
+.hero .by{font-family:var(--mono); font-size:.88rem; color:var(--ink-muted); margin:0 0 1rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px; margin:0 0 1rem}
+.btn{display:inline-flex; align-items:center; gap:.4rem; font-family:var(--mono); border:1px solid var(--ring);
+  background:#fff; color:var(--ink-1); padding:.35rem .8rem; border-radius:3px; font-size:.88rem; cursor:pointer; line-height:1.3}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--ring); color:var(--ink-1)}
+.btn.primary:disabled:hover{color:#fff}
+.notice{border-left:3px solid var(--warn-rule); background:var(--warn-bg); padding:14px 18px; border-radius:0 4px 4px 0; margin:0 0 18px; max-width:80ch}
+.notice .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; color:#7a5400; margin:0 0 .35rem}
+.notice p{margin:0 0 .5rem; font-size:.95rem}
+.notice p:last-child{margin:0}
+.ask{border-left:3px solid var(--accent); background:#f4f4fb; padding:14px 18px; border-radius:0 4px 4px 0; margin:0 0 26px; max-width:80ch}
+.ask .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; color:var(--accent); margin:0 0 .35rem}
+.ask p{margin:0 0 .5rem; font-size:.95rem}
+.ask p:last-child{margin:0}
+
+section{border-top:1px solid var(--grid); padding:30px 0 12px; scroll-margin-top:56px}
+
+/* figures */
+.fig{border:1px solid var(--ring); background:var(--surface-1); border-radius:4px; padding:14px 16px 12px; margin:1.3rem 0 1.7rem; position:relative}
+.fig .bar{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; font-family:var(--mono); font-size:.86rem; margin:0 0 .6rem}
+.fig .bar label{display:inline-flex; align-items:center; gap:.4rem; color:var(--ink-1)}
+.fig select{font-family:var(--mono); font-size:.86rem; border:1px solid var(--ring); border-radius:3px; background:#fff; padding:.25rem .3rem; color:var(--ink-1); max-width:100%}
+.fig .bar .gap{flex:1}
+.fig .status{font-family:var(--mono); font-size:.85rem; color:var(--ink-muted); display:flex; align-items:center; gap:.5rem; min-height:1.6em}
+.fig .status svg{width:18px; height:18px; flex:none; overflow:visible}
+.teacher{font-family:var(--mono); font-size:.92rem; margin:.2rem 0 .3rem; min-height:1.5em; color:var(--ink-1); opacity:0}
+.teacher b{color:var(--ink-head)}
+.garden svg{display:block; width:100%; height:auto; margin:0 auto}
+.garden .kid{cursor:pointer; outline:none}
+.garden .kid:focus-visible .head{stroke:var(--accent); stroke-width:3}
+.garden.locked .kid{cursor:default}
+.map{position:relative; margin:.4rem 0 0}
+.map svg{display:block; width:100%; height:auto}
+.map .world{cursor:pointer}
+.legend{display:flex; flex-wrap:wrap; gap:6px 16px; font-family:var(--mono); font-size:.82rem; margin:.5rem 0 0; color:var(--ink-1)}
+.legend span{display:inline-flex; align-items:center; gap:.35rem}
+.legend i{display:inline-block; width:18px; height:3px; border-radius:2px}
+.legend .key{color:var(--ink-muted)}
+.caps{margin:.7rem 0 0; min-height:3.2em; max-width:78ch}
+.caps p{margin:0 0 .4rem; font-size:.97rem}
+.caps p.also{font-style:italic}
+.steps{display:flex; gap:8px; align-items:center; font-family:var(--mono); font-size:.85rem}
+.dots{display:inline-flex; gap:5px; margin:0 .3rem}
+.dots b{display:inline-block; width:8px; height:8px; border-radius:50%; background:#d6d6d6}
+.dots b.on{background:var(--accent)}
+details.table{margin:.7rem 0 0; font-size:.88rem}
+details.table summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--ink-1)}
+.tablewrap{overflow-x:auto; position:relative; margin:.5rem 0 0}
+table{border-collapse:collapse; font-size:.86rem; min-width:420px; width:100%; background:#fff}
+th{font-family:var(--mono); font-weight:700; text-align:left; font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); border-bottom:1px solid var(--axis,#cfcfcf); padding:.35rem .5rem}
+td{border-bottom:1px solid var(--grid); padding:.3rem .5rem; vertical-align:top}
+tr.real td{font-weight:700}
+tr.out td{color:var(--ink-muted)}
+.tip{position:fixed; left:0; top:0; pointer-events:none; opacity:0; background:#fff; border:1px solid var(--ring); border-radius:4px;
+  padding:.45rem .65rem; font-family:var(--mono); font-size:.8rem; color:var(--ink-1); box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:260px}
+.rule{border:1px solid var(--grid); background:#fff; padding:12px 16px; margin:1rem 0 1.2rem; max-width:72ch; border-radius:4px}
+.rule .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; color:var(--ink-muted); margin:0 0 .3rem}
+.rule p{margin:0}
+footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--mono); font-size:.8rem; color:var(--ink-muted); margin-top:20px}
+@media (max-width:520px){
+  body{font-size:16px}
+  .hero h1{font-size:1.9rem}
+  h2{font-size:1.35rem}
+  .fig{padding:12px 10px 10px}
+}
+</style>
+</head>
+<body>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<header class="topbar"><div class="in">
+  <a class="back" href="../">&larr; Learning</a>
+  <a class="me" href="../../">Duc V. Le</a>
+  <nav id="topnav" aria-label="Sections">
+    <a href="#puzzle">puzzle</a><a href="#worlds">worlds</a><a href="#frozen">frozen</a><a href="#collapse">collapse</a><a href="#why">why</a><a href="#other">other sentences</a><a href="#fine">fine print</a>
+  </nav>
+</div></header>
+
+<main class="wrap prose" id="main">
+  <div class="hero">
+    <p class="eyebrow">Learning with AI &middot; explainer</p>
+    <h1>The muddy children puzzle</h1>
+    <p class="sub">A teacher tells a group of children something every one of them already knows. It changes everything. This post draws every world the children think might be real, and lets you watch that picture collapse once the sentence is said.</p>
+    <p class="by">by Duc V. Le &middot; November 2026</p>
+    <div class="btns">
+      <a class="btn primary" href="#puzzle">[start]</a>
+      <a class="btn" href="#collapse">[jump to the collapse]</a>
+    </div>
+  </div>
+
+  <aside class="notice" role="note">
+    <p class="k">AI-assisted &middot; not peer-reviewed</p>
+    <p>This post was produced with an AI assistant (Claude) as part of my own learning. The animations compute the puzzle for real and were checked by a separate program, but the post has <strong>not</strong> been reviewed by experts and may contain mistakes.</p>
+    <p>Please don&rsquo;t cite it or rely on it for anything important.</p>
+  </aside>
+
+  <aside class="ask" role="note">
+    <p class="k">Tell me where it loses you</p>
+    <p>I want this post to get better with feedback. Select any sentence and a small <strong>suggest an edit</strong> button appears: leave a comment, propose a better wording, or both. It opens a prefilled GitHub issue, so you need a GitHub account, and I read every one before anything on the page changes. <a href="../../posts/suggest-an-edit/">How this works.</a></p>
+  </aside>
+
+  <section id="puzzle">
+    <h2>The puzzle</h2>
+    <p>Some children have been playing outside, and a few of them have mud on their foreheads. Every child can see everyone else&rsquo;s forehead, but not their own. There are no mirrors, and nobody is allowed to say what they see.</p>
+    <p>The teacher gathers them and says one sentence: <em>&ldquo;At least one of you is muddy.&rdquo;</em> Then she rings a bell, again and again, with one rule: when the bell rings, anyone who is sure they are muddy steps forward. Everyone hears every bell and sees who steps forward.</p>
+    <p>If $k$ children are muddy, nothing happens for the first $k-1$ bells. Then, at bell $k$, all the muddy children step forward together. Click a child to add or wash off mud, then let the teacher speak and ring the bell.</p>
+
+    <div class="fig sim" id="sim-garden" data-n="3" data-nmin="2" data-nmax="5" data-muddy="0,1" data-sents="one,none" data-sent="one" data-map="0">
+      <div class="bar"></div>
+      <p class="teacher" aria-live="polite"></p>
+      <div class="garden"></div>
+      <div class="status"></div>
+      <div class="caps" aria-live="polite">
+        <p data-cap="before" hidden>Before the teacher speaks. Each child sees everyone&rsquo;s forehead except their own. Click a child to change who is muddy.</p>
+        <p data-cap="teacher-cut" hidden>The teacher says it out loud, to everyone at once.</p>
+        <p data-cap="teacher-none" hidden>The teacher gives only the rule, and says nothing about mud.</p>
+        <p data-cap="silent" hidden>Bell <span data-f="bell"></span>. Nobody steps forward.</p>
+        <p data-cap="step" hidden>Bell <span data-f="bell"></span>. <span data-f="who"></span> forward.</p>
+        <p data-cap="done" class="also" hidden>Every muddy child has stepped forward, and the clean children now know they are clean.</p>
+        <p data-cap="stuck" class="also" hidden>Nothing more will ever happen, however often the bell rings.</p>
+        <p data-cap="lying" class="also" hidden>The teacher can&rsquo;t truthfully say that when nobody is muddy. Put mud on someone first.</p>
+      </div>
+    </div>
+
+    <p>Now the strange part. Make two or more children muddy. Then every child can already see a muddy forehead, so every child already knows that at least one of them is muddy. The teacher tells nobody anything new.</p>
+    <p>Yet switch the teacher to <em>only the rule</em> and ring as often as you like: nobody ever steps forward. A sentence that tells nobody anything new is the whole difference between &ldquo;stuck forever&rdquo; and &ldquo;solved&rdquo;. The rest of this post is about why.</p>
+  </section>
+
+  <section id="worlds">
+    <h2>Every world a child can imagine</h2>
+    <p>Call a <strong>world</strong> one possible answer to &ldquo;who is muddy?&rdquo;. With three children there are 8 worlds, and with $n$ children there are $2^n$. Only one of them is real, but no child knows which.</p>
+    <p>We stack the worlds by how many children are muddy: nobody at the bottom, everybody at the top. Each world is a row of dots, one per child, filled in if that child is muddy.</p>
+    <p>Now the key question: which worlds can a child not tell apart? Ana sees everyone except herself. So two worlds that differ only in Ana&rsquo;s forehead look exactly the same to Ana. We join every such pair with a line in Ana&rsquo;s colour, and do the same for Ben and Cy.</p>
+
+    <div class="fig" id="build" data-mode="build">
+      <div class="map"></div>
+      <div class="legend"></div>
+      <div class="caps" aria-live="polite">
+        <p data-cap="0" hidden>Eight worlds for three children, stacked by how many are muddy. A filled dot means that child is muddy.</p>
+        <p data-cap="1" hidden>Ana&rsquo;s lines. Each one joins two worlds that differ only in Ana&rsquo;s forehead. Ana sees exactly the same thing in both, so she can&rsquo;t tell them apart.</p>
+        <p data-cap="2" hidden>Ben&rsquo;s lines, made the same way.</p>
+        <p data-cap="3" hidden>Cy&rsquo;s lines. Every world now touches exactly one line of each colour: one doubt per child. With three children, the lines form a cube.</p>
+      </div>
+      <div class="steps"><button class="btn" data-act="prev">&larr; back</button><span class="dots"></span><button class="btn primary" data-act="next">next &rarr;</button></div>
+    </div>
+
+    <p>Hover over a world, or tap it, to see who is muddy there. The picture has one line per child per world, and that line is the child&rsquo;s doubt: in the real world, Ana&rsquo;s line leads to the one other world she cannot rule out.</p>
+  </section>
+
+  <section id="frozen">
+    <h2>Knowing is a line with nothing at the other end</h2>
+    <p>The whole explanation rests on one rule.</p>
+    <div class="rule"><p class="k">The rule</p><p>A child knows whether they are muddy exactly when their line leads to a world that has been ruled out. Then only one world fits what they see.</p></div>
+    <p>Before the teacher speaks, no world has been ruled out. Every line has a world at both ends, so in every world, every child is unsure. That means that in every world, nobody steps forward at the first bell.</p>
+    <p>So when the first bell rings and nobody moves, that silence is exactly what every world predicted. It rules nothing out. The second bell is the same story, and so is every bell after it. Here are three muddy children with a teacher who gives only the rule:</p>
+
+    <div class="fig sim" id="sim-frozen" data-n="3" data-muddy="0,1,2" data-sents="none" data-sent="none" data-map="1">
+      <div class="bar"></div>
+      <p class="teacher" aria-live="polite"></p>
+      <div class="garden"></div>
+      <div class="map"></div>
+      <div class="legend"></div>
+      <div class="status"></div>
+      <div class="caps" aria-live="polite">
+        <p data-cap="before" hidden>Three muddy children; the real world is outlined in dark blue. Every world still has all its lines.</p>
+        <p data-cap="teacher-none" hidden>The rule alone rules out no world. Every line still has a world at both ends, so in every world, every child is unsure.</p>
+        <p data-cap="silent" hidden>Bell <span data-f="bell"></span>. Nobody steps forward, which is exactly what every world predicted. No world falls.</p>
+        <p data-cap="stuck" class="also" hidden>Ring as long as you like: the picture can never change.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="collapse">
+    <h2>The sentence knocks out the foundation</h2>
+    <p>&ldquo;At least one of you is muddy&rdquo; rules out exactly one world: the one at the bottom, where nobody is muddy. Watch what that does. Every line that ran into the bottom world now has nothing at its far end; it dangles.</p>
+    <p>In each world with exactly one muddy child, that child&rsquo;s line is one of the dangling ones. So in those worlds, the muddy child would know, and would step forward at the first bell. A ring around a dot marks a child who knows their own forehead in that world.</p>
+    <p>Now silence means something. If nobody steps forward at bell 1, the real world cannot be one of the one-muddy worlds, so that whole floor falls. Their lines dangle in turn, now into the two-muddy worlds, and so on. Each silent bell knocks out one more floor. When the collapse reaches the real world, the muddy children&rsquo;s lines all dangle at once, and they all step forward together.</p>
+
+    <div class="fig sim" id="sim-collapse" data-n="4" data-nmin="2" data-nmax="5" data-muddy="0,1,2" data-sents="one,none" data-sent="one" data-map="1">
+      <div class="bar"></div>
+      <p class="teacher" aria-live="polite"></p>
+      <div class="garden"></div>
+      <div class="map"></div>
+      <div class="legend"></div>
+      <div class="status"></div>
+      <div class="caps" aria-live="polite">
+        <p data-cap="before" hidden>Pick who is muddy by clicking the children or a world; the real world is outlined in dark blue. Then let the teacher speak.</p>
+        <p data-cap="teacher-none" hidden>Only the rule: no world is ruled out, so nothing will ever fall. Switch the teacher&rsquo;s sentence back on.</p>
+        <p data-cap="teacher-cut" hidden>The teacher speaks. The bottom world, where nobody is muddy, is ruled out, and the lines that ran into it now dangle.</p>
+        <p data-cap="silent-cut" hidden>Bell <span data-f="bell"></span>. Nobody steps forward. In <span data-f="goneW"></span> someone would have, so they are ruled out: a whole floor falls, and the lines into the next floor up now dangle.</p>
+        <p data-cap="silent-none" hidden>Bell <span data-f="bell"></span>. Nobody steps forward, which every remaining world predicted. Nothing falls.</p>
+        <p data-cap="step" hidden>Bell <span data-f="bell"></span>. <span data-f="who"></span> forward. The other worlds predicted something different, so <span data-f="goneW"></span> fall.</p>
+        <p data-cap="step-none" hidden>Bell <span data-f="bell"></span>. <span data-f="who"></span> forward, which is what every remaining world predicted.</p>
+        <p data-cap="done" class="also" hidden>The collapse has reached the real world. Every child now knows their own forehead.</p>
+        <p data-cap="stuck" class="also" hidden>Nothing can change any more: the next bell will bring exactly what every remaining world predicts.</p>
+        <p data-cap="lying" class="also" hidden>The teacher can&rsquo;t truthfully say that when nobody is muddy. Put mud on someone first.</p>
+      </div>
+      <details class="table"><summary>Show the worlds as a table</summary>
+        <div class="tablewrap"><table><thead><tr><th>World: who is muddy</th><th>Status</th><th>Who knows their forehead there</th></tr></thead><tbody></tbody></table></div>
+      </details>
+    </div>
+
+    <p>Try five children with four of them muddy. Three silent bells knock out the three floors below the real world, and the muddy children step forward at bell four. Nothing visible happens before then, but every silent bell is doing work.</p>
+  </section>
+
+  <section id="why">
+    <h2>But everyone already knew!</h2>
+    <p>So what did the teacher add? Take three children, all muddy, and follow Ana&rsquo;s doubt down the picture.</p>
+
+    <div class="fig" id="chain" data-mode="chain">
+      <div class="map"></div>
+      <div class="legend"></div>
+      <div class="caps" aria-live="polite">
+        <p data-cap="0" hidden>The real world: Ana, Ben and Cy are all muddy. Each of them can see a muddy forehead, so each of them knows that at least one of them is muddy.</p>
+        <p data-cap="1" hidden>But Ana can&rsquo;t see her own forehead. For all she knows, she is clean and only Ben and Cy are muddy. That is the world at the other end of her line.</p>
+        <p data-cap="2" hidden>Now step inside that imagined world. There, Ben sees only Cy muddy, and he can&rsquo;t rule out that he is clean too, which leaves only Cy muddy.</p>
+        <p data-cap="3" hidden>And in that world, Cy sees no mud at all. Cy can&rsquo;t rule out that nobody is muddy.</p>
+        <p data-cap="4" hidden>So the all-clean world is three lines away from the real one. Everyone knows someone is muddy, but Ana doesn&rsquo;t know that Ben knows that Cy knows it.</p>
+        <p data-cap="5" hidden>The teacher says it to everyone at once. The all-clean world is gone, so no chain of doubts can end there any more. That one missing world is what starts the collapse.</p>
+      </div>
+      <div class="steps"><button class="btn" data-act="prev">&larr; back</button><span class="dots"></span><button class="btn primary" data-act="next">next &rarr;</button></div>
+    </div>
+
+    <p>This is the general picture. Something is known to everyone, and known to be known, and so on to any depth, exactly when it is true in every world you can reach from the real one by walking along lines. Before the teacher spoke, &ldquo;someone is muddy&rdquo; failed in one reachable world, three lines away. One world was enough to hold the whole structure in place.</p>
+    <p>With $k$ muddy children the all-clean world is $k$ lines away. Before the teacher speaks, &ldquo;everyone knows that everyone knows &hellip;&rdquo; holds $k-1$ levels deep but fails at level $k$, and afterwards the muddy children stay silent for exactly $k-1$ bells. The two numbers match.</p>
+  </section>
+
+  <section id="other">
+    <h2>Other sentences</h2>
+    <p>The teacher&rsquo;s sentence is not magic. What matters is which worlds it removes, and which lines that leaves dangling. A few others to try:</p>
+    <ul>
+      <li><strong>&ldquo;At least two of you are muddy.&rdquo;</strong> Removes the bottom two floors at once. The collapse starts higher, so the muddy children step forward one bell earlier.</li>
+      <li><strong>&ldquo;Ana is muddy.&rdquo;</strong> Removes every world where Ana is clean. All of Ana&rsquo;s lines dangle, so she knows straight away. But none of anyone else&rsquo;s lines is left dangling, so the others never learn anything, however long the bell rings.</li>
+      <li><strong>&ldquo;An odd number of you are muddy.&rdquo;</strong> Removes every other world. Every line joins an odd world to an even one, so every surviving line dangles and everyone knows at once.</li>
+    </ul>
+
+    <div class="fig sim" id="sim-lab" data-n="3" data-nmin="2" data-nmax="5" data-muddy="0,2" data-sents="one,two,ana,odd,none" data-sent="ana" data-map="1">
+      <div class="bar"></div>
+      <p class="teacher" aria-live="polite"></p>
+      <div class="garden"></div>
+      <div class="map"></div>
+      <div class="legend"></div>
+      <div class="status"></div>
+      <div class="caps" aria-live="polite">
+        <p data-cap="before" hidden>Choose what the teacher says and who is muddy, then let the teacher speak.</p>
+        <p data-cap="teacher-none" hidden>Only the rule: no world is ruled out.</p>
+        <p data-cap="teacher-cut" hidden>The teacher speaks: <span data-f="goneW"></span> where the sentence is false are ruled out, and the lines into them dangle.</p>
+        <p data-cap="silent-cut" hidden>Bell <span data-f="bell"></span>. Nobody steps forward, so <span data-f="goneW"></span> where someone would have are ruled out.</p>
+        <p data-cap="silent-none" hidden>Bell <span data-f="bell"></span>. Nobody new steps forward, which every remaining world predicted. Nothing falls.</p>
+        <p data-cap="step" hidden>Bell <span data-f="bell"></span>. <span data-f="who"></span> forward, and <span data-f="goneW"></span> that predicted something else fall.</p>
+        <p data-cap="step-none" hidden>Bell <span data-f="bell"></span>. <span data-f="who"></span> forward, which is what every remaining world predicted.</p>
+        <p data-cap="done" class="also" hidden>Every child now knows their own forehead.</p>
+        <p data-cap="stuck" class="also" hidden>Nothing can change any more. Any child whose line still has a world at both ends will never find out.</p>
+        <p data-cap="lying" class="also" hidden>The teacher can&rsquo;t truthfully say that here. Change who is muddy, or what the teacher says.</p>
+      </div>
+      <details class="table"><summary>Show the worlds as a table</summary>
+        <div class="tablewrap"><table><thead><tr><th>World: who is muddy</th><th>Status</th><th>Who knows their forehead there</th></tr></thead><tbody></tbody></table></div>
+      </details>
+    </div>
+
+    <p>So a sentence helps exactly as much as the lines it leaves dangling. A line that keeps a world at both ends is a doubt that no amount of waiting will remove.</p>
+  </section>
+
+  <section id="fine">
+    <h2>The fine print</h2>
+    <p>The collapse leans hard on the setup. Every child reasons perfectly, hears every bell, sees every step, and steps forward at the very bell they become sure. Nobody guesses, lies or dozes off, and everyone knows all of this about everyone else.</p>
+    <p>Take any of that away and the silence stops meaning anything. If a child might simply have missed a bell, then nobody stepping forward no longer rules a world out, and the collapse can stall. That fragility is why puzzles like this one turn up in distributed computing, where messages get lost and machines drift out of step.</p>
+    <p class="mono" style="font-size:.88rem">Where this comes from: I met the puzzle in chapter 1 of Maurice Herlihy, Dmitry Kozlov and Sergio Rajsbaum, <em>Distributed Computing Through Combinatorial Topology</em> (Morgan Kaufmann, 2014; <a href="https://doi.org/10.1016/B978-0-12-404578-1.00001-2">chapter DOI</a>), which draws the same structure in a different way. The pictures and wording here are my own, and so are any mistakes.</p>
+  </section>
+
+  <section id="feedback">
+    <h2>Did it work?</h2>
+    <p>If one of the animations didn&rsquo;t make the idea click, that is the most useful thing you could tell me. Select the sentence next to it, press <strong>suggest an edit</strong>, and say what you expected to see.</p>
+  </section>
+</main>
+
+<footer><div class="wrap">AI-assisted explainer by Duc V. Le. Not peer-reviewed.</div></footer>
+
+<script>
+(function(){
+'use strict';
+/* ---------------- helpers ---------------- */
+const MC = window.MC = {};
+const RM = MC.reducedMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const running = new Map();
+const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+/* every animation goes through this guarded, keyed tween */
+function tween(key, ms, onUpdate, onDone){
+  const prev = running.get(key); if(prev) prev.cancel();
+  let done=false, raf=0, timer=0; const t0=performance.now();
+  const finish=()=>{ if(done) return; done=true; cancelAnimationFrame(raf); clearTimeout(timer); running.delete(key);
+    try{onUpdate(1);}catch(e){console.error(e)} if(onDone) try{onDone();}catch(e){console.error(e)} };
+  const ctl={cancel(){ if(done) return; done=true; cancelAnimationFrame(raf); clearTimeout(timer); running.delete(key); }, finish};
+  running.set(key, ctl);
+  if(RM || ms<=0){ finish(); return ctl; }
+  const step=now=>{ if(done) return; const t=Math.min(1,(now-t0)/ms); try{onUpdate(ease(t));}catch(e){console.error(e)} if(t<1) raf=requestAnimationFrame(step); else finish(); };
+  raf=requestAnimationFrame(step);
+  timer=setTimeout(finish, ms+150);   /* force-settle if rAF is starved */
+  return ctl;
+}
+MC.tween = tween;
+function onVisible(el, fn){
+  if(!('IntersectionObserver' in window)){ fn(); return; }
+  const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ io.disconnect(); fn(); } }); }, {rootMargin:'0px 0px -12% 0px'});
+  io.observe(el);
+}
+function fadeIn(el, key){ el.style.opacity='0'; onVisible(el, ()=>tween(key, 550, t=>{ el.style.opacity=String(t); })); }
+const NS='http://www.w3.org/2000/svg';
+function S(tag, attrs, parent){ const e=document.createElementNS(NS, tag);
+  if(attrs) for(const k in attrs){ const v=attrs[k]; if(v==null) continue; if(k==='text') e.textContent=v; else e.setAttribute(k, v); }
+  if(parent) parent.appendChild(e); return e; }
+function H(tag, attrs, kids){ const e=document.createElement(tag);
+  if(attrs) for(const k in attrs){ const v=attrs[k]; if(v==null) continue;
+    if(k==='class') e.className=v; else if(k==='text') e.textContent=v; else if(k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); }
+  (kids||[]).forEach(c=>{ if(c!=null) e.append(c instanceof Node?c:document.createTextNode(String(c))); });
+  return e; }
+const tip=document.getElementById('tip');
+function showTip(lines, x, y){
+  tip.textContent=''; lines.forEach(l=>tip.appendChild(H('div',{text:l})));
+  tip.style.opacity='1';
+  const r=tip.getBoundingClientRect(); let L=x+14, T=y+14;
+  if(L+r.width>window.innerWidth-8) L=Math.max(8, x-r.width-14);
+  if(T+r.height>window.innerHeight-8) T=Math.max(8, y-r.height-14);
+  tip.style.left=L+'px'; tip.style.top=T+'px';
+}
+function hideTip(){ tip.style.opacity='0'; }
+
+/* ---------------- the puzzle, computed ---------------- */
+const NAMES=['Ana','Ben','Cy','Dee','Eve'];
+const COLORS=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4'];
+const MUD='#7a5230', ACCENT='#00008b', INK='#333333';
+const pc = w => { let c=0; while(w){ c+=w&1; w>>=1; } return c; };
+const count = a => { let c=0; for(let i=0;i<a.length;i++) c+=a[i]; return c; };
+const SENT = {
+  none:{label:'only the rule', say:'When the bell rings, step forward if you are sure you are muddy.', pred:()=>true},
+  one: {label:'at least one is muddy', say:'At least one of you is muddy.', pred:w=>w!==0},
+  two: {label:'at least two are muddy', say:'At least two of you are muddy.', pred:w=>pc(w)>=2},
+  ana: {label:'Ana is muddy', say:'Ana is muddy.', pred:w=>(w&1)===1},
+  odd: {label:'an odd number are muddy', say:'An odd number of you are muddy.', pred:w=>pc(w)%2===1}
+};
+/* a child knows their own forehead in world w exactly when the world that differs only there is ruled out */
+const knowsIn = (alive, w, i) => !alive[w ^ (1<<i)];
+function steppersIn(alive, n, w){ let s=0; for(let i=0;i<n;i++) if(((w>>i)&1) && knowsIn(alive,w,i)) s|=1<<i; return s; }
+function allKnow(alive, n, w){ for(let i=0;i<n;i++) if(!knowsIn(alive,w,i)) return false; return true; }
+/* steps[0] = before the teacher, steps[1] = after the teacher, steps[b+1] = after bell b */
+function simulate(n, actual, key){
+  const N=1<<n, steps=[]; let alive=new Uint8Array(N).fill(1);
+  steps.push({kind:'before', bell:0, alive, stepped:0, ever:0, gone:0});
+  const pred=SENT[key].pred;
+  if(!pred(actual)) return {steps, lying:true, end:'lying'};
+  let nxt=new Uint8Array(N); for(let w=0;w<N;w++) nxt[w]=pred(w)?1:0;
+  steps.push({kind:'teacher', bell:0, alive:nxt, stepped:0, ever:0, gone:count(alive)-count(nxt)});
+  alive=nxt;
+  let ever=0, end=null;
+  for(let b=1; b<=n+3; b++){
+    const obs=steppersIn(alive, n, actual);
+    nxt=new Uint8Array(N);
+    for(let w=0;w<N;w++) if(alive[w] && steppersIn(alive,n,w)===obs) nxt[w]=1;
+    const gone=count(alive)-count(nxt); alive=nxt; ever|=obs;
+    steps.push({kind:'bell', bell:b, alive, stepped:obs, ever, gone});
+    if(allKnow(alive,n,actual) && (ever&actual)===actual){ end='done'; break; }
+    if(gone===0){ end='stuck'; break; }
+  }
+  return {steps, lying:false, end};
+}
+MC.simulate = simulate;
+function names(mask, n){ const a=[]; for(let i=0;i<n;i++) if((mask>>i)&1) a.push(NAMES[i]); return a; }
+function listNames(a){ if(!a.length) return 'nobody'; if(a.length===1) return a[0]; return a.slice(0,-1).join(', ')+' and '+a[a.length-1]; }
+function worldName(w, n){ const a=names(w,n); return a.length ? listNames(a)+(a.length===1?' is muddy':' are muddy') : 'Nobody is muddy'; }
+function worldsWord(k){ return k+(k===1?' world':' worlds'); }
+
+/* ---------------- the map of worlds ---------------- */
+let mapCount=0;
+function MapView(host, n, opts){
+  opts=opts||{};
+  const N=1<<n, id='map'+(++mapCount);
+  const st={alive:new Uint8Array(N).fill(1), actual:-1, mask:(1<<n)-1, path:null};
+  const E=[]; for(let w=0;w<N;w++) for(let i=0;i<n;i++) if(!((w>>i)&1)) E.push({u:w, v:w|(1<<i), i});
+  const edgeIndex=(a,b)=>{ const u=Math.min(a,b), v=Math.max(a,b); return E.findIndex(e=>e.u===u&&e.v===v); };
+  let cur=null, svg=null, els=null, pos=null, narrowNow=null;
+  const rowKey = w => { let k=0; for(let i=0;i<n;i++) if((w>>i)&1) k+=1<<(n-1-i); return k; };
+  function geometry(narrow){
+    const W=narrow?360:900, padL=narrow?26:80, padR=narrow?8:24, top=narrow?34:38, gap=narrow?(n>=5?76:70):(n>=5?82:84);
+    const H=top+n*gap+30;
+    const rows=[]; for(let r=0;r<=n;r++) rows.push([]);
+    for(let w=0;w<N;w++) rows[pc(w)].push(w);
+    rows.forEach(r=>r.sort((a,b)=>rowKey(b)-rowKey(a)));
+    const P=new Array(N), span=W-padL-padR, mid=padL+span/2;
+    const maxM=Math.max.apply(null, rows.map(r=>r.length));
+    /* glyph width gw = n*d+8; a row of m glyphs must fit inside the span */
+    const spacing=(m,gw)=> m<2 ? 0 : Math.min(span/m, (span-gw)/(m-1));
+    let d=16, zig=false;
+    for(; d>=9; d-=.5){ const gw=n*d+8; if(spacing(maxM,gw)>=gw+6) break; }
+    if(d<9){ zig=true; /* alternate glyphs up and down, so only every other one shares a line */
+      for(d=16; d>4; d-=.5){ const gw=n*d+8; if(2*spacing(maxM,gw)>=gw+6) break; } }
+    const gw0=n*d+8;
+    rows.forEach((r,ri)=>{ const m=r.length, s=spacing(m,gw0), y=top+(n-ri)*gap, x0=mid-s*(m-1)/2;
+      r.forEach((w,j)=>{ const z=(zig&&m===maxM)?((j%2)?gap*.17:-gap*.17):0; P[w]={x:x0+s*j, y:y+z, row:ri}; }); });
+    const rr=Math.max(2.6, d*.34), gw=gw0, gh=Math.max(14, 2*rr+8);
+    return {W,H,P,d,rr,gw,gh,padL,top,gap};
+  }
+  function target(){
+    const T={node:[], edge:[]};
+    const pset=st.path?new Set(st.path):null;
+    const pedges=st.path?new Set(st.path.slice(1).map((w,j)=>edgeIndex(st.path[j],w))):null;
+    for(let w=0;w<N;w++){
+      const a=st.alive[w], halo=[];
+      for(let i=0;i<n;i++) halo.push(a&&knowsIn(st.alive,w,i)?1:0);
+      let op=a?1:.1; if(pset&&a&&!pset.has(w)) op=.3;
+      T.node.push({op, dy:a?0:16, halo});
+    }
+    E.forEach((e,k)=>{
+      const au=st.alive[e.u], av=st.alive[e.v], shown=(st.mask>>e.i)&1;
+      let a=0,b=1,op=.9,dash=0,sw=2;
+      if(!shown){ b=0; op=0; }
+      else if(au&&av){}
+      else if(au){ b=.4; dash=1; }
+      else if(av){ a=.6; dash=1; }
+      else op=0;
+      if(pedges&&op>0){ if(pedges.has(k)){ op=1; sw=4.5; } else op=.15; }
+      T.edge.push({a,b,op,dash,sw});
+    });
+    return T;
+  }
+  const clone = T => ({node:T.node.map(p=>({op:p.op,dy:p.dy,halo:p.halo.slice()})), edge:T.edge.map(p=>Object.assign({},p))});
+  const lerp=(a,b,t)=>a+(b-a)*t;
+  function mix(A,B,t){ return {
+    node:A.node.map((p,w)=>({op:lerp(p.op,B.node[w].op,t), dy:lerp(p.dy,B.node[w].dy,t), halo:p.halo.map((h,i)=>lerp(h,B.node[w].halo[i],t))})),
+    edge:A.edge.map((p,k)=>{ const q=B.edge[k]; return {a:lerp(p.a,q.a,t), b:lerp(p.b,q.b,t), op:lerp(p.op,q.op,t), sw:lerp(p.sw,q.sw,t), dash:q.dash}; }) }; }
+  function draw(T){
+    T.node.forEach((p,w)=>{ const g=els.nodes[w]; g.g.setAttribute('transform',`translate(${pos.P[w].x.toFixed(2)},${(pos.P[w].y+p.dy).toFixed(2)})`);
+      g.g.setAttribute('opacity',p.op.toFixed(3)); p.halo.forEach((h,i)=>g.halo[i].setAttribute('opacity',h.toFixed(3))); });
+    T.edge.forEach((p,k)=>{ const e=E[k], L=els.edges[k], A=pos.P[e.u], B=pos.P[e.v];
+      L.setAttribute('x1',(A.x+(B.x-A.x)*p.a).toFixed(2)); L.setAttribute('y1',(A.y+(B.y-A.y)*p.a).toFixed(2));
+      L.setAttribute('x2',(A.x+(B.x-A.x)*p.b).toFixed(2)); L.setAttribute('y2',(A.y+(B.y-A.y)*p.b).toFixed(2));
+      L.setAttribute('opacity',p.op.toFixed(3)); L.setAttribute('stroke-width',p.sw.toFixed(2)); });
+  }
+  function decorate(){
+    for(let w=0;w<N;w++){ const g=els.nodes[w], real=(w===st.actual);
+      g.rect.setAttribute('stroke', real?ACCENT:'#b5b5b5'); g.rect.setAttribute('stroke-width', real?2.6:1);
+      g.real.setAttribute('opacity', real?1:0); }
+  }
+  function build(){
+    const narrow = host.clientWidth>0 && host.clientWidth<560;
+    narrowNow=narrow; pos=geometry(narrow);
+    host.textContent='';
+    svg=S('svg',{viewBox:`0 0 ${pos.W} ${pos.H}`, role:'img', 'aria-label':`Map of all ${N} worlds for ${n} children, stacked by how many are muddy; lines join worlds one child cannot tell apart.`}, host);
+    const floors=S('g',{}, svg);
+    for(let r=0;r<=n;r++){ const y=pos.top+(n-r)*pos.gap;
+      S('line',{x1:pos.padL-6, x2:pos.W-4, y1:y, y2:y, stroke:'#ececec', 'stroke-width':1}, floors);
+      S('text',{x:pos.padL-10, y:y+4, 'text-anchor':'end', 'font-family':'Ubuntu Mono, monospace', 'font-size':narrow?11:12, fill:'#8a8a8a',
+        text: narrow?String(r):(r===0?'nobody':r===n?'all':r+' muddy')}, floors); }
+    const eg=S('g',{}, svg), ng=S('g',{}, svg);
+    els={edges:E.map(e=>S('line',{stroke:COLORS[e.i], 'stroke-linecap':'round'}, eg)), nodes:[]};
+    for(let w=0;w<N;w++){
+      const g=S('g',{class:'world', tabindex:opts.onPick?0:null, role:opts.onPick?'button':null, 'aria-label':worldName(w,n)}, ng);
+      S('rect',{x:-pos.gw/2-6, y:-pos.gh/2-6, width:pos.gw+12, height:pos.gh+12, fill:'transparent'}, g);
+      const rect=S('rect',{x:-pos.gw/2, y:-pos.gh/2, width:pos.gw, height:pos.gh, rx:4, fill:'#fff'}, g);
+      const halo=[];
+      for(let i=0;i<n;i++){ const cx=-pos.gw/2+4+pos.d*(i+.5);
+        halo.push(S('circle',{cx, cy:0, r:pos.rr+2.6, fill:'none', stroke:INK, 'stroke-width':1.5, opacity:0}, g));
+        S('circle',{cx, cy:0, r:pos.rr, fill:((w>>i)&1)?COLORS[i]:'#fff', stroke:COLORS[i], 'stroke-width':1.6}, g); }
+      const real=S('text',{x:0, y:-pos.gh/2-5, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size':narrow?9.5:11, fill:ACCENT, 'font-weight':700, opacity:0, text:'real'}, g);
+      g.addEventListener('pointerenter', ev=>{ if(ev.pointerType==='mouse') showTip(info(w), ev.clientX, ev.clientY); });
+      g.addEventListener('pointermove', ev=>{ if(ev.pointerType==='mouse') showTip(info(w), ev.clientX, ev.clientY); });
+      g.addEventListener('pointerleave', hideTip);
+      g.addEventListener('click', ev=>{ if(opts.onPick) opts.onPick(w); else { const r=g.getBoundingClientRect(); showTip(info(w), r.left+r.width/2, r.bottom); setTimeout(hideTip, 2600); } });
+      g.addEventListener('keydown', ev=>{ if(opts.onPick && (ev.key==='Enter'||ev.key===' ')){ ev.preventDefault(); opts.onPick(w); } });
+      els.nodes.push({g, rect, halo, real});
+    }
+    if(!cur) cur=target();
+    decorate(); draw(cur);
+  }
+  function info(w){
+    const L=[worldName(w,n)+'.'];
+    if(w===st.actual) L.push('This is the real world.');
+    if(!st.alive[w]) L.push('Ruled out.');
+    else { const k=[]; for(let i=0;i<n;i++) if(knowsIn(st.alive,w,i)) k.push(NAMES[i]);
+      L.push('Still possible.'); L.push(k.length ? 'Here '+listNames(k)+(k.length===1?' knows':' know')+' their own forehead.' : 'Here nobody knows their own forehead.'); }
+    return L;
+  }
+  function apply(animate, ms){
+    const T=target();
+    T.edge.forEach((p,k)=>els.edges[k].setAttribute('stroke-dasharray', p.dash?'5 4':'none'));
+    decorate();
+    if(!animate||RM||!cur){ cur=T; draw(cur); running.get(id)&&running.get(id).cancel(); return; }
+    const from=clone(cur);
+    tween(id, ms||800, t=>{ cur=mix(from,T,t); draw(cur); });
+  }
+  function intro(){ /* worlds rise in floor by floor */
+    const T=target(), from=clone(T); from.node.forEach(p=>{ p.op=0; p.dy=10; }); from.edge.forEach(p=>{ p.op=0; });
+    cur=from; draw(cur);
+    tween(id, 1200, t=>{ const M=clone(T);
+      M.node.forEach((p,w)=>{ const r=pos.P[w].row, lt=Math.max(0,Math.min(1,(t*(n+2)-r)/2)); p.op=T.node[w].op*lt; p.dy=10*(1-lt); });
+      M.edge.forEach((p,k)=>{ p.op=T.edge[k].op*t; });
+      cur=M; draw(M); });
+  }
+  build();
+  let rt=0; const onResize=()=>{ clearTimeout(rt); rt=setTimeout(()=>{ const nw=host.clientWidth<560; if(nw!==narrowNow){ running.get(id)&&running.get(id).finish(); build(); } },120); };
+  window.addEventListener('resize', onResize);
+  return {
+    set(o){ Object.assign(st,o); }, apply, intro, id, n,
+    destroy(){ window.removeEventListener('resize', onResize); running.get(id)&&running.get(id).cancel(); host.textContent=''; },
+    probe(){ return cur; }
+  };
+}
+
+/* ---------------- the garden ---------------- */
+let gardenCount=0;
+function GardenView(host, n, opts){
+  opts=opts||{};
+  const CW=96, H=214, id='garden'+(++gardenCount);
+  host.textContent='';
+  const svg=S('svg',{viewBox:`0 0 ${n*CW} ${H}`, role:'group', 'aria-label':'The children'}, host);
+  svg.style.maxWidth=Math.round(n*CW*1.2)+'px';
+  const kids=[];
+  for(let i=0;i<n;i++){
+    const cx=CW*(i+.5);
+    const g=S('g',{class:'kid', tabindex:opts.editable?0:null, role:opts.editable?'button':null}, svg);
+    const body=S('g',{}, g);
+    S('rect',{x:cx-23, y:148, width:46, height:40, rx:12, fill:COLORS[i]}, body);
+    S('circle',{class:'head', cx, cy:122, r:25, fill:'#fff', stroke:INK, 'stroke-width':1.6}, body);
+    S('circle',{cx:cx-8, cy:124, r:2.6, fill:INK}, body); S('circle',{cx:cx+8, cy:124, r:2.6, fill:INK}, body);
+    S('path',{d:`M ${cx-7} 133 Q ${cx} 139 ${cx+7} 133`, fill:'none', stroke:INK, 'stroke-width':1.6, 'stroke-linecap':'round'}, body);
+    const mud=S('path',{d:`M ${cx-13} 108 C ${cx-12} 100, ${cx-2} 99, ${cx+3} 102 C ${cx+9} 98, ${cx+15} 104, ${cx+12} 110 C ${cx+9} 115, ${cx-2} 112, ${cx-6} 114 C ${cx-12} 116, ${cx-15} 112, ${cx-13} 108 Z`, fill:MUD, opacity:0}, body);
+    S('text',{x:cx, y:206, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size':14, fill:INK, text:NAMES[i]}, g);
+    const bub=S('g',{opacity:0}, body);
+    const brect=S('rect',{x:cx-42, y:40, width:84, height:30, rx:12, fill:'#fff', stroke:INK, 'stroke-width':1.3}, bub);
+    const tail=S('path',{d:`M ${cx-6} 70 L ${cx} 80 L ${cx+6} 70`, fill:'#fff', stroke:INK, 'stroke-width':1.3}, bub);
+    const t1=S('circle',{cx:cx-3, cy:77, r:3, fill:'#fff', stroke:INK, 'stroke-width':1.2}, bub);
+    const t2=S('circle',{cx:cx-6, cy:86, r:1.8, fill:'#fff', stroke:INK, 'stroke-width':1.1}, bub);
+    const btxt=S('text',{x:cx, y:60, 'text-anchor':'middle', 'font-family':'Ubuntu Mono, monospace', 'font-size':13, fill:INK}, bub);
+    if(opts.editable){
+      const tog=()=>opts.onToggle(i);
+      g.addEventListener('click', tog);
+      g.addEventListener('keydown', ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); tog(); } });
+    }
+    kids.push({g, body, mud, bub, brect, tail, t1, t2, btxt, cx});
+  }
+  const cur=kids.map(()=>({mud:0, up:0, bub:0}));
+  let kinds=kids.map(()=>null);
+  const BUB={unsure:{t:'?', w:30, think:true}, thinkMuddy:{t:"I'm muddy", w:84, think:true}, thinkClean:{t:"I'm clean", w:84, think:true}, say:{t:"I'm muddy!", w:90, think:false}};
+  function styleBubble(k, kind){
+    if(!kind) return; const b=BUB[kind];
+    k.brect.setAttribute('x', k.cx-b.w/2); k.brect.setAttribute('width', b.w);
+    k.brect.setAttribute('stroke-dasharray', b.think?'3 3':'none');
+    k.brect.setAttribute('stroke-width', b.think?1.2:1.6);
+    k.tail.setAttribute('display', b.think?'none':null); k.t1.setAttribute('display', b.think?null:'none'); k.t2.setAttribute('display', b.think?null:'none');
+    k.btxt.textContent=b.t; k.btxt.setAttribute('font-weight', b.think?400:700);
+  }
+  function draw(){ kids.forEach((k,i)=>{ const c=cur[i];
+    k.body.setAttribute('transform', `translate(0,${(-18*c.up).toFixed(2)})`);
+    k.mud.setAttribute('opacity', c.mud.toFixed(3)); k.bub.setAttribute('opacity', c.bub.toFixed(3)); }); }
+  function set(s, animate){
+    /* s = {muddy, up:mask, bubbles:[kind|null]} */
+    const T=kids.map((k,i)=>({mud:(s.muddy>>i)&1, up:(s.up>>i)&1, bub:s.bubbles[i]?1:0}));
+    const changed=kids.map((k,i)=>s.bubbles[i]!==kinds[i]);
+    kids.forEach((k,i)=>{ if(s.bubbles[i]) styleBubble(k, s.bubbles[i]);
+      k.g.setAttribute('aria-label', NAMES[i]+((s.muddy>>i)&1?', muddy':', clean')+(opts.editable?' (click to change)':'')); });
+    if(!animate||RM){ T.forEach((t,i)=>Object.assign(cur[i],t)); kinds=s.bubbles.slice(); draw(); return; }
+    const from=cur.map((c,i)=>({mud:c.mud, up:c.up, bub:changed[i]&&T[i].bub?0:c.bub}));
+    kinds=s.bubbles.slice();
+    tween(id, 700, t=>{ cur.forEach((c,i)=>{ c.mud=from[i].mud+(T[i].mud-from[i].mud)*t; c.up=from[i].up+(T[i].up-from[i].up)*t; c.bub=from[i].bub+(T[i].bub-from[i].bub)*t; }); draw(); });
+  }
+  draw();
+  return {set, id, probe(){ return cur; }};
+}
+
+function legend(host, n){
+  host.textContent='';
+  host.appendChild(H('span',{class:'key', text:'lines:'}));
+  for(let i=0;i<n;i++){ const s=H('span'); const sw=H('i'); sw.style.background=COLORS[i]; s.append(sw, NAMES[i]+'’s doubt'); host.appendChild(s); }
+  host.appendChild(H('span',{class:'key', text:'· dashed = dangles · ring = knows'}));
+}
+
+/* ---------------- a simulation box ---------------- */
+function bellIcon(){ const s=S('svg',{viewBox:'-10 -10 20 20', 'aria-hidden':'true'}); const g=S('g',{}, s);
+  S('path',{d:'M -6 4 Q -6 -6 0 -6 Q 6 -6 6 4 L 7 5 L -7 5 Z', fill:'none', stroke:INK, 'stroke-width':1.4, 'stroke-linejoin':'round'}, g);
+  S('circle',{cx:0, cy:7, r:1.6, fill:INK}, g); S('line',{x1:0,y1:-6,x2:0,y2:-8.5, stroke:INK, 'stroke-width':1.4}, g);
+  return {s, g}; }
+
+function Sim(root, idx){
+  const ds=root.dataset;
+  let n=+ds.n||3; const nMin=+(ds.nmin||n), nMax=+(ds.nmax||n);
+  let muddy=(ds.muddy||'').split(',').filter(x=>x!=='').reduce((m,x)=>m|(1<<+x),0);
+  const sents=(ds.sents||'one').split(','); let sent=ds.sent||sents[0];
+  const useMap=ds.map==='1';
+  const bar=root.querySelector('.bar'), teacherEl=root.querySelector('.teacher'), gardenHost=root.querySelector('.garden'),
+        mapHost=root.querySelector('.map'), legendHost=root.querySelector('.legend'), statusEl=root.querySelector('.status'),
+        caps=Array.from(root.querySelectorAll('.caps p[data-cap]')), tbody=root.querySelector('tbody');
+  const key='sim'+idx;
+  /* controls */
+  let nSel=null, sSel=null;
+  if(nMax>nMin){ nSel=H('select',{'aria-label':'Number of children'}); for(let k=nMin;k<=nMax;k++) nSel.appendChild(H('option',{value:k, text:String(k)})); nSel.value=n;
+    bar.appendChild(H('label',{},['children ', nSel])); nSel.addEventListener('change',()=>{ n=+nSel.value; muddy&=(1<<n)-1; rebuild(); }); }
+  if(sents.length>1){ sSel=H('select',{'aria-label':'What the teacher says'}); sents.forEach(k=>sSel.appendChild(H('option',{value:k, text:SENT[k].label}))); sSel.value=sent;
+    bar.appendChild(H('label',{},['teacher says ', sSel])); sSel.addEventListener('change',()=>{ sent=sSel.value; reset(); }); }
+  bar.appendChild(H('span',{class:'gap'}));
+  const stepBtn=H('button',{class:'btn primary', type:'button'}), playBtn=H('button',{class:'btn', type:'button', text:'play'}), resetBtn=H('button',{class:'btn', type:'button', text:'start over'});
+  bar.append(stepBtn, playBtn, resetBtn);
+  const bell=bellIcon(); const statusTxt=H('span'); statusEl.append(bell.s, statusTxt);
+  let garden=null, map=null, sim=null, i=0, timer=0;
+  function rebuild(){
+    garden=GardenView(gardenHost, n, {editable:true, onToggle:k=>{ muddy^=1<<k; reset(); }});
+    if(useMap){ if(map) map.destroy(); map=MapView(mapHost, n, {onPick:w=>{ muddy=w; reset(); }}); legend(legendHost, n); }
+    reset(false);
+  }
+  function stop(){ clearTimeout(timer); timer=0; playBtn.textContent='play'; }
+  function reset(animate){ stop(); sim=simulate(n, muddy, sent); i=0; render(animate!==false); }
+  function canStep(){ if(sim.lying) return false; if(i<sim.steps.length-1) return true; return sim.end==='stuck'; }
+  function step(){
+    if(!canStep()) return false;
+    if(i>=sim.steps.length-1){ const last=sim.steps[sim.steps.length-1]; sim.steps.push(Object.assign({}, last, {bell:last.bell+1, gone:0})); }
+    i++;
+    if(sim.steps[i].kind==='bell') tween(key+'bell', 900, t=>{ bell.g.setAttribute('transform',`rotate(${(28*Math.sin(t*Math.PI*4)*(1-t)).toFixed(2)})`); });
+    render(true); return true;
+  }
+  function play(){
+    if(timer){ stop(); return; }
+    const finished=()=> i>=sim.steps.length-1 && (sim.end!=='stuck' || sim.steps[i].bell>=1);
+    if(sim.lying) return;
+    if(finished()) reset(true);
+    playBtn.textContent='pause';
+    const tick=()=>{ if(finished()||!step()){ stop(); return; } if(finished()){ stop(); return; } timer=setTimeout(tick, RM?500:1700); };
+    timer=setTimeout(tick, RM?100:350);
+  }
+  stepBtn.addEventListener('click', ()=>{ stop(); step(); });
+  playBtn.addEventListener('click', play);
+  resetBtn.addEventListener('click', ()=>reset(true));
+  function render(animate){
+    const s=sim.steps[i], N=1<<n, prev=i>0?sim.steps[i-1]:null;
+    /* garden */
+    const bubbles=[]; for(let c=0;c<n;c++){
+      if(s.kind==='before') bubbles.push(null);
+      else if((s.ever>>c)&1) bubbles.push('say');
+      else if(knowsIn(s.alive,muddy,c)) bubbles.push((muddy>>c)&1?'thinkMuddy':'thinkClean');
+      else bubbles.push('unsure'); }
+    garden.set({muddy, up:s.ever, bubbles}, animate);
+    /* map */
+    if(map){ map.set({alive:s.alive, actual:muddy}); map.apply(animate); }
+    /* teacher */
+    const showT = s.kind!=='before';
+    teacherEl.textContent=''; teacherEl.append(H('b',{text:'Teacher: '}), '“'+SENT[sent].say+'”');
+    const tFrom=+teacherEl.style.opacity||0, tTo=showT?1:0;
+    if(!animate||RM){ running.get(key+'t')&&running.get(key+'t').cancel(); teacherEl.style.opacity=String(tTo); }
+    else if(tFrom!==tTo) tween(key+'t', 450, t=>{ teacherEl.style.opacity=String(tFrom+(tTo-tFrom)*t); });
+    /* status */
+    let stx = s.kind==='before' ? 'before the teacher speaks' : s.kind==='teacher' ? 'the teacher has spoken' : 'bell '+s.bell;
+    if(useMap) stx += ' · '+count(s.alive)+' of '+N+' worlds still possible';
+    statusTxt.textContent=stx;
+    /* buttons */
+    stepBtn.disabled=!canStep();
+    stepBtn.textContent = sim.lying ? 'teacher can’t say that' : i===0 ? 'teacher speaks ▸' : (!canStep() ? 'everyone knows' : 'ring bell '+(s.bell+1)+' ▸');
+    /* captions: one main, one optional */
+    let main, also=null;
+    if(s.kind==='before') main=['before'];
+    else if(s.kind==='teacher') main = sent==='none' ? ['teacher-none','teacher'] : ['teacher-cut','teacher'];
+    else { const newly = s.stepped & ~(prev?prev.ever:0);
+      main = newly ? (s.gone? ['step'] : ['step-none','step']) : (s.gone? ['silent-cut','silent'] : ['silent-none','silent']); }
+    if(sim.lying) also='lying';
+    else if(i===sim.steps.length-1 && i>0 && s.kind==='bell') also = sim.end==='done'?'done':(sim.end==='stuck'?'stuck':null);
+    else if(i>=sim.steps.length-1 && sim.end==='stuck' && s.kind!=='before') also='stuck';
+    const pick = keys => { for(const k of keys){ const p=caps.find(p=>p.dataset.cap===k); if(p) return p; } return null; };
+    const mp=pick(main), ap=also?pick([also]):null;
+    const newlyMask = s.kind==='bell' ? (s.stepped & ~(prev?prev.ever:0)) : 0;
+    const who=names(newlyMask,n);
+    caps.forEach(p=>{ const on=(p===mp||p===ap); p.hidden=!on; if(!on) return;
+      p.querySelectorAll('[data-f]').forEach(f=>{ const k=f.dataset.f;
+        f.textContent = k==='bell' ? String(s.bell) : k==='who' ? listNames(who)+(who.length===1?' steps':' step') : k==='goneW' ? worldsWord(s.gone) : ''; });
+      if(animate&&!RM){ p.style.opacity='0'; tween(key+'cap'+p.dataset.cap, 400, t=>{ p.style.opacity=String(t); }); } else p.style.opacity='1'; });
+    /* table */
+    if(tbody){ tbody.textContent='';
+      const order=[]; for(let w=0;w<N;w++) order.push(w); order.sort((a,b)=>pc(a)-pc(b)||b-a);
+      order.forEach(w=>{ let when='possible';
+        if(!s.alive[w]){ for(let j=1;j<=i;j++) if(!sim.steps[j].alive[w]){ const t=sim.steps[j]; when='ruled out '+(t.kind==='teacher'?'by the teacher':'at bell '+t.bell); break; } }
+        const kn=[]; if(s.alive[w]) for(let c=0;c<n;c++) if(knowsIn(s.alive,w,c)) kn.push(NAMES[c]);
+        const tr=H('tr',{class:(w===muddy?'real ':'')+(s.alive[w]?'':'out')},[
+          H('td',{text:(names(w,n).join(', ')||'nobody')+(w===muddy?' (real)':'')}), H('td',{text:when}), H('td',{text:s.alive[w]?(kn.join(', ')||'nobody'):'—'})]);
+        tbody.appendChild(tr); }); }
+  }
+  rebuild();
+  return {get state(){ return {n, muddy, sent, i, sim}; }, step, reset, map:()=>map, garden:()=>garden,
+    setup(o){ if(o.n!=null){ n=o.n; if(nSel) nSel.value=n; } if(o.muddy!=null) muddy=o.muddy; if(o.sent){ sent=o.sent; if(sSel) sSel.value=sent; } if(o.n!=null) rebuild(); else reset(false); }};
+}
+
+/* ---------------- stepped map figures ---------------- */
+function Stepper(root, nSteps, onStep){
+  const dots=root.querySelector('.dots'), prev=root.querySelector('[data-act=prev]'), next=root.querySelector('[data-act=next]');
+  const caps=Array.from(root.querySelectorAll('.caps p[data-cap]'));
+  const ds=[]; for(let k=0;k<nSteps;k++){ const b=H('b'); dots.appendChild(b); ds.push(b); }
+  let s=0;
+  function go(k, animate){ s=Math.max(0,Math.min(nSteps-1,k));
+    ds.forEach((b,j)=>b.classList.toggle('on', j<=s));
+    caps.forEach(p=>{ const on=+p.dataset.cap===s; p.hidden=!on; if(on){ if(animate&&!RM){ p.style.opacity='0'; tween('cap'+root.id, 400, t=>{ p.style.opacity=String(t); }); } else p.style.opacity='1'; } });
+    prev.disabled=(s===0); next.disabled=(s===nSteps-1);
+    onStep(s, animate); }
+  prev.addEventListener('click', ()=>{ stopAuto(); go(s-1, true); });
+  next.addEventListener('click', ()=>{ stopAuto(); go(s+1, true); });
+  let auto=0; function stopAuto(){ clearTimeout(auto); auto=0; }
+  function autoplay(ms){ const tick=()=>{ if(s>=nSteps-1){ auto=0; return; } go(s+1, true); auto=setTimeout(tick, ms); }; auto=setTimeout(tick, ms); }
+  return {go, autoplay, get step(){ return s; }};
+}
+
+function initBuild(root){
+  const map=MapView(root.querySelector('.map'), 3, {}); legend(root.querySelector('.legend'), 3);
+  const stp=Stepper(root, 4, (s, animate)=>{ map.set({mask:(1<<s)-1}); map.apply(animate, 900); });
+  stp.go(0, false);
+  onVisible(root, ()=>{ map.intro(); stp.autoplay(RM?300:1700); });
+  return {map, stepper:stp};
+}
+function initChain(root){
+  const map=MapView(root.querySelector('.map'), 3, {}); legend(root.querySelector('.legend'), 3);
+  const P=[[7],[7,6],[7,6,4],[7,6,4,0],[7,6,4,0],[7,6,4,0]];
+  const full=new Uint8Array(8).fill(1), cut=full.slice(); cut[0]=0;
+  map.set({actual:7});
+  const stp=Stepper(root, 6, (s, animate)=>{ map.set({path:P[s], alive:s===5?cut:full}); map.apply(animate, 900); });
+  stp.go(0, false);
+  return {map, stepper:stp};
+}
+
+/* ---------------- start ---------------- */
+function start(){
+  if(window.renderMathInElement) renderMathInElement(document.getElementById('main'),{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false, ignoredClasses:['caps']});
+  MC.sims={}; document.querySelectorAll('.sim').forEach((el,k)=>{ MC.sims[el.id]=Sim(el,k); });
+  MC.build=initBuild(document.getElementById('build'));
+  MC.chain=initChain(document.getElementById('chain'));
+  document.querySelectorAll('.fig').forEach((el,k)=>fadeIn(el,'fig'+k));
+  /* nav highlight */
+  const links=Array.from(document.querySelectorAll('#topnav a')); const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const onScroll=()=>{ let on=0; secs.forEach((s,k)=>{ if(s && s.getBoundingClientRect().top<120) on=k; }); links.forEach((a,k)=>a.classList.toggle('on',k===on)); };
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+  MC.ready=true;
+}
+let tries=0;
+const go=()=>{ if((window.renderMathInElement && window.katex) || tries++>100) start(); else setTimeout(go,30); };
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
+</script>
+</body>
+</html>
