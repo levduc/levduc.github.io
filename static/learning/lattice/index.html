@@ -243,7 +243,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
       <p class="eyebrow">Learning with AI &middot; study companion</p>
       <h1>Learning Lattice Cryptography</h1>
       <p class="sub">A companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; last updated June 18, 2025), told section by section in short animations.</p>
-      <p class="by">by Duc V. Le &middot; numbers are the paper's &middot; step through each figure with back / play / next</p>
+      <p class="by">by Duc V. Le &middot; numbers the paper prints are cited (&sect;, Eq., Table, page); numbers marked <em>illustration</em>, <em>ours</em> or <em>computed</em> are mine, including the paper&rsquo;s formulas evaluated on this page &middot; step through the figures with back / play / next</p>
       <div class="btns">
         <a class="btn primary" href="guide.pdf">[companion guide pdf]</a>
         <a class="btn" href="#how">[how to read this page]</a>
@@ -261,19 +261,19 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
     <section class="psec" id="how" data-num="" data-toc="How to read this page">
   <h2>How to read this page</h2>
   <ul>
-    <li>Each subsection: one line on the idea, a figure to step through (<strong>back / play / next</strong> or arrow keys), one line to remember.</li>
-    <li>A navy rule marks the paper&rsquo;s claim, cited in grey like <span class="cite">§2.3, Eq. (6)</span>; open <em>The paper&rsquo;s exact statement</em> for its wording.</li>
+    <li>Most subsections: one line on the idea, a figure to step through (<strong>back / play / next</strong> or arrow keys) or a calculator to try, and one line to remember.</li>
+    <li>A navy rule marks the paper&rsquo;s claim, cited in grey like <span class="cite">§2.3.1, Eq. (6)</span>; open <em>The paper&rsquo;s exact statement</em> for the details, closely paraphrased.</li>
     <li><span class="tag">illustration</span> marks my toy numbers; proofs are in the <a href="guide.pdf">companion guide (pdf)</a>.</li>
     <li>You need CPA security, ElGamal, Schnorr and the hybrid argument. Read ticks stay in your browser.</li>
   </ul>
 
   <details class="boxdef">
-    <summary class="t" style="cursor:pointer">Notation cheat-sheet (paper §2.1, §4.2)</summary>
+    <summary class="t" style="cursor:pointer">Notation cheat-sheet (paper §2.1, §2.5.1–2.5.2, §4.1–4.2, §4.7)</summary>
     <div class="scrollx">
     <table class="dt">
       <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
       <tbody>
-        <tr><td>$\mathbb{Z}_q$</td><td>integers modulo $q$; to measure size we use the centred representatives $\{-\lfloor q/2\rfloor,\ldots,\lfloor q/2\rfloor\}$</td></tr>
+        <tr><td>$\mathbb{Z}_q$</td><td>integers modulo $q$; to measure size, this page takes the representative in $(-q/2,\,q/2]$ (its own convention)</td></tr>
         <tr><td>$[\beta]$</td><td>the set $\{-\beta,\ldots,\beta\}$</td></tr>
         <tr><td>$s \leftarrow [\beta]$, $\mathbf{s}\leftarrow[\beta]^m$</td><td>every coefficient sampled uniformly from $[\beta]$ (for polynomials: every coefficient of every polynomial)</td></tr>
         <tr><td>$\mathbf{A}\leftarrow\mathbb{Z}_q^{n\times m}$</td><td>uniformly random matrix</td></tr>
@@ -281,7 +281,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
         <tr><td>$\lceil x\rfloor_{q\to p}$</td><td>modulus switching $\lceil xp/q\rfloor \in\mathbb{Z}_p$ (Definition 3)</td></tr>
         <tr><td>$\mathcal{R}_f$, $\mathcal{R}_{q,f}$</td><td>polynomials modulo $f$ with integer / $\mathbb{Z}_q$ coefficients</td></tr>
         <tr><td>$\mathcal{V}_a$, $\mathcal{M}_a$</td><td>coefficient vector of $a$; the matrix of multiplication by $a$ (Eq. (44))</td></tr>
-        <tr><td>$\psi_\eta$</td><td>centred binomial distribution (Definition 8)</td></tr>
+        <tr><td>$\psi_\eta$</td><td>binomial distribution: $\sum a_i-\sum b_i$ over $2\eta$ coin flips (Definition 8)</td></tr>
         <tr><td>$\mathrm{HIGH}_\mathcal{S}$, $\mathrm{LOW}_\mathcal{S}$</td><td>nearest point of $\mathcal{S}$; the remainder (Section 2.5.1)</td></tr>
       </tbody>
     </table>
@@ -311,7 +311,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
 
 <section class="psec" id="sec-2" data-num="§2" data-toc="Encryption">
   <h2><span class="n">§2</span>Encryption</h2>
-  <p class="claim">Lattice encryption is most efficient with a tiny decryption error, around $2^{-150}$. <span class="cite">§2, p. 5</span></p>
+  <p class="claim">Lattice encryption is most efficient when they allow a tiny decryption error (say, around $2^{-150}$). <span class="cite">§2, p. 5</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>We start with a CPA-secure public-key encryption scheme: three algorithms (key generation, encryption, decryption), and CPA security means that for any two messages of the adversary's choosing, their encryptions are computationally indistinguishable. Generic transformations such as Fujisaki&ndash;Okamoto [FO99] later turn CPA security into CCA security (§4.8).</p>
     <p>Unlike discrete-log and factoring schemes, lattice schemes are most efficient when they allow <strong>decryption errors</strong>: even when everything is run correctly, a ciphertext may, with very small probability, decrypt wrongly. An error around $2^{-150}$ does not appear to hurt practical security, as long as the transformations' proofs account for it. <span class="cite">§2, p. 5; footnote 5</span></p>
@@ -412,7 +412,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>Decryption is right while the leftover noise stays under $q/4$. <span class="next">How often is the noise large, really?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>Decryption is right while the leftover noise stays under about $q/4$. <span class="next">How often is the noise large, really?</span></p>
   <button class="readbtn" data-for="sec-2-3-1">mark as read</button>
 
   <!-- 2.3.2 -->
@@ -454,8 +454,8 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
     $$\Bigl(\mathbf{U} = \mathbf{R}\mathbf{A} + \mathbf{E}_2,\;\; \mathbf{V} = \mathbf{R}\mathbf{T} + \mathbf{E}_3 + \tfrac q2\mathbf{M}\Bigr) \qquad (14)$$
     <p>The public key grows to $256 + \ell m\log q$ bits; the ciphertext is $km\log q + k\ell\log q$ bits. For the minimum combined size set $k \approx \ell \approx \sqrt N$: about $256 + 2\sqrt N m\log q + N\log q$ bits, dominated by $2\sqrt N m\log q$ (one rarely needs more than $N = 256$). Security follows from $\mathsf{LWE}_{m,q,\beta}$ with a hybrid argument, losing $\log\ell$ bits (footnote 7: it is not clear in this case whether the loss is real). Each coefficient of $\mathbf{V} - \mathbf{U}\mathbf{S} = \mathbf{R}\mathbf{E}_1 + \mathbf{E}_3 + \frac q2\mathbf{M} - \mathbf{E}_2\mathbf{S}$ has exactly the single-bit noise (Eqs. (16)&ndash;(17)); a union bound over coefficients gives the total error (footnote 8). <span class="cite">§2.4, Eqs. (13)&ndash;(17)</span></p>
   </details>
-  <div class="try" id="p1-sz"><span class="vlabel">Try it</span><p class="tt">Size calculator</p>
-    <p class="how">The paper&rsquo;s $m = 700$, $q = 2^{13}$, $N = 256$. Move $k$.</p>
+  <div class="try" id="p1-sz"><span class="vlabel">Try it</span><p class="tt">Size calculator (computed from the &sect;2.4 formulas) <span class="tag">illustration</span></p>
+    <p class="how">Preset from the paper: $m \approx 700$ and $q \approx 2^{13}$ (set here to 700 and $2^{13}$), and $N = 256$, the most it says one generally needs (§2.4, pp. 10&ndash;11). Move $k$.</p>
     <div class="mount"></div></div>
   <p class="remember"><span class="vlabel">Remember</span>Amortizing trades public-key bits for ciphertext bits. <span class="next">What else shrinks them?</span></p>
   <button class="readbtn" data-for="sec-2-4">mark as read</button>
@@ -523,7 +523,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
     <p>Distinguishing $(\mathbf{A}, \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s}))$ from $(\mathbf{A}, \mathrm{HIGH}_\mathcal{S}(\mathbf{u}))$ is the <strong>Learning with Rounding (LWR)</strong> problem, at least as hard as LWE whenever adding $\mathbf{e}$ does not affect the rounded output [BPR12, AKPW13, BGM<sup>+</sup>16]. It is sometimes used even when $q$ is too small for a reduction, as a separate assumption. The best attacks treat it as LWE with implicit noise $\mathbf{e} = -\mathrm{LOW}_\mathcal{S}(\mathbf{A}\mathbf{s})$, which is larger than the reduction's noise. Under LWR, rounding does two jobs: in (19), $\mathbf{E}'$ may make $\mathbf{E}_3$ unnecessary, and rounding $\mathbf{U}$ may make $\mathbf{E}_2$ unnecessary. <span class="cite">§2.5.3, pp. 14&ndash;15</span></p>
   </details>
   <div class="try" id="p1-lwr"><span class="vlabel">Try it</span><p class="tt">When does rounding swallow the error?</p>
-    <p class="how">The paper&rsquo;s formula against a Monte-Carlo count <span class="tag">illustration</span>.</p>
+    <p class="how">The paper&rsquo;s formula (&sect;2.5.3, p. 14) against a Monte-Carlo count <span class="tag">illustration</span>. The formula assumes the points of $\mathcal{S}$ are far apart, so it is shown only while $q/|\mathcal{S}| \ge 2\beta$.</p>
     <div class="mount"></div></div>
   <p class="remember"><span class="vlabel">Remember</span>Under LWR the rounding is the noise. <span class="next">Can one slot carry more than one bit?</span></p>
   <button class="readbtn" data-for="sec-2-5-3">mark as read</button>
@@ -533,7 +533,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
   <p class="hook">Put $2^b$ message points on the circle instead of two.</p>
   <p class="claim">The noise room shrinks from $q/4$ to $q/2^{b+1}$; raising $q$ to compensate can still shrink the public key. <span class="cite">§2.5.4</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
-    <p>Pack the $N$ bits into $\mathbf{M} \in \{0, \ldots, 2^b-1\}^{(k/\sqrt b)\times(\ell/\sqrt b)}$ and use $\frac{q}{2^b}\mathbf{M}$ instead of $\frac q2\mathbf{M}$. The other error terms in (17) must then lie in $[q/2^{b+1}]$ instead of $[q/4]$. The trivial fix is to increase $q$ by about $2^{b-1}$. That can still shrink the public key: if $\ell$ halves, $256 + \ell m\log q$ becomes $256 + \frac{\ell m}{2}(\log q + b - 1)$, smaller if $b - 1 &lt; \log q$. But a larger $q$ with everything else fixed lowers security (the problem gets harder as $\beta/q$ grows), so one must increase $\beta$ or $m$ &mdash; best found by a script. <span class="cite">§2.5.4</span></p>
+    <p>Pack the $N$ bits into $\mathbf{M} \in \{0, \ldots, 2^b-1\}^{(k/\sqrt b)\times(\ell/\sqrt b)}$ and use $\frac{q}{2^b}\mathbf{M}$ instead of $\frac q2\mathbf{M}$. The other error terms in (17) must then lie in $[q/2^{b+1}]$ instead of $[q/4]$. The trivial fix is to increase $q$ by a factor of approximately $2^{b-1}$. That can still shrink the public key: if $\ell$ halves, $256 + \ell m\log q$ becomes $256 + \frac{\ell m}{2}(\log q + b - 1)$, smaller if $b - 1 &lt; \log q$. But a larger $q$ with everything else fixed lowers security (the problem gets harder as $\beta/q$ grows), so one must increase $\beta$ or $m$ &mdash; best found by a script. <span class="cite">§2.5.4</span></p>
   </details>
   <div class="try" id="p1-bits"><span class="vlabel">Try it</span><p class="tt">More message points, less room for noise <span class="tag">illustration</span></p>
     <div class="mount"></div></div>
@@ -555,14 +555,14 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
   <!-- 2.5.6 -->
   <h3 id="sec-2-5-6" data-num="2.5.6"><span class="n">2.5.6</span>Using Distinct Distributions for the Secret and the Error</h3>
   <p class="hook">Keep the total size of secret and error fixed, but split it unevenly.</p>
-  <p class="claim">A larger secret and a smaller error, with the same total norm, cut the decryption noise to about 0.63 of the equal split. <span class="cite">§2.5.6, Eqs. (22)&ndash;(24)</span></p>
+  <p class="claim">A larger secret and a smaller error, with the same total norm, cut the decryption noise to $\tfrac{4\sqrt2}{9}$ of the equal split ($\approx 0.63$, our decimal). <span class="cite">§2.5.6, Eqs. (22)&ndash;(24)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>Take $\mathbf{r}, \mathbf{s} \leftarrow \psi_1$ and $\mathbf{e}_1, \mathbf{e}_2 \leftarrow \psi_2$ [ZYF<sup>+</sup>20]. Against the best known algorithms, hardness depends on the norm of $(\mathbf{s}, \mathbf{e}_1)$ (§3.3), while decryption wants $\mathbf{r}^T\mathbf{e}_1 + \mathbf{e}_2^T\mathbf{s}$ (22) small. With normal distributions ($\|\mathbf{v}\| \approx \sigma\sqrt n$ for $\mathbf{v} \leftarrow \mathcal{N}_\sigma^n$; $\langle\mathbf{s},\mathbf{v}\rangle \sim \mathcal{N}_{\sigma\|\mathbf{v}\|}$), $\mathbf{s},\mathbf{r} \leftarrow \mathcal{N}_{\sigma_1}$ and $\mathbf{e}_1, \mathbf{e}_2 \leftarrow \mathcal{N}_{\sigma_2}$ give (22) $\sim \mathcal{N}_{\sigma_1\sigma_2\sqrt{2n}}$ and $\|(\mathbf{s},\mathbf{e}_1)\| \approx \sqrt{\sigma_1^2+\sigma_2^2}\sqrt n$. <span class="cite">§2.5.6, Eqs. (22)&ndash;(24)</span></p>
     $$\sigma_1 = \sigma_2 = \sigma:\;\; \|(\mathbf{s},\mathbf{e}_1)\| \approx \sigma\sqrt{2n},\; (22) \sim \mathcal{N}_{\sigma^2\sqrt{2n}} \qquad (23)$$
     $$\sigma_1 = \tfrac43\sigma,\; \sigma_2 = \tfrac{\sqrt2}{3}\sigma:\;\; \|(\mathbf{s},\mathbf{e}_1)\| \approx \sigma\sqrt{2n},\; (22) \sim \mathcal{N}_{\frac{4\sqrt2}{9}\sigma^2\sqrt{2n}} \qquad (24)$$
     <p>Same norms, smaller decryption noise. Whether to do this depends on believing the two LWE problems (Definition 2 and the one with different distributions) are equally hard. <span class="cite">§2.5.6</span></p>
   </details>
-  <div class="try" id="p1-sig"><span class="vlabel">Try it</span><p class="tt">Split a fixed norm between secret and error</p>
+  <div class="try" id="p1-sig"><span class="vlabel">Try it</span><p class="tt">Split a fixed norm between secret and error <span class="tag">illustration</span></p>
     <div class="mount"></div></div>
   <p class="remember"><span class="vlabel">Remember</span>An uneven split keeps the norm and cuts the noise, if both LWE variants are equally hard. <span class="next">Can two parties agree on a key, either speaking first?</span></p>
   <button class="readbtn" data-for="sec-2-5-6">mark as read</button>
@@ -655,7 +655,7 @@ If $\Lambda = \mathcal{L}(\mathbf{B})$ for a full-rank $\mathbf{B} \in \mathbb{Z
 <!-- ============================ 3.1.2 ============================ -->
 <h3 id="sec-3-1-2" data-num="3.1.2"><span class="n">3.1.2</span>Distance to the Lattice</h3>
 <p class="hook">LWE cosets sit close to the lattice; random cosets sit far.</p>
-<p class="claim">A coset&rsquo;s members share one distance $\Delta_p$. For prime $q$: random cosets are farther than $\beta$ when $\beta^{1+m/n}\ll q$; short vectors almost never exist below $\tfrac14 q^{n/(n+m)}$, and always at $q^{n/(n+m)}$. <span class="cite">§3.1.2, Eq. (33), Lemmas 2&ndash;4, Corollary 1, pp. 20&ndash;21</span></p>
+<p class="claim">A coset&rsquo;s members share one distance $\Delta_p$. Random cosets are farther than $\beta$ when $\beta^{1+m/n}\ll q$ (prime or power-of-2 $q$); for prime $q$, short vectors almost never exist below $\tfrac14 q^{n/(n+m)}$; for any $q$, one exists at $q^{n/(n+m)}$. <span class="cite">§3.1.2, Eq. (33), Lemmas 2&ndash;4, Corollary 1, pp. 20&ndash;21</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>For an $m$-dimensional lattice and any $\mathbf{r} \in \mathbb{Z}^m$, the $\ell_p$ distance to the lattice is
 $$\Delta_p(\mathbf{r}, \Lambda) = \min_{\mathbf{v}\in\Lambda}\|\mathbf{v} - \mathbf{r}\|_p. \qquad (33)$$
@@ -688,18 +688,18 @@ For any $q$ and any $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$: $\;\exists\,\math
 <p data-cap="2" hidden>200 LWE cosets $t=as+e$ with $s,e\in[\beta]$. Each coset&rsquo;s shortest member lands in the small box: <span data-f="inL"></span> of 200.</p>
 <p data-cap="3" hidden>200 uniform $t$: only <span data-f="inU"></span> of 200 land in the box. Of all 101 cosets, <span data-f="C"></span> are that close; Corollary 1 allows <span data-f="bound"></span>.</p>
 <p data-cap="4" hidden>The shortest non-zero lattice vector, <span data-f="sv"></span>, has $\ell_\infty$ norm <span data-f="svn"></span>, within $\sqrt{101}\approx10.05$: Lemma 4 promises one that short.</p>
-<p data-cap="4-also" class="also" hidden>At real sizes ($n=m=512$, prime $q=4093$, $\beta=2$) Lemma 3 bounds the chance that the lattice has a non-zero vector in $[\beta]^{n+m}$ by <span data-f="l3"></span>.</p>
+<p data-cap="4-also" class="also" hidden>At real sizes ($n=m=512$, $\beta=2$, and our choice of a prime near $2^{12}$, $q=4093$) Lemma 3 bounds the chance that the lattice has a non-zero vector in $[\beta]^{n+m}$ by <span data-f="l3"></span>.</p>
 </div>
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>Short vectors: almost none below $q^{n/(n+m)}$, always one at it. <span class="next">How hard is it to find one?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Short vectors: almost none below $\tfrac14 q^{n/(n+m)}$, always one at $q^{n/(n+m)}$. <span class="next">How hard is it to find one?</span></p>
 <button class="readbtn" data-for="sec-3-1-2">mark as read</button>
 
 <!-- ============================ 3.2 ============================ -->
 <h3 id="sec-3-2" data-num="3.2"><span class="n">3.2</span>Finding Short Vectors in Random Lattices (the SIS Problem)</h3>
 <p class="hook">Lemma 4 promises short vectors, not how to find them. Reduction finds longer ones; $\delta$ measures effort.</p>
-<p class="claim">Reduction finds vectors of length about $q^{n/(n+m)}\delta^{n+m}$; $\delta=1.01$ is in reach, $1.005$ may never be. <span class="cite">§3.2, Eqs. (34)&ndash;(36), pp. 21&ndash;22</span></p>
+<p class="claim">Reduction finds vectors of length about $q^{n/(n+m)}\delta^{n+m}$; roughly, in dimension above 500, $\delta=1.01$ is in reach and $1.005$ may never be. <span class="cite">§3.2, Eqs. (34)&ndash;(36), pp. 21&ndash;22</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Lemma 4 guarantees a non-zero $\mathbf{z} \in [q^{n/(n+m)}]^{n+m}$ with $[\mathbf{A} \mid \mathbf{I}_n]\mathbf{z} \equiv \mathbf{0}$, but all known (quantum) algorithms for finding such vectors for uniformly random $\mathbf{A}$ take $2^{\Omega(m+n)}$ time [AKS01, ADRS15, AS18]. The problem gets easier as $\beta$ grows; at $\beta = q/2$ it is trivial (set the coefficients multiplied by $\mathbf{I}_n$ to the target). All modern (i.e. polynomial-time) algorithms are descendants of LLL [LLL82], which guarantees a vector at most $2^{O(n+m)}$ times longer than the shortest; in practice the factor is exponential but with a small base. Experiments [GN08, MR09] show that one can find non-trivial vectors of length approximately
 $$\det(\Lambda)^{1/(n+m)}\cdot\delta^{n+m} = q^{n/(n+m)}\cdot\delta^{n+m}, \qquad (34)$$
@@ -713,17 +713,18 @@ $$2^{2\sqrt{n\log q\log\delta}}. \qquad (36)$$
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div class="boxdef"><p class="t">Definition 4 (p. 22): $\mathrm{SIS}_{n,m,q,\beta}$</p>
 For positive integers $m, n, q$ and $\beta &lt; q$: given a random $\mathbf{A} \leftarrow \mathbb{Z}_q^{n\times m}$, find $\mathbf{s}_1 \in [\beta]^m$ and $\mathbf{s}_2 \in [\beta]^n$ such that $\mathbf{A}\mathbf{s}_1 + \mathbf{s}_2 = \mathbf{0} \pmod q$.</div>
+<div class="voice note"><span class="vlabel">Note on the paper&rsquo;s text</span><p>As printed, $\mathbf{s}_1 = \mathbf{s}_2 = \mathbf{0}$ solves Definition 4; the surrounding text (pp. 21&ndash;22) asks for a <em>non-zero</em> vector.</p></div>
 <p>By Lemma 3, SIS is vacuously hard when $\beta \ll \frac12 q^{n/(n+m)}$, and by (36) it gets easier as $\beta$ grows. Once $m &gt; \sqrt{n\log q/\log\delta}$, $m$ has no impact on hardness, so one writes $\mathrm{SIS}_{n,q,\beta}$. SIS is defined in the $\ell_\infty$ norm (natural for Dilithium, which avoids complicated operations; all its sampling is uniform, footnote 11), while (36) is an $\ell_2$ norm: finding a vector of $\ell_\infty$ norm $\beta$ requires at least finding one of $\ell_2$ norm (36) multiplied by the square root of the dimension. Footnote 10: [MR09] only state the bound when the found vector is shorter than $q$. <span class="cite">§3.2, p. 22</span></p>
 </details>
 
 <div class="try" id="p2-delta"><span class="vlabel">Try it</span>
-<p class="tt">Effort against length: $\log_2$ length $= \frac{n\log q}{k} + k\log\delta$</p>
+<p class="tt">Effort against length: $\log_2$ length $= \frac{n\log q}{k} + k\log\delta$ <span class="tag">illustration</span></p>
 <div class="mount"></div>
 </div>
 
 <div class="try" id="p2-fig2"><span class="vlabel">Try it</span>
 <p class="tt">LWE vs. SIS hardness as $\beta$ grows <span class="tag">illustration</span></p>
-<p class="how">From Eqs. (41) and (36); the paper&rsquo;s Figure 2 only sketches it.</p>
+<p class="how">From Eqs. (41) and (36), with SIS&rsquo;s $\beta$ read as an $\ell_2$ length (Table 2 uses $\ell_\infty$); the paper&rsquo;s Figure 2 only sketches it.</p>
 <div class="mount"></div>
 </div>
 
@@ -757,7 +758,7 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 <div class="caps" aria-live="polite">
 <p data-cap="0" hidden>A toy instance with $\mathbf{A}=$ <span data-f="A"></span>. Is $\mathbf{t}=\mathbf{A}\mathbf{s}+\mathbf{e}$ with small $\mathbf{s},\mathbf{e}$, or uniform?</p>
 <p data-cap="1" hidden>Try every $\mathbf{r}_1\in[8]^2$; then $\mathbf{r}_2\equiv-\mathbf{A}^T\mathbf{r}_1$ is forced (Eq. 37). Shortest: $\mathbf{r}_1=$ <span data-f="r1"></span>, $\mathbf{r}_2=$ <span data-f="r2"></span>, length <span data-f="len"></span>.</p>
-<p data-cap="2" hidden>One LWE sample: $\mathbf{r}_1^T\mathbf{t}=-\mathbf{r}_2^T\mathbf{s}+\mathbf{r}_1^T\mathbf{e}=$ <span data-f="v1"></span> (Eq. 38), a small number.</p>
+<p data-cap="2" hidden>One LWE sample: $\mathbf{r}_1^T\mathbf{t}$, centred mod 97, is <span data-f="v1"></span>. By Eq. (38) it is $-\mathbf{r}_2^T\mathbf{s}+\mathbf{r}_1^T\mathbf{e}$ mod 97: small while $\beta$ is small.</p>
 <p data-cap="3" hidden>200 LWE samples pile up near 0: <span data-f="inL"></span> of 200 within &plusmn;24, a quarter of $q$. Eq. (40) gives spread <span data-f="sd"></span>.</p>
 <p data-cap="4" hidden>200 uniform $\mathbf{t}$ stay flat: <span data-f="inU"></span> of 200 within &plusmn;24. Raise $\beta$ above and the LWE pile melts.</p>
 </div>
@@ -765,7 +766,7 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 </div>
 
 <div class="try" id="p2-attack"><span class="vlabel">Try it</span>
-<p class="tt">Solve Eq. (41) for the $\delta$ an attacker needs</p>
+<p class="tt">Solve Eq. (41) for the $\delta$ an attacker needs <span class="tag">illustration</span></p>
 <p class="how">Pick a row of Tables 1&ndash;2, or set $m$, $\beta$ and $\log_2 q$.</p>
 <div class="mount"></div>
 </div>
@@ -775,8 +776,8 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 
 <!-- ============================ 3.4 ============================ -->
 <h3 id="sec-3-4" data-num="3.4"><span class="n">3.4</span>Practical Parameters</h3>
-<p class="hook">Every $\delta$ in Tables 1&ndash;2 is below $1.005$, which may never be reached (§3.2).</p>
-<p class="claim">Table 1 resembles Kyber, Table 2 Dilithium, both set by today&rsquo;s best lattice reduction. <span class="cite">§3.4, Tables 1&ndash;2, p. 24</span></p>
+<p class="hook">Every $\delta$ in Tables 1&ndash;2 is below $1.005$, which §3.2&rsquo;s rough rule says may never be reached.</p>
+<p class="claim">Table 1 resembles Kyber, Table 2 Dilithium, both set by today&rsquo;s best lattice reduction. <span class="cite">§3.4, Tables 1&ndash;2, pp. 24&ndash;25</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Table 1 lists sample $\mathrm{LWE}_{m,q,\beta}$ parameters similar to those used in Kyber (ML-KEM, §4.7); the signature scheme of §5 depends on both SIS and LWE, and Table 2 gives parameters resembling Dilithium (ML-DSA). The tables are set from the best currently-known lattice-reduction algorithms (cf. the Lattice Estimator [APS15]). <span class="cite">§3.4, Tables 1&ndash;2, pp. 24&ndash;25</span></p>
 <div class="scrollx">
@@ -817,7 +818,7 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 <p class="hook">Plain LWE spends a whole ciphertext on one bit. Over a polynomial ring, one ciphertext carries a whole key.</p>
 <p class="claim">Section 4 removes the square-root blow-up of Section 2.4 by doing LWE over higher-degree polynomial rings instead of $\mathbb{Z}_q$. <span class="cite">§4, p. 26</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
-<p>The LWE scheme of Section 2.3 needs a ciphertext of $(m+1)\log q$ bits for <em>one</em> message bit: its expansion is linear in the security parameter. The scheme of Section 2.4 reduced this to a square-root expansion, at the price of blowing up the public key by the same factor. Section 4 removes the square-root blow-up by doing LWE not over $\mathbb{Z}_q$ but over <strong>higher-degree polynomial rings</strong>. <span class="cite">§4, p. 26</span></p>
+<p>The LWE scheme of Section 2.3 needs a fairly large ciphertext for <em>one</em> message bit ($(m+1)\log q$ bits, §2.4, p. 10): its expansion is linear in the security parameter. The scheme of Section 2.4 reduced this to a square-root expansion, at the price of blowing up the public key by the same factor. Section 4 removes the square-root blow-up by doing LWE not over $\mathbb{Z}_q$ but over <strong>higher-degree polynomial rings</strong>. <span class="cite">§4, p. 26</span></p>
 </details>
 
 <!-- ================= 4.1 ================= -->
@@ -830,7 +831,7 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 </details>
 <div class="try" id="p3-div"><span class="vlabel">Try it</span>
 <p class="tt">Division with remainder, one leading term at a time</p>
-<p class="how">The paper&rsquo;s example; press <em>step</em>, or type your own (highest degree first).</p>
+<p class="how">The paper&rsquo;s example (§4.1, p. 27); press <em>step</em>, or type your own (highest degree first).</p>
 <div class="mount"></div>
 </div>
 <p class="remember"><span class="vlabel">Remember</span>Multiply, then keep the remainder modulo $f$. <span class="next">Multiplying by a fixed $a$ is linear: what is its matrix?</span></p>
@@ -856,7 +857,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
     <p data-cap="split" hidden>Times $X$ raises every degree by one. The last coefficient, <span data-f="top"></span>, spills into $X^d$; since <span data-f="rule"></span>, it returns in two places and adds onto what is there. Column <span data-f="col"></span>: <span data-f="vec"></span>.</p>
     <p data-cap="bad" hidden>Times $X$ raises every degree by one. The last coefficient, <span data-f="top"></span>, spills into $X^d$; since <span data-f="rule"></span>, it returns doubled, so entries grow column after column. Column <span data-f="col"></span>: <span data-f="vec"></span>.</p>
     <p data-cap="end-prod" hidden>Multiply $\mathcal{M}_a$ by $\mathcal{V}_b =$ <span data-f="vb"></span>: the result <span data-f="prod"></span> is <span data-f="poly"></span>, the paper&rsquo;s $ab \bmod f$ in Eq. (43).</p>
-    <p data-cap="end-ratio" hidden>Largest entry of $\mathcal{M}_a$ (ringed): <span data-f="big"></span>; largest coefficient of $a$: <span data-f="na"></span>. Ratio <span data-f="ratio"></span>; the paper wants 1 or 2.</p>
+    <p data-cap="end-ratio" hidden>Largest entry of $\mathcal{M}_a$ (ringed): <span data-f="big"></span>; largest coefficient of $a$: <span data-f="na"></span>. Ratio <span data-f="ratio"></span>; the paper prefers 1 or 2 (§4.1.2, p. 28).</p>
   </div>
   <div class="steps"></div>
 </div>
@@ -927,7 +928,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 
 <!-- ================= 4.4 ================= -->
 <h3 id="sec-4-4" data-num="4.4"><span class="n">4.4</span>NTRU</h3>
-<p class="hook">NTRU is lattice cryptography&rsquo;s RSA: anyone can evaluate $b = as + e$; only the holder of a trapdoor can invert it.</p>
+<p class="hook">NTRU works like RSA (our analogy): anyone can evaluate $b = as + e$; only the holder of a trapdoor can invert it.</p>
 <p class="claim">NTRU [HPS98] was the first truly efficient lattice-based encryption scheme and the first to use polynomial rings, as a trapdoor one-way function. <span class="cite">§4.4, p. 30</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>NTRU [HPS98] was the first truly efficient lattice-based encryption scheme and the first to use polynomial rings — specifically $\mathcal{R}_{q,X^d-1}$. It was proposed as a trapdoor one-way function, which can be seen as a OW-CPA cryptosystem (footnote 13: an attacker holding the public key cannot recover the message of a ciphertext of a randomly chosen message). A simple modification gives CPA security [SS11], but usually the one-way function suffices, since there are black-box transformations to CCA-secure encryption (cf. [Den02]). <span class="cite">§4.4, p. 30</span></p>
@@ -952,7 +953,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <button class="readbtn" data-for="sec-4-4-1">mark as read</button>
 
 <h3 id="sec-4-4-2" data-num="4.4.2"><span class="n">4.4.2</span>Security</h3>
-<p class="hook">Two lattices that differ by one vector, and one of them is much easier.</p>
+<p class="hook">Two lattices that differ by one vector, and when $q$ is much larger than $\beta$, one of them is much easier.</p>
 <p class="claim">Recovering $s, e$ is the LWE key attack on lattice (62); recovering $g_1, g_2$ via lattice (63) is significantly easier when $q \gg \beta$, so large-modulus schemes such as FHE use Generalized-LWE. <span class="cite">§4.4.2, Eqs. (62)–(63)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Ignoring the special form of $a$, recovering $s, e$ from (58) is the Generalized-LWE key attack: a short vector in $\mathcal{L}_q^\perp([\mathcal{M}_a \mid \mathcal{V}_b \mid \mathbf{I}_d])$ (62). One can also try to recover $g_1, g_2$ (or related short polynomials) from $a$ via $\mathcal{L}_q^\perp([\mathcal{M}_{p^{-1}a} \mid \mathbf{I}_d])$ (63). The two lattices differ only by the extra vector $\mathcal{V}_b$, yet when $q$ is significantly larger than $\beta$ (but not so large that generic reduction clearly works), finding short vectors in (63) was found to be significantly easier than in (62) [ABD16, CJL16, KF17]. This does not affect NTRU's parameters, but rules the NTRU assumption out of advanced primitives (e.g. FHE) needing large moduli and small noise; there, Generalized-LWE (security resting essentially on (62)) is used. <span class="cite">§4.4.2, Eqs. (62)–(63)</span></p>
@@ -998,7 +999,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
     <p data-cap="0" hidden>Start at the root: $a =$ <span data-f="a"></span> and $b =$ <span data-f="b"></span> in $\mathbb{Z}_{17}[X]/(X^4+1)$. The schoolbook way needs 16 products.</p>
     <p data-cap="1" hidden>Split with $r = 4$, since $4^2 \equiv -1$: left $= a_i + 4a_{i+2}$, right $= a_i - 4a_{i+2}$. So $a \mapsto$ <span data-f="l1a"></span>; the same for $b$.</p>
     <p data-cap="2" hidden>Split again with $r = 2$ and $r = 8$. The leaves hold $a$ evaluated at $2, -2, 8, -8$: $\hat a =$ <span data-f="ah"></span>, and $\hat b =$ <span data-f="bh"></span>.</p>
-    <p data-cap="3" hidden>Multiply pointwise, 4 products instead of 16: $\hat c = \hat a \cdot \hat b =$ <span data-f="ch"></span>.</p>
+    <p data-cap="3" hidden>Multiply pointwise, 4 products: $\hat c = \hat a \cdot \hat b =$ <span data-f="ch"></span>. The splits and merges multiply by $r$ too, so at $d = 4$ nothing is saved; the gain comes for large $d$ (Eq. (68)).</p>
     <p data-cap="4" hidden>Climb back with $2\phi^{-1}$: add the two children, and multiply their difference by $r^{-1}$. Level 1 now holds <span data-f="inv2"></span>.</p>
     <p data-cap="5" hidden>Once more with $r = 4$. Each climb doubled the result, so the root holds $4ab =$ <span data-f="four"></span>.</p>
     <p data-cap="6" hidden>Divide by $d = 4$ (multiply by 13): $ab =$ <span data-f="ab"></span>, the same as schoolbook multiplication, <span data-f="school"></span>.</p>
@@ -1023,7 +1024,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 </div>
 </details>
 <div class="try" id="p3-roots"><span class="vlabel">Try it</span>
-<p class="tt">Lemma 7: find the $r_i$</p>
+<p class="tt">Lemma 7: find the $r_i$ <span class="tag">illustration</span></p>
 <p class="how">Smallest $r$ with $r^k \equiv -1$, then its odd powers. Preset: $q = 17$, as in the NTT above.</p>
 <div class="mount"></div>
 </div>
@@ -1040,11 +1041,11 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <div class="voice note"><span class="vlabel">Note — typo in the paper</span><p>Definition 8 ends "sampled according to $\psi_k$"; it means $\psi_\eta$.</p></div>
 </details>
 <div class="try" id="p3-psi"><span class="vlabel">Try it</span>
-<p class="tt">Sample $\psi_\eta$ with coin flips</p>
+<p class="tt">Sample $\psi_\eta$ with coin flips <span class="tag">illustration</span></p>
 <div class="mount"></div>
 </div>
 
-<p class="claim">Correct if every coefficient of (71) is below $q/4$; one coefficient&rsquo;s error × 256 gives Table 3. <span class="cite">Figure 3, Eqs. (70)–(71), Table 3</span></p>
+<p class="claim">Correct if every coefficient of (71) is below $q/4$ in magnitude; one coefficient&rsquo;s error probability × 256 is the upper bound Table 3 lists. <span class="cite">Figure 3, Eqs. (70)–(71), Table 3</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Public parameters $k, \eta_1, \eta_2, d_u, d_v \in \mathbb{Z}^+$. <span class="cite">Figure 3</span></p>
 <div class="scrollx"><table class="dt" id="p3-fig3">
@@ -1067,6 +1068,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>With $e'$, $\mathbf{e}''$ the compression errors (coefficients as the $\eta$ of Lemma 1), and $\mathbf{t} = \mathbf{A}\mathbf{s} + \mathbf{e}$:
 $$\lceil v' - \mathbf{u}'^T\mathbf{s}\rfloor_{q\to2} = \Big\lceil \mathbf{r}^T\mathbf{e} + e_2 + \tfrac{q-1}{2}m + e' - (\mathbf{e}_1 + \mathbf{e}'')^T\mathbf{s}\Big\rfloor_{q\to 2}\quad(70)$$
 which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\mathbf{e}_1 + \mathbf{e}'')^T\mathbf{s}$ (71) is less than $q/4$ in magnitude. Compute this as in Section 2.3.2 (adapted to rings via (55)), assuming the compressed values are uniform so that $e'$ is distributed as $\lceil\lceil x\rfloor_{q\to2^{d_v}}\rfloor_{2^{d_v}\to q} - x$ for random $x \in \mathbb{Z}_q$ (resp. $d_u$); then multiply the one-coefficient probability by 256 (union bound). <span class="cite">Eqs. (70)–(71)</span></p>
+<div class="voice note"><span class="vlabel">Note on the paper&rsquo;s text</span><p>The paper writes the distribution of $e'$ as that of $\lceil\lceil x\rfloor_{q\to2^{d_v}}\rfloor_{2^{d_v}\to q}$; the error is that value minus $x$, as above.</p></div>
 </details>
 <div class="try fig" id="p3-pipe">
   <span class="vlabel">Step through</span>
@@ -1078,20 +1080,21 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
     <p data-cap="1" hidden>KeyGen: $\mathbf{t} = \mathbf{A}\mathbf{s} + \mathbf{e}$. The public key is a 32-byte seed for $\mathbf{A}$ plus $\mathbf{t}$ at 256 coefficients of 12 bits per ring element: <span data-f="pk"></span> bytes.</p>
     <p data-cap="2" hidden>Encrypt: $\mathbf{u} = \mathbf{r}^T\mathbf{A} + \mathbf{e}_1$, compressed from 12 to <span data-f="du"></span> bits per coefficient: <span data-f="x"></span> becomes <span data-f="cu"></span> and decompresses to <span data-f="xu"></span>. That is <span data-f="ctu"></span> bytes.</p>
     <p data-cap="3" hidden>Then $v = \mathbf{r}^T\mathbf{t} + e_2 + 1664\,m$, squeezed to <span data-f="dv"></span> bits: <span data-f="x"></span> becomes <span data-f="cv"></span> and comes back as <span data-f="xv"></span>. Ciphertext: <span data-f="ctu"></span> + <span data-f="ctv"></span> = <span data-f="ct"></span> bytes.</p>
-    <p data-cap="4" hidden>Decrypt: $v' - \mathbf{u}'^T\mathbf{s}$ is $1664\,m$ plus the noise (71), drawn to scale: far inside the $\pm 832$ window. Union bound: wrong with probability at most <span data-f="err"></span> (Table 3: <span data-f="paper"></span>).</p>
+    <p data-cap="4" hidden>Decrypt: $v' - \mathbf{u}'^T\mathbf{s}$ is $1664\,m$ plus the noise (71), drawn to scale: far inside the window of about $\pm 832$. Our union bound: wrong with probability at most <span data-f="err"></span>; Table 3 prints <span data-f="paper"></span>.</p>
   </div>
   <div class="steps"></div>
 </div>
 <div class="try" id="p3-kyber"><span class="vlabel">Try it</span>
 <p class="tt">Table 3, recomputed (ours)</p>
+<p class="how">The paper&rsquo;s recipe, with failures counted exactly as Figure 3 decrypts, for the worse message bit.</p>
 <div class="mount"></div>
 </div>
 
 <p class="claim">Secure under $\mathcal{R}_{3329,X^{256}+1}$-$\mathsf{LWE}_{k,\psi_2}$; $\mathbf{A}$ comes from a seed, in NTT form. <span class="cite">§4.7, Eq. (72)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><strong>Security.</strong> Security is based on $\mathcal{R}_{3329,X^{256}+1}$-$\mathsf{LWE}_{k,\psi_2}$, with the proof of Sections 2.3.1 and 4.3. In Kyber-512, $\eta_1 = 3$ but $\eta_2 = 2$: the public key rests on $\mathcal{R}$-$\mathsf{LWE}_{k,\psi_3}$, while the ciphertext rests on a "hybrid" distribution ($\mathbf{r}$ from $\psi_3$, $\mathbf{e}_1, e_2$ from $\psi_2$), at least as hard as $\mathcal{R}$-$\mathsf{LWE}_{k,\psi_2}$. But the output is the rounded $\lceil\mathbf{r}^T\mathbf{A} + \mathbf{e}_1^T\rfloor_{q\to 2^{d_u}}$, adding error as in LWR (Section 2.5.3); $\psi_2$ plus compression from 3329 to $2^{d_u} = 1024$ values is somewhat larger than $\psi_3$, so in practice one gets a few extra bits of heuristic security. The price of $\psi_3$ is a larger decryption error. <span class="cite">§4.7 Security</span></p>
-<p><strong>Computational efficiency.</strong> Store a 256-bit seed $\rho$ and create $\mathbf{A} = \mathcal{H}(\rho)$ (e.g. SHAKE); the public key is $(\rho, \mathbf{t})$. $3329 \equiv 1 \pmod{256}$, so (Lemma 7) $X^{256} + 1$ splits into 128 quadratics $X^2 - r_i$; the NTT representation is $\hat a = (a \bmod X^2 - r_1, \dots, a \bmod X^2 - r_{128})$ (72), and converting $a \leftrightarrow \hat a$ takes $O(d\log d)$. No prime of similar size splits $X^{256} + 1$ into linear factors (that needs $q \equiv 1 \bmod 512$, footnote 18), and there is virtually no computational difference. Since the NTT is a bijection, sample $\mathbf{A}$ directly in NTT form, and store $\mathbf{t}$ in NTT form (needed anyway for $\mathbf{r}^T\mathbf{t}$) — a double win that avoids $k^2$ NTT computations. $\mathbf{s}, \mathbf{e}, \mathbf{r}, \mathbf{e}_1, e$ cannot be sampled in NTT form (not uniform), and compression cannot be done in NTT form. <span class="cite">§4.7, Eq. (72), footnote 18</span></p>
-<div class="voice note"><span class="vlabel">Note — slip in the paper</span><p>The paper says "the matrix $\mathbf{A}$ consists of $k$ polynomials"; a $k\times k$ matrix has $k^2$ — as the paper's own "avoid doing $k^2$ NTT computations" implies.</p></div>
+<p><strong>Computational efficiency.</strong> Store a 256-bit seed $\rho$ and create $\mathbf{A} = \mathcal{H}(\rho)$ (e.g. SHAKE); the public key is $(\rho, \mathbf{t})$. $3329 \equiv 1 \pmod{256}$, so (Lemma 7) $X^{256} + 1$ splits into 128 quadratics $X^2 - r_i$; the NTT representation is $\hat a = (a \bmod X^2 - r_1, \dots, a \bmod X^2 - r_{128})$ (72), and converting $a \leftrightarrow \hat a$ takes $O(d\log d)$. No prime of similar size splits $X^{256} + 1$ into linear factors (that needs $q \equiv 1 \bmod 512$, footnote 18), and there is virtually no computational difference. Since the NTT is a bijection, sample $\mathbf{A}$ directly in NTT form: this avoids $k^2$ NTT computations. Store $\mathbf{t}$ in NTT form too: no inverse NTT after $\mathbf{A}\mathbf{s}$, and $\hat{\mathbf{t}}$ is needed anyway for $\mathbf{r}^T\mathbf{t}$ — a double win. $\mathbf{s}, \mathbf{e}, \mathbf{r}, \mathbf{e}_1, e$ cannot be sampled in NTT form (not uniform), and compression cannot be done in NTT form. <span class="cite">§4.7, Eq. (72), footnote 18</span></p>
+<div class="voice note"><span class="vlabel">Note — slips in the paper</span><p>The paper says "the matrix $\mathbf{A}$ consists of $k$ polynomials"; a $k\times k$ matrix has $k^2$ — as the paper's own "avoid doing $k^2$ NTT computations" implies. In the list of values that cannot be sampled in NTT form, its last "$e$" is Figure 3's $e_2$.</p></div>
 </details>
 <p class="remember"><span class="vlabel">Remember</span>Kyber = Module-LWE + binomial noise + compression + NTT. <span class="next">And CCA security?</span></p>
 <button class="readbtn" data-for="sec-4-7">mark as read</button>
@@ -1110,7 +1113,7 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
 <tr><td></td><td>$c :=$ CPA-Encrypt$(pk, m, \rho)$</td><td>$c' :=$ CPA-Encrypt$(pk, m', \rho')$</td></tr>
 <tr><td></td><td>Shared Key $:= K$, ctxt $:= c$</td><td>if $c \ne c'$ then $K' := \perp$; Shared Key $:= K'$</td></tr>
 </tbody></table></div>
-<p>$\mathcal{H}$ and $\mathcal{G}$ are modelled as random oracles; $\rho \in \{0,1\}^{256}$ is the random coins of CPA-Encrypt (used to generate $(\mathbf{r}, \mathbf{e}_1, e_2)$). The Decaps inputs $h, z$ belong to the ML-KEM modifications below.</p>
+<p>$\mathcal{H}$ and $\mathcal{G}$ are modelled as random oracles; $\rho \in \{0,1\}^{256}$ is the random coins of CPA-Encrypt (used to generate $(\mathbf{r}, \mathbf{e}_1, e_2)$). The Decaps inputs $h, z$ belong to the ML-KEM modifications below: $h = \mathcal{G}(pk)$; the paper never names $z$, which we read as the secret random value used for implicit rejection.</p>
 </details>
 <div class="try fig" id="p3-fo">
   <span class="vlabel">Step through</span>
@@ -1119,7 +1122,7 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
   <div class="stage"></div>
   <div class="caps" aria-live="polite">
     <p data-cap="0" hidden>Encapsulate $m =$ <span data-f="m"></span>: hash it with $pk$ into the key $K$ and the coins $\rho$, then encrypt with those coins. Same $m$, same ciphertext.</p>
-    <p data-cap="1-maul" hidden>In transit, an attacker adds $\lfloor q/2\rfloor = 128$ to $v_1$: <span data-f="v1old"></span> becomes <span data-f="v1new"></span>. Like ElGamal, plain LWE encryption is malleable.</p>
+    <p data-cap="1-maul" hidden>In transit, an attacker adds $\lfloor q/2\rfloor = 128$ to $v_1$: <span data-f="v1old"></span> becomes <span data-f="v1new"></span>. Plain LWE encryption is malleable, as ElGamal is (our comparison, not the paper&rsquo;s).</p>
     <p data-cap="1-honest" hidden>The ciphertext arrives untouched ($v_1$ is still <span data-f="v1new"></span>).</p>
     <p data-cap="2-maul" hidden>Decapsulation decrypts: $m' =$ <span data-f="m2"></span>, first bit flipped. A plain decryption oracle would hand this to the attacker.</p>
     <p data-cap="2-honest" hidden>Decapsulation decrypts: $m' =$ <span data-f="m2"></span>, the message that was sent.</p>
@@ -1136,7 +1139,7 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
 <div class="sumbox"><p class="t">What to remember from Section 4</p>
 <ol>
 <li>A ring element carries $d$ bits; $X^d \pm 1$ keeps products small.</li>
-<li>$X^d + 1$: irreducible over $\mathbb{Z}$, split mod $q$: safe and fast.</li>
+<li>$X^d + 1$ ($d$ a power of 2): irreducible over $\mathbb{Z}$, split mod $q$: safe and fast.</li>
 </ol></div>
 <p class="remember"><span class="vlabel">Remember</span>FO: coins from the message; re-encrypt; reject mismatches. <span class="next">§5: signatures from the same rings.</span></p>
 <button class="readbtn" data-for="sec-4-8">mark as read</button>
@@ -1162,7 +1165,7 @@ $$\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}. \qquad
 <p>Suppose an algorithm, given $\mathbf{A} \leftarrow \mathcal{R}_{q,f}^{n\times m}$ and $\mathbf{t} = \mathbf{A}\mathbf{s}_1 + \mathbf{s}_2$ for $\mathbf{s}_1 \leftarrow [\beta]^m$, $\mathbf{s}_2 \leftarrow [\beta]^n$, outputs $\bar{\mathbf{s}}_1 \in [\bar\beta]^m$, $\bar{\mathbf{s}}_2 \in [\bar\beta]^n$ and $\bar c \in [2]$ with $\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}$. Then another algorithm, with the same running time and success probability, solves either $\mathcal{R}_{q,f}$-$\mathrm{LWE}_{n,m,\beta}$ or $\mathcal{R}_{q,f}$-$\mathrm{SIS}_{n,m+1,\bar\beta}$.</p></div>
 <p><em>Proof.</em> Given a uniformly random SIS instance $\bar{\mathbf{A}} = [\mathbf{A} \mid \mathbf{t}] \in \mathcal{R}_{q,f}^{n\times(m+1)}$, hand $(\mathbf{A}, \mathbf{t})$ to the algorithm. By the $\mathcal{R}_{q,f}$-$\mathrm{LWE}_{n,m,\beta}$ assumption this is indistinguishable from what it expects (if it fails, it solves LWE). If it outputs $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2, \bar c$ with coefficients at most $\bar\beta$ and $\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}$, that is a solution to the $\mathcal{R}_{q,f}$-$\mathrm{SIS}_{n,m+1,\bar\beta}$ instance $\bar{\mathbf{A}}$. <span class="cite">§5.1, Eqs. (73)–(74), Lemma 9, p. 41</span></p>
 <div class="voice note"><span class="vlabel">Note on the paper's text</span>
-<p>Implicit in the proof: the SIS solution is $(\bar{\mathbf{s}}_1, -\bar c, \bar{\mathbf{s}}_2)$, which must be non-zero, so $\bar c \neq 0$. In use $\bar c \in \bar{\mathcal C}$ is non-zero by (76).</p></div>
+<p>Implicit in the proof: the SIS solution is $(\bar{\mathbf{s}}_1, -\bar c, \bar{\mathbf{s}}_2)$, and a SIS solution must be non-zero; it is, because $\bar c \neq 0$, which in use holds since $\bar c \in \bar{\mathcal C}$ (76).</p></div>
 </details>
 
 <div class="try fig" id="p4-wit"><span class="vlabel">Picture</span>
@@ -1183,15 +1186,16 @@ $$\mathcal{C} = \{c \in [1] : \|c\|_1 = \eta\}, \qquad \bar{\mathcal{C}} = \{\ba
 </details>
 
 <div class="try" id="p4-chal"><span class="vlabel">Try it</span><p class="tt">How big is the challenge space?</p>
+<p class="how">The default $\eta = 49$ is Table 4&rsquo;s (p. 56): about $2^{225.35}$ challenges (our count), below the $2^{256}$ the §5.1.1 rule asks for; $\eta$ by the §5.1.1 rule (our count) is 60. The paper does not comment.</p>
 <div class="mount"></div></div>
 
-<p class="remember"><span class="vlabel">Remember</span>Sparse $\pm1$ challenges: small, yet more than $2^{256}$ of them. <span class="next">Now the protocol.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Sparse $\pm1$ challenges: small, yet over $2^{256}$ by the §5.1.1 rule (Table 4&rsquo;s $\eta = 49$ gives about $2^{225}$, our count). <span class="next">Now the protocol.</span></p>
 <button class="readbtn" data-for="sec-5-1-1">mark as read</button>
 
 <!-- ============================ 5.2 ============================ -->
 <h3 id="sec-5-2" data-num="5.2"><span class="n">5.2</span>The Basic Σ-Protocol</h3>
 <p class="hook">Schnorr&rsquo;s three moves, plus one lattice-only step: the prover throws away any answer that would leak the secret.</p>
-<p class="claim">Figure 5 [Lyu09]: send $\mathbf{w} = \mathbf{A}\mathbf{y}_1 + \mathbf{y}_2$, receive $c$, answer $\mathbf{z}_i = c\mathbf{s}_i + \mathbf{y}_i$ or $\perp$ if some $\mathbf{z}_i \notin [\bar\beta]$; accept iff $\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t} = \mathbf{w}$. <span class="cite">§5.2, Figure 5, pp. 42–43</span></p>
+<p class="claim">Figure 5 [Lyu09]: send $\mathbf{w} = \mathbf{A}\mathbf{y}_1 + \mathbf{y}_2$, receive $c$, answer $\mathbf{z}_i = c\mathbf{s}_i + \mathbf{y}_i$ or $\perp$ if some $\mathbf{z}_i \notin [\bar\beta]$; accept iff both $\mathbf{z}_i \in [\bar\beta]$ and $\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t} = \mathbf{w}$. <span class="cite">§5.2, Figure 5, pp. 42–43</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div class="boxdef"><p class="t">Figure 5 — the basic zero-knowledge proof system (from [Lyu09])</p>
 <p>Private: $\mathbf{s}_1 \in [\beta]^m$, $\mathbf{s}_2 \in [\beta]^n$. Public: $\mathbf{A} \in \mathcal{R}_{q,f}^{n\times m}$, $\mathbf{t} = \mathbf{A}\mathbf{s}_1 + \mathbf{s}_2$.</p>
@@ -1252,11 +1256,11 @@ $$\left(\frac{2\bar\beta+1}{2(\bar\beta+\gamma)+1}\right)^{d(m+n)} &gt; \left(\f
 
 <!-- ============================ 5.2.2 ============================ -->
 <h3 id="sec-5-2-2" data-num="5.2.2"><span class="n">5.2.2</span>Proof of Knowledge</h3>
-<p class="claim">Rewinding (Figure 6, step 8 above): two accepting answers to one $\mathbf{w}$ subtract to $\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c - c')\mathbf{t}$, a relaxed witness (74) with coefficients in $[2\bar\beta]$. <span class="cite">§5.2.2, Figure 6, Eq. (81), p. 44</span></p>
+<p class="claim">Rewinding (Figure 6, step 8 above): two accepting answers to one $\mathbf{w}$ subtract to $\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c - c')\mathbf{t}$, a relaxed witness (74) with coefficients in $[2\bar\beta]$. <span class="cite">§5.2.2, Figure 6, Eq. (81), pp. 44&ndash;45</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Use the usual rewinding argument (Figure 6): after the prover sends $\mathbf{w}$, get answers to two challenges $c \neq c'$. If both transcripts $(\mathbf{w}, c, \mathbf{z}_1, \mathbf{z}_2)$ and $(\mathbf{w}, c', \mathbf{z}_1', \mathbf{z}_2')$ verify, then $\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t} = \mathbf{A}\mathbf{z}_1' + \mathbf{z}_2' - c'\mathbf{t}$, which simplifies to</p>
 $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c - c')\mathbf{t}, \qquad (81)$$
-<p>exactly the statement (74) with $\bar{\mathbf{s}}_1 \in [2\bar\beta]^m$, $\bar{\mathbf{s}}_2 \in [2\bar\beta]^n$, $\bar c \in [2]$. <span class="cite">§5.2.2, Figure 6, Eq. (81), p. 44</span></p>
+<p>exactly the statement (74) with $\bar{\mathbf{s}}_1 \in [2\bar\beta]^m$, $\bar{\mathbf{s}}_2 \in [2\bar\beta]^n$, $\bar c \in [2]$. <span class="cite">§5.2.2, Figure 6, Eq. (81), pp. 44&ndash;45</span></p>
 </details>
 <p class="remember"><span class="vlabel">Remember</span>Two answers to one commitment give a relaxed witness. <span class="next">Put the two halves together.</span></p>
 <button class="readbtn" data-for="sec-5-2-2">mark as read</button>
@@ -1274,7 +1278,7 @@ $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c
 <h3 id="sec-5-2-4" data-num="5.2.4"><span class="n">5.2.4</span>Setting the Parameters</h3>
 <p class="claim">$\bar\beta \approx \gamma d(m+n)$ with $\gamma = \eta\beta$, so $\bar\beta$ is about $\eta d(m+n)$ times $\beta$; the best setting makes Ring-LWE at $\beta$ and Ring-SIS at $2\bar\beta$ equally hard. <span class="cite">§5.2.4, p. 45</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
-<p>Extraction gives $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2$ with coefficients in $[2\bar\beta]$ and $\|\bar c\|_1 \le 2\eta$. By Lemma 9, if $\mathcal{R}_{q,f}$-$\mathrm{LWE}_{n,m,\beta}$ is hard, this implies solving an $\mathcal{R}_{q,f}$-SIS problem with $m+1$ columns. The optimal setting makes the two problems equally hard, i.e. on the same vertical line in Figure 2. $\bar\beta$ is dictated by Lemma 10: by (80) it should be around $\gamma d(m+n)$, and with $\|c\|_1 \le \eta$, $\gamma = \eta\beta$. So $\bar\beta$ is roughly a factor $\eta d(m+n)$ larger than $\beta$. <span class="cite">§5.2.4, p. 45</span></p>
+<p>Extraction gives $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2$ with coefficients in $[2\bar\beta]$ and $\|\bar c\|_1 \le 2\eta$. By Lemma 9, if $\mathcal{R}_{q,f}$-$\mathrm{LWE}_{n,m,\beta}$ is hard, this implies solving an $\mathcal{R}_{q,f}$-SIS problem with $m+1$ columns. The optimal setting makes the two problems equally hard, i.e. at the same vertical position (height) in Figure 2. $\bar\beta$ is dictated by Lemma 10: by (80) it should be around $\gamma d(m+n)$, and with $\|c\|_1 \le \eta$, $\gamma = \eta\beta$. So $\bar\beta$ is roughly a factor $\eta d(m+n)$ larger than $\beta$. <span class="cite">§5.2.4, p. 45</span></p>
 <div class="voice note"><span class="vlabel">Note on the paper's text</span>
 <p>Here the paper writes the SIS problem as $\mathcal{R}_{q,f}$-$\mathrm{SIS}_{n,m+1,\bar\beta}$. Since the extracted coefficients lie in $[2\bar\beta]$, applying Lemma 9 gives bound $2\bar\beta$, which is what the paper itself writes in §5.7 ($\mathcal{R}_{q,f}$-$\mathrm{SIS}_{n,m+1,2\bar\beta}$).</p>
 </div>
@@ -1413,15 +1417,15 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t} = \mathrm{LOW}_\math
 $$\mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{z} - c\mathbf{t}) = \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{z} - c\mathbf{t} + c\mathbf{t}_0). \qquad (91)$$
 <p>Forcing $c\mathbf{t}_0$ to be tiny and reusing (85) would be wasteful. We bounded $c\mathbf{s}_2$ by $\gamma$ only because $\mathbf{s}_2$ must stay <em>secret</em>, whereas $\mathbf{t}_0$ need not be secret, only unnecessary for verification. The key observation: if $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$, the verifier needs just <strong>one extra bit per coefficient</strong>. If $v$ lies between $s_i$ and $s_{i+1}$ and $v' \in [\delta_\mathcal{S}]$, the closest point to $v + v'$ can only be $s_i$ or $s_{i+1}$, and the prover tells the verifier which. $\mathrm{HINT}(\mathbf{A}\mathbf{z} - c\mathbf{t}_1, c\mathbf{t}_0) = \mathbf{h} \in \{0,1\}^{dn}$. $\mathrm{USEHINT}(\mathbf{v}, \mathbf{h})$ outputs, for each coefficient of $\mathbf{v}$, the closer neighbouring point if the hint bit is 0 and the farther one if it is 1. For every $\mathbf{v}$ and $\mathbf{h}$,</p>
 $$\mathbf{v} - \mathrm{USEHINT}(\mathbf{v}, \mathbf{h}) \in [q/2^\kappa]^n \approx [2\delta_\mathcal{S}]^n. \qquad (92)$$
-<p>Usually the hint bit is 0, so $\mathbf{h}$ can be represented by the positions where it is 1. Figure 9 is Figure 8 plus: restart if $c\mathbf{t}_0 \notin [\delta_\mathcal{S}]^n$; send $(\mathbf{z}, \mathbf{h})$; the verifier accepts iff $\mathbf{z} \in [\bar\beta]^m$ and $\mathrm{USEHINT}(\mathbf{A}\mathbf{z} - c\mathbf{t}_1, \mathbf{h}) = \mathbf{w}$. It proves knowledge of $\bar{\mathbf{s}}_1 \in [2\bar\beta]^m$, $\bar{\mathbf{s}}_2 \in [q/2^{\kappa-1}]^n$, $\bar c \in \bar{\mathcal C}$ with</p>
+<p>Usually the hint bit is 0, so $\mathbf{h}$ can be represented by the positions where it is 1. Footnote 31: a 1-bit hint in fact works when $c\mathbf{t}_0 \in [2\delta_\mathcal{S} - 1]$. This was observed independently by Jonathan Katz and in [BDL24]; it compresses the public key further at a small cost in signature size, and it came after ML-DSA was standardized. <span class="cite">§5.5, footnote 31, p. 54</span> Figure 9 is Figure 8 plus: send $\perp$ if $c\mathbf{t}_0 \notin [\delta_\mathcal{S}]^n$; send $(\mathbf{z}, \mathbf{h})$; the verifier accepts iff $\mathbf{z} \in [\bar\beta]^m$ and $\mathrm{USEHINT}(\mathbf{A}\mathbf{z} - c\mathbf{t}_1, \mathbf{h}) = \mathbf{w}$. It proves knowledge of $\bar{\mathbf{s}}_1 \in [2\bar\beta]^m$, $\bar{\mathbf{s}}_2 \in [q/2^{\kappa-1}]^n$, $\bar c \in \bar{\mathcal C}$ with</p>
 $$\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}_1. \qquad (93)$$
 <p>Substituting $\mathbf{t}_1 = \mathbf{t} - \mathbf{t}_0$ gives $\mathbf{A}\bar{\mathbf{s}}_1 + (\bar{\mathbf{s}}_2 + \bar c\mathbf{t}_0) = \bar c\mathbf{t}$, i.e. (74) with $\bar{\mathbf{s}}_2$ grown by the largest $\bar c\mathbf{t}_0$. <span class="cite">§5.5, Figure 9, Eqs. (91)–(93), pp. 52–54</span></p>
 </details>
 
 <h4 class="fold" id="sec-5-5-1"><span class="n">§5.5.1</span>Correctness and Zero-Knowledge</h4>
-<p class="claim">$\mathbf{t}_0$ is not secret (the hint leaks it); zero-knowledge carries over from Figure 8, and correctness holds whenever $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$. <span class="cite">§5.5.1, p. 54</span></p>
+<p class="claim">$\mathbf{t}_0$ is not secret (the hint leaks information about it); zero-knowledge carries over from Figure 8, and correctness holds whenever $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$. <span class="cite">§5.5.1, p. 54</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
-<p>Although the verifier does not need $\mathbf{t}_0$, it <em>should not</em> be considered secret, because the hint $\mathbf{h}$ leaks information about it. Think of it as: the verifier knows all of $\mathbf{t}$ but only uses $\mathbf{t}_1$. ZK follows from Figure 8 (§5.4.2), since the only new output $\mathbf{h}$ can be computed from $\mathbf{z}$ and $\mathbf{t}$. Correctness holds whenever $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$. If this sometimes fails, security is unaffected; the prover just restarts more often. Footnote 31: a 1-bit hint in fact works when $c\mathbf{t}_0 \in [2\delta_\mathcal{S} - 1]$. This was observed independently by Jonathan Katz and in [BDL24]; it compresses the public key further at a small cost in signature size, and it came after ML-DSA was standardized. <span class="cite">§5.5.1, footnote 31, p. 54</span></p>
+<p>Although the verifier does not need $\mathbf{t}_0$, it <em>should not</em> be considered secret, because the hint $\mathbf{h}$ leaks information about it. Think of it as: the verifier knows all of $\mathbf{t}$ but only uses $\mathbf{t}_1$. ZK follows from Figure 8 (§5.4.2), since the only new output $\mathbf{h}$ can be computed from $\mathbf{z}$ and $\mathbf{t}$. Correctness holds whenever $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$. If this sometimes fails, security is unaffected; the prover just restarts more often. <span class="cite">§5.5.1, p. 54</span></p>
 </details>
 
 <h4 class="fold" id="sec-5-5-2"><span class="n">§5.5.2</span>Proof of Knowledge</h4>
@@ -1488,12 +1492,12 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
     <p data-cap="try-z" hidden>Attempt <span data-f="k"></span>: a coefficient of $\mathbf{z}$ reaches <span data-f="zmax"></span>, above $\bar\beta =$ 524,091. Restart with a fresh $\mathbf{y}$.</p>
     <p data-cap="try-low" hidden>Attempt <span data-f="k"></span>: $\mathbf{z}$ is fine, but a LOW part reaches <span data-f="lmax"></span>, above $\delta_\mathcal{S} - \gamma =$ 261,691. Restart.</p>
     <p data-cap="try-ok" hidden>Attempt <span data-f="k"></span> passes all three checks. Output $(c, \mathbf{z}, \mathbf{h})$; the hint has <span data-f="ones"></span> ones among 1,536 bits.</p>
-    <p data-cap="verify" hidden>Verify: USEHINT on $\mathbf{A}\mathbf{z} - c\mathbf{t}_1$ rebuilds the high part, and hashing it gives back $c$: <span data-f="ver"></span>. This signature took <span data-f="k"></span> attempts; the paper expects about 5.</p>
+    <p data-cap="verify" hidden>Verify: USEHINT on $\mathbf{A}\mathbf{z} - c\mathbf{t}_1$ rebuilds the high part, and hashing it gives back $c$: <span data-f="ver"></span>. This signature took <span data-f="k"></span> attempts; the paper expects about 5 on average (§5.7, p. 56).</p>
   </div>
   <div class="steps"></div>
 </div>
 
-<div class="try" id="p4-dil"><span class="vlabel">Try it</span><p class="tt">Dilithium calculator (Table 4 preset)</p>
+<div class="try" id="p4-dil"><span class="vlabel">Try it</span><p class="tt">Dilithium calculator (Table 4 preset, p. 56; read-outs computed here with Eq. (89)) <span class="tag">illustration</span></p>
 <div class="mount"></div></div>
 
 <h4>Some optimizations in ML-DSA</h4>
@@ -1520,7 +1524,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
 <li>Prove a relaxed statement; by Lemma 9 that still means Ring-LWE or Ring-SIS.</li>
 <li>Rejection sampling makes sent answers uniform whatever the secret (Lemma 10).</li>
 <li>High bits and hints drop $\mathbf{z}_2$ from the signature and the low bits of $\mathbf{t}$ from the key.</li>
-<li>Dilithium: about 5 attempts, a 1952-byte key, about 3290-byte signatures.</li>
+<li>Dilithium: about 5 attempts, a 1952-byte key, about 3290-byte signatures with the compact hint (§5.7, pp. 56&ndash;57).</li>
 </ol></div>
 <button class="readbtn" data-for="sec-5-7">mark as read</button>
 </section>
@@ -1538,7 +1542,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
         <tr><td>LWE$_{n,m,q,\psi}$</td><td>the same with secrets/errors drawn from a distribution $\psi$</td><td><a href="#sec-2-3">§2.3, Def. 2</a></td></tr>
         <tr><td>HIGH / LOW</td><td>nearest point of a set $\mathcal{S}\subset\mathbb{Z}_q$, and the remainder</td><td><a href="#sec-2-5-1">§2.5.1</a></td></tr>
         <tr><td>modulus switching</td><td>$\lceil x\rfloor_{q\to p}=\lceil xp/q\rfloor$</td><td><a href="#sec-2-5-2">§2.5.2, Def. 3</a></td></tr>
-        <tr><td>LWR</td><td>Learning with Rounding: $(\mathbf{A},\mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s}))$ vs uniform</td><td><a href="#sec-2-5-3">§2.5.3</a></td></tr>
+        <tr><td>LWR</td><td>Learning with Rounding: $(\mathbf{A},\mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s}))$ vs $(\mathbf{A},\mathrm{HIGH}_\mathcal{S}(\mathbf{u}))$ for uniform $\mathbf{u}$</td><td><a href="#sec-2-5-3">§2.5.3</a></td></tr>
         <tr><td>NIKE</td><td>non-interactive key exchange</td><td><a href="#sec-2-6">§2.6</a></td></tr>
         <tr><td>lattice, $\mathcal{L}_q^\perp(\mathbf{A})$</td><td>$\{\mathbf{v}:\mathbf{A}\mathbf{v}\equiv\mathbf{0}\bmod q\}$ (parity-check form)</td><td><a href="#sec-3-1">§3.1</a></td></tr>
         <tr><td>determinant, cosets</td><td>$\det(\Lambda)$; the quotient group $\mathbb{Z}^m/\Lambda$</td><td><a href="#sec-3-1-1">§3.1.1</a></td></tr>
@@ -1548,13 +1552,13 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
         <tr><td>$\mathcal{R}_{q,f}$-LWE / -SIS</td><td>the same problems over a polynomial ring (Ring / Module-LWE)</td><td><a href="#sec-4-2">§4.2, Defs. 5–6</a></td></tr>
         <tr><td>NTRU problem</td><td>find $e$ from $(a, as+e)$ with $a=pg_1g_2^{-1}$</td><td><a href="#sec-4-4-1">§4.4.1, Def. 7</a></td></tr>
         <tr><td>NTT</td><td>Number Theoretic Transform: FFT over $\mathbb{Z}_q$</td><td><a href="#sec-4-6">§4.6</a></td></tr>
-        <tr><td>$\psi_\eta$</td><td>centred binomial distribution</td><td><a href="#sec-4-7">§4.7, Def. 8</a></td></tr>
+        <tr><td>$\psi_\eta$</td><td>binomial distribution: $\sum a_i-\sum b_i$ over $2\eta$ coin flips</td><td><a href="#sec-4-7">§4.7, Def. 8</a></td></tr>
         <tr><td>KEM, CCA-KEM, FO</td><td>key encapsulation; the Fujisaki–Okamoto transform</td><td><a href="#sec-4-8">§4.8</a></td></tr>
         <tr><td>challenge space $\mathcal{C}$</td><td>polynomials with exactly $\eta$ coefficients $\pm1$</td><td><a href="#sec-5-1-1">§5.1.1, Eq. (75)</a></td></tr>
         <tr><td>$\Sigma$-protocol, rejection sampling</td><td>commit–challenge–respond proof; abort unless the response is in range</td><td><a href="#sec-5-2">§5.2</a></td></tr>
         <tr><td>HVZK</td><td>honest-verifier zero-knowledge</td><td><a href="#sec-5-2-1">§5.2.1</a></td></tr>
         <tr><td>HINT / USEHINT</td><td>one bit per coefficient letting the verifier recover $\mathrm{HIGH}_\mathcal{S}$</td><td><a href="#sec-5-5">§5.5</a></td></tr>
-        <tr><td>Fiat–Shamir</td><td>challenge := hash of the first message and the message</td><td><a href="#sec-5-6">§5.6</a></td></tr>
+        <tr><td>Fiat–Shamir</td><td>challenge := hash of the first message, the message and the public key (Figure 10)</td><td><a href="#sec-5-6">§5.6</a></td></tr>
       </tbody>
     </table>
     </div>
@@ -1580,14 +1584,14 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
     <div class="scrollx"><table class="dt"><tbody>
       <tr><td>$q$</td><td>$2^{23}-2^{13}+1$</td></tr><tr><td>$f(X)$</td><td>$X^{256}+1$</td></tr><tr><td>$\beta$</td><td>4</td></tr><tr><td>$(n,m)$</td><td>$(6,5)$</td></tr>
       <tr><td>$\mathcal{C}$</td><td>$c\in[1]$ with 49 coefficients $\pm1$ and 207 zeros</td></tr><tr><td>$\gamma$</td><td>$49\cdot4=196$</td></tr>
-      <tr><td>$\bar\beta$ (printed as $\beta$)</td><td>$2^{19}-\gamma-1$</td></tr><tr><td>$\mathcal{S}$</td><td>$\{i\cdot(q-1)/16 \mid 0\le i\le15\}$</td></tr>
+      <tr><td>$\bar\beta$</td><td>$2^{19}-\gamma-1$</td></tr><tr><td>$\mathcal{S}$</td><td>$\{i\cdot(q-1)/16 \mid 0\le i\le15\}$</td></tr>
       <tr><td>$\delta_\mathcal{S}$</td><td>$(q-1)/32-1$</td></tr><tr><td>$\mathcal{T}$</td><td>$\{i\cdot2^{13}\mid 0\le i\le(q-1)/2^{13}\}$</td></tr></tbody></table></div>
   </details>
 
   <details>
     <summary>References, BibTeX, and code</summary>
     <p>Citation keys on this page (e.g. [Reg09], [LPR10], [DKL<sup>+</sup>18]) are the paper's own; the full entries are in the paper's bibliography (pp. 58–65).</p>
-    <p><strong>BibTeX</strong> (built from the paper's own title page):</p>
+    <p><strong>BibTeX</strong> (author, title, affiliation and update date from the paper's title page, which prints no year; the year 2024 is that of its Cryptology ePrint Archive entry, 2024/1287, as recorded in my library):</p>
 <pre class="bib">@misc{lyubashevsky2024basic,
   author = {Vadim Lyubashevsky},
   title  = {Basic Lattice Cryptography: The concepts behind
@@ -1595,7 +1599,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
   year   = {2024},
   note   = {IBM Research Europe, Zurich. Last updated June 18, 2025}
 }</pre>
-    <p><strong>Code.</strong> The paper comes with no code. Every toy computation on this page runs in your browser, in the page's own JavaScript. The larger checks (for example, reproducing Table 3's decryption errors) were also verified independently in Python.</p>
+    <p><strong>Code.</strong> The paper comes with no code. Every toy computation on this page runs in your browser, in the page's own JavaScript. The larger checks (for example, recomputing Table 3's decryption errors, which land within about a bit of the paper's values) were also verified independently in Python.</p>
   </details>
 </section>
 
@@ -1965,7 +1969,7 @@ function gaussSnaps(A,t,q){ // Gauss-Jordan on [A | t] mod prime q, keeping the 
 LP.register('p1-bk', ()=>{
   const root=document.getElementById('p1-bk'); if(!root) return;
   const q=97, n=4, b=1;
-  /* default toy instance (illustration), verified independently in py1/check_p1.py */
+  /* default toy instance (illustration), verified independently in web/checks/p1/check_p1.py */
   const DEF={A:[[77,38,94,71],[61,50,33,92],[37,27,55,89],[20,96,92,58]], s:[1,-1,-1,1], e:[-1,1,-1,0]};
   let inst=DEF, seed=0, noise=false, runs=null, P=null, G=null;
   const tOf=nz=>inst.A.map((r,i)=>mod(r.reduce((a,x,j)=>a+x*inst.s[j],0)+(nz?inst.e[i]:0),q));
@@ -2044,10 +2048,10 @@ LP.register('p1-bk', ()=>{
       rows[4].cells[1+j].textContent=ru.same?'yes — x matches the secret s':(ru.short?'yes, but x ≠ s':'no — x = s + A⁻¹e is far from short'); }); }
   fill();
   LP.check({name:'§2.2 noiseless: elimination recovers s', sel:'#p1-bk-res', expect:'x matches the secret s', source:'§2.2 (toy)'});
-  LP.check({name:'§2.2 toy q=97, m=4, β=1: t = As mod 97', sel:'#p1-bk-t0', expect:'(16, 70, 44, 84)', source:'ours (py1/check_p1.py)'});
-  LP.check({name:'§2.2 toy: elimination gives x = s = (1, −1, −1, 1)', sel:'#p1-bk-xs', expect:'(1, −1, −1, 1)', source:'ours (py1/check_p1.py)'});
-  LP.check({name:'§2.3 same toy with noise: x = s + A⁻¹e = (−40, 35, −35, −34)', sel:'#p1-bk-xn', expect:'(−40, 35, −35, −34)', source:'ours (py1/check_p1.py)'});
-  LP.check({name:'§2.2 toy with noise: x is not short', sel:'#p1-bk-resn', expect:'far from short', source:'ours (py1/check_p1.py)'});
+  LP.check({name:'§2.2 toy q=97, m=4, β=1: t = As mod 97', sel:'#p1-bk-t0', expect:'(16, 70, 44, 84)', source:'ours (web/checks/p1/check_p1.py)'});
+  LP.check({name:'§2.2 toy: elimination gives x = s = (1, −1, −1, 1)', sel:'#p1-bk-xs', expect:'(1, −1, −1, 1)', source:'ours (web/checks/p1/check_p1.py)'});
+  LP.check({name:'§2.3 same toy with noise: x = s + A⁻¹e = (−40, 35, −35, −34)', sel:'#p1-bk-xn', expect:'(−40, 35, −35, −34)', source:'ours (web/checks/p1/check_p1.py)'});
+  LP.check({name:'§2.2 toy with noise: x is not short', sel:'#p1-bk-resn', expect:'far from short', source:'ours (web/checks/p1/check_p1.py)'});
 });
 
 /* ================= 2. §2.3.1 decrypt on the circle of Z_97 (player) ================= */
@@ -2144,15 +2148,15 @@ LP.register('p1-ed', ()=>{
     setText('p1-ed-dec',D.dec+(D.ok?' — correct':' — wrong'));
     const wc=wcOf(st.b); setText('p1-ed-wc',wc+(wc<q/4?' < q/4 = '+(q/4)+': never fails':' ≥ q/4 = '+(q/4)+': may fail'));
     const W=encdec(sample(true),st.mu); setText('p1-ed-wcrun','noise '+fv(W.noise)+', decodes to '+W.dec+(W.ok?' (right)':' (flipped)'));
-    setText('p1-ed-half',half+'; the paper’s example ⌈13/2⌋ = '+LP.round(13/2)); }
+    setText('p1-ed-half',half+'; the paper’s example (§2.3.1, p. 8) ⌈13/2⌋ = '+LP.round(13/2)); }
   function upd(){ D=encdec(sample(st.worst),st.mu); fill(); P.go(P.step); }
   fill();
   LP.check({name:'§2.3.1 ⌈13/2⌋ = 7', sel:'#p1-ed-half', expect:'⌈13/2⌋ = 7', source:'§2.3.1 p. 8'});
   LP.check({name:'§2.3.1 default run decrypts correctly (2mβ²+β = 17 < q/4)', sel:'#p1-ed-dec', expect:'correct', source:'§2.3.1 (toy)'});
   LP.check({name:'§2.3.1 worst case 2mβ²+β for m=8, β=1', sel:'#p1-ed-wc', expect:'17', source:'§2.3.1 p. 9'});
-  LP.check({name:'§2.3.1 extreme run at m=8, β=1 really has noise 17', sel:'#p1-ed-wcrun', expect:'noise 17, decodes to 1 (right)', source:'§2.3.1 p. 9 formula; ours (py1/check_p1.py)'});
-  LP.check({name:'§2.3.1 toy default run: v = 84, uᵀs = 39 (seeded)', sel:'#p1-ed .caps p[data-cap="0"]', expect:'39. Both look like random points', source:'ours (py1/check_p1.py, LP.rng port)'});
-  LP.check({name:'§2.3.1 toy default run: noise rᵀe₁ + e₃ − e₂ᵀs = −3 + 1 − 2 = −4', sel:'#p1-ed-noise', expect:'\u22124', source:'ours (py1/check_p1.py, LP.rng port)'});
+  LP.check({name:'§2.3.1 extreme run at m=8, β=1 really has noise 17', sel:'#p1-ed-wcrun', expect:'noise 17, decodes to 1 (right)', source:'§2.3.1 p. 9 formula; ours (web/checks/p1/check_p1.py)'});
+  LP.check({name:'§2.3.1 toy default run: v = 84, uᵀs = 39 (seeded)', sel:'#p1-ed .caps p[data-cap="0"]', expect:'39. Both look like random points', source:'ours (web/checks/p1/check_p1.py, LP.rng port)'});
+  LP.check({name:'§2.3.1 toy default run: noise rᵀe₁ + e₃ − e₂ᵀs = −3 + 1 − 2 = −4', sel:'#p1-ed-noise', expect:'\u22124', source:'ours (web/checks/p1/check_p1.py, LP.rng port)'});
 });
 
 /* ================= 3. §2.3.2 noise by polynomial multiplication, exact (player) ================= */
@@ -2277,7 +2281,7 @@ LP.register('p1-ex', ()=>{
   LP.check({name:'smallest t with tail < 2^-150 is 642', sel:'#p1-ex-tstar', expect:'642', source:'ours (exact integer check)'});
   LP.check({name:'tail at t=100 is 2^-5.2', sel:'#p1-ex-tbl', expect:'-5.2', source:'guide §2.3.2 table (ours)'});
   LP.check({name:'tail at t=800 is 2^-231.9', sel:'#p1-ex-tbl', expect:'-231.9', source:'guide §2.3.2 table (ours)'});
-  LP.check({name:'β=2: two products sum to 0 with probability 129/625', sel:'#p1-ex-A2', expect:'129/625', source:'§2.3.2 Eq. (11) at β=2 (ours, py1/check_p1.py)'});
+  LP.check({name:'β=2: two products sum to 0 with probability 129/625', sel:'#p1-ex-A2', expect:'129/625', source:'§2.3.2 Eq. (11) at β=2 (ours, web/checks/p1/check_p1.py)'});
   LP.check({name:'β=2, m=256: BigInt counts sum to 25^512·5', sel:'#p1-ex-sum', expect:'yes', source:'ours (exact)'});
   LP.check({name:'noise figure step 0: 25 pairs', sel:'#p1-ex .caps p[data-cap="0"]', expect:'25 equally likely pairs', source:'§2.3.2 p. 9'});
 });
@@ -2395,8 +2399,8 @@ LP.register('p1-z13', ()=>{
   LP.check({name:'Lemma 1 bound 13/8 + 1/2 = 2.125', sel:'#p1-l1-bd', expect:'2.125', source:'§2.5.2 Lemma 1'});
   LP.check({name:'decompressed values = Figure 1 S', sel:'#p1-l1-S', expect:'{0, 3, 7, 10}', source:'§2.5.2 item 2 / Figure 1'});
   LP.check({name:'circle step 0 caption names S = {0, 3, 7, 10}', sel:'#p1-z13 .caps p[data-cap="0"]', expect:'{0, 3, 7, 10}', source:'§2.5.1 Figure 1'});
-  LP.check({name:'x = 5: compress to 2, decompress to 7, η = +2', sel:'#p1-z13-tab tbody tr:nth-child(6)', expect:'527+2', source:'Def. 3, Lemma 1 (toy, ours; py1/check_p1.py)'});
-  LP.check({name:'x = 12 wraps: compress to 0, back to 0, η = +1', sel:'#p1-z13-tab tbody tr:nth-child(13)', expect:'1200+1', source:'Def. 3 (toy, ours; py1/check_p1.py)'});
+  LP.check({name:'x = 5: compress to 2, decompress to 7, η = +2', sel:'#p1-z13-tab tbody tr:nth-child(6)', expect:'527+2', source:'Def. 3, Lemma 1 (toy, ours; web/checks/p1/check_p1.py)'});
+  LP.check({name:'x = 12 wraps: compress to 0, back to 0, η = +1', sel:'#p1-z13-tab tbody tr:nth-child(13)', expect:'1200+1', source:'Def. 3 (toy, ours; web/checks/p1/check_p1.py)'});
 });
 
 /* ================= 6. §2.5.3 LWR mismatch (eased read-outs) ================= */
@@ -2409,9 +2413,10 @@ LP.register('p1-lwr', ()=>{
   const ns=LP.slider({label:'n (coefficients)',min:1,max:1024,value:256,onInput:v=>{st.n=v;go();}});
   ctl.append(el('div',{class:'ctl'},[el('label',{text:'q'}),qi]),ks,bs,ns); m0.append(ctl);
   LP.readouts(m0,[{id:'p1-lwr-ex',k:'per coefficient, exact sum',v:''},{id:'p1-lwr-ap',k:k('\\approx\\beta|\\mathcal S|/(2q)'),v:''},{id:'p1-lwr-mc',k:'Monte-Carlo (200,000 samples)',v:''},{id:'p1-lwr-all',k:'all '+k('n')+' unchanged '+k('\\approx(1-\\beta|\\mathcal S|/2q)^n'),v:''}]);
-  let shown=null;
-  const put=v=>{ setHTML('p1-lwr-ex', v[0].toExponential(3)); setHTML('p1-lwr-ap', v[1].toExponential(3)); setHTML('p1-lwr-mc', v[2].toExponential(3)); setHTML('p1-lwr-all', v[3]<1e-4 ? v[3].toExponential(2) : v[3].toFixed(4)); };
-  function go(){ const {q,kap,b,n}=st; const S=2**kap;
+  let shown=null, valid=true;                       // the paper's count assumes the points of S are far apart (q/|S| >> β)
+  const NA='<span class="muted">not valid here: q/|S| &lt; 2β</span>';
+  const put=v=>{ setHTML('p1-lwr-ex', valid?v[0].toExponential(3):NA); setHTML('p1-lwr-ap', valid?v[1].toExponential(3):NA); setHTML('p1-lwr-mc', v[2].toExponential(3)); setHTML('p1-lwr-all', !valid?NA:(v[3]<1e-4 ? v[3].toExponential(2) : v[3].toFixed(4))); };
+  function go(){ const {q,kap,b,n}=st; const S=2**kap; valid = q/S >= 2*b;
     const ex=S*b*(b+1)/(q*(2*b+1)), ap=b*S/(2*q);
     const rng=LP.rng(q*7+kap*3+b); let bad=0; const T=200000;
     for(let i=0;i<T;i++){ const a=LP.randInt(rng,0,q-1), e=LP.randInt(rng,-b,b);
@@ -2420,8 +2425,8 @@ LP.register('p1-lwr', ()=>{
     if(!shown){ shown=tgt; put(tgt); return; }
     const from=shown.slice(); LP.tween('p1-lwr-ease',400,t=>{ shown=tgt.map((x,i)=>lerpLog(from[i],x,t)); put(shown); }); }
   go();
-  LP.check({name:'§2.5.3 exact per-coefficient sum at q=3329, |S|=16, β=2', sel:'#p1-lwr-ex', expect:'5.767e-3', source:'§2.5.3 formula (ours, py1/check_p1.py)'});
-  LP.check({name:'§2.5.3 approximation β|S|/2q at q=3329, |S|=16, β=2', sel:'#p1-lwr-ap', expect:'4.806e-3', source:'§2.5.3 formula (ours, py1/check_p1.py)'});
+  LP.check({name:'§2.5.3 exact per-coefficient sum at q=3329, |S|=16, β=2', sel:'#p1-lwr-ex', expect:'5.767e-3', source:'§2.5.3 formula (ours, web/checks/p1/check_p1.py)'});
+  LP.check({name:'§2.5.3 approximation β|S|/2q at q=3329, |S|=16, β=2', sel:'#p1-lwr-ap', expect:'4.806e-3', source:'§2.5.3 formula (ours, web/checks/p1/check_p1.py)'});
 });
 
 /* ================= 7. §2.5.4 bits per slot (eased clock) ================= */
@@ -2433,7 +2438,7 @@ LP.register('p1-bits', ()=>{
   const qs=LP.slider({label:'log q (before)',min:8,max:24,value:13,onInput:v=>{st.lq=v;go();}});
   m0.append(ctl, el('div',{class:'controls'},[qs]));
   const fig=el('div',{class:'fig',style:'max-width:520px;margin:0 auto'}); m0.append(fig);
-  LP.readouts(m0,[{id:'p1-bits-tol',k:'tolerable noise '+k('q/2^{b+1}'),v:''},{id:'p1-bits-pk0',k:'pk before: '+k('256+\\ell m\\log q'),v:''},{id:'p1-bits-pk1',k:'pk after: '+k('256+\\frac{\\ell m}{2}(\\log q+b-1)'),v:''}]);
+  LP.readouts(m0,[{id:'p1-bits-tol',k:'tolerable noise '+k('q/2^{b+1}'),v:''},{id:'p1-bits-pk0',k:'pk before: '+k('256+\\ell m\\log q'),v:''},{id:'p1-bits-pk1',k:'pk after, the paper’s example (§2.5.4, p. 15): '+k('256+\\frac{\\ell m}{2}(\\log q+b-1)'),v:'',d:k('q')+' times '+k('2^{b-1}')+', '+k('\\ell')+' halved'}]);
   const tv=LP.tableView(m0,'table view: message points',['message','position on the circle'],[]);
   const Q=1000; const layout=b=>{ const n=2**b; return {n, pos:Array.from({length:n},(_,i)=>i/n), w:1/(2*n), lab:Array.from({length:n},(_,i)=>String(i))}; };
   let shown=layout(st.b), shownB=st.b;
@@ -2442,7 +2447,8 @@ LP.register('p1-bits', ()=>{
     const n=2**st.b; drawClock(s,W,H,Q,{pad:44,ticks,arcs,bounds,center:[{t:n+' message points',b:true},{t:'noise < q/'+2**(st.b+1)}]}); });
   function go(){ const {b,lq,m,l}=st; const f=x=>Math.round(x).toLocaleString('en-US');
     setHTML('p1-bits-tol','q/'+2**(b+1)); setHTML('p1-bits-pk0', f(256+l*m*lq)+' bits');
-    const after=256+l*m/2*(lq+b-1); setHTML('p1-bits-pk1', f(after)+' bits '+(b-1<lq?'<span class="ok">smaller (b − 1 &lt; log q)</span>':'<span class="bad">not smaller</span>'));
+    const after=256+l*m/2*(lq+b-1);
+    setHTML('p1-bits-pk1', b===1 ? f(256+l*m*lq)+' bits <span class="muted">(b = 1 packs nothing: no change)</span>' : f(after)+' bits '+(b-1<lq?'<span class="ok">smaller (b − 1 &lt; log q)</span>':'<span class="bad">not smaller</span>'));
     const tb=tv.table.tBodies[0]; tb.innerHTML=''; for(let i=0;i<2**b;i++) tb.append(el('tr',{},[el('td',{text:String(i)}),el('td',{text:i+'·q/'+2**b})]));
     if(b===shownB){ R.redraw(); return; }
     const n0=2**shownB, n1=2**b, N=Math.max(n0,n1), w0=1/(2*n0), w1=1/(2*n1);   // points split (or merge) and slide to their new places
@@ -2941,7 +2947,7 @@ LP.register('p2-delta', ()=>{
   function readouts(){ const m=model(T), delta=Math.pow(2,T.ld);
     LP.$('#p2-del-k').innerHTML='√(n log q / log δ) ≈ '+fmt(m.kst,0);
     LP.$('#p2-del-norm').innerHTML=P2(fmt(m.best,2))+(m.best<T.lq?' <span class="muted">&lt; q</span>':' <span class="muted">≥ q: outside the regime of footnote 10</span>');
-    LP.$('#p2-del-rot').innerHTML= delta>=1.01-1e-9?'δ ≥ 1.01: considered within reach':(delta<=1.005+1e-9?'δ ≤ 1.005: may never be achieved (dimension &gt; 500)':'between the two rule-of-thumb values');
+    LP.$('#p2-del-rot').innerHTML= delta>=1.01-1e-9?'δ ≥ 1.01: considered within reach (the paper’s very rough rule, §3.2, p. 22)':(delta<=1.005+1e-9?'δ ≤ 1.005: may never be achieved (dimension &gt; 500; §3.2, p. 22)':'between the two rule-of-thumb values');
     tvHost.innerHTML=''; LP.tableView(tvHost,'table view: sampled k',['k','log₂ length'].map(NT), [[m.kst, m.best]].concat(m.series.filter((_,i)=>i%12===0)).sort((a,b)=>a[0]-b[0]).map(s=>[fmt(s[0],0)+(s[0]===m.kst?' (k*)':''),fmt(s[1],2)]));
   }
   readouts(); paint();
@@ -2969,7 +2975,7 @@ LP.register('p2-fig2', ()=>{
            LP.slider({label:'log₂ q', min:8, max:24, value:T.lq, onInput:v=>{T.lq=v; sB.input.max=T.lq-1; if(T.lb>T.lq-1){ sB.set(T.lq-1); } else ease();}}), sB);
   root.append(c);
   const figWrap=LP.el('div',{class:'fig'}); root.append(figWrap);
-  LP.readouts(root,[{id:'p2-f2-lwe',k:'LWE: '+K('\\delta')+' needed',v:''},{id:'p2-f2-sis',k:'SIS: '+K('\\delta')+' needed',v:''},{id:'p2-f2-x',k:'curves cross at',v:''}]);
+  LP.readouts(root,[{id:'p2-f2-lwe',k:'LWE: '+K('\\delta')+' needed',v:''},{id:'p2-f2-sis',k:'SIS: '+K('\\delta')+' needed ('+K('\\beta')+' as '+K('\\ell_2')+' length)',v:''},{id:'p2-f2-x',k:'curves cross at',v:''}]);
   const tvHost=LP.el('div'); root.append(tvHost);
   const hL=(M,b)=>1/Math.log2(deltaLWE(M.n,b,M.lq)), hS=(M,b)=>{ const l=Math.log2(b); const ld=(l/2)*(l/2)/(M.n*M.lq); return ld>0?1/ld:Infinity; };
   const curves=(M)=>{ const xs=[]; for(let i=0;i<=100;i++){ const l=0.5+(M.lq-1.5)*i/100; const b=Math.pow(2,l); xs.push({x:l,l:hL(M,b),s:hS(M,b)}); } return xs; };
@@ -3215,8 +3221,8 @@ LP.register('p2-jump', ()=>{
   const T={m:512, r:11}; let C=Object.assign({},T);
   const ease=()=>{ upd(); const F=Object.assign({},C); LP.tween('p2-jump:ease', 420, t=>{ C=lerpObj(F,T,t); paint(); }); };
   const c=LP.el('div',{class:'controls'});
-  c.append(LP.slider({label:'m (lattice dimension)', min:64, max:2048, step:64, value:T.m, onInput:v=>{T.m=v; ease();}}),
-           LP.slider({label:'log₂(q/β)', min:1, max:120, value:T.r, onInput:v=>{T.r=v; ease();}}));
+  const rS=LP.slider({label:'log₂(q/β)', min:1, max:120, value:T.r, onInput:v=>{T.r=v; ease();}});   // the paper needs 1 ≤ k ≤ m, i.e. log₂(q/β) ≤ m
+  c.append(LP.slider({label:'m (lattice dimension)', min:64, max:2048, step:64, value:T.m, onInput:v=>{T.m=v; rS.input.max=Math.min(R1,v); if(T.r>v) rS.set(v); else ease();}}), rS);
   root.append(c);
   const figWrap=LP.el('div',{class:'fig'}); root.append(figWrap);
   LP.readouts(root,[{id:'p2-j-k',k:K('k = m/\\log_2(q/\\beta)'),v:''},{id:'p2-j-t',k:'best known time (generic)',v:''},{id:'p2-j-i',k:'ideal lattices (not LWE)',v:''}]);
@@ -3241,14 +3247,14 @@ LP.register('p2-jump', ()=>{
   });
   function paint(){ if(!el.gen) return; const {X,Y,pt,pb,H,W,pr,narrow}=el; const sm_=Math.sqrt(C.m);
     const ly=r=>Math.max(Y0,Math.min(Y1,Math.log2(C.m/r)));
-    const pts=[]; for(let i=0;i<=160;i++){ const r=R0+(R1-R0)*i/160; pts.push([r,ly(r)]); }
+    const rmax=Math.min(R1,C.m); const pts=[]; for(let i=0;i<=160;i++){ const r=R0+(rmax-R0)*i/160; pts.push([r,ly(r)]); }
     el.gen.setAttribute('d',pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' '));
-    const cut=Math.min(R1,sm_); const ip=pts.filter(p=>p[0]<=cut).concat([[cut,ly(cut)],[cut,Y0],[R1,Y0]]);
+    const cut=Math.min(rmax,sm_); const ip=pts.filter(p=>p[0]<=cut).concat([[cut,ly(cut)],[cut,Y0],[rmax,Y0]]);
     el.ide.setAttribute('d',ip.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' '));
-    el.band.setAttribute('x',X(cut).toFixed(1)); el.band.setAttribute('width',Math.max(0,X(R1)-X(cut)).toFixed(1));
+    el.band.setAttribute('x',X(cut).toFixed(1)); el.band.setAttribute('width',Math.max(0,X(rmax)-X(cut)).toFixed(1));
     const bx=X(cut)+4, fits=bx+(narrow?150:200)<W-pr; el.bandLab.setAttribute('x',(fits?bx:W-pr-2).toFixed(1)); el.bandLab.setAttribute('text-anchor',fits?'start':'end');
-    el.bandLab.textContent=(narrow?'ideal: quantum poly':'ideal lattices: quantum poly time')+' (q/β > 2^√m)';
-    const lr=Math.max(R0,Math.min(R1,C.r)); el.genLab.setAttribute('x',(X(R1)-4).toFixed(1)); el.genLab.setAttribute('y',(Y(ly(R1))-8).toFixed(1));
+    el.bandLab.textContent=(narrow?'ideal: quantum poly':'ideal lattices: quantum poly time')+' (q/β > 2^√m; §3.4, p. 25)';
+    const lr=Math.max(R0,Math.min(rmax,C.r)); el.genLab.setAttribute('x',(X(rmax)-4).toFixed(1)); el.genLab.setAttribute('y',(Y(ly(rmax))-8).toFixed(1));
     el.dot.setAttribute('cx',X(lr).toFixed(1)); el.dot.setAttribute('cy',Y(ly(lr)).toFixed(1));
     const right=X(lr)>W-150; el.dlab.setAttribute('x',(X(lr)+(right?-9:9)).toFixed(1)); el.dlab.setAttribute('y',(Y(ly(lr))-9).toFixed(1)); el.dlab.setAttribute('text-anchor',right?'end':'start');
     el.dlab.textContent='k = '+fmt(C.m/lr,1);
@@ -3258,7 +3264,7 @@ LP.register('p2-jump', ()=>{
     LP.$('#p2-j-t').innerHTML='≈ '+P2(fmt(k,1));
     LP.$('#p2-j-i').innerHTML= k<sm_ ? '<span class="bad">k &lt; √m</span>: q/β &gt; 2<sup>√m</sup> — quantum polynomial time' : '<span class="ok">k &gt; √m</span>: back to ≈ 2<sup>k</sup>';
     tvHost.innerHTML=''; LP.tableView(tvHost,'table view: m = '+T.m,['log₂(q/β)','k = m/log₂(q/β)','generic time','ideal lattices'].map(NT),
-      [1,5,10,11,15,20,Math.round(sm_),30,45,60,90,120].filter((v,i,a)=>a.indexOf(v)===i).sort((x,y)=>x-y).map(r=>[r, fmt(T.m/r,1), '2<sup>'+fmt(T.m/r,1)+'</sup>', r>sm_?'quantum poly':'≈ 2<sup>k</sup>']), {id:'p2-j-tab'});
+      [1,5,10,11,15,20,Math.round(sm_),30,45,60,90,120].filter((v,i,a)=>a.indexOf(v)===i && v<=T.m).sort((x,y)=>x-y).map(r=>[r, fmt(T.m/r,1), '2<sup>'+fmt(T.m/r,1)+'</sup>', r>sm_?'quantum poly':'≈ 2<sup>k</sup>']), {id:'p2-j-tab'});
   }
   upd(); paint();
   LP.check({name:'p2-jump: m=512, log₂(q/β)=11 gives k = 46.5 > √512', sel:'#p2-j-k', expect:'46.5', source:'§3.4, q/β = 2^{m/k}'});
@@ -3861,8 +3867,11 @@ function kyberNoise(k,e1,e2,du,dv){ const n=256*k;
 const KY=[{name:'Kyber-512',k:2,e1:3,e2:2,du:10,dv:4,paper:-139,pk:800,ct:768},{name:'Kyber-768',k:3,e1:2,e2:2,du:10,dv:4,paper:-164,pk:1184,ct:1088},{name:'Kyber-1024',k:4,e1:2,e2:2,du:11,dv:5,paper:-174,pk:1568,ct:1568}];
 const KYRES={};
 function kyberRes(p){ if(KYRES[p.name]) return KYRES[p.name];
-  const dist=kyberNoise(p.k,p.e1,p.e2,p.du,p.dv); let f=0; for(let i=0;i<dist.p.length;i++){ if(Math.abs(dist.lo+i)>832) f+=dist.p[i]; }
-  return (KYRES[p.name]={dist, lg:Math.log2(f)+8}); }
+  /* a coefficient fails exactly when Figure 3's rule, ⌈1664m + noise⌋_{q→2}, does not return m: noise outside [−832, 832]
+     for m = 0, outside [−831, 832] for m = 1. Take the worse bit, so ×256 bounds every message (union bound). */
+  const dist=kyberNoise(p.k,p.e1,p.e2,p.du,p.dv); const fail=[0,0];
+  for(let i=0;i<dist.p.length;i++){ const N=dist.lo+i; for(let m=0;m<2;m++) if(LP.modswitch(mod(((KQ-1)/2)*m+N,KQ),KQ,2)!==m) fail[m]+=dist.p[i]; }
+  return (KYRES[p.name]={dist, lg:Math.log2(Math.max(fail[0],fail[1]))+8}); }
 
 /* =====================================================================
    8b. §4.7 figure: one Kyber message through KeyGen, Encrypt, Decrypt
@@ -3908,11 +3917,11 @@ LP.register('p3-pipe', ()=>{
     const g2=g(), uSq=[], ux=nar?20:60;
     for(let r=0;r<kk;r++){ LP.svg('rect',{x:ux,y:ay+r*st,width:sq,height:sq,rx:3,fill:'var(--s1)'},g2); uSq.push([ux,ay+r*st]); }
     tx(ux+sq/2,ay+kk*st+14,'u',{'text-anchor':'middle'},g2);
-    G.strip.u=strip(g2,12,Pp.du,'one coefficient: 12 bits → '+Pp.du);
+    G.strip.u=strip(g2,12,Pp.du,'one coefficient: 12 bits → '+Pp.du+', by rounding');
     G.vtxt2=tx(nar?62:130,118,'',{fill:'#333','font-weight':700},g2);
     const g3=g(), vSq=[[ux,ay]];
     LP.svg('rect',{x:ux,y:ay,width:sq,height:sq,rx:3,fill:'var(--s2)'},g3); tx(ux+sq/2,ay+sq+14,'v',{'text-anchor':'middle'},g3);
-    G.strip.v=strip(g3,12,Pp.dv,'one coefficient: 12 bits → '+Pp.dv);
+    G.strip.v=strip(g3,12,Pp.dv,'one coefficient: 12 bits → '+Pp.dv+', by rounding');
     G.vtxt3=tx(nar?62:130,118,'',{fill:'#333','font-weight':700},g3);
     /* step 4: decrypt on the Z_q line, with the exact noise distribution of (71) */
     const g4=g(), L0=nar?16:40, L1=W-(nar?16:40), ly4=nar?208:186, X4=v=>L0+(L1-L0)*v/KQ;
@@ -3979,8 +3988,8 @@ LP.register('p3-pipe', ()=>{
   LP.check({name:'pipeline: Kyber-768 ct bytes', sel:'#p3-pipe-ct-3', expect:'1,088', source:'Table 3'});
   LP.check({name:'pipeline: Kyber-512 pk bytes', sel:'#p3-pipe-pk-2', expect:'800', source:'Table 3'});
   LP.check({name:'pipeline: Kyber-1024 ct bytes', sel:'#p3-pipe-ct-4', expect:'1,568', source:'Table 3'});
-  LP.check({name:'pipeline: Kyber-768 error bound', sel:'#p3-pipe-err-3', expect:'2^-165.2', source:'ours (Table 3: 2^-164)'});
-  LP.check({name:'pipeline: compressing 1000 (d_u = 10, d_v = 4)', sel:'#p3-pipe-cx-3', expect:'1000 → 308 → 1001; 1000 → 5 → 1040', source:'ours (py3/fig9_kyber.py)'});
+  LP.check({name:'pipeline: Kyber-768 error bound', sel:'#p3-pipe-err-3', expect:'2^-165.0', source:'ours, Figure 3 rule, worse bit (Table 3: 2^-164; web/checks/fix/kyber_fail.py)'});
+  LP.check({name:'pipeline: compressing 1000 (d_u = 10, d_v = 4)', sel:'#p3-pipe-cx-3', expect:'1000 → 308 → 1001; 1000 → 5 → 1040', source:'ours (web/checks/p3/fig9_kyber.py)'});
   LP.check({name:'pipeline step 0 caption', sel:'#p3-pipe .caps p[data-cap="0"]', expect:'Kyber-768', source:'Table 3'});
 });
 
@@ -3990,6 +3999,8 @@ LP.register('p3-kyber', ()=>{
   const rows=P.map((p,i)=>[p.name,'<span id="p3-ky-pk-'+p.k+'">'+(32+384*p.k)+'</span> <span class="muted">('+p.pk+')</span>','<span id="p3-ky-ct-'+p.k+'">'+(32*p.k*p.du+32*p.dv)+'</span> <span class="muted">('+p.ct+')</span>',
     '<span id="p3-ky-err-'+p.k+'">2^'+res[i].lg.toFixed(1)+'</span>','2^'+p.paper]);
   LP.table(m,['','pk bytes (Table 3)','ct bytes (Table 3)','decryption error, ours','Table 3'],rows,{id:'p3-ky-tab'});
+  /* the slightly cautious count: every |noise| ≥ 832 fails; same exact distributions, × 256 (union bound) */
+  const cau=res.map(r=>{ const d=r.dist; let s=0; for(let i=0;i<d.p.length;i++) if(Math.abs(d.lo+i)>=832) s+=d.p[i]; return '2^'+(Math.log2(s)+8).toFixed(1).replace('-','−'); });
   // noise distribution plot for a chosen set
   let sel=0;
   const seg=LP.seg(P.map((p,i)=>({v:i,t:p.name})), sel, v=>{ sel=v; plot(); }, 'parameter set');
@@ -4004,7 +4015,7 @@ LP.register('p3-kyber', ()=>{
       for(let g=ymin; g<=0; g+=nar?80:40){ LP.svg('line',{x1:L,x2:W-R,y1:sy(g),y2:sy(g),stroke:'#e8e8e8'},svg); LP.svg('text',{x:L-4,y:sy(g)+4,'text-anchor':'end','font-size':10,fill:'#8a8a8a','font-family':'Ubuntu Mono',text:'2^'+g},svg); }
       [-1200,-800,-400,0,400,800,1200].forEach(x=>{ if(nar&&Math.abs(x)%800&&x) return; LP.svg('text',{x:sx(x),y:H-B+15,'text-anchor':'middle','font-size':10,fill:'#8a8a8a','font-family':'Ubuntu Mono',text:x},svg); });
       [-832,832].forEach(x=>{ LP.svg('line',{x1:sx(x),x2:sx(x),y1:T,y2:H-B,stroke:'var(--critical)','stroke-dasharray':'4 3'},svg); });
-      LP.svg('text',{x:sx(832)-4,y:T+10,'text-anchor':'end','font-size':10,fill:'#333','font-family':'Ubuntu Mono',text:nar?'±832':'|noise| > 832 ⇒ error'},svg);
+      LP.svg('text',{x:sx(832)-4,y:T+10,'text-anchor':'end','font-size':10,fill:'#333','font-family':'Ubuntu Mono',text:nar?'≈ ±832':'outside ≈ ±832 ⇒ error'},svg);
       LP.svg('path',{d:pts.map((p,i)=>(i?'L':'M')+sx(p.x).toFixed(1)+' '+sy(p.y).toFixed(1)).join(''),fill:'none',stroke:'var(--s1)','stroke-width':2},svg);
       const cross=LP.svg('line',{y1:T,y2:H-B,stroke:'#8a8a8a',opacity:0},svg);
       const hit=LP.svg('rect',{x:L,y:T,width:W-L-R,height:H-T-B,fill:'transparent'},svg);
@@ -4012,14 +4023,19 @@ LP.register('p3-kyber', ()=>{
         cross.setAttribute('x1',sx(x)); cross.setAttribute('x2',sx(x)); cross.setAttribute('opacity',1); LP.tip.show('noise = '+x+'<br>Pr = '+(v>0?'2^'+Math.log2(v).toFixed(1):'0'),ev.clientX,ev.clientY); });
       hit.addEventListener('pointerleave',()=>{ cross.setAttribute('opacity',0); LP.tip.hide(); });
     });
-    fig.append(el('p',{class:'cap',text:P[sel].name+': log₂ Pr[noise coefficient = x], exact (our computation). Everything outside the dashed lines is a decryption error; its total mass × 256 is the table value.'}));
+    fig.append(el('p',{class:'cap'},[P[sel].name+': log₂ Pr[noise coefficient = x], exact (our computation). Outside the dashed lines decryption fails (for message bit 1, the worse case: noise ≤ −832 or ≥ 833); that mass × 256 is our value in the table, within about a bit of Table 3. A slightly cautious count fails every |noise| ≥ 832; for bit 1 that adds only noise = +832, which in fact decrypts correctly. From the same distributions it gives ',
+      el('span',{id:'p3-ky-cau-2',text:cau[0]}),', ',el('span',{id:'p3-ky-cau-3',text:cau[1]}),' and ',el('span',{id:'p3-ky-cau-4',text:cau[2]}),
+      ' for Kyber-512, -768 and -1024 (our computation), also within a bit. The paper (§4.7, p. 38) states the condition as every coefficient of (71) being “less than q/4 in magnitude” (q/4 = 832.25); it does not show which count it used.']));
     LP.tableView(fig,'table view (every 200)',['noise x','log₂ Pr'],pts.filter(p=>p.x%200===0).map(p=>[p.x,p.y.toFixed(1)]));
   }
   plot();
   P.forEach(p=>{ LP.check({name:p.name+' pk size', sel:'#p3-ky-pk-'+p.k, expect:String(p.pk), source:'Table 3'}); LP.check({name:p.name+' ct size', sel:'#p3-ky-ct-'+p.k, expect:String(p.ct), source:'Table 3'}); });
-  LP.check({name:'Kyber-512 decryption error (ours)', sel:'#p3-ky-err-2', expect:'2^-139.1', source:'Table 3: 2^-139'});
-  LP.check({name:'Kyber-768 decryption error (ours)', sel:'#p3-ky-err-3', expect:'2^-165.2', source:'Table 3: 2^-164'});
-  LP.check({name:'Kyber-1024 decryption error (ours)', sel:'#p3-ky-err-4', expect:'2^-175.2', source:'Table 3: 2^-174'});
+  LP.check({name:'Kyber-512 decryption error (ours)', sel:'#p3-ky-err-2', expect:'2^-138.9', source:'ours, web/checks/fix/kyber_fail.py (Table 3: 2^-139)'});
+  LP.check({name:'Kyber-768 decryption error (ours)', sel:'#p3-ky-err-3', expect:'2^-165.0', source:'ours, web/checks/fix/kyber_fail.py (Table 3: 2^-164)'});
+  LP.check({name:'Kyber-1024 decryption error (ours)', sel:'#p3-ky-err-4', expect:'2^-175.0', source:'ours, web/checks/fix/kyber_fail.py (Table 3: 2^-174)'});
+  LP.check({name:'Kyber-512 cautious count, |noise| ≥ 832 (ours)', sel:'#p3-ky-cau-2', expect:'2^−138.8', source:'ours, same distribution (independent script: −138.775)'});
+  LP.check({name:'Kyber-768 cautious count, |noise| ≥ 832 (ours)', sel:'#p3-ky-cau-3', expect:'2^−164.8', source:'ours, same distribution (independent script: −164.812)'});
+  LP.check({name:'Kyber-1024 cautious count, |noise| ≥ 832 (ours)', sel:'#p3-ky-cau-4', expect:'2^−174.8', source:'ours, same distribution (independent script: −174.761)'});
 });
 
 /* =====================================================================
@@ -4124,9 +4140,9 @@ LP.register('p3-fo', ()=>{
   LP.check({name:'FO honest decapsulation', sel:'#p3-fo-honest', expect:'accepted', source:'Figure 4 (toy, ours)'});
   LP.check({name:'CPA decrypt of mauled c flips bit 1', sel:'#p3-fo-cpa', expect:'0011 (sent 1011)', source:'ours'});
   LP.check({name:'FO rejects mauled c', sel:'#p3-fo-maul', expect:'rejected', source:'Figure 4 (toy, ours)'});
-  LP.check({name:'FO toy ciphertext c (Python replica)', sel:'#p3-fo-c', expect:'u = (69, 71, 151, 40), v = (235, 219, 98, 242)', source:'ours (py3/fig_fo.py)'});
-  LP.check({name:'FO toy re-encryption c′ (Python replica)', sel:'#p3-fo-c2', expect:'u = (189, 5, 226, 153), v = (219, 94, 19, 190)', source:'ours (py3/fig_fo.py)'});
-  LP.check({name:'FO toy key K (Python replica)', sel:'#p3-fo-K', expect:'d27dd73a', source:'ours (py3/fig_fo.py)'});
+  LP.check({name:'FO toy ciphertext c (Python replica)', sel:'#p3-fo-c', expect:'u = (69, 71, 151, 40), v = (235, 219, 98, 242)', source:'ours (web/checks/p3/fig_fo.py)'});
+  LP.check({name:'FO toy re-encryption c′ (Python replica)', sel:'#p3-fo-c2', expect:'u = (189, 5, 226, 153), v = (219, 94, 19, 190)', source:'ours (web/checks/p3/fig_fo.py)'});
+  LP.check({name:'FO toy key K (Python replica)', sel:'#p3-fo-K', expect:'d27dd73a', source:'ours (web/checks/p3/fig_fo.py)'});
   LP.check({name:'FO step 0 caption', sel:'#p3-fo .caps p[data-cap="0"]', expect:'1011', source:'ours'});
 });
 })();
@@ -4219,7 +4235,7 @@ LP.register('p4-chal', ()=>{
   const etaS=LP.slider({label:'number of ±1 coefficients η',min:1,max:120,value:49,onInput:v=>{ eta=Math.min(v,d); upd(); }});
   m.append(el('div',{class:'controls'},[cD,etaS]));
   LP.readouts(m,[
-    {id:'p4-chal-eta',k:'paper’s η for this d',d:'smallest η with 2<sup>η</sup>·C(d,η) &gt; 2<sup>256</sup>'},
+    {id:'p4-chal-eta',k:'η by the §5.1.1 rule (our count)',d:'smallest η with 2<sup>η</sup>·C(d,η) &gt; 2<sup>256</sup>'},
     {id:'p4-chal-log',k:'log₂|C| at that η'},
     {id:'p4-chal-log2',k:'log₂|C| at chosen η',d:'= log₂(2<sup>η</sup>·C(d,η))'}
   ]);
@@ -4500,7 +4516,7 @@ LP.register('p4-sigma', ()=>{
     const dN=256*11, dG=196, dB=dG*dN, toyN=2;
     LP.tableView(tv,'table view: Eq. (80), toy and Dilithium-like',['setting','exact, Eq. (77)','lower bound','≈ e^(−γd(m+n)/β̄)','expected attempts'],[
       [`toy: γ = 2, d(m+n) = 2, β̄ = ${bb}`,acc(TG,toyN,bb).toFixed(4),Math.exp(-toyN*Math.log1p(TG/bb)).toFixed(4),Math.exp(-TG*toyN/bb).toFixed(4),(1/acc(TG,toyN,bb)).toFixed(2)],
-      [`γ = 196, d = 256, m + n = 11, β̄ = γd(m+n) = ${dB}`,`<span id="p4-ab-exact">${acc(dG,dN,dB).toFixed(3)}</span>`,`<span id="p4-ab-lb">${Math.exp(-dN*Math.log1p(dG/dB)).toFixed(3)}</span>`,`<span id="p4-ab-approx">${Math.exp(-dG*dN/dB).toFixed(3)}</span>`,`<span id="p4-ab-rep">${(1/acc(dG,dN,dB)).toFixed(2)}</span>`]],{id:'p4-sig-80'});
+      [`γ = 196, d = 256, m + n = 11 (Table 4); β̄ = γd(m+n) = ${dB} by the §5.2.1 rule, not Table 4’s β̄`,`<span id="p4-ab-exact">${acc(dG,dN,dB).toFixed(3)}</span>`,`<span id="p4-ab-lb">${Math.exp(-dN*Math.log1p(dG/dB)).toFixed(3)}</span>`,`<span id="p4-ab-approx">${Math.exp(-dG*dN/dB).toFixed(3)}</span>`,`<span id="p4-ab-rep">${(1/acc(dG,dN,dB)).toFixed(2)}</span>`]],{id:'p4-sig-80'});
   }
   tables();
 
@@ -4603,7 +4619,7 @@ LP.register('p4-high', ()=>{
   const target=k=>{
     const o={wv:w,sv:s,wdot:0,split:0,safe:0,safeR:HD-gam(),reach:0,reachR:gam(),sdot:0,ringOp:0,ringV:HIGH(w),cand:0,use:0};
     if(k>=1&&k<=3){ o.wdot=1; o.split=1; o.ringOp=1; }
-    if(k===2){ o.safe=1; o.reach=1; o.sdot=1; }
+    if(k===2){ o.safe=1; o.reach=1; o.sdot=1; o.sv=Math.sign(s)*Math.min(Math.abs(s),gam()); }   // step 2 draws a shift of at most gamma (gamma is capped at delta_S - 1 = 10)
     if(k===3){ const d=demo(); o.wv=d.w2; o.sv=3; o.safe=1; o.safeR=HD-3; o.reach=1; o.reachR=3; o.sdot=1; o.ringV=d.h2; o.split=0; }
     if(k>=4){ o.wdot=1; o.sdot=1; o.cand=1; }
     if(k===5){ o.use=1; }
@@ -4824,7 +4840,7 @@ LP.register('p4-sign', ()=>{
     LP.tableView(tv,'table view: this signature, attempt by attempt',['attempt','max |z|','max |LOW|','max |c·t₀|','result','hint ones'],
       res.att.map(a=>[String(a.a),grp(a.zmax),a.lmax==null?'—':grp(a.lmax),a.ct0==null?'—':grp(a.ct0),a.why==='ok'?'output':(a.why==='z'?'restart (z)':'restart (LOW)'),a.ones==null?'—':String(a.ones)]),{id:'p4-sign-tab'});
     LP.tableView(tv,'table view: key and verification',['quantity','value'],[
-      ['max |t₀| (paper: in [2¹²] = [4096])',`<span id="p4-sign-t0">${key.t0max}</span>`],
+      ['max |t₀| (paper, §5.7, p. 56: in [2¹²] = [4096])',`<span id="p4-sign-t0">${key.t0max}</span>`],
       ['bounds used','β̄ = '+grp(DBB)+', δ_S − γ = '+grp(DDS-DG)+', δ_S = '+grp(DDS)],
       ['hash H','a stand-in (FNV-1a seeding the page PRNG), not SHAKE; key, masks and messages are seeded'],
       ['verification of message '+mu,`<span id="p4-sign-ver">${ok?'valid':'invalid'}</span>`]]); }
@@ -4858,7 +4874,7 @@ LP.register('p4-sign', ()=>{
       b100.textContent='sign 100'; b100.disabled=false;
       const exp=cnt.map((_,i)=>i<BINS-1?100*pAcc*Math.pow(1-pAcc,i):100*Math.pow(1-pAcc,BINS-1));
       hData={cnt,exp}; hist.hidden=false; grow=0; hPlot.redraw();
-      hInfo.textContent=`Messages ${base}–${base+99}: ${tries} attempts for 100 signatures, ${(tries/100).toFixed(2)} on average (the paper: about 5; 1/p = ${(1/pAcc).toFixed(2)}). All ${valid} of 100 verify.`;
+      hInfo.textContent=`Messages ${base}–${base+99}: ${tries} attempts for 100 signatures, ${(tries/100).toFixed(2)} on average (the paper: about 5, §5.7, p. 56; 1/p = ${(1/pAcc).toFixed(2)}). All ${valid} of 100 verify.`;
       hTV.innerHTML=''; LP.tableView(hTV,'table view: attempts per signature',['attempts','signatures','expected'],cnt.map((c,i)=>[i===BINS-1?BINS+'+':String(i+1),String(c),exp[i].toFixed(1)]));
       LP.tween('p4-sign-hist',900,t=>{ grow=t; paintH(); }); };
     step(); });
