@@ -115,14 +115,15 @@ class InjectTests(unittest.TestCase):
         self.assertEqual(snapshot(self.public), before)
 
     @unittest.skipUnless(shutil.which("hugo"), "hugo not installed")
-    def test_real_site_wires_26(self):
+    def test_real_site_wires_every_page(self):
         with tempfile.TemporaryDirectory() as out:
             subprocess.run(["hugo", "--quiet", "-d", out, "--baseURL",
                             "https://levduc.github.io/"],
                            cwd=ROOT, check=True, capture_output=True)
             ids = inj.inject(Path(out), ROOT / "static", "levduc/suggest-lab",
                              "https://levduc.github.io/")
-            self.assertEqual(len(ids), 26, sorted(ids))   # 25 pages + the agentreputation/ redirect stub
+            pages = list((ROOT / "static").rglob("index.html"))   # every page, counted from the tree
+            self.assertEqual(len(ids), len(pages), sorted(ids))
             self.assertNotIn(inj.MARK_BEGIN, (Path(out) / "index.html").read_text())
 
 
