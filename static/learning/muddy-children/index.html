@@ -51,6 +51,11 @@ strong{font-weight:700}
 .topbar nav::-webkit-scrollbar{display:none}
 .topbar nav a{font-family:var(--mono); color:var(--ink-1); font-size:.86rem; white-space:nowrap}
 .topbar nav a.on{color:var(--accent); font-weight:700}
+.kinds-tabs{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; font-family:var(--mono); font-size:.82rem}
+.kinds-tabs .tab{border:1px solid var(--ring); border-radius:3px; padding:.15rem .6rem; color:var(--ink-1); text-decoration:none}
+.kinds-tabs a.tab:hover{border-color:var(--accent); color:var(--accent)}
+.kinds-tabs .tab.on{background:var(--accent); border-color:var(--accent); color:#fff}
+.kinds-tabs .tab.off{color:var(--ink-muted); border-style:dashed}
 @media (max-width:700px){ .topbar nav{display:none} }
 
 .wrap{max-width:1000px; margin:0 auto; padding:0 16px}
@@ -142,6 +147,11 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
 
 <main class="wrap prose" id="main">
   <div class="hero">
+    <nav class="kinds-tabs" aria-label="Versions of this page">
+      <span class="tab on" aria-current="page">explainer</span>
+      <span class="tab off" title="not written yet" aria-disabled="true">companion</span>
+      <span class="tab off" title="not written yet" aria-disabled="true">talk</span>
+    </nav>
     <p class="eyebrow">Learning with AI &middot; explainer</p>
     <h1>The muddy children puzzle</h1>
     <p class="sub">A teacher tells a group of children something every one of them already knows. It changes everything. This post draws every world the children think might be real, and lets you watch that picture collapse once the sentence is said.</p>
