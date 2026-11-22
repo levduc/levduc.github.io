@@ -24,6 +24,8 @@ _DECK_RES = (
 _PAGE_RES = (
     re.compile(rf"static/({SEG})/index\.html"),
     re.compile(rf"static/(learning/{SEG})/index\.html"),
+    # A learning page's companion: /learning/<slug>/companion/ (the explainer is the slug root).
+    re.compile(rf"static/(learning/{SEG}/companion)/index\.html"),
 )
 
 

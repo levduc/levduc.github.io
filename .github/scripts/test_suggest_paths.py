@@ -82,6 +82,28 @@ class NamingTests(unittest.TestCase):
         self.assertEqual(url_path(classify("static/pdag/index.html")), "pdag/")
 
 
+class CompanionTests(unittest.TestCase):
+    def test_companion_page(self):
+        ref = classify("static/learning/lattice/companion/index.html")
+        self.assertEqual(ref, PageRef("page", "static/learning/lattice/companion/index.html",
+                                      "learning/lattice/companion"))
+        self.assertEqual(url_path(ref), "learning/lattice/companion/")
+        self.assertEqual(notes_filename("learning/lattice/companion"),
+                         "learning--lattice--companion.json")
+
+    def test_companion_shapes_refused(self):
+        for p in ("static/learning/lattice/companion/x/index.html",
+                  "static/lattice/companion/index.html",
+                  "static/learning/lattice/Companion/index.html",
+                  "static/learning/js/../companion/index.html"):
+            with self.subTest(path=p):
+                self.assertIsNone(classify(p))
+
+    def test_slug_named_companion_is_still_a_page(self):
+        self.assertEqual(classify("static/learning/companion/index.html").page_id,
+                         "learning/companion")
+
+
 class RealTreeTests(unittest.TestCase):
     def test_every_real_page_classifies(self):
         found = sorted(p.relative_to(REPO).as_posix()
