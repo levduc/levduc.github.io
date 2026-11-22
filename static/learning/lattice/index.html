@@ -263,7 +263,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
   <ul>
     <li>Most subsections: one line on the idea, a figure to step through (<strong>back / play / next</strong> or arrow keys) or a calculator to try, and one line to remember.</li>
     <li>A navy rule marks the paper&rsquo;s claim, cited in grey like <span class="cite">§2.3.1, Eq. (6)</span>; open <em>The paper&rsquo;s exact statement</em> for the details, closely paraphrased.</li>
-    <li><span class="tag">illustration</span> marks my toy numbers; proofs are in the <a href="guide.pdf">companion guide (pdf)</a>.</li>
+    <li><span class="tag">illustration</span> marks numbers computed on this page (toy examples and the paper&rsquo;s formulas evaluated here); proofs are in the <a href="guide.pdf">companion guide (pdf)</a>.</li>
     <li>You need CPA security, ElGamal, Schnorr and the hybrid argument. Read ticks stay in your browser.</li>
   </ul>
 
@@ -699,7 +699,7 @@ For any $q$ and any $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$: $\;\exists\,\math
 <!-- ============================ 3.2 ============================ -->
 <h3 id="sec-3-2" data-num="3.2"><span class="n">3.2</span>Finding Short Vectors in Random Lattices (the SIS Problem)</h3>
 <p class="hook">Lemma 4 promises short vectors, not how to find them. Reduction finds longer ones; $\delta$ measures effort.</p>
-<p class="claim">Reduction finds vectors of length about $q^{n/(n+m)}\delta^{n+m}$; roughly, in dimension above 500, $\delta=1.01$ is in reach and $1.005$ may never be. <span class="cite">§3.2, Eqs. (34)&ndash;(36), pp. 21&ndash;22</span></p>
+<p class="claim">Reduction finds vectors of length about $q^{n/(n+m)}\delta^{n+m}$; roughly, $\delta=1.01$ is in reach and $1.005$ may never be for high-enough dimension (e.g. above 500). <span class="cite">§3.2, Eqs. (34)&ndash;(36), pp. 21&ndash;22</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Lemma 4 guarantees a non-zero $\mathbf{z} \in [q^{n/(n+m)}]^{n+m}$ with $[\mathbf{A} \mid \mathbf{I}_n]\mathbf{z} \equiv \mathbf{0}$, but all known (quantum) algorithms for finding such vectors for uniformly random $\mathbf{A}$ take $2^{\Omega(m+n)}$ time [AKS01, ADRS15, AS18]. The problem gets easier as $\beta$ grows; at $\beta = q/2$ it is trivial (set the coefficients multiplied by $\mathbf{I}_n$ to the target). All modern (i.e. polynomial-time) algorithms are descendants of LLL [LLL82], which guarantees a vector at most $2^{O(n+m)}$ times longer than the shortest; in practice the factor is exponential but with a small base. Experiments [GN08, MR09] show that one can find non-trivial vectors of length approximately
 $$\det(\Lambda)^{1/(n+m)}\cdot\delta^{n+m} = q^{n/(n+m)}\cdot\delta^{n+m}, \qquad (34)$$
@@ -830,7 +830,7 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 <p>For a monic $f \in \mathbb{Z}[X]$ of degree $d$, the ring $\mathcal{R}_f$ (often written $\mathbb{Z}[X]/(f(X))$, footnote 12) consists of the polynomials $a = \sum_{i=0}^{d-1} a_i X^i$. Addition is coefficient-wise, so $\mathcal{R}_f$ under addition is $\mathbb{Z}^d$. Multiplication is ordinary multiplication followed by reduction modulo $f$: every $a$ can be written uniquely as $a = bf + r$ with $\deg(r) &lt; d$, and $a \bmod f = r$. The usual $\mathbb{Z}$ is the special case $f = X$ (or $f = X - \alpha$). <span class="cite">§4.1, p. 26–27</span></p>
 </details>
 <div class="try" id="p3-div"><span class="vlabel">Try it</span>
-<p class="tt">Division with remainder, one leading term at a time</p>
+<p class="tt">Division with remainder, one leading term at a time <span class="tag">illustration</span></p>
 <p class="how">The paper&rsquo;s example (§4.1, p. 27); press <em>step</em>, or type your own (highest degree first).</p>
 <div class="mount"></div>
 </div>
@@ -874,7 +874,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 </div>
 </details>
 <div class="try" id="p3-growth"><span class="vlabel">Try it</span>
-<p class="tt">Which $f$ keeps products small?</p>
+<p class="tt">Which $f$ keeps products small? <span class="tag">illustration</span></p>
 <div class="mount"></div>
 </div>
 <p class="remember"><span class="vlabel">Remember</span>$X^d \pm 1$: ratio 1. Some innocent-looking $f$: exponential. <span class="next">What do LWE and SIS look like over these rings?</span></p>
@@ -1497,7 +1497,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
   <div class="steps"></div>
 </div>
 
-<div class="try" id="p4-dil"><span class="vlabel">Try it</span><p class="tt">Dilithium calculator (Table 4 preset, p. 56; read-outs computed here with Eq. (89)) <span class="tag">illustration</span></p>
+<div class="try" id="p4-dil"><span class="vlabel">Try it</span><p class="tt">Dilithium calculator (Table 4 preset, p. 56; read-outs computed here; no-restart probability from Eq. (89)) <span class="tag">illustration</span></p>
 <div class="mount"></div></div>
 
 <h4>Some optimizations in ML-DSA</h4>
@@ -2947,7 +2947,7 @@ LP.register('p2-delta', ()=>{
   function readouts(){ const m=model(T), delta=Math.pow(2,T.ld);
     LP.$('#p2-del-k').innerHTML='√(n log q / log δ) ≈ '+fmt(m.kst,0);
     LP.$('#p2-del-norm').innerHTML=P2(fmt(m.best,2))+(m.best<T.lq?' <span class="muted">&lt; q</span>':' <span class="muted">≥ q: outside the regime of footnote 10</span>');
-    LP.$('#p2-del-rot').innerHTML= delta>=1.01-1e-9?'δ ≥ 1.01: considered within reach (the paper’s very rough rule, §3.2, p. 22)':(delta<=1.005+1e-9?'δ ≤ 1.005: may never be achieved (dimension &gt; 500; §3.2, p. 22)':'between the two rule-of-thumb values');
+    LP.$('#p2-del-rot').innerHTML= delta>=1.01-1e-9?'at or above the paper’s δ = 1.01: considered within reach (very rough rule, §3.2, p. 22)':(delta<=1.005+1e-9?'at or below the paper’s δ = 1.005: may never be achieved for high-enough dimension, e.g. more than 500 (§3.2, p. 22)':'between the two rule-of-thumb values');
     tvHost.innerHTML=''; LP.tableView(tvHost,'table view: sampled k',['k','log₂ length'].map(NT), [[m.kst, m.best]].concat(m.series.filter((_,i)=>i%12===0)).sort((a,b)=>a[0]-b[0]).map(s=>[fmt(s[0],0)+(s[0]===m.kst?' (k*)':''),fmt(s[1],2)]));
   }
   readouts(); paint();
