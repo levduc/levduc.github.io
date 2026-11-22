@@ -25,6 +25,7 @@ class Hub(HTMLParser):
         self.topics: dict[str, dict] = {}       # id -> {"h2": int, "cards_div": int}
         self.cards: dict[str, dict] = {}        # id -> {"topic": str|None, "kind": str, "row": [...], "count": int}
         self._entry: dict | None = None
+        self.index_links: list[str] = []          # hrefs in nav.topics-index
 
     def _inside(self, pred) -> dict | None:
         for tag, attrs in reversed(self.stack):
@@ -53,6 +54,8 @@ class Hub(HTMLParser):
         if in_row is not None and card is not None and tag in ("a", "span") and "btn" in classes:
             self._entry = {"tag": tag, "classes": classes, "href": attrs.get("href"), "text": ""}
             self.cards[card.get("id", "")]["row"].append(self._entry)
+        if tag == "a" and self._inside(lambda t, a: t == "nav" and "topics-index" in (a.get("class") or "").split()):
+            self.index_links.append(attrs.get("href", ""))
         if tag not in ("br", "img", "meta", "link", "input", "hr"):
             self.stack.append((tag, attrs))
 
@@ -97,6 +100,9 @@ class HubTests(unittest.TestCase):
                 self.assertTrue(tid.startswith("topic-"), tid)
                 self.assertEqual(t["h2"], 1)
                 self.assertEqual(t["cards_div"], 1)
+
+    def test_topic_index_lists_every_topic(self):
+        self.assertEqual(sorted(self.hub.index_links), sorted("#" + t for t in self.hub.topics))
 
     def test_every_paper_has_one_card_in_a_topic(self):
         for slug in papers():

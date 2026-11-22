@@ -120,6 +120,25 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(added, allowed)
 
     @unittest.skipIf(shutil.which("git") is None, "git is not installed")
+    def test_every_suggestible_page_is_an_add_path(self):
+        """The reverse of the check below: a page the suggestion layer wires must also be
+        stageable by add-paths, or a suggestion on it edits the file and then opens no PR.
+        Turns red when the first companion page lands without its add-paths glob."""
+        sys.path.insert(0, str(ROOT / ".github" / "scripts"))
+        from suggest_paths import classify  # noqa: E402
+        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        inside = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"],
+                                cwd=ROOT, env=env, capture_output=True, text=True)
+        if inside.stdout.strip() != "true":
+            self.skipTest("not a git checkout")
+        pages = {p.relative_to(ROOT).as_posix() for p in (ROOT / "static").rglob("index.html")
+                 if classify(p.relative_to(ROOT).as_posix())}
+        proc = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard",
+                               "--", *add_paths()], cwd=ROOT, env=env,
+                              capture_output=True, text=True, check=True)
+        stageable = set(proc.stdout.split())
+        self.assertEqual(sorted(pages - stageable), [], "wired pages no add-path can stage")
+
     def test_every_add_path_matches_a_tracked_file(self):
         """create-pull-request runs one `git add -- <all paths>` and ignores its
         exit code. If any one pathspec matches nothing, git refuses the whole
