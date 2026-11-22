@@ -48,7 +48,11 @@ p{margin:0 0 1rem}
 
 .eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em; text-transform:uppercase;
   color:var(--ink-muted); font-weight:700; margin:0 0 .8rem}
-.cards{display:grid; gap:16px; padding-bottom:56px}
+.cards{display:grid; gap:16px; padding-bottom:40px}
+.topics-index{display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 18px; margin:0 0 30px}
+.topics-index .eyebrow{margin:0}
+.topic{scroll-margin-top:60px}
+.topic h2{font-size:1.5rem; font-weight:400; margin:0 0 14px; padding-top:6px; border-top:1px solid var(--grid)}
 .card{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:18px 20px}
 .card h3{font-size:1.25rem; font-weight:700; margin:0 0 .3rem}
 .card .src{font-size:.95rem; margin:0 0 .6rem}
@@ -81,7 +85,7 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
 <main class="wrap">
   <div class="hero">
     <h1>Learning with AI</h1>
-    <p class="sub">Study notes I make while learning topics outside my own research: companion guides and interactive pages that walk through a published paper, section by section.</p>
+    <p class="sub">Study notes I make while learning topics outside my own research: short animated explainers, companions that walk through a paper section by section, and talks.</p>
   </div>
 
   <aside class="notice" role="note">
@@ -90,53 +94,79 @@ footer{border-top:1px solid var(--grid); padding:22px 0 40px; font-family:var(--
     <p>Please don&rsquo;t cite these pages or rely on them for anything important. The original papers are the authority.</p>
   </aside>
 
-  <p class="eyebrow">Topics</p>
-  <div class="cards">
+  <nav class="topics-index" aria-label="Topics">
+    <p class="eyebrow">Topics</p>
+    <a href="#topic-cryptography">Cryptography</a>
+    <a href="#topic-distributed-computing">Distributed computing</a>
+  </nav>
 
-    <!-- To add a topic: copy one <article class="card"> block, put the page at learning/<slug>/. -->
-    <article class="card" id="muddy-children">
-      <h3>The muddy children puzzle</h3>
-      <p class="src">An animated explainer in my own words. I met the puzzle in chapter 1 of Herlihy, Kozlov and Rajsbaum, <em>Distributed Computing Through Combinatorial Topology</em> (2014).</p>
-      <div class="meta">
-        <span><span class="badge done">interactive post</span></span>
-        <span>one puzzle, six animations</span>
-      </div>
-      <p class="desc">Why a sentence every child already knows makes the puzzle solvable. Every possible world is drawn, with a line for each doubt; you watch the teacher&rsquo;s sentence knock out one world and the rest collapse, floor by floor, one silent bell at a time.</p>
-      <div class="links">
-        <a class="btn primary" href="muddy-children/">[read]</a>
-      </div>
-    </article>
+  <!-- To add a paper: copy one <article class="card"> into its topic's .cards, or add a new
+       <section class="topic" id="topic-..."> with one <h2>. Pages live at learning/<slug>/ (explainer),
+       learning/<slug>/companion/ and learning/<slug>/talk/. A card's first row is [explainer]
+       [companion] [talk]: a link when that page exists, else <span class="btn off">. A card whose
+       root page is a companion carries data-kind="companion". .github/scripts/test_learning_hub.py
+       checks all of this. -->
+  <section class="topic" id="topic-cryptography">
+    <h2>Cryptography</h2>
+    <div class="cards">
 
-    <article class="card" id="aes-gcm">
-      <h3>AES-GCM, spelled out</h3>
-      <p class="src">Companion to Alfred Menezes, <em>Crypto 101: Building Blocks</em>, module 5 &ldquo;Authenticated encryption&rdquo; (V5 slides, cryptography101.ca, December 2024), with length bounds and algorithm steps from NIST SP 800-38D.</p>
-      <div class="meta">
-        <span><span class="badge done">slide deck</span></span>
-        <span>36 slides</span>
-        <span>covers V5a and V5b</span>
-      </div>
-      <p class="desc">Why confidentiality and authentication are separate goals, the three generic compositions, then AES-GCM itself: CTR mode, arithmetic in GF(2<sup>128</sup>), GMAC and Horner&rsquo;s rule, the three attacks on the simplified tag &mdash; including a full derivation of the (v+1)/2<sup>128</sup> forgery bound &mdash; and why one repeated IV ends the key. Animated step by step; press N for speaker notes.</p>
-      <div class="links">
-        <a class="btn primary" href="aes-gcm/talk/">[slides]</a>
-      </div>
-    </article>
+      <article class="card" id="lattice" data-kind="companion">
+        <h3>Learning Lattice Cryptography</h3>
+        <p class="src">Companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; version last updated June 18, 2025).</p>
+        <div class="meta">
+          <span><span class="badge done">guide done</span></span>
+          <span><span class="badge done">interactive page</span></span>
+          <span>covers Sections 2&ndash;5</span>
+        </div>
+        <p class="desc">LWE encryption, the geometry of lattices and SIS, polynomial rings, the NTT, Kyber and the Fujisaki&ndash;Okamoto transform, then &Sigma;-protocols, rejection sampling and Dilithium. Every step the paper skips is spelled out, with toy examples.</p>
+        <div class="links kinds">
+          <span class="btn off" title="not written yet" aria-disabled="true">[explainer]</span>
+          <a class="btn primary" href="lattice/">[companion]</a>
+          <span class="btn off" title="not written yet" aria-disabled="true">[talk]</span>
+          <a class="btn" href="lattice/guide.pdf">[guide pdf]</a>
+        </div>
+      </article>
 
-    <article class="card" id="lattice">
-      <h3>Learning Lattice Cryptography</h3>
-      <p class="src">Companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; version last updated June 18, 2025).</p>
-      <div class="meta">
-        <span><span class="badge done">guide done</span></span>
-        <span><span class="badge done">interactive page</span></span>
-        <span>covers Sections 2&ndash;5</span>
-      </div>
-      <p class="desc">LWE encryption, the geometry of lattices and SIS, polynomial rings, the NTT, Kyber and the Fujisaki&ndash;Okamoto transform, then &Sigma;-protocols, rejection sampling and Dilithium. Every step the paper skips is spelled out, with toy examples.</p>
-      <div class="links">
-        <a class="btn primary" href="lattice/">[learn]</a>
-        <a class="btn" href="lattice/guide.pdf">[guide pdf]</a>
-      </div>
-    </article>
+      <article class="card" id="aes-gcm">
+        <h3>AES-GCM, spelled out</h3>
+        <p class="src">Companion to Alfred Menezes, <em>Crypto 101: Building Blocks</em>, module 5 &ldquo;Authenticated encryption&rdquo; (V5 slides, cryptography101.ca, December 2024), with length bounds and algorithm steps from NIST SP 800-38D.</p>
+        <div class="meta">
+          <span><span class="badge done">slide deck</span></span>
+          <span>36 slides</span>
+          <span>covers V5a and V5b</span>
+        </div>
+        <p class="desc">Why confidentiality and authentication are separate goals, the three generic compositions, then AES-GCM itself: CTR mode, arithmetic in GF(2<sup>128</sup>), GMAC and Horner&rsquo;s rule, the three attacks on the simplified tag &mdash; including a full derivation of the (v+1)/2<sup>128</sup> forgery bound &mdash; and why one repeated IV ends the key. Animated step by step; press N for speaker notes.</p>
+        <div class="links kinds">
+          <span class="btn off" title="not written yet" aria-disabled="true">[explainer]</span>
+          <span class="btn off" title="not written yet" aria-disabled="true">[companion]</span>
+          <a class="btn primary" href="aes-gcm/talk/">[talk]</a>
+        </div>
+      </article>
 
-  </div>
+    </div>
+  </section>
+
+  <section class="topic" id="topic-distributed-computing">
+    <h2>Distributed computing</h2>
+    <div class="cards">
+
+      <article class="card" id="muddy-children">
+        <h3>The muddy children puzzle</h3>
+        <p class="src">An animated explainer in my own words. I met the puzzle in chapter 1 of Herlihy, Kozlov and Rajsbaum, <em>Distributed Computing Through Combinatorial Topology</em> (2014).</p>
+        <div class="meta">
+          <span><span class="badge done">interactive post</span></span>
+          <span>one puzzle, six animations</span>
+        </div>
+        <p class="desc">Why a sentence every child already knows makes the puzzle solvable. Every possible world is drawn, with a line for each doubt; you watch the teacher&rsquo;s sentence knock out one world and the rest collapse, floor by floor, one silent bell at a time.</p>
+        <div class="links kinds">
+          <a class="btn primary" href="muddy-children/">[explainer]</a>
+          <span class="btn off" title="not written yet" aria-disabled="true">[companion]</span>
+          <span class="btn off" title="not written yet" aria-disabled="true">[talk]</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
 </main>
 
 <footer><div class="wrap">AI-assisted study notes by Duc V. Le. Not peer-reviewed.</div></footer>
