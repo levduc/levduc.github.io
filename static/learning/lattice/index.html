@@ -570,8 +570,53 @@ kbd{font-family:var(--mono); font-size:.82em; border:1px solid var(--ring); bord
     $$\Bigl(\mathbf{U} = \mathbf{R}\mathbf{A} + \mathbf{E}_2,\;\; \mathbf{V} = \mathbf{R}\mathbf{T} + \mathbf{E}_3 + \tfrac q2\mathbf{M}\Bigr) \qquad (14)$$
     <p>The public key grows to $256 + \ell m\log q$ bits; the ciphertext is $km\log q + k\ell\log q$ bits. For the minimum combined size set $k \approx \ell \approx \sqrt N$: about $256 + 2\sqrt N m\log q + N\log q$ bits, dominated by $2\sqrt N m\log q$ (one rarely needs more than $N = 256$). Security follows from <span class="ref" data-ref="lwe-mqb">$\mathsf{LWE}_{m,q,\beta}$</span> with a hybrid argument, losing $\log\ell$ bits (footnote 7: it is not clear in this case whether the loss is real). Each coefficient of $\mathbf{V} - \mathbf{U}\mathbf{S} = \mathbf{R}\mathbf{E}_1 + \mathbf{E}_3 + \frac q2\mathbf{M} - \mathbf{E}_2\mathbf{S}$ has exactly the single-bit noise (Eqs. (16)&ndash;(17)); a union bound over coefficients gives the total error (footnote 8). <span class="cite">§2.4, Eqs. (13)&ndash;(17)</span></p>
   </details>
-  <div class="try" id="p1-sz"><span class="vlabel">Try it</span><p class="tt">Size calculator (computed from the &sect;2.4 formulas) <span class="tag">illustration</span></p>
-    <p class="how">Preset from the paper: $m \approx 700$ and $q \approx 2^{13}$ (set here to 700 and $2^{13}$), and $N = 256$, the most it says one generally needs (§2.4, pp. 10&ndash;11). Move $k$.</p>
+  <div class="try fig" id="p1-blk">
+    <span class="vlabel">Step through</span>
+    <p class="tt">KeyGen, Enc, Dec on blocks: $q = 97$, $m = 4$, $k = 2$, $\ell = 3$ <span class="tag">illustration</span></p>
+    <div class="controls"></div>
+    <p class="api-key"><span><span class="api-mk" data-kind="public">public</span> anyone may see it</span><span><span class="api-mk" data-kind="secret">secret</span> never leaves its owner</span><span><span class="api-mk" data-kind="sent">sent</span> travels to the decryptor</span></p>
+    <div class="api" aria-label="the three algorithms of the block scheme">
+      <div class="api-col" data-from="0">
+        <p class="api-h"><span class="api-n">KeyGen</span><span>$\to (\mathsf{pk}, \mathsf{sk})$</span><span class="cite">Eq. (13)</span></p>
+        <div class="api-row" data-at="0"><span class="api-k">$\mathbf{A} \leftarrow \mathbb{Z}_q^{m\times m}$</span><span class="api-mk" data-kind="public">public</span><span class="api-v">4 × 4; can travel as a 256-bit seed ρ (p. 10)</span></div>
+        <div class="api-row" data-at="1"><span class="api-k">$\mathbf{S} \leftarrow [\beta]^{m\times\ell}$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">4 × 3</span></div>
+        <div class="api-row" data-at="1"><span class="api-k">$\mathbf{E}_1 \leftarrow [\beta]^{m\times\ell}$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">4 × 3</span></div>
+        <div class="api-row api-out" data-at="2"><span class="api-k">$\mathbf{T} = \mathbf{A}\mathbf{S} + \mathbf{E}_1$</span><span class="api-mk" data-kind="public">public</span><span class="api-v">4 × 3</span></div>
+        <div class="api-row api-out" data-at="2"><span class="api-k">$\mathsf{pk} = (\mathbf{A}, \mathbf{T})$</span><span class="api-mk" data-kind="public">public</span><span class="api-k">$\mathsf{sk} = \mathbf{S}$</span><span class="api-mk" data-kind="secret">secret</span></div>
+      </div>
+      <div class="api-col" data-from="3">
+        <p class="api-h"><span class="api-n">Enc</span><span>$(\mathsf{pk}, \mathbf{M}) \to (\mathbf{U}, \mathbf{V})$</span><span class="cite">Eq. (14)</span></p>
+        <div class="api-row" data-at="3"><span class="api-k">$\mathbf{M} \in \{0,1\}^{k\times\ell}$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">2 × 3: N = kℓ = 6 bits</span></div>
+        <div class="api-row" data-at="3"><span class="api-k">$\mathbf{R}, \mathbf{E}_2 \leftarrow [\beta]^{k\times m}$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">2 × 4 each</span></div>
+        <div class="api-row" data-at="3"><span class="api-k">$\mathbf{E}_3 \leftarrow [\beta]^{k\times\ell}$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">2 × 3</span></div>
+        <div class="api-row api-out" data-at="4"><span class="api-k">$\mathbf{U} = \mathbf{R}\mathbf{A} + \mathbf{E}_2$</span><span class="api-mk" data-kind="sent">sent</span><span class="api-v">2 × 4</span></div>
+        <div class="api-row api-out" data-at="5"><span class="api-k">$\mathbf{V} = \mathbf{R}\mathbf{T} + \mathbf{E}_3 + \tfrac q2\mathbf{M}$</span><span class="api-mk" data-kind="sent">sent</span><span class="api-v">2 × 3</span></div>
+      </div>
+      <div class="api-col" data-from="6">
+        <p class="api-h"><span class="api-n">Dec</span><span>$(\mathsf{sk}, (\mathbf{U}, \mathbf{V})) \to \mathbf{M}$</span><span class="cite">Eqs. (16)&ndash;(17)</span></p>
+        <div class="api-row" data-at="6"><span class="api-k">$\mathbf{V} - \mathbf{U}\mathbf{S}$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">2 × 3</span></div>
+        <div class="api-row" data-at="7"><span class="api-k">entry $(i, j)$</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v">(<span data-f="ei"></span>, <span data-f="ej"></span>): <span data-f="sum"></span></span></div>
+        <div class="api-row api-out" data-at="8"><span class="api-k">output</span><span class="api-mk" data-kind="secret">secret</span><span class="api-v"><span id="p1-blk-verdict" data-f="verdict"></span></span></div>
+      </div>
+    </div>
+    <div class="stage"></div>
+    <div class="caps" aria-live="polite">
+      <p data-cap="0" hidden>KeyGen: a <span class="ref" data-ref="unif">uniformly random</span> $4\times 4$ matrix $\mathbf{A}$ modulo 97, public. The paper notes it can travel as a 256-bit seed $\rho$ (p. 10).</p>
+      <p data-cap="1" hidden>Draw $\ell = 3$ secrets at once, as the columns of $\mathbf{S}$, and errors $\mathbf{E}_1$. Every entry comes from <span class="ref" data-ref="beta">$[\beta]$</span>, here $\beta = 1$.</p>
+      <p data-cap="2" hidden>Publish $\mathbf{T} = \mathbf{A}\mathbf{S} + \mathbf{E}_1$: column $j$ is a §2.3.1 key $\mathbf{t}$ for secret column $j$. The public key grows with $\ell$.</p>
+      <p data-cap="3" hidden>Enc packs $N = k\ell = 6$ bits into $\mathbf{M}$ and draws $\mathbf{R}$, $\mathbf{E}_2$ ($k = 2$ rows) and $\mathbf{E}_3$ from <span class="ref" data-ref="beta">$[\beta]$</span>.</p>
+      <p data-cap="4" hidden>Send $\mathbf{U} = \mathbf{R}\mathbf{A} + \mathbf{E}_2$: each row is a §2.3.1 $\mathbf{u}^T$, but there are only $k$ rows for all $N$ bits.</p>
+      <p data-cap="5" hidden>Send $\mathbf{V} = \mathbf{R}\mathbf{T} + \mathbf{E}_3 + \frac q2\mathbf{M}$, one entry per bit. The paper writes $q/2$ for <span class="ref" data-ref="halfq">$\lceil q/2\rfloor$</span>, here 49.</p>
+      <p data-cap="6" hidden>Dec computes $\mathbf{V} - \mathbf{U}\mathbf{S}$ with the secret $\mathbf{S}$. Each entry pairs a row of $\mathbf{U}$ with a column of $\mathbf{S}$, like $v - \mathbf{u}^T\mathbf{s}$ in §2.3.1.</p>
+      <p data-cap="7" hidden>Entry (<span data-f="ei"></span>, <span data-f="ej"></span>) uses row <span data-f="ei"></span> of $\mathbf{R}$, $\mathbf{E}_2$ and column <span data-f="ej"></span> of $\mathbf{S}$, $\mathbf{E}_1$: it is $\mathbf{r}^T\mathbf{e}_1 + e_3 + \frac q2\mu - \mathbf{e}_2^T\mathbf{s}$, the §2.3.1 one-bit scheme (§2.4, p. 11). Click another entry.</p>
+      <p data-cap="7-n" class="also" hidden>Here <span data-f="sum"></span>.</p>
+      <p data-cap="8-ok" hidden>Round each entry to the nearer of 0 and 49: all <span data-f="nok"></span> bits equal $\mathbf{M}$. Footnote 8: each entry can fail, so bound the block by a union bound.</p>
+      <p data-cap="8-bad" hidden>Round each entry to the nearer of 0 and 49: <span data-f="nbad"></span> of the bits differ from $\mathbf{M}$.</p>
+    </div>
+    <div class="steps"></div>
+  </div>
+  <div class="try" id="p1-sz"><span class="vlabel">Try it</span><p class="tt">The same blocks at the paper&rsquo;s sizes, $N = 256$ bits <span class="tag">illustration</span></p>
+    <p class="how">Computed from the §2.4 sizes at $m = 700$, $\log q = 13$ (the paper&rsquo;s $m \approx 700$, $q \approx 2^{13}$, p. 10) and $N = 256$ (p. 11). Slide $k$; $\ell = 256/k$.</p>
     <div class="mount"></div></div>
   <p class="remember"><span class="vlabel">Remember</span>Amortizing trades public-key bits for ciphertext bits. <span class="next">What else shrinks them?</span></p>
   <button class="readbtn" data-for="sec-2-4">mark as read</button>
@@ -2840,47 +2885,221 @@ LP.register('p1-ex', ()=>{
   LP.check({name:'noise figure step 0: 25 pairs', sel:'#p1-ex .caps p[data-cap="0"]', expect:'25 equally likely pairs', source:'§2.3.2 p. 9'});
 });
 
-/* ================= 4. §2.4 size calculator (eased redraw) ================= */
-LP.register('p1-sz', ()=>{
-  const m0=mount('p1-sz'); if(!m0) return; const st={m:700,lq:13,N:256,k:16};
-  const ctl=el('div',{class:'controls'});
-  const mi=LP.slider({label:'m',min:100,max:1500,step:50,value:700,onInput:v=>{st.m=v;go();}});
-  const qi=LP.slider({label:'log q',min:8,max:24,value:13,onInput:v=>{st.lq=v;go();}});
-  const ks=[1,2,4,8,16,32,64,128,256];
-  const kk=LP.slider({label:'k (ℓ = N/k)',min:0,max:8,value:4,fmt:v=>ks[v]+' × '+(256/ks[v]),onInput:v=>{st.k=ks[v];go();}});
-  ctl.append(mi,qi,kk); m0.append(ctl);
-  const fig=el('div',{class:'fig'}); m0.append(fig);
-  LP.readouts(m0,[{id:'p1-sz-pk1',k:'1-bit scheme: public key',v:''},{id:'p1-sz-ct1',k:'1-bit scheme: ciphertext',v:''},
-    {id:'p1-sz-amort',k:k('N=256')+' bits, this '+k('k')+': pk + ct',v:''},{id:'p1-sz-best',k:k('k=\\ell=\\sqrt N')+': '+k('256+2\\sqrt N m\\log q+N\\log q'),v:''},{id:'p1-sz-naive',k:'256 separate 1-bit ciphertexts',v:''}]);
-  const tv=LP.tableView(m0,'table view',[k('k'),k('\\ell'),'public key (bits)','ciphertext (bits)','total'],[]);
-  const sizes=kv=>{ const l=st.N/kv; return {pk:256+l*st.m*st.lq, ct:kv*st.m*st.lq+kv*l*st.lq}; };
-  let shown=null;                                       // the plotted values, eased towards the target
-  const R=LP.respSVG(fig,[600,250],[340,240],(s,W,H)=>{
-    if(!shown) return; const L=62,Rr=16,T=14,Bm=34; const data=shown;
-    const vals=data.flatMap(d=>[d.pk,d.ct]); const lo=Math.floor(Math.log10(Math.min(...vals))), hi=Math.ceil(Math.log10(Math.max(...vals)));
-    const X=i=>L+i/(ks.length-1)*(W-L-Rr), Y=v=>T+(hi-Math.log10(v))/(hi-lo)*(H-T-Bm);
-    for(let e=lo;e<=hi;e++){ svg('line',{x1:L,x2:W-Rr,y1:Y(10**e),y2:Y(10**e),stroke:'#e8e8e8'},s); svg('text',{x:L-4,y:Y(10**e)+4,'text-anchor':'end','font-size':10,'font-family':MONO,fill:'#8a8a8a',text:'10^'+e+' b'},s); }
-    ks.forEach((kv,i)=>svg('text',{x:X(i),y:H-Bm+14,'text-anchor':'middle','font-size':10,'font-family':MONO,fill:'#8a8a8a',text:kv},s));
-    svg('text',{x:(L+W)/2,y:H-4,'text-anchor':'middle','font-size':10,'font-family':MONO,fill:'#8a8a8a',text:'k (rows of M)'},s);
-    [['pk','#2a78d6','public key'],['ct','#eb6834','ciphertext']].forEach(([key,c,lb])=>{
-      svg('path',{d:data.map((d,i)=>(i?'L':'M')+X(i)+' '+Y(d[key])).join(''),fill:'none',stroke:c,'stroke-width':2},s);
-      data.forEach((d,i)=>svg('circle',{cx:X(i),cy:Y(d[key]),r:d.k===st.k?6:3.5,fill:c,stroke:'#fff','stroke-width':1.5},s));
-      const li=key==='pk'?0:data.length-1, last=data[li];
-      svg('text',{x:X(li)+(key==='pk'?8:-8),y:Y(last[key])-8,'text-anchor':key==='pk'?'start':'end','font-size':11,'font-family':MONO,fill:'#333',text:lb},s); });
+/* ================= 4. §2.4 block encryption: KeyGen / Enc / Dec on matrices drawn to scale (player) ================= */
+const KFILL={public:'#e8f1fb', secret:'#fdeee6', sent:'#e2f5ee'}, KEDGE={public:COL.s1, secret:COL.s2, sent:COL.s3};
+LP.register('p1-blk', ()=>{
+  const root=document.getElementById('p1-blk'); if(!root) return;
+  const q=97, m=4, K=2, L=3, b=1, half=LP.round(q/2);              // illustration; the paper writes q/2 for ⌈q/2⌋ = 49 (§2.3.1, p. 8)
+  const st={seed:18, i:0, j:0};                                    // seed 18: mixed message bits, and entry (2, 3) wraps below 0
+  const mul=(X,Y)=>X.map(r=>Y[0].map((_,c)=>r.reduce((a,x,t)=>a+x*Y[t][c],0)));
+  const add=(...Ms)=>Ms[0].map((r,i)=>r.map((_,j)=>Ms.reduce((a,M)=>a+M[i][j],0)));
+  const modM=X=>X.map(r=>r.map(x=>mod(x,q)));
+  const sample=()=>{ const rng=LP.rng(st.seed), G=(r,c,lo,hi)=>Array.from({length:r},()=>Array.from({length:c},()=>LP.randInt(rng,lo,hi)));
+    const A=G(m,m,0,q-1), S=G(m,L,-b,b), E1=G(m,L,-b,b), M=G(K,L,0,1), R=G(K,m,-b,b), E2=G(K,m,-b,b), E3=G(K,L,-b,b);
+    const T=modM(add(mul(A,S),E1)), U=modM(add(mul(R,A),E2)), V=modM(add(mul(R,T),E3,M.map(r=>r.map(x=>half*x))));   // Eqs. (13)-(14)
+    const US=modM(mul(U,S)), D=V.map((r,i)=>r.map((x,j)=>mod(x-US[i][j],q))), O=D.map(r=>r.map(x=>LP.modswitch(x,q,2)));
+    const RE1=mul(R,E1), E2S=mul(E2,S);
+    const ok=O.every((r,i)=>r.every((x,j)=>x===M[i][j]));
+    return {A,S,E1,T,M,R,E2,E3,U,V,US,D,O,RE1,E2S,ok}; };
+  let I=sample();
+  const term=v=>v<0?'('+fv(v)+')':String(v);
+  const entry=(i,j)=>{ const a=I.RE1[i][j], e=I.E3[i][j], h=half*I.M[i][j], d=I.E2S[i][j], tot=a+e+h-d, r=mod(tot,q);   // Eq. (17), entry (i, j)
+    return {a,e,h,d,tot,r, s:term(a)+' + '+term(e)+' + '+h+' − '+term(d)+' = '+fv(tot)+(r!==tot?' ≡ '+r+' (mod 97)':'')}; };
+  /* blocks: one c x c cell per entry in every matrix, so the shapes are to scale */
+  const DIM={A:[m,m],S:[m,L],E1:[m,L],T:[m,L],M:[K,L],R:[K,m],E2:[K,m],E3:[K,L],U:[K,m],V:[K,L],D:[K,L],O:[K,L]};
+  const NAME={A:'A',S:'S',E1:'E₁',T:'T',M:'M',R:'R',E2:'E₂',E3:'E₃',U:'U',V:'V',D:'V − US',O:'decoded'};
+  const KIND={A:'public',T:'public',U:'sent',V:'sent'}, kindOf=n=>KIND[n]||'secret';
+  const SIGNED={S:1,E1:1,R:1,E2:1,E3:1};
+  const PICK={M:'ij',E3:'ij',V:'ij',D:'ij',O:'ij',R:'i',E2:'i',U:'i',S:'j',E1:'j'};     // what a click on a cell selects (Dec steps)
+  const MATS=Object.keys(DIM), HI='#ffe39a';
+  const sp={sp:12}, X=n=>({m:n});
+  const LAY={
+    w:[ [[X('A')]], [[X('A'),sp,X('S'),sp,X('E1')]], [[X('T'),'=',X('A'),'·',X('S'),'+',X('E1')]],
+        [[X('M'),sp,X('R'),sp,X('E2'),sp,X('E3')]], [[X('U'),'=',X('R'),'·',X('A'),'+',X('E2')]],
+        [[X('V'),'=',X('R'),'·',X('T'),'+',X('E3'),'+','q/2·',X('M')]], [[X('D'),'=',X('V'),'−',X('U'),'·',X('S')]],
+        [[X('D'),'=',X('R'),'·',X('E1'),'+',X('E3'),'+','q/2·',X('M'),'−',X('E2'),'·',X('S')]], [[X('D'),'round →',X('O'),'=?',X('M')]] ],
+    n:[ [[X('A')]], [[X('A'),sp,X('S'),sp,X('E1')]], [[X('T'),'=',X('A'),'·',X('S'),'+',X('E1')]],
+        [[X('M'),sp,X('R'),sp,X('E2'),sp,X('E3')]], [[X('U'),'=',X('R'),'·',X('A')],['+',X('E2')]],
+        [[X('V'),'=',X('R'),'·',X('T')],['+',X('E3'),'+','q/2·',X('M')]], [[X('D'),'=',X('V'),'−',X('U'),'·',X('S')]],
+        [[X('D'),'=',X('R'),'·',X('E1'),'+',X('E3')],['+','q/2·',X('M'),'−',X('E2'),'·',X('S')]], [[X('D'),'round →',X('O'),'=?',X('M')]] ] };
+  const LABH=30, GAP=12, PAD=8, OPF=13, CW=24, CN=20;
+  const tokW=(t,c)=>typeof t==='string' ? t.length*OPF*0.62+10 : t.m ? DIM[t.m][1]*c : t.sp;
+  const lineH=(line,c)=>LABH+Math.max(...line.filter(t=>t.m).map(t=>DIM[t.m][0]))*c;
+  const totH=(lines,c)=>lines.reduce((a,l)=>a+lineH(l,c),0)+GAP*(lines.length-1);
+  const place=(lines,c,W,H)=>{ const mats={}, ops=[]; let y=(H-totH(lines,c))/2+LABH/2-4;
+    lines.forEach(line=>{ const w=line.reduce((a,t)=>a+tokW(t,c),0), h=lineH(line,c), mid=y+LABH+(h-LABH)/2; let x=(W-w)/2;
+      line.forEach(t=>{ const tw=tokW(t,c); if(typeof t==='string') ops.push({x:x+tw/2, y:mid+4.5, t}); else if(t.m) mats[t.m]={x, y:mid-DIM[t.m][0]*c/2}; x+=tw; });
+      y+=h+GAP; });
+    return {mats, ops}; };
+  const HW=Math.ceil(Math.max(...LAY.w.map(l=>totH(l,CW))))+2*PAD, HN=Math.ceil(Math.max(...LAY.n.map(l=>totH(l,CN))))+2*PAD;
+  let G=null, P=null, cur={pos:{}, ops:[]};
+  const target=k=>{ const pos={}; MATS.forEach(n=>{ const p=G.pos[k][n], c0=cur.pos[n]||{x:0,y:0,o:0}; pos[n]=p?{x:p.x,y:p.y,o:1}:{x:c0.x,y:c0.y,o:0}; });
+    return {pos, ops:G.ops.map((_,s)=>s===k?1:0)}; };
+  const paint=()=>{ if(!G) return;
+    MATS.forEach(n=>{ const p=cur.pos[n], B=G.blocks[n]; if(!p) return; B.g.setAttribute('transform','translate('+p.x.toFixed(2)+','+p.y.toFixed(2)+')');
+      B.g.setAttribute('opacity',p.o.toFixed(3)); B.g.style.pointerEvents=p.o>0.5?'':'none'; });
+    G.ops.forEach((arr,s)=>arr.forEach(e=>e.setAttribute('opacity',(cur.ops[s]||0).toFixed(3)))); };
+  const setVals=()=>{ if(!G) return; MATS.forEach(n=>G.blocks[n].cells.forEach((row,i)=>row.forEach((cl,j)=>{ const v=I[n][i][j]; cl.tx.textContent=SIGNED[n]?fv(v):String(v); }))); };
+  const HIS=[{},{},{},{},{},{}, {D:'c',V:'c',U:'r',S:'col'}, {D:'c',R:'r',E2:'r',S:'col',E1:'col',E3:'c',M:'c'}, {D:'c',O:'c',M:'c'}];
+  const setHi=k=>{ if(!G) return; const H=HIS[k]||{}, c=G.c;
+    MATS.forEach(n=>{ const B=G.blocks[n], h=H[n], live=k>=6 && !!PICK[n] && !!G.pos[k][n];
+      B.cells.forEach((row,i)=>row.forEach((cl,j)=>{ const on=h==='c'?(i===st.i&&j===st.j):h==='r'?i===st.i:h==='col'?j===st.j:false;
+        cl.rect.setAttribute('fill', on?HI:KFILL[kindOf(n)]); cl.rect.style.cursor=live?'pointer':'';
+        if(n==='D') cl.rect.setAttribute('tabindex', live?'0':'-1'); }));
+      if(h){ const x=h==='r'?0:st.j*c, y=h==='col'?0:st.i*c, w=h==='r'?B.cc*c:c, hh=h==='col'?B.r*c:c;
+        B.hl.setAttribute('x',x); B.hl.setAttribute('y',y); B.hl.setAttribute('width',w); B.hl.setAttribute('height',hh); B.hl.setAttribute('opacity','1'); }
+      else B.hl.setAttribute('opacity','0'); }); };
+  const pick=(n,i,j)=>{ if(!P || P.step<6 || !G.pos[P.step][n]) return; const w=PICK[n]; if(!w) return;
+    if(w.includes('i')) st.i=i; if(w.includes('j')) st.j=j;
+    if(P.step===6) P.go(7); else P.redraw(); };
+  const S_=LP.apiStrip(root);
+  LP.respSVG(root.querySelector('.stage'), [760,HW], [340,HN], (s,W,H,narrow)=>{
+    const c=narrow?CN:CW, fs=narrow?10.5:11.5, lays=narrow?LAY.n:LAY.w, blocks={};
+    s.setAttribute('aria-label','the matrices of the current step, drawn to scale: one square per entry');
+    MATS.forEach(n=>{ const [r,cc]=DIM[n], kd=kindOf(n), g=svg('g',{opacity:0},s); g.id='p1-blk-g'+n;
+      stext(g,cc*c/2,-17,NAME[n],{'text-anchor':'middle','font-weight':700,fill:COL.ink,'font-size':narrow?11:12});
+      stext(g,cc*c/2,-5,kd,{'text-anchor':'middle','font-size':9.5,fill:COL.mute});
+      const cells=[];
+      for(let i=0;i<r;i++){ const row=[]; for(let j=0;j<cc;j++){
+        const rect=svg('rect',{x:j*c,y:i*c,width:c,height:c,fill:KFILL[kd],stroke:'#fff','stroke-width':1},g);
+        const tx=stext(g,j*c+c/2,i*c+c/2+fs*0.36,'',{'text-anchor':'middle','font-size':fs,fill:COL.ink,'pointer-events':'none'});
+        rect.addEventListener('click',()=>pick(n,i,j));
+        if(n==='D'){ rect.setAttribute('role','button'); rect.setAttribute('aria-label','entry ('+(i+1)+', '+(j+1)+') of V − US');
+          rect.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(n,i,j); } }); }
+        row.push({rect,tx}); } cells.push(row); }
+      svg('rect',{x:0,y:0,width:cc*c,height:r*c,fill:'none',stroke:KEDGE[kd],'stroke-width':1.5,rx:2,'pointer-events':'none'},g);
+      const hl=svg('rect',{fill:'none',stroke:COL.ochre,'stroke-width':2.4,rx:2,opacity:0,'pointer-events':'none'},g);
+      blocks[n]={g,cells,hl,r,cc}; });
+    const pos=[], ops=[];
+    lays.forEach(lines=>{ const pl=place(lines,c,W,H); pos.push(pl.mats);
+      ops.push(pl.ops.map(o=>stext(s,o.x,o.y,o.t==='=?'?(I.ok?'=':'≠'):o.t,{'text-anchor':'middle','font-size':OPF,fill:COL.ink,opacity:0}))); });
+    G={blocks,pos,ops,c};
+    setVals(); cur=target(P?P.step:0); paint(); setHi(P?P.step:0);
+    if(P) P.redraw();
   });
-  function go(){ const {m,lq,N,k:kv}=st; const f=n=>n.toLocaleString('en-US');
-    setHTML('p1-sz-pk1', f(256+m*lq)+' bits'); setHTML('p1-sz-ct1', f((m+1)*lq)+' bits');
-    const z=sizes(kv); setHTML('p1-sz-amort', f(z.pk)+' + '+f(z.ct)+' = '+f(z.pk+z.ct)+' bits');
-    setHTML('p1-sz-best', f(256+2*Math.sqrt(N)*m*lq+N*lq)+' bits'); setHTML('p1-sz-naive', f(N*(m+1)*lq)+' bits');
-    const tb=tv.table.tBodies[0]; tb.innerHTML=''; ks.forEach(x=>{ const y=sizes(x); tb.append(el('tr',{class:x===kv?'hl':null},[x,N/x,f(y.pk),f(y.ct),f(y.pk+y.ct)].map(c=>el('td',{text:String(c)})))); });
-    const tgt=ks.map(x=>Object.assign({k:x},sizes(x)));
-    if(!shown){ shown=tgt; R.redraw(); return; }
-    const from=shown.map(d=>Object.assign({},d));
-    LP.tween('p1-sz-ease',450,t=>{ shown=tgt.map((d,i)=>({k:d.k, pk:lerpLog(from[i].pk,d.pk,t), ct:lerpLog(from[i].ct,d.ct,t)})); R.redraw(); }); }
+  P=LP.player(root,{steps:9, ms:800, hold:1500, onStep(k,ctx){
+    S_.show(k, ctx);
+    if(G){ const from={pos:{}, ops:cur.ops.slice()}, to=target(k);
+      MATS.forEach(n=>{ const a=Object.assign({}, cur.pos[n]||to.pos[n]); if(a.o<0.02 && to.pos[n].o>0){ a.x=to.pos[n].x; a.y=to.pos[n].y; } from.pos[n]=a; });
+      ctx.tween('blk', 800, t=>{ MATS.forEach(n=>{ const a=from.pos[n], z=to.pos[n]; cur.pos[n]={x:LP.lerp(a.x,z.x,t), y:LP.lerp(a.y,z.y,t), o:LP.lerp(a.o,z.o,t)}; });
+        cur.ops=to.ops.map((o,s)=>LP.lerp(from.ops[s]||0,o,t)); paint(); });
+      setHi(k); }
+    const E=entry(st.i,st.j), nbad=I.O.flat().filter((x,t)=>x!==I.M.flat()[t]).length;
+    const vd=document.getElementById('p1-blk-verdict'); vd.classList.toggle('ok',I.ok); vd.classList.toggle('bad',!I.ok);
+    return {ei:String(st.i+1), ej:String(st.j+1), sum:E.s, nok:String(K*L), nbad:String(nbad),
+      verdict:I.ok?'all '+K*L+' entries equal M, correct':nbad+' of '+K*L+' entries differ from M, wrong',
+      cap: k===7 ? ['7','7-n'] : k===8 ? (I.ok?'8-ok':'8-bad') : undefined};
+  }});
+  root.querySelector('.controls').append(el('div',{class:'btns',style:'margin:0'},[el('button',{class:'btn',type:'button',text:'resample',onclick:()=>{ st.seed++; I=sample(); fill(); redrawAll(); }})]));
+  const rowTxt=X_=>X_.map(r=>r.map(fv).join(' ')).join(' / ');
+  const tv=LP.tableView(root,'table view: the matrices',['quantity','value (rows separated by /)'],[]);
+  [['q, m, k, ℓ, β','p1-blk-par'],['A','p1-blk-A'],['S','p1-blk-S'],['E₁','p1-blk-E1'],['T = AS + E₁','p1-blk-T'],['M','p1-blk-M'],['R','p1-blk-R'],['E₂','p1-blk-E2'],['E₃','p1-blk-E3'],
+   ['U = RA + E₂','p1-blk-U'],['V = RT + E₃ + (q/2)M, q/2 read as 49','p1-blk-V'],['US','p1-blk-US'],['V − US','p1-blk-D'],['decoded (nearer 0 or 49)','p1-blk-O'],['Eq. (17) entry by entry','p1-blk-idn']]
+    .forEach(([a,id])=>tv.table.tBodies[0].append(el('tr',{},[el('td',{text:a}),el('td',{id})])));
+  const tv2=LP.tableView(root,'table view: every entry of V − US',['(i, j)','rᵀe₁','e₃','(q/2)μ','e₂ᵀs','sum mod 97','V − US','decoded','μ'],[],{id:'p1-blk-ent'});
+  function fill(){
+    setText('p1-blk-par',q+', '+m+', '+K+', '+L+', '+b);
+    ['A','S','E1','T','M','R','E2','E3','U','V','US','D','O'].forEach(n=>setText('p1-blk-'+n,rowTxt(I[n])));
+    const tb=tv2.table.tBodies[0]; tb.textContent=''; let hold=0;
+    for(let i=0;i<K;i++) for(let j=0;j<L;j++){ const E=entry(i,j); if(E.r===I.D[i][j]) hold++;
+      tb.append(el('tr',{},['('+(i+1)+', '+(j+1)+')',fv(E.a),fv(E.e),String(E.h),fv(E.d),String(E.r),String(I.D[i][j]),String(I.O[i][j]),String(I.M[i][j])].map(t=>el('td',{text:t})))); }
+    setText('p1-blk-idn','rᵀe₁ + e₃ + (q/2)μ − e₂ᵀs equals V − US in '+hold+' of '+K*L+' entries');
+  }
+  function redrawAll(){ setVals(); if(G){ G.ops[8].forEach(e=>{ if(e.textContent==='='||e.textContent==='≠') e.textContent=I.ok?'=':'≠'; }); } P.redraw(); }
+  fill();
+  const SRC='ours (web/checks/p1/blocks_p1.py, LP.rng port)';
+  const cell=(r,c)=>'#p1-blk-ent tbody tr:nth-child('+r+') td:nth-child('+c+')';
+  LP.check({name:'§2.4 toy KeyGen: A (seed 18, q = 97, m = 4)', sel:'#p1-blk-A', expect:'38 58 51 19 / 77 51 69 20 / 13 53 37 49 / 19 45 60 8', source:SRC});
+  LP.check({name:'§2.4 toy KeyGen: T = AS + E₁ (Eq. (13))', sel:'#p1-blk-T', expect:'85 11 25 / 8 76 38 / 74 46 77 / 57 26 94', source:SRC});
+  LP.check({name:'§2.4 toy Enc: U = RA + E₂ (Eq. (14))', sel:'#p1-blk-U', expect:'32 0 93 41 / 18 14 88 10', source:SRC});
+  LP.check({name:'§2.4 toy Enc: V = RT + E₃ + 49M (Eq. (14), q/2 read as ⌈q/2⌋)', sel:'#p1-blk-V', expect:'87 84 94 / 78 35 28', source:SRC});
+  LP.check({name:'§2.4 toy Dec: V − US (Eq. (16))', sel:'#p1-blk-D', expect:'51 0 2 / 51 50 94', source:SRC});
+  LP.check({name:'§2.4 toy Dec: decoded = M = 1 0 0 / 1 1 0', sel:'#p1-blk-O', expect:'1 0 0 / 1 1 0', source:SRC});
+  LP.check({name:'§2.4 p. 11 remark: rᵀe₁ + e₃ + (q/2)μ − e₂ᵀs = entry of V − US, all 6 entries', sel:'#p1-blk-idn', expect:'6 of 6', source:SRC+'; §2.4 p. 11'});
+  LP.check({name:'§2.4 toy entry (1, 1): −1 + 1 + 49 − (−2) = 51', sel:cell(1,6), expect:'51', source:SRC});
+  LP.check({name:'§2.4 toy entry (2, 3): e₂ᵀs = 1, sum −3 ≡ 94 (mod 97)', sel:cell(6,6), expect:'94', source:SRC});
+  LP.check({name:'§2.4 toy Dec output equals M', sel:'#p1-blk-verdict', expect:'all 6 entries equal M, correct', source:SRC});
+  LP.check({name:'§2.4 block strip starts on the KeyGen column', sel:'#p1-blk .api-col.is-on .api-n', expect:'KeyGen', source:'player (step 0)'});
+  LP.check({name:'§2.4 block strip: U is marked sent', sel:'#p1-blk .api-col[data-from="3"] .api-row[data-at="4"] .api-mk', expect:'sent', source:'Eq. (14)'});
+  LP.check({name:'§2.4 block strip step 0 caption', sel:'#p1-blk .caps p[data-cap="0"]', expect:'uniformly random', source:'§2.4 Eq. (13)'});
+});
+
+/* ================= 5. §2.4 the same blocks at the paper's sizes: k x l = 256, blocks reshape, bits per k (slider, eased) ================= */
+LP.register('p1-sz', ()=>{
+  const m0=mount('p1-sz'); if(!m0) return;
+  const m=700, lq=13, N=256, ks=[1,2,4,8,16,32,64,128,256];          // the paper's m ≈ 700, q ≈ 2^13 (p. 10), N = 256 (p. 11); bit counts are ours
+  const size=kv=>{ const l=N/kv, pk=256+l*m*lq, ct=kv*m*lq+kv*l*lq; return {k:kv, l, pk, ct, tot:pk+ct}; };   // §2.4, pp. 10-11
+  const D=ks.map(size), iMin=D.reduce((a,d,i)=>d.tot<D[a].tot?i:a,0), f=n=>n.toLocaleString('en-US');
+  let ki=4, cur=4, G=null;
+  const ctl=el('div',{class:'controls'});
+  const sl=LP.slider({label:'k × ℓ',min:0,max:8,value:4,fmt:v=>ks[v]+' × '+(N/ks[v])+' = 256',onInput:v=>{ ki=v; go(); }});
+  ctl.append(sl); m0.append(ctl);
+  const fig=el('div',{class:'fig'}); m0.append(fig);
+  LP.readouts(m0,[{id:'p1-sz-amort',k:'this '+k('k\\times\\ell')+': public key + ciphertext',v:'',d:k('256+\\ell m\\log q')+' and '+k('km\\log q+k\\ell\\log q')+' (§2.4, p. 10)'},
+    {id:'p1-sz-best',k:k('k=\\ell=\\sqrt N')+': '+k('256+2\\sqrt N m\\log q+N\\log q'),v:''}]);
+  const tv=LP.tableView(m0,'table view',[k('k'),k('\\ell'),'public key '+k('256+\\ell m\\log q'),'ciphertext '+k('km\\log q+k\\ell\\log q'),'total (bits)'],[],{id:'p1-sz-tab'});
+  const paint=()=>{ if(!G) return; const g=G, kc=Math.pow(2,cur), lc=N/kc, kt=ks[ki], lt=N/kt;
+    const tw=Math.max(lc*g.sc,1.5), uh=Math.max(kc*g.sc,1.5), xr=g.x0+g.ms+g.gap, yb=g.y0+g.ms+g.gap;
+    g.T.setAttribute('width',tw.toFixed(2)); g.U.setAttribute('y',yb.toFixed(2)); g.U.setAttribute('height',uh.toFixed(2));
+    g.V.setAttribute('x',xr.toFixed(2)); g.V.setAttribute('y',yb.toFixed(2)); g.V.setAttribute('width',tw.toFixed(2)); g.V.setAttribute('height',uh.toFixed(2));
+    g.tL.setAttribute('x',(xr+tw+6).toFixed(1)); g.tK.setAttribute('x',(xr+tw+6).toFixed(1)); g.tL.textContent='T: 700 × '+lt;
+    g.vL.setAttribute('x',(xr+tw+6).toFixed(1)); g.vL.setAttribute('y',(yb+Math.max(uh/2+4,9)).toFixed(1)); g.vL.textContent='V: '+kt+' × '+lt+', sent';
+    g.uL.setAttribute('y',(yb+uh+14).toFixed(1)); g.uL.textContent='U: '+kt+' × 700, sent';
+    g.bars.forEach((b,i)=>b.setAttribute('opacity',(0.3+0.7*Math.max(0,1-Math.abs(i-cur))).toFixed(3)));
+    const d=D[ki], txt=f(d.tot), tw2=txt.length*5.9; let cx=g.bx(ki)+g.bw/2; cx=Math.min(Math.max(cx,g.bx0+tw2/2-30),g.W-4-tw2/2);
+    g.tot.setAttribute('x',cx.toFixed(1)); g.tot.setAttribute('y',(g.Y(d.tot)-6).toFixed(1)); g.tot.textContent=txt; };
+  LP.respSVG(fig,[900,330],[340,584],(s,W,H,narrow)=>{
+    s.setAttribute('aria-label','public key and ciphertext blocks to scale, and bar chart of their bits for each k');
+    const sc=narrow?0.24:0.27, x0=narrow?14:24, y0=narrow?44:50, gap=3, ms=m*sc;
+    stext(s,x0,y0-30,'to scale (blocks thinner than 1.5 units are thickened)',{fill:COL.mute,'font-size':10.5});
+    svg('rect',{x:x0,y:y0,width:ms,height:ms,fill:'#f4f4f4',stroke:COL.dot,'stroke-dasharray':'4 3'},s);
+    stext(s,x0+ms/2,y0+ms/2-10,'A: 700 × 700, public',{'text-anchor':'middle',fill:COL.ink2});
+    stext(s,x0+ms/2,y0+ms/2+6,'not sent: the paper',{'text-anchor':'middle',fill:COL.mute,'font-size':10.5});
+    stext(s,x0+ms/2,y0+ms/2+20,'sends a 256-bit seed ρ',{'text-anchor':'middle',fill:COL.mute,'font-size':10.5});
+    const T=svg('rect',{x:x0+ms+gap,y:y0,height:ms,fill:KFILL.public,stroke:KEDGE.public,'stroke-width':1.2},s); T.id='p1-sz-T';
+    const U=svg('rect',{x:x0,width:ms,fill:KFILL.sent,stroke:KEDGE.sent,'stroke-width':1.2},s); U.id='p1-sz-U';
+    const V=svg('rect',{fill:KFILL.sent,stroke:KEDGE.sent,'stroke-width':1.2},s);
+    const tL=stext(s,0,y0+12,'',{fill:COL.ink}), tK=stext(s,0,y0+26,'public',{fill:COL.mute,'font-size':10.5});
+    const uL=stext(s,x0,0,'',{fill:COL.ink}), vL=stext(s,0,0,'',{fill:COL.ink});
+    /* stacked bars: public key (below) + ciphertext (above), one per k */
+    const bx0=narrow?40:548, bx1=narrow?334:892, by0=narrow?362:62, by1=narrow?540:276, ymax=2.4e6;
+    const Y=v=>by1-v/ymax*(by1-by0), slot=(bx1-bx0)/ks.length, bw=slot*0.6, bx=i=>bx0+slot*i+(slot-bw)/2;
+    stext(s,bx0-(narrow?34:40),by0-38,'million bits, N = 256',{fill:COL.ink2});
+    [['public key',COL.s1],['ciphertext',COL.s3]].forEach(([t,c],i)=>{ const x=bx0-(narrow?34:40)+i*(narrow?110:120);
+      svg('rect',{x,y:by0-25,width:11,height:11,rx:2,fill:c},s); stext(s,x+16,by0-15.5,t,{fill:COL.ink2}); });
+    [0,0.5e6,1e6,1.5e6,2e6].forEach(v=>{ svg('line',{x1:bx0,x2:bx1,y1:Y(v),y2:Y(v),stroke:v?COL.grid:COL.axis},s);
+      stext(s,bx0-5,Y(v)+4,(v/1e6).toFixed(1),{'text-anchor':'end','font-size':10,fill:COL.mute}); });
+    const bars=D.map((d,i)=>{ const g=svg('g',{},s), x=bx(i);
+      svg('rect',{x,y:Y(d.pk),width:bw,height:Math.max(by1-Y(d.pk),0.5),fill:COL.s1},g);
+      svg('rect',{x,y:Y(d.tot),width:bw,height:Math.max(Y(d.pk)-Y(d.tot)-2,0.8),rx:2,fill:COL.s3},g);
+      stext(s,x+bw/2,by1+14,String(d.k),{'text-anchor':'middle','font-size':10,fill:COL.mute});
+      const hit=svg('rect',{x:bx0+slot*i,y:by0-6,width:slot,height:by1-by0+22,fill:'transparent',style:'cursor:pointer'},s);
+      LP.hover(hit,()=>'k = '+d.k+', ℓ = '+d.l+'<br>public key '+f(d.pk)+' bits<br>ciphertext '+f(d.ct)+' bits<br>total '+f(d.tot)+' bits');
+      hit.addEventListener('click',()=>sl.set(i));
+      return g; });
+    bars[iMin].id='p1-sz-minbar';
+    stext(s,bx(iMin)+bw/2,Y(D[iMin].tot)-20,'min',{'text-anchor':'middle','font-weight':700,fill:COL.ink});
+    stext(s,(bx0+bx1)/2,by1+30,'k (rows of M); ℓ = 256 / k',{'text-anchor':'middle','font-size':10.5,fill:COL.mute});
+    const tot=stext(s,0,0,'',{'text-anchor':'middle','font-size':10,fill:COL.ink});
+    G={W,sc,x0,y0,gap,ms,T,U,V,tL,tK,uL,vL,bars,tot,Y,bx,bw,bx0};
+    paint();
+  });
+  function go(){
+    const d=D[ki]; setHTML('p1-sz-amort', f(d.pk)+' + '+f(d.ct)+' = '+f(d.tot)+' bits');
+    setHTML('p1-sz-best', f(256+2*Math.sqrt(N)*m*lq+N*lq)+' bits');
+    const tb=tv.table.tBodies[0]; tb.textContent='';
+    D.forEach((x,i)=>tb.append(el('tr',{class:i===ki?'hl':null},[x.k,x.l,f(x.pk),f(x.ct),f(x.tot)+(i===iMin?' (min)':'')].map(c=>el('td',{text:String(c)})))));
+    tb.append(el('tr',{},[el('td',{text:'§2.3.1, 1 bit'}),el('td',{text:''}),el('td',{id:'p1-sz-pk1',text:f(256+m*lq)}),el('td',{id:'p1-sz-ct1',text:f((m+1)*lq)}),el('td',{text:f(256+m*lq+(m+1)*lq)})]));
+    const from=cur; LP.tween('p1-sz-ease',450,t=>{ cur=LP.lerp(from,ki,t); paint(); });
+  }
   go();
+  const cell=(r,c)=>'#p1-sz-tab tbody tr:nth-child('+r+') td:nth-child('+c+')';
   LP.check({name:'§2.4 one-bit ciphertext (m+1)log q, m=700, q=2^13', sel:'#p1-sz-ct1', expect:'9,113', source:'§2.4 formula at the paper\'s m≈700, q≈2^13'});
   LP.check({name:'§2.4 public key 256 + m log q', sel:'#p1-sz-pk1', expect:'9,356', source:'§2.4 formula'});
   LP.check({name:'§2.4 k=ℓ=16 equals 256 + 2√N m log q + N log q', sel:'#p1-sz-amort', expect:'294,784', source:'§2.4 formula'});
+  LP.check({name:'§2.4 sizes: minimum total at k = ℓ = 16 (divisors of 256)', sel:cell(5,5), expect:'294,784 (min)', source:'§2.4 formulas, pp. 10–11 (ours, web/checks/p1/blocks_p1.py)'});
+  LP.check({name:'§2.4 sizes: k = 1, ℓ = 256 public key 256 + ℓm log q', sel:cell(1,3), expect:'2,329,856', source:'§2.4 formula (ours, web/checks/p1/blocks_p1.py)'});
+  LP.check({name:'§2.4 sizes: k = 256, ℓ = 1 ciphertext km log q + kℓ log q', sel:cell(9,4), expect:'2,332,928', source:'§2.4 formula (ours, web/checks/p1/blocks_p1.py)'});
 });
 
 /* ================= 5. §2.5.1–2.5.2 the 13-point circle: compress, decompress (player) ================= */
