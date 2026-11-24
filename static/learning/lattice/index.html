@@ -346,7 +346,7 @@ kbd{font-family:var(--mono); font-size:.82em; border:1px solid var(--ring); bord
       </nav>
       <p class="eyebrow">Learning with AI &middot; study companion</p>
       <h1>Learning Lattice Cryptography</h1>
-      <p class="sub">A companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; last updated June 18, 2025), told section by section in short animations.</p>
+      <p class="sub">A quantum computer would break the discrete-log ElGamal and Schnorr we know. Kyber (ML-KEM) and Dilithium (ML-DSA) rebuild them from noisy linear algebra, and on this page we rebuild them ourselves, one short animation at a time. A companion to Vadim Lyubashevsky, <em>Basic Lattice Cryptography: The concepts behind Kyber (ML-KEM) and Dilithium (ML-DSA)</em> (2024; last updated June 18, 2025), told section by section.</p>
       <p class="by">by Duc V. Le &middot; numbers the paper prints are cited (&sect;, Eq., Table, page); numbers marked <em>illustration</em>, <em>ours</em> or <em>computed</em> are mine, including the paper&rsquo;s formulas evaluated on this page &middot; step through the figures with back / play / next</p>
       <div class="btns">
         <a class="btn primary" href="guide.pdf">[companion guide pdf]</a>
@@ -365,7 +365,7 @@ kbd{font-family:var(--mono); font-size:.82em; border:1px solid var(--ring); bord
     <section class="psec" id="how" data-num="" data-toc="How to read this page">
   <h2>How to read this page</h2>
   <ul>
-    <li>Most subsections: one line on the idea, a figure to step through (<strong>back / play / next</strong> or arrow keys) or a calculator to try, and one line to remember.</li>
+    <li>Most subsections: the question left open, the idea in plain words, a figure to step through (<strong>back / play / next</strong> or arrow keys) or a calculator to try, and a boxed line with what we now have and the next question.</li>
     <li>A navy rule marks the paper&rsquo;s claim, cited in grey like <span class="cite">§2.3.1, Eq. (6)</span>; open <em>The paper&rsquo;s exact statement</em> for the details, closely paraphrased.</li>
     <li><span class="tag">illustration</span> marks numbers computed on this page (toy examples and the paper&rsquo;s formulas evaluated here); proofs are in the <a href="guide.pdf">companion guide (pdf)</a>.</li>
     <li>In the algorithm strips (KeyGen, Enc, Dec, &hellip;), <span class="api-mk" data-kind="public">public</span> anyone may see it, <span class="api-mk" data-kind="secret">secret</span> hidden from everyone else, <span class="api-mk" data-kind="sent">sent</span> travels to the decryptor or verifier. <span class="ref" data-ref="zq">Numbers mod $q$</span> are read centred (this page&rsquo;s convention): ${94 \equiv -3 \pmod{97}}$.</li>
@@ -410,6 +410,9 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
 </style>
 <section class="psec" id="sec-1" data-num="§1" data-toc="Prelude">
   <h2><span class="n">§1</span>Prelude</h2>
+  <p class="hook">The public-key cryptography most of us learned first rests on factoring or discrete logs (ElGamal to encrypt, Schnorr to sign), and a quantum computer would be able to break all of it <span class="cite">§1, p. 2</span>. So what do we encrypt and sign with instead?</p>
+  <p>Two of the schemes NIST standardized are built on <span class="ref" data-ref="lattice">lattices</span>: Kyber (ML-KEM) for encryption and Dilithium (ML-DSA) for signatures. They are less foreign than they look. The encryption scheme follows the outline of ElGamal and the signature scheme is an analogue of Schnorr <span class="cite">§1, pp. 3&ndash;4; §2.2&ndash;2.3, p. 6</span>. What changes is the hard problem underneath: where discrete log hides $s$ inside $g^s$, lattices hide a short vector $\mathbf{s}$ inside a matrix product $\mathbf{A}\mathbf{s}$ with a little noise added.</p>
+  <p>So this page asks one question: <strong>can we rebuild ElGamal and Schnorr ourselves from noisy linear algebra, and why would anyone believe the result is hard to break?</strong> §2 rebuilds encryption with plain matrices, §3 asks why it should be hard, §4 swaps numbers for polynomials to make it small and fast (Kyber), and §5 signs (Dilithium).</p>
   <p class="claim">Kyber (ML-KEM) and Dilithium (ML-DSA) need few deep concepts; the mess is in parameters and rounding tricks. <span class="cite">§1, pp. 2&ndash;3</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <h4>The road to the NIST standards</h4>
@@ -422,30 +425,39 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     <h4>Outline</h4>
     <p>§2 builds encryption over <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> from LWE, plus compression tricks; §3 introduces lattices and connects LWE and SIS to the hardness of lattice problems; §4 moves to polynomial rings and ends with Kyber and the NTT; §5 builds a lattice analogue of Schnorr signatures, ending with Dilithium. <span class="cite">§1, p. 4</span></p>
   </details>
+  <p class="remember"><span class="vlabel">Remember</span>ElGamal and Schnorr again, with noisy linear algebra where the exponent was. <span class="next">First, encryption.</span></p>
   <button class="readbtn" data-for="sec-1">mark as read</button>
 </section>
 
 <section class="psec" id="sec-2" data-num="§2" data-toc="Encryption">
   <h2><span class="n">§2</span>Encryption</h2>
-  <p class="claim">Lattice encryption is most efficient when they allow a tiny <span class="ref" data-ref="decerr">decryption error</span> (say, around $2^{-150}$). <span class="cite">§2, p. 5</span></p>
+  <p class="hook">We start with encryption and the modest goal of <span class="ref" data-ref="cpa">CPA security</span>: an eavesdropper who picks two messages cannot tell which one we encrypted. Active attackers wait for §4.8 <span class="cite">§2, p. 5</span>.</p>
+  <p>The route: write ElGamal with matrices and watch it break (§2.2), repair it with a little noise (§2.3&ndash;2.3.2), shrink the keys and ciphertexts (§2.4&ndash;2.5), and finish with key exchange (§2.6).</p>
+  <p>One thing will feel odd after ElGamal. Noise is what will protect the key, and noise can also, very rarely, make an honest ciphertext decrypt to the wrong message. We make that so unlikely that it does not appear to hurt security in practice, as long as the later proofs account for it <span class="cite">§2, p. 5; footnote 5</span>.</p>
+  <p class="claim">The encryption schemes of this section are most efficient when they allow a tiny <span class="ref" data-ref="decerr">decryption error</span> (say, around $2^{-150}$). <span class="cite">§2, p. 5</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>We start with a CPA-secure public-key encryption scheme: three algorithms (key generation, encryption, decryption), and <span data-def="cpa" data-def-label="CPA security" data-def-keys="chosen plaintext indistinguishable">CPA security means that for any two messages of the adversary's choosing, their encryptions are computationally indistinguishable.</span> Generic transformations such as Fujisaki&ndash;Okamoto [FO99] later turn CPA security into CCA security (§4.8).</p>
-    <p><span data-def="decerr" data-def-label="decryption errors" data-def-keys="failure probability">Unlike discrete-log and factoring schemes, lattice schemes are most efficient when they allow <strong>decryption errors</strong>: even when everything is run correctly, a ciphertext may, with very small probability, decrypt wrongly.</span> An error around $2^{-150}$ does not appear to hurt practical security, as long as the transformations' proofs account for it. <span class="cite">§2, p. 5; footnote 5</span></p>
+    <p><span data-def="decerr" data-def-label="decryption errors" data-def-keys="failure probability">Unlike their discrete-log and factoring analogues, the paper&rsquo;s schemes (&ldquo;in this chapter&rdquo;) are most efficient when they allow <strong>decryption errors</strong>: even when everything is run correctly, a ciphertext may, with very small probability, decrypt wrongly.</span> An error around $2^{-150}$ does not appear to hurt practical security, as long as the transformations' proofs account for it. <span class="cite">§2, p. 5; footnote 5</span></p>
   </details>
 
   <!-- 2.1 -->
   <h3 id="sec-2-1" data-num="2.1"><span class="n">2.1</span>Some Notation</h3>
+  <p class="hook">The whole section turns on one word, <em>small</em>. Arithmetic is modulo $q$, and a number is small when it is close to 0 once we read it centred: with $q = 97$, the number 94 is really $-3$ (this page&rsquo;s convention).</p>
+  <p>A short vector has only small entries. Secrets and errors will be short; public keys and ciphertexts will look like arbitrary numbers mod $q$.</p>
   <p class="claim"><span class="ref" data-ref="beta">$[\beta] = \{-\beta,\ldots,\beta\}$</span> holds the small numbers; <span class="ref" data-ref="round">$\lceil x\rfloor$</span> rounds, ties up. <span class="cite">§2.1, Eq. (1)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>All operations are in the ring <span class="ref" data-ref="zq">$(\mathbb{Z}_q, +, \times)$</span>. $a \leftarrow S$ means $a$ is chosen uniformly from the set $S$. For a positive integer $\beta$,</p>
     $$[\beta] = \{-\beta, \ldots, -1, 0, 1, \ldots, \beta\}. \qquad (1)$$
     <p>$[\beta]^{n\times m}$ is an $n\times m$ matrix with coefficients in $[\beta]$; vectors are column vectors; $\mathbf{v} \in [\beta]^m$ can also be written <span class="ref" data-ref="norm">$\|\mathbf{v}\|_\infty \le \beta$</span>. <span data-def="round" data-def-label="rounding" data-def-tex="\lceil x\rfloor" data-def-keys="round nearest integer ties">$\lceil x \rfloor$ is the closest integer to $x$, with ties broken upwards.</span> For polynomials $a = \sum a_i X^i$, $a \leftarrow [\beta]$ means every coefficient is uniform in $[\beta]$; a distribution $\psi$ can replace $[\beta]$. <span class="cite">§2.1, Eq. (1)</span></p>
   </details>
+  <p class="remember"><span class="vlabel">Remember</span>Small means in $[\beta]$. <span class="next">What does ElGamal look like with matrices?</span></p>
   <button class="readbtn" data-for="sec-2-1">mark as read</button>
 
   <!-- 2.2 -->
   <h3 id="sec-2-2" data-num="2.2"><span class="n">2.2</span>A Motivating Example</h3>
-  <p class="hook">Pretend $(\mathbf{A}, \mathbf{A}\mathbf{s})$ with a short secret $\mathbf{s}$ looks random. An ElGamal-like scheme follows at once.</p>
+  <p class="hook">Take ElGamal and change one thing: where it raises to a power, multiply by a matrix. The secret is a short vector $\mathbf{s}$, the public key a random matrix $\mathbf{A}$ with $\mathbf{t} = \mathbf{A}\mathbf{s}$, and every line of ElGamal gets a twin (table below).</p>
+  <p>Decryption works for ElGamal&rsquo;s reason: sender and receiver each reach the same value from their own side, here $\mathbf{r}^T\mathbf{A}\mathbf{s}$, and it cancels. Matrices don&rsquo;t commute, so $\mathbf{r}$ multiplies from the left and $\mathbf{s}$ from the right <span class="cite">§2.2, footnote 6</span>.</p>
+  <p>For security, $(\mathbf{A}, \mathbf{A}\mathbf{s})$ would have to look random to any efficient algorithm. It doesn&rsquo;t.</p>
   <p class="claim">The assumption is &ldquo;clearly false&rdquo;: Gaussian elimination recovers $\mathbf{s}$. A slightly modified version founds most lattice cryptography. <span class="cite">§2.2, Eqs. (2)&ndash;(5)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>Pretend that for $n \ge m$ and $\beta \ll q$ the distributions $(\mathbf{A}, \mathbf{A}\mathbf{s})$ with <span class="ref" data-ref="unif">$\mathbf{A} \leftarrow \mathbb{Z}_q^{n\times m}$</span>, <span class="ref" data-ref="sample">$\mathbf{s} \leftarrow [\beta]^m$</span>, and $(\mathbf{A}, \mathbf{u})$ with $\mathbf{u} \leftarrow \mathbb{Z}_q^n$, are indistinguishable. This assumption is <strong>clearly false</strong>: Gaussian elimination inverts $\mathbf{A}$ (or an $m\times m$ sub-matrix) and checks whether some $\mathbf{s} \in [\beta]^m$ satisfies $\mathbf{A}\mathbf{s} = \mathbf{u}$. But it gives an ElGamal-like scheme, with $\mu \in \mathbb{Z}_q$: <span class="cite">§2.2</span></p>
@@ -462,6 +474,7 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     <tr><td>public key</td><td>$A,\ t = A^s$</td><td>$\mathbf{A},\ \mathbf{t} = \mathbf{A}\mathbf{s}$</td></tr>
     <tr><td>ciphertext</td><td>$u = A^r,\ v = t^r\cdot\mu$</td><td>$\mathbf{u}^T = \mathbf{r}^T\mathbf{A},\ v = \mathbf{r}^T\mathbf{t} + \mu$</td></tr>
     <tr><td>decrypt</td><td>$v/u^s = \mu$</td><td>$v - \mathbf{u}^T\mathbf{s} = \mu$</td></tr></tbody></table>
+  <p>Undoing an exponent is the discrete-log problem; undoing a matrix product is the linear algebra we learned at school. In the figure, four pivots on a $4\times4$ toy key give $(1, -1, -1, 1)$, the secret. Leave the figure open: its noise switch is where the repair starts.</p>
   <div class="try fig" id="p1-bk">
     <span class="vlabel">Step through</span>
     <p class="tt">Elimination finds the secret; noise hides it <span class="tag">illustration</span></p>
@@ -478,12 +491,14 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>Without noise, linear algebra reads the secret off the public key. <span class="next">What small change stops it?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>Without noise, elimination reads the secret off the public key. <span class="next">What small change stops it and still lets us decrypt?</span></p>
   <button class="readbtn" data-for="sec-2-2">mark as read</button>
 
   <!-- 2.3 -->
   <h3 id="sec-2-3" data-num="2.3"><span class="n">2.3</span>The LWE Problem</h3>
-  <p class="hook">Add a small error $\mathbf{e}$. Switch on the noise in the <a href="#p1-bk">elimination figure above</a>: the same steps now land far from $\mathbf{s}$.</p>
+  <p class="hook">The repair is almost embarrassingly small. Add a small error $\mathbf{e}$: publish $\mathbf{t} = \mathbf{A}\mathbf{s} + \mathbf{e}$, with $\mathbf{e}$ as short as $\mathbf{s}$ and just as secret.</p>
+  <p>Why would errors of size 1 stop elimination? Elimination computes $\mathbf{A}^{-1}\mathbf{t} = \mathbf{s} + \mathbf{A}^{-1}\mathbf{e}$, and the entries of $\mathbf{A}^{-1}$ are typically nowhere near small, so the short $\mathbf{e}$ is scattered all over <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span>. Switch on the noise in the <a href="#p1-bk">elimination figure above</a>: the same steps now land on $(-40, 35, -35, -34)$, far from $\mathbf{s}$. (Our toy and our reading; the paper says only that the error makes the attack &ldquo;inapplicable&rdquo;, <span class="cite">§2.3, p. 7</span>.)</p>
+
   <p class="claim"><span class="ref" data-ref="lwe">$\mathsf{LWE}_{n,m,q,\beta}$</span>: tell $(\mathbf{A}, \mathbf{A}\mathbf{s}+\mathbf{e})$ from $(\mathbf{A}, \mathbf{u})$, with $\mathbf{s}, \mathbf{e}$ short and $\mathbf{u}$ uniform. <span class="cite">§2.3, Definition 1</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <div class="boxdef" data-def="lwe" data-def-label="LWE problem" data-def-tex="\mathsf{LWE}_{n,m,q,\beta}" data-def-keys="learning with errors definition 1"><p class="t">Definition 1 (LWE)</p>
@@ -492,18 +507,21 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
       <li>$(\mathbf{A}, \mathbf{u})$, where $\mathbf{A} \leftarrow \mathbb{Z}_q^{n\times m}$ and $\mathbf{u} \leftarrow \mathbb{Z}_q^n$.</li></ol></div>
     <p>The error $\mathbf{e}$ is what makes Gaussian elimination inapplicable. <span class="cite">§2.3, Definition 1</span></p>
   </details>
+  <p>Nobody proves this: the paper calls the adjusted assumption &ldquo;plausibly valid&rdquo; <span class="cite">§2.3, p. 6</span>, and §3 weighs the evidence.</p>
   <p class="claim">It gets harder as $m$ and $\beta/q$ grow; $n$ barely matters, so we write <span class="ref" data-ref="lwe-mqb">$\mathsf{LWE}_{m,q,\beta}$</span>. <span class="cite">§2.3, p. 7</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p><span data-def="lwe-mqb" data-def-label="LWE, short form" data-def-tex="\mathsf{LWE}_{m,q,\beta}" data-def-keys="learning with errors">The problem becomes <strong>harder as $m$ and $\beta/q$ grow</strong>; $n$ has no known large impact unless it is as large as about $m^{2\beta+1}$ (linearization [AG11]), so we sometimes write $\mathsf{LWE}_{m,q,\beta}$.</span> <span class="cite">§2.3, p. 7</span></p>
     <p>Uniform errors are for illustration: Regev's worst-case reductions [Reg09, Pei09] used rounded Gaussians, but this is not strictly necessary [DM13, MP13], and Kyber uses a <span class="ref" data-ref="psi">binomial distribution</span> because it is faster to sample. <span data-def="lwe-psi" data-def-label="LWE with a distribution ψ" data-def-tex="\mathsf{LWE}_{n,m,q,\psi}" data-def-keys="definition 2 distribution psi">Definition 2 ($\mathsf{LWE}_{n,m,q,\psi}$) replaces $[\beta]$ by any distribution $\psi$.</span> Some parameters make LWE trivially hard but useless (if $n &lt; m$ and $\beta$ is large, $(\mathbf{A}, \mathbf{A}\mathbf{s}+\mathbf{e})$ can be statistically close to uniform), and some make it easy (if $m = 1$ it is not difficult to see whether $\mathbf{A}\mathbf{s}+\mathbf{e}$ is close to a multiple of the vector $\mathbf{A}$). Taking $\mathbf{s}$ from the same distribution as $\mathbf{e}$ gives an essentially equally hard problem [ACPS09]. <span class="cite">§2.3, Definition 2, p. 7</span></p>
     <p>Distinguishing $(\mathbf{A}, \mathbf{s}^T\mathbf{A} + \mathbf{e}^T)$ is also LWE, with $n$ and $m$ interchanged; by a hybrid argument, many samples $\mathbf{A}\mathbf{s}_i + \mathbf{e}_i$ and $\mathbf{s}_j'^T\mathbf{A} + \mathbf{e}_j'^T$ are indistinguishable from uniform, losing a factor of at most $(t + t')$. <span class="cite">§2.3, p. 8</span></p>
   </details>
-  <p class="remember"><span class="vlabel">Remember</span>LWE is §2.2&rsquo;s assumption plus a small error, and the error is what stops elimination. <span class="next">Does the §2.2 scheme survive it?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>LWE is §2.2&rsquo;s assumption plus a small error. <span class="next">Our own decryption was exact arithmetic too. Does it survive the noise?</span></p>
   <button class="readbtn" data-for="sec-2-3">mark as read</button>
 
   <!-- 2.3.1 -->
   <h3 id="sec-2-3-1" data-num="2.3.1"><span class="n">2.3.1</span>An LWE-Based Encryption Scheme</h3>
-  <p class="hook">The §2.2 scheme with an error added to every product. Below, its three algorithms run on one toy key: KeyGen, Enc, then Dec on the circle of <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span>.</p>
+  <p class="hook">Decryption survives the noise, because attacker and receiver do very different things with it.</p>
+  <p>Elimination has to undo $\mathbf{A}$, and that scatters the error. The receiver undoes nothing. Subtracting $\mathbf{u}^T\mathbf{s}$ cancels the one big term, $\mathbf{r}^T\mathbf{A}\mathbf{s}$. What is left is $\mathbf{r}^T\mathbf{e}_1 + e_3 - \mathbf{e}_2^T\mathbf{s}$: $2m+1$ terms, each a small number or a product of two.</p>
+  <p>Small, but not zero, so the message can no longer be any number mod $q$: the noise would blur it. We send one bit: 0 as 0 and 1 as <span class="ref" data-ref="halfq">$\lceil q/2\rfloor$</span>, as far apart as the circle allows. The receiver asks which of the two the result is nearer.</p>
   <p class="claim">The key and both ciphertext parts each get a small error, the bit becomes $0$ or <span class="ref" data-ref="halfq">$\lceil q/2\rfloor$</span>, and security uses <span class="ref" data-ref="lwe">LWE</span> twice. <span class="cite">§2.3.1, Eqs. (6)&ndash;(7)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <div data-def="eq6-7" data-def-label="LWE encryption, Eqs. (6)–(7)" data-def-keys="key generation encryption scheme t u v section 2.3.1"><p>The message becomes a bit $\mu \in \{0,1\}$, and every product gets an error term:</p>
@@ -518,6 +536,7 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     $$= \mathbf{r}^T\mathbf{e}_1 + e_3 + \tfrac q2\mu - \mathbf{e}_2^T\mathbf{s} \qquad (9)$$</div>
     <p>The error terms have coefficients bounded by $\pm\beta$, so $\mathbf{r}^T\mathbf{e}_1$ and $\mathbf{e}_2^T\mathbf{s}$ each consist of $m$ terms of magnitude at most $\beta^2$: the error lies in $[2m\beta^2 + \beta]$. If $2m\beta^2 + \beta &lt; q/4$, the decryptor recovers $\mu$ by checking whether $v - \mathbf{u}^T\mathbf{s}$ is closer to $0$ or to $q/2$. <span class="cite">§2.3.1, p. 9</span></p>
   </details>
+  <p>In the figure ($q = 97$, $m = 8$) the bit 1 sits at 49 and decryption lands on 45: watch both dots turn back by the same big amount when $\mathbf{r}^T\mathbf{A}\mathbf{s}$ cancels.</p>
   <div class="try fig" id="p1-ed">
     <span class="vlabel">Step through</span>
     <p class="tt">KeyGen, Enc, Dec in $\mathbb{Z}_{97}$ with $m = 8$ <span class="tag">illustration</span></p>
@@ -569,12 +588,14 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>Decryption is right while the leftover noise stays under about $q/4$. <span class="next">How often is the noise large, really?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>Decryption works while the leftover noise stays under about $q/4$. <span class="next">How often is it that large, really?</span></p>
   <button class="readbtn" data-for="sec-2-3-1">mark as read</button>
 
   <!-- 2.3.2 -->
   <h3 id="sec-2-3-2" data-num="2.3.2"><span class="n">2.3.2</span>Bounding the Total Error, Exactly</h3>
-  <p class="hook">Random signs cancel, so the noise is nearer $\sqrt m\,\beta^2$ than the worst case $2m\beta^2+\beta$.</p>
+  <p class="hook">The worst case needs every one of the $2m+1$ error terms to push the same way at full strength. That is quite unlikely.</p>
+  <p>The terms are random and centred on 0, so most of them cancel, roughly like a long random walk that ends far closer to home than its number of steps (an analogy). The noise is of order $\sqrt m\,\beta^2$, far below the worst case $2m\beta^2+\beta$ <span class="cite">§2.3.2, p. 9</span>.</p>
+  <p>We don&rsquo;t need &ldquo;never fails&rdquo;, only &ldquo;fails with probability around $2^{-150}$&rdquo; (§2), so we want the exact tail. Write each random term as a polynomial whose coefficient of $X^i$ is the chance of the value $i$. Adding two independent terms then multiplies their polynomials.</p>
   <p class="claim">The noise is a sum of independent terms, so its exact distribution is a product of polynomials. <span class="cite">§2.3.2, Eqs. (10)&ndash;(12)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>$2m\beta^2 + \beta$ is an upper bound, but the coefficients are random and centred, so the error is closer to $O(\sqrt m\,\beta^2)$. We want a bound that holds with very high probability (say $1 - 2^{-150}$), and for concrete parameters we can compute exactly <span class="cite">§2.3.2</span></p>
@@ -584,6 +605,7 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     <div class="voice note"><span class="vlabel">Note</span><p>The paper's Eq. (12) prints the summand as $C_\alpha$; it should be $C_i$, as the paper itself writes a few lines later.</p></div>
     <p>$\mathbf{r}^T\mathbf{e}_1 - \mathbf{e}_2^T\mathbf{s}$ is a sum of $2m$ independent variables with $A_i = \Pr_{x,y \leftarrow [\beta]}[xy = i]$, and $e_3$ is uniform over $[\beta]$. For $\beta = 2$: $A_{\pm4} = \frac{2}{25}$, $A_{\pm2} = \frac{4}{25}$, $A_{\pm1} = \frac{2}{25}$, $A_0 = \frac{9}{25}$, and all other $A_i$ are 0. With $C(X) = A(X)^{2m}\cdot\frac15(X^{-2}+X^{-1}+1+X+X^2)$, setting $\alpha = q/4 - 1$ gives the exact probability of correct decryption. <span class="cite">§2.3.2, pp. 9&ndash;10</span></p>
   </details>
+  <p>The figure builds the distribution up, one product, then two, then all 512; watch the tails appear at the switch to the log scale.</p>
   <div class="try fig" id="p1-ex">
     <span class="vlabel">Step through</span>
     <p class="tt">Noise by polynomial multiplication, $m = 256$ <span class="tag">illustration</span></p>
@@ -600,12 +622,14 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>In our $\beta = 2$, $m = 256$ example the noise passes 645 with probability $2^{-151.5}$; the worst case is 2050. <span class="next">How big are keys and ciphertexts?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>In our $\beta = 2$, $m = 256$ example the noise passes 645 with probability $2^{-151.5}$; the worst case is 2050. <span class="next">How big are the keys and ciphertexts?</span></p>
   <button class="readbtn" data-for="sec-2-3-2">mark as read</button>
 
   <!-- 2.4 -->
   <h3 id="sec-2-4" data-num="2.4"><span class="n">2.4</span>Public Key and Ciphertext Size Trade-offs</h3>
-  <p class="hook">A whole ciphertext for one bit is wasteful, so encrypt a block of $N = k\ell$ bits at once.</p>
+  <p class="hook">The scheme works, so let&rsquo;s weigh it. At the paper&rsquo;s sizes, $m \approx 700$ and $q \approx 2^{13}$, one ciphertext is 9,113 bits (ours, from the paper&rsquo;s formula), and it carries a single bit.</p>
+  <p>Where do the bits go? Almost all into $\mathbf{u}$, $m$ numbers mod $q$ against one for $v$, and $\mathbf{u}$ involves only $\mathbf{A}$ and the sender&rsquo;s randomness, not the receiver&rsquo;s $\mathbf{t}$ or the message. So reuse it: give the receiver $\ell$ secrets, the columns of a matrix $\mathbf{S}$. One $\mathbf{u}$ then gives a different shared value with each secret, and each hides its own bit. With $k$ rows of randomness we encrypt $N = k\ell$ bits at once.</p>
+
   <p class="claim">Sharing one $\mathbf{U}$ across the block grows the public key and shrinks the ciphertext; a square block, $k \approx \ell \approx \sqrt N$, minimises the total. <span class="cite">§2.4, Eqs. (13)&ndash;(17)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>$\mathbf{A}$ is uniform, so it can be expanded from a 256-bit seed $\rho$ by a PRF (e.g. SHAKE); the public key costs $256 + m\log q$ bits. The ciphertext $(\mathbf{u}, v)$ costs $(m+1)\log q$ bits; secure parameters need $m \approx 700$ and $q \approx 2^{13}$, which is a lot for one bit. To amortize [PVW08, MR09, BCD<sup>+</sup>16], encrypt $N = k\ell$ bits arranged in $\mathbf{M} \in \{0,1\}^{k\times\ell}$: <span class="cite">§2.4</span></p>
@@ -618,6 +642,7 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     $$= \mathbf{R}\mathbf{E}_1 + \mathbf{E}_3 + \tfrac q2\mathbf{M} - \mathbf{E}_2\mathbf{S}. \qquad (17)$$</div>
     <p>The $(i, j)$th coefficient of $\mathbf{V} - \mathbf{U}\mathbf{S}$ is $\mathbf{r}^T\mathbf{e}_1 + e_3 + \frac q2\mu - \mathbf{e}_2^T\mathbf{s}$, with $\mathbf{r}^T, \mathbf{e}_2^T$ the $i$th rows of $\mathbf{R}, \mathbf{E}_2$, $\mathbf{e}_1, \mathbf{s}$ the $j$th columns of $\mathbf{E}_1, \mathbf{S}$, and $e_3, \mu$ the $(i, j)$th entries of $\mathbf{E}_3, \mathbf{M}$: the exact situation of <span class="ref" data-ref="eq9">(9)</span>. The error is now per coefficient (and not independent), so a union bound gives the total (footnote 8). <span class="cite">§2.4, Eqs. (16)&ndash;(17), p. 11</span></p>
   </details>
+  <p>In the first figure, click an entry of $\mathbf{V} - \mathbf{U}\mathbf{S}$ and the §2.3.1 decryption is inside it; in the slider after it, the total bottoms out at $k = \ell = 16$.</p>
   <div class="try fig" id="p1-blk">
     <span class="vlabel">Step through</span>
     <p class="tt">KeyGen, Enc, Dec on blocks: $q = 97$, $m = 4$, $k = 2$, $\ell = 3$ <span class="tag">illustration</span></p>
@@ -664,11 +689,12 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
   <div class="try" id="p1-sz"><span class="vlabel">Try it</span><p class="tt">The same blocks at the paper&rsquo;s sizes, $N = 256$ bits <span class="tag">illustration</span></p>
     <p class="how">Computed from the §2.4 sizes at $m = 700$, $\log q = 13$ (the paper&rsquo;s $m \approx 700$, $q \approx 2^{13}$, p. 10) and $N = 256$ (p. 11). Slide $k$; $\ell = 256/k$.</p>
     <div class="mount"></div></div>
-  <p class="remember"><span class="vlabel">Remember</span>Amortizing trades public-key bits for ciphertext bits. <span class="next">What else shrinks them?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>One shared $\mathbf{U}$ serves a whole block, and the public key pays for it. <span class="next">At best, key and ciphertext together still take 294,784 bits to move 256 (ours); what else shrinks them?</span></p>
   <button class="readbtn" data-for="sec-2-4">mark as read</button>
 
   <!-- 2.5 -->
   <h3 id="sec-2-5" data-num="2.5"><span class="n">2.5</span>Some Variations and Optimizations</h3>
+  <p class="hook">What we have is more a framework than a finished scheme. §2.5 is a toolbox of six ideas, each at a price, usually paid in noise or in what we must assume.</p>
   <p class="claim">Which optimizations to use, and with which parameters, is found by trying. <span class="cite">§2.5</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>The scheme above is a general framework; when instantiating it there are several optimizations. It is not easy to know which to use and how to set parameters optimally without actually trying some possibilities. <span class="cite">§2.5</span></p>
@@ -676,7 +702,9 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
 
   <!-- 2.5.1 -->
   <h3 id="sec-2-5-1" data-num="2.5.1"><span class="n">2.5.1</span>Reducing the Ciphertext Size by Removing the Low-Order Part</h3>
-  <p class="hook">Send only $\kappa$ bits per coefficient of $\mathbf{V}$: round it to the nearest of $2^\kappa$ evenly spread points.</p>
+  <p class="hook">After amortizing, $\mathbf{V}$ still spends $\log q$ bits on every message bit: about 13 bits to carry 1 at the paper&rsquo;s $q \approx 2^{13}$. Do we need all of them?</p>
+  <p>No, because of the noise we already live with. Decryption only asks whether a value is nearer 0 or $q/2$, so the low-order part of each entry of $\mathbf{V}$ is small change. Send only $\kappa$ bits per coefficient: the nearest of $2^\kappa$ evenly spread points on the circle.</p>
+  <p>The rounding is one more error, $\mathbf{E}&#39;$, and a mild one: it enters decryption on its own, while the other error terms come from inner products, which are much larger. So $\kappa$ can usually be a small constant like 3 or 4 <span class="cite">§2.5.1, p. 12</span>.</p>
   <p class="claim">With evenly spread points no value moves more than $\lceil q/2^{\kappa+1}\rceil$, and decryption gains one small error. <span class="cite">§2.5.1, Eqs. (18)&ndash;(19), Figure 1</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <div data-def="S-set" data-def-label="the set S" data-def-tex="\mathcal{S}" data-def-keys="rounding points compression kappa eq 18"><p>Send only $\kappa$ bits per coefficient of $\mathbf{V}$. Pick $\mathcal{S} \subset \mathbb{Z}_q$ of size $2^\kappa$ with neighbouring points as evenly spaced as possible ($q/2^\kappa$ is the best one can hope for): <span class="cite">§2.5.1</span></p>
@@ -687,6 +715,8 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     <p>$\mathbf{E}'$ has limited effect because the other terms are inner products with much larger coefficients; $\kappa$ can usually be 3 or 4. Compressing $\mathbf{U}$ is harder: its error is multiplied by $\mathbf{S}$ (a term $\mathbf{E}''\mathbf{S}$), so one balances error against size by trial and error. <span class="cite">§2.5.1, Eq. (19)</span></p>
     <p>Figure 1: $\mathbb{Z}_{13}$ as points on a circle. With $\mathcal{S} = \{\lceil i\cdot 13/4\rfloor : 0 \le i &lt; 4\}$ it consists of the four points $0, 3, 7, 10$, representable by 2 bits, and every point of $\mathbb{Z}_{13}$ is within $\lceil 13/8\rceil = 2$ of an element of $\mathcal{S}$. <span class="cite">§2.5.1, Figure 1</span></p>
   </details>
+
+  <p>The figure is the paper&rsquo;s own small example, $q = 13$ with the four points $\{0, 3, 7, 10\}$. Watch every number go to its nearest ring: none moves more than 2.</p>
   <div class="try fig" id="p1-z13">
     <span class="vlabel">Step through</span>
     <p class="tt">The paper&rsquo;s Figure 1, compressed and decompressed <span class="tag">illustration</span></p>
@@ -700,12 +730,13 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>Rounding $\mathbf{V}$ costs one small error and saves most of its bits. <span class="next">What is that rounding as a formula?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>Rounding $\mathbf{V}$ saves most of its bits for one small error. <span class="next">As arithmetic, what is &ldquo;round to the nearest point&rdquo;?</span></p>
   <button class="readbtn" data-for="sec-2-5-1">mark as read</button>
 
   <!-- 2.5.2 -->
   <h3 id="sec-2-5-2" data-num="2.5.2"><span class="n">2.5.2</span>Modulus Switching / Compression / Decompression</h3>
-  <p class="hook">The last three steps of the <a href="#p1-z13">circle above</a>: compress to $\mathbb{Z}_p$, then decompress.</p>
+  <p class="hook">Rounding to the nearest of $p$ evenly spread points is a change of scale: multiply by $p/q$ and round.</p>
+  <p>The result is a number mod $p$, with fewer bits, and that is what gets sent. The receiver scales back by $q/p$ and rounds again, roughly like converting a price into a coarser currency and back (an analogy): we get nearly what we started with. The last three steps of the <a href="#p1-z13">circle above</a> show it. How near is &ldquo;nearly&rdquo;?</p>
   <p class="claim"><span class="ref" data-ref="modswitch">$\lceil x\rfloor_{q\to p} = \lceil xp/q\rfloor$</span>; the round trip moves $x$ by at most $\frac{q}{2p}+\frac12$. <span class="cite">§2.5.2, Definition 3, Lemma 1</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <div class="boxdef" data-def="modswitch" data-def-label="modulus switching" data-def-tex="\lceil x\rfloor_{q\to p}" data-def-keys="definition 3 compress decompress"><p class="t">Definition 3</p><p>For $x \in \mathbb{Z}_q$ and a positive integer $p$: $\;\lceil x \rfloor_{q\to p} = \bigl\lceil \frac{x\cdot p}{q} \bigr\rfloor \in \mathbb{Z}_p$.</p></div>
@@ -713,23 +744,27 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     <p>Proof (paper): by rounding, $\lceil x\rfloor_{q\to p} = \frac{xp}{q} + \delta$ with $|\delta| \le \frac12$; decompressing gives $\bigl\lceil x + \frac{\delta q}{p}\bigr\rfloor = x + \frac{\delta q}{p} + \delta'$ with $|\delta'| \le \frac12$, and $\frac{\delta q}{p} \le \frac{q}{2p}$. The definition is well formed: replacing $x$ by $x + qk$ adds the integer $pk$. <span class="cite">§2.5.2, p. 13</span></p>
     <p>With $2^\kappa = p$, $\mathcal{S} = \{\lceil x\rfloor_{p\to q} : x \in \mathbb{Z}_p\}$, $\mathrm{HIGH}_\mathcal{S}(x) = \lceil\lceil x\rfloor_{q\to p}\rfloor_{p\to q}$, <span class="ref" data-ref="lemma1">Lemma 1</span> proves $\mathrm{LOW}_\mathcal{S}(x) \in [\lceil q/2p\rceil]$. One transmits $\lceil x\rfloor_{q\to p} \in \mathbb{Z}_p$, not <span class="ref" data-ref="high-low">$\mathrm{HIGH}_\mathcal{S}(x)$</span>. Other $\mathcal{S}$ can be equally good, e.g. $p = 4$, $q = 33$, $\mathcal{S} = \{0, 8, 16, 24\}$, needing only reductions and divisions mod 8. Kyber ($q$ small) uses the generic $\mathcal{S}$; Dilithium ($q$ larger) gets a nice $\mathcal{S}$ and fast multiplication. <span class="cite">§2.5.2, Definition 3, Lemma 1</span></p>
   </details>
+  <p>And we have been compressing all along: asking &ldquo;is it nearer 0 or $q/2$?&rdquo; is this same map with $p = 2$. The idea comes back in Kyber (§4.7) and Dilithium (§5.7) <span class="cite">§2.5.2, Eq. (20), pp. 13&ndash;14</span>.</p>
   <p class="claim">Decryption is compression to one bit: $\mu = \lceil v - \mathbf{u}^T\mathbf{s}\rfloor_{q\to2}$. <span class="cite">§2.5.2, Eq. (20)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>For $x \in \mathbb{Z}_q$, $\lceil x\rfloor_{q\to 2}$ maps to 0 if $x$ is closer to 0 than to $q/2$, and to 1 otherwise, so decryption (e.g. <span class="ref" data-ref="eq9">(8)</span>) can be rewritten as</p>
     $$\bigl\lceil v - \mathbf{u}^T\mathbf{s}\bigr\rfloor_{q\to 2}. \qquad (20)$$
   </details>
-  <p class="remember"><span class="vlabel">Remember</span>Compress, decompress, and $x$ moves by at most $\frac q{2p}+\frac12$. <span class="next">If rounding adds error anyway, is $\mathbf{e}$ needed?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>One small map does both jobs: it shrinks ciphertexts and it decodes bits. <span class="next">If rounding adds error anyway, is $\mathbf{e}$ needed?</span></p>
   <button class="readbtn" data-for="sec-2-5-2">mark as read</button>
 
   <!-- 2.5.3 -->
   <h3 id="sec-2-5-3" data-num="2.5.3"><span class="n">2.5.3</span>Learning with Rounding</h3>
-  <p class="hook">When $q$ is large next to $\beta$ and <span class="ref" data-ref="S-set">$|\mathcal{S}|$</span>, rounding usually swallows $\mathbf{e}$.</p>
+  <p class="hook">We now add error twice: once on purpose ($\mathbf{e}$, for security) and once as a side effect (rounding, for size). That looks redundant.</p>
+  <p>Sometimes it is. Round $\mathbf{A}\mathbf{s} + \mathbf{e}$ to a coarse set of points and ask what $\mathbf{e}$ changed. Usually nothing: a nudge of at most $\beta$ matters only if $\mathbf{A}\mathbf{s}$ was already within $\beta$ of a midpoint between two points. When $q$ is large next to $\beta$ and <span class="ref" data-ref="S-set">$|\mathcal{S}|$</span>, the gaps are wide and that is rare.</p>
   <p class="claim">Then $\mathbf{e}$ rarely changes the rounded value, so drop it: that is <span class="ref" data-ref="lwr">Learning with Rounding</span>, at least as hard as <span class="ref" data-ref="lwe">LWE</span> when $\mathbf{e}$ would not matter. <span class="cite">§2.5.3, pp. 14&ndash;15</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>By LWE, $(\mathbf{A}, \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s} + \mathbf{e}))$ is indistinguishable from $(\mathbf{A}, \mathrm{HIGH}_\mathcal{S}(\mathbf{u}))$. But $\mathbf{e}$ may not change the rounded value at all: $\mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s}+\mathbf{e}) = \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s})$ with probability about $\bigl(1 - \frac{\beta|\mathcal{S}|}{2q}\bigr)^n$, because a coefficient changes only if $\mathbf{A}\mathbf{s}$ is within $\beta$ of a midpoint; per coefficient</p>
     $$\frac{2|\mathcal{S}|}{q}\sum_{i=1}^{\beta}\frac{i}{2\beta+1} \approx \frac{\beta|\mathcal{S}|}{2q}.$$
     <p><span data-def="lwr" data-def-label="Learning with Rounding (LWR)" data-def-keys="lwr rounding">Distinguishing $(\mathbf{A}, \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{s}))$ from $(\mathbf{A}, \mathrm{HIGH}_\mathcal{S}(\mathbf{u}))$ is the <strong>Learning with Rounding (LWR)</strong> problem, at least as hard as LWE whenever adding $\mathbf{e}$ does not affect the rounded output [BPR12, AKPW13, BGM<sup>+</sup>16].</span> It is sometimes used even when $q$ is too small for a reduction, as a separate assumption. The best attacks treat it as LWE with implicit noise $\mathbf{e} = -\mathrm{LOW}_\mathcal{S}(\mathbf{A}\mathbf{s})$, which is larger than the reduction's noise. Under LWR, rounding does two jobs: in <span class="ref" data-ref="eq19">(19)</span>, $\mathbf{E}'$ may make $\mathbf{E}_3$ unnecessary, and rounding $\mathbf{U}$ may make $\mathbf{E}_2$ unnecessary. <span class="cite">§2.5.3, pp. 14&ndash;15</span></p>
   </details>
+  <p>Read the condition carefully: the guarantee covers only parameters where $\mathbf{e}$ would not have mattered. With a smaller $q$, LWR is a separate assumption whose relationship with LWE the paper calls unclear <span class="cite">§2.5.3, p. 14</span>.</p>
+  <p>The figure zooms in on one midpoint: at $q = 3329$ and $\beta = 2$ with 16 points, all 256 coefficients come through unchanged only about 23% of the time (ours, from the exact sum; the paper&rsquo;s approximation gives 29%), too small a $q$ for the reduction.</p>
   <div class="try fig" id="p1-lwr">
     <span class="vlabel">Step through</span>
     <p class="tt">When does rounding swallow the error? <span class="tag">illustration</span></p>
@@ -745,36 +780,43 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>Under LWR the rounding is the noise. <span class="next">Can one slot carry more than one bit?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>Under LWR the rounding is the noise. <span class="next">Can one slot carry more than one message bit?</span></p>
   <button class="readbtn" data-for="sec-2-5-3">mark as read</button>
 
   <!-- 2.5.4 -->
   <h3 id="sec-2-5-4" data-num="2.5.4"><span class="n">2.5.4</span>Encrypting More Bits per Slot</h3>
-  <p class="hook">Put $2^b$ message points on the circle instead of two.</p>
+  <p class="hook">So far each entry of $\mathbf{V}$ carries one message bit, its two message points at opposite ends of the circle. That is generous spacing.</p>
+  <p>Put $2^b$ message points on the circle instead of two, and each entry carries $b$ bits. The price is room: the points sit closer together.</p>
   <p class="claim">The noise room shrinks from $q/4$ to $q/2^{b+1}$; raising $q$ to compensate can still shrink the public key. <span class="cite">§2.5.4</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>Pack the $N$ bits into $\mathbf{M} \in \{0, \ldots, 2^b-1\}^{(k/\sqrt b)\times(\ell/\sqrt b)}$ and use $\frac{q}{2^b}\mathbf{M}$ instead of $\frac q2\mathbf{M}$. The other error terms in <span class="ref" data-ref="eq17">(17)</span> must then lie in $[q/2^{b+1}]$ instead of $[q/4]$. The trivial fix is to increase $q$ by a factor of approximately $2^{b-1}$. That can still shrink the public key: if $\ell$ halves, $256 + \ell m\log q$ becomes $256 + \frac{\ell m}{2}(\log q + b - 1)$, smaller if $b - 1 &lt; \log q$. But a larger $q$ with everything else fixed lowers security (the problem gets harder as $\beta/q$ grows), so one must increase $\beta$ or $m$ &mdash; best found by a script. <span class="cite">§2.5.4</span></p>
   </details>
+  <p>A $q$ about $2^{b-1}$ times larger buys the room back, and we then need fewer slots. But a larger $q$ makes <span class="ref" data-ref="lwe">LWE</span> easier (§2.3), so $\beta$ or $m$ has to grow as well. The paper&rsquo;s advice is to try a few options, &ldquo;or better yet, write a script that does this for you&rdquo; <span class="cite">§2.5.4, p. 15</span>.</p>
+  <p>In the calculator, watch the green arc around each message point, the noise it can absorb, shrink as bits are added.</p>
   <div class="try" id="p1-bits"><span class="vlabel">Try it</span><p class="tt">More message points, less room for noise <span class="tag">illustration</span></p>
     <div class="mount"></div></div>
-  <p class="remember"><span class="vlabel">Remember</span>Each extra bit per slot halves the noise budget. <span class="next">Can the public key be truly uniform?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>Each extra bit per slot halves the noise room. <span class="next">A different wish: can the public key be truly uniform, and not just look it?</span></p>
   <button class="readbtn" data-for="sec-2-5-4">mark as read</button>
 
   <!-- 2.5.5 -->
   <h3 id="sec-2-5-5" data-num="2.5.5"><span class="n">2.5.5</span>LWE Encryption with a &ldquo;Non-Square&rdquo; Public Key</h3>
-  <p class="hook">Some applications need a truly uniform public key, so <span class="ref" data-ref="lwe">LWE</span> is used only once.</p>
+  <p class="hook">Every scheme so far uses <span class="ref" data-ref="lwe">LWE</span> twice: public key and ciphertext both only <em>look</em> random. Some applications need a truly uniform public key, so LWE is used only once.</p>
+  <p>Counting gives us that. Suppose there are far more short secrets $\mathbf{s}$ than possible values of $\mathbf{A}\mathbf{s}$, that is, $(2\beta+1)^m \gg q^n$. Then the public key needs no error and no assumption (next line). $\mathbf{A}$ gets more columns than rows; hence &ldquo;non-square&rdquo;.</p>
   <p class="claim">With far more short secrets than possible outputs, the <span class="ref" data-ref="lhl">leftover hash lemma</span> makes $\mathbf{A}\mathbf{S}$ statistically close to uniform. <span class="cite">§2.5.5, Eq. (21)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p><span data-def="lhl" data-def-label="leftover hash lemma" data-def-keys="statistically close uniform">The <strong>leftover hash lemma</strong> [IZ89, IN96], roughly: if $\mathbf{A} \leftarrow \mathbb{Z}_q^{n\times m}$ ($q$ prime), $\mathbf{s} \leftarrow [\beta]^m$ and $(2\beta+1)^m \gg q^n$, then $(\mathbf{A}, \mathbf{A}\mathbf{s})$ is statistically close to $(\mathbf{A}, \mathbf{u})$.</span> For a uniform public key, replace (13) by</p>
     $$\mathsf{sk}: \mathbf{S} \leftarrow [\beta']^{m\times\ell},\quad \mathsf{pk}: (\mathbf{A} \leftarrow \mathbb{Z}_q^{n\times m},\; \mathbf{T} = \mathbf{A}\mathbf{S}),\quad (2\beta'+1)^m > q^n. \qquad (21)$$
     <p>LWE is not used twice any more, so $\beta'$ need not equal $\beta$. Encryption and decryption stay as in <span class="ref" data-ref="eq13-14">(14)</span> and <span class="ref" data-ref="eq17">(17)</span>, but $\mathbf{E}_2\mathbf{S}$ grows (larger $m$ and/or $\beta'$) and $\mathbf{R}\mathbf{E}_1 = 0$. A uniform ciphertext works the same way: choose $\mathbf{A}$'s dimension and $\mathbf{R}$'s distribution so that $([\mathbf{A}\mid\mathbf{T}], \mathbf{R}[\mathbf{A}\mid\mathbf{T}])$ is indistinguishable from $([\mathbf{A}\mid\mathbf{T}], [\mathbf{U}\mid\mathbf{V}])$. Applications: identity-based encryption [GPV08], where $\mathbf{t}_x = \mathcal{H}(x)$ is uniform and a trapdoor lets the authority find a short $\mathbf{s}_x$ with $\mathbf{A}\mathbf{s}_x = \mathbf{t}_x$ (the secret key is created <em>after</em> the public key); and leakage of $\mathbf{r}$ [AGV09]. <span class="cite">§2.5.5, Eq. (21)</span></p>
   </details>
-  <p class="remember"><span class="vlabel">Remember</span>Enough short secrets make $\mathbf{A}\mathbf{s}$ truly uniform, at a price in size. <span class="next">Must secret and error share a distribution?</span></p>
+  <p>Didn&rsquo;t §2.2 break exactly this, $\mathbf{A}\mathbf{s}$ with no noise? It broke the case with at least as many rows as columns ($n \ge m$), where the equations pin $\mathbf{s}$ down. Here so many short $\mathbf{s}$ fit each value that $\mathbf{A}\mathbf{s}$ gives almost nothing away. And the ciphertext still needs the assumption: using it at least once is &ldquo;inescapable&rdquo; <span class="cite">§2.2, p. 6</span>.</p>
+  <p>The price is size: more columns, or a larger secret, make the term $\mathbf{E}_2\mathbf{S}$ in decryption larger. The paper&rsquo;s main example is identity-based encryption, where a user&rsquo;s public key is the hash of their name: <span class="ref" data-ref="unif">uniformly random</span>, and not built from any secret <span class="cite">§2.5.5, p. 16</span>.</p>
+  <p class="remember"><span class="vlabel">Remember</span>Enough short secrets make $\mathbf{A}\mathbf{s}$ statistically close to uniform. <span class="next">Must secret and error share a distribution?</span></p>
   <button class="readbtn" data-for="sec-2-5-5">mark as read</button>
 
   <!-- 2.5.6 -->
   <h3 id="sec-2-5-6" data-num="2.5.6"><span class="n">2.5.6</span>Using Distinct Distributions for the Secret and the Error</h3>
-  <p class="hook">Keep the total size of secret and error fixed, but split it unevenly.</p>
+  <p class="hook">We have drawn $\mathbf{s}$ and $\mathbf{e}$ from the same set all along. Nothing forced that.</p>
+  <p>For the best known algorithms, hardness depends on the norm of $(\mathbf{s}, \mathbf{e}_1)$, secret and error taken together <span class="cite">§2.5.6, p. 16</span>. But decryption noise is made of products, secret times error. So security looks at $\sigma_1^2 + \sigma_2^2$ and correctness at $\sigma_1\sigma_2$. With the sum of squares fixed, the product is largest when the two are equal, just as a rectangle with a fixed diagonal has the most area when it is a square. So we split the total unevenly.</p>
   <p class="claim">A larger secret and a smaller error, with the same total norm, cut the decryption noise to $\tfrac{4\sqrt2}{9}$ of the equal split ($\approx 0.63$, our decimal). <span class="cite">§2.5.6, Eqs. (22)&ndash;(24)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>Take $\mathbf{r}, \mathbf{s} \leftarrow \psi_1$ and $\mathbf{e}_1, \mathbf{e}_2 \leftarrow \psi_2$ [ZYF<sup>+</sup>20]. Against the best known algorithms, hardness depends on the norm of $(\mathbf{s}, \mathbf{e}_1)$ (§3.3), while decryption wants $\mathbf{r}^T\mathbf{e}_1 + \mathbf{e}_2^T\mathbf{s}$ (22) small. With normal distributions ($\|\mathbf{v}\| \approx \sigma\sqrt n$ for $\mathbf{v} \leftarrow \mathcal{N}_\sigma^n$; $\langle\mathbf{s},\mathbf{v}\rangle \sim \mathcal{N}_{\sigma\|\mathbf{v}\|}$), $\mathbf{s},\mathbf{r} \leftarrow \mathcal{N}_{\sigma_1}$ and $\mathbf{e}_1, \mathbf{e}_2 \leftarrow \mathcal{N}_{\sigma_2}$ give (22) $\sim \mathcal{N}_{\sigma_1\sigma_2\sqrt{2n}}$ and $\|(\mathbf{s},\mathbf{e}_1)\| \approx \sqrt{\sigma_1^2+\sigma_2^2}\sqrt n$. <span class="cite">§2.5.6, Eqs. (22)&ndash;(24)</span></p>
@@ -782,14 +824,17 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     $$\sigma_1 = \tfrac43\sigma,\; \sigma_2 = \tfrac{\sqrt2}{3}\sigma:\;\; \|(\mathbf{s},\mathbf{e}_1)\| \approx \sigma\sqrt{2n},\; (22) \sim \mathcal{N}_{\frac{4\sqrt2}{9}\sigma^2\sqrt{2n}} \qquad (24)$$
     <p>Same norms, smaller decryption noise. Whether to do this depends on believing the two LWE problems (<span class="ref" data-ref="lwe-psi">Definition 2</span> and the one with different distributions) are equally hard. <span class="cite">§2.5.6</span></p>
   </details>
+  <p>Less noise allows a smaller $q$: a harder problem and a smaller public key. The catch: this is no longer <span class="ref" data-ref="lwe">LWE</span> as we defined it, though the paper calls it &ldquo;perhaps also a reasonable assumption&rdquo; <span class="cite">§2.5.6, p. 17</span>.</p>
+  <p>In the calculator, the paper&rsquo;s two presets take the noise readout from 1.000 (equal) to 0.629 while the sum-of-squares readout stays at 2.000.</p>
   <div class="try" id="p1-sig"><span class="vlabel">Try it</span><p class="tt">Split a fixed norm between secret and error <span class="tag">illustration</span></p>
     <div class="mount"></div></div>
-  <p class="remember"><span class="vlabel">Remember</span>An uneven split keeps the norm and cuts the noise, if both <span class="ref" data-ref="lwe">LWE</span> variants are equally hard. <span class="next">Can two parties agree on a key, either speaking first?</span></p>
+  <p class="remember"><span class="vlabel">Remember</span>An uneven split cuts the noise at the same norm, if we accept the modified assumption. <span class="next">Diffie&ndash;Hellman does one thing we have not matched: can two parties agree on a key, whoever speaks first?</span></p>
   <button class="readbtn" data-for="sec-2-5-6">mark as read</button>
 
   <!-- 2.6 -->
   <h3 id="sec-2-6" data-num="2.6"><span class="n">2.6</span>Non-Interactive Key Exchange (NIKE)</h3>
-  <p class="hook">In Diffie&ndash;Hellman either party may speak first. <span class="ref" data-ref="lwe">LWE</span> allows that too, but the two parties end up with only nearly equal numbers.</p>
+  <p class="hook">Encryption already gives key transport, but in a fixed order: nobody can encrypt before the public key arrives.</p>
+  <p>In Diffie&ndash;Hellman either party may speak first, and <span class="ref" data-ref="lwe">LWE</span> allows that too. Each party publishes one noisy sample, $\mathbf{s}_1^T\mathbf{A} + \mathbf{e}_1^T$ or $\mathbf{A}\mathbf{s}_2 + \mathbf{e}_2$, and multiplies what it receives by its own secret. Diffie&ndash;Hellman would leave both holding exactly $g^{xy}$; here both hold $\mathbf{s}_1^T\mathbf{A}\mathbf{s}_2$ plus a small error, and the two errors differ. So each rounds to one bit, which goes wrong only when the shared value sits near a boundary, $q/4$ or $3q/4$.</p>
   <p class="claim">Each party sends one noisy LWE sample; both then round nearly the same number, and their bits differ with probability at most $4m\beta^2/q$. <span class="cite">§2.6, Eqs. (25)&ndash;(27)</span></p>
   <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
     <p>Encryption gives a passively-secure <em>key transport</em>: party 1 sends a public key (13), party 2 encrypts an AES key as $\mathbf{M}$ (14). But party 2 must wait for party 1; in Diffie&ndash;Hellman either party can send $g^{x_i}$ first. An LWE protocol with that property exists but is much less efficient. For one shared bit: public random $\mathbf{A} \in \mathbb{Z}_q^{m\times m}$ trusted by everyone (e.g. expanded by SHAKE from seed 0); party $i$ picks <span class="ref" data-ref="sample">$\mathbf{s}_i, \mathbf{e}_i \leftarrow [\beta]^m$</span>; party 1 sends $\mathbf{u}_1^T = \mathbf{s}_1^T\mathbf{A} + \mathbf{e}_1^T$, party 2 sends $\mathbf{u}_2 = \mathbf{A}\mathbf{s}_2 + \mathbf{e}_2$. Each sets its bit to 1 if its value is between $q/4$ and $3q/4$: <span class="cite">§2.6</span></p>
@@ -797,6 +842,8 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     <p>The errors have magnitude at most $m\beta^2$, so $b_1 \ne b_2$ only if $\mathbf{s}_1^T\mathbf{A}\mathbf{s}_2$ falls within $m\beta^2$ of $q/4$ or $3q/4$ (27). That value is uniform, so the probability is at most $4m\beta^2/q$. The techniques of §2.3.2 still leave $\Omega(\beta^2\sqrt m/q)$ &mdash; unlike encryption, where the error can be made exponentially small. A negligible mismatch needs a very large $q$ [GdKQ<sup>+</sup>24], and this may be intrinsic to using LWE in the natural way [GKRS22]. <span class="cite">§2.6, Eqs. (25)&ndash;(27)</span></p>
     <div class="voice note"><span class="vlabel">Note</span><p>The paper's Eq. (27) prints both intervals with their endpoints swapped (e.g. $[\frac{3q}4 + m\beta^2, \frac{3q}4 - m\beta^2]$); the intended windows are $[\frac{q}{4} \pm m\beta^2]$ and $[\frac{3q}{4} \pm m\beta^2]$, centred on the boundaries.</p></div>
   </details>
+  <p>Encryption could make failure exponentially small. Here the mismatch probability stays at least of order $\beta^2\sqrt m/q$, an inefficiency the paper says &ldquo;may be intrinsic&rdquo; to using LWE in the natural way <span class="cite">§2.6, p. 18</span>.</p>
+  <p>In the figure, with $q = 97$, the two parties get 43 and 41 around a hidden 42, and agree. Then press &ldquo;find a mismatch&rdquo;.</p>
   <div class="try fig" id="p1-nike">
     <span class="vlabel">Step through</span>
     <p class="tt">Two parties, two noisy copies of one value <span class="tag">illustration</span></p>
@@ -814,13 +861,16 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
     </div>
     <div class="steps"></div>
   </div>
-  <p class="remember"><span class="vlabel">Remember</span>LWE key exchange works, but its mismatch rate is hard to make negligible. <span class="next">Why should LWE be hard at all? That is §3.</span></p>
+
+  <p class="remember"><span class="vlabel">Remember</span>§2 rebuilt encryption and a key exchange, all resting on LWE or a close variant. <span class="next">We have watched one attack fail. Why should anyone believe LWE is hard?</span></p>
   <button class="readbtn" data-for="sec-2-6">mark as read</button>
 </section>
 
     <section class="psec" id="sec-3" data-num="§3">
 <h2><span class="n">§3</span>Hardness of LWE and Other Lattice Problems</h2>
-<p class="hook">An <span class="ref" data-ref="lwe">LWE</span> public key is a point near a <span class="ref" data-ref="lattice">lattice</span>; a random key is far from it.</p>
+<p class="hook">Everything in §2 is safe only if <span class="ref" data-ref="lwe">LWE</span> is hard, and all we have seen is Gaussian elimination failing. What better evidence is there?</p>
+<p>The paper&rsquo;s answer is a picture and a hard look at the best known attack. Behind them stands one theoretical remark: asymptotically, solving some problem on random <span class="ref" data-ref="lattice">lattices</span> of our kind is as hard as solving some problem on any lattice <span class="cite">p. 19</span>. The picture is geometric. $\mathbf{A}$ draws a regular grid of points, a lattice. An LWE value $\mathbf{t}=\mathbf{A}\mathbf{s}+\mathbf{e}$ marks a spot close to the grid, and at the sizes we use a random $\mathbf{t}$ almost always marks a spot far from it. Breaking LWE means telling the two apart.</p>
+<p>The attack needs one tool, a short vector of a lattice. So we ask three things in turn: do short vectors exist, how well can today&rsquo;s algorithms find them, and how short must one be to break LWE?</p>
 <p class="claim">The geometric view is not needed to see how the schemes work, but it is crucial for their security. <span class="cite">§3, p. 19</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Section 3 gives a <em>geometric</em> view of the LWE problem. The connection is not really necessary for understanding how most cryptographic constructions work, but it is crucial for understanding their security. <span class="cite">§3, p. 19</span></p>
@@ -828,7 +878,9 @@ table.p1-eg{margin:.2rem 0 1.1rem} table.p1-eg td{white-space:normal} .p1-cap{ca
 
 <!-- ============================ 3.1 ============================ -->
 <h3 id="sec-3-1" data-num="3.1"><span class="n">3.1</span>Lattices</h3>
-<p class="hook">A <span class="ref" data-ref="lattice">lattice</span> is a grid of integer points that is closed under adding and subtracting. Cryptography uses lattices defined by a check modulo $q$.</p>
+<p class="hook">First we need the grid itself. What is a <span class="ref" data-ref="lattice">lattice</span>, and which one does $\mathbf{A}$ define?</p>
+<p>A lattice is a set of integer vectors that we can add and subtract without leaving the set. We can pin one down by building blocks, a <em>basis</em>, taking every integer combination of them; or by a test, keeping every vector that passes. The paper compares the two to a code&rsquo;s generator and parity-check matrices. <span class="cite">p. 19</span></p>
+<p>Cryptography uses the test. A pair $(\mathbf{v}_1,\mathbf{v}_2)$ is in our lattice when $\mathbf{A}\mathbf{v}_1+\mathbf{v}_2\equiv\mathbf{0}$ mod $q$. A public key satisfies $\mathbf{A}\mathbf{s}+\mathbf{e}\equiv\mathbf{t}$: the same equation with $\mathbf{t}$ in place of $\mathbf{0}$. So the lattice is the set of pairs that would give the all-zero public key.</p>
 <p class="claim">The $q$-ary lattice <span class="ref" data-ref="qary">$\mathcal{L}_q^\perp([\mathbf{A}\mid\mathbf{I}_n])$</span> is the set of integer vectors that pass a parity check mod $q$, and Eq. (31) gives it a basis. <span class="cite">§3.1, Eqs. (28)&ndash;(32), p. 19</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="lattice" data-def-label="lattice" data-def-tex="\Lambda=\mathcal{L}(\mathbf{B})" data-def-keys="basis subgroup eq 28">An $m$-dimensional integer lattice $\Lambda$ is a subgroup of $(\mathbb{Z}^m, +)$. It can be described by a (full-rank) basis $\mathbf{B} \in \mathbb{Z}^{m\times m}$:
@@ -844,6 +896,8 @@ $$\begin{bmatrix}-\mathbf{I}_m & \mathbf{0}\\ \mathbf{A} & q\mathbf{I}_n\end{bma
 so all vectors in $\mathcal{L}_q^\perp([\mathbf{A} \mid \mathbf{I}_n])$ are also in the lattice generated by the basis of (31), and vice versa. <span class="cite">§3.1, Eqs. (28)&ndash;(32), p. 19</span></p>
 </details>
 
+<p>The figure takes the smallest case, $a=5$ and $q=13$: watch the same dots appear twice, first built from two arrows, then picked out by the test $5v_1+v_2\equiv0$ mod 13.</p>
+
 <div class="try fig" id="p2-lat">
 <span class="vlabel">Step through</span>
 <p class="tt">A $q$-ary lattice in two dimensions, $\mathcal{L}_q^\perp([a\mid 1])$ <span class="tag">illustration</span></p>
@@ -857,18 +911,22 @@ so all vectors in $\mathcal{L}_q^\perp([\mathbf{A} \mid \mathbf{I}_n])$ are also
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>A $q$-ary lattice is the integer points that pass a check mod $q$; (31) lists a basis. <span class="next">What are its shifted copies, and how many are there?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>We have the grid. <span class="next">But $(\mathbf{s},\mathbf{e})$ fails the test: it gives $\mathbf{t}$, not $\mathbf{0}$. Where does it live?</span></p>
 <button class="readbtn" data-for="sec-3-1">mark as read</button>
 
 <!-- ============================ 3.1.1 ============================ -->
 <h3 id="sec-3-1-1" data-num="3.1.1"><span class="n">3.1.1</span>The Quotient Group and Determinant</h3>
-<p class="hook">Slide the whole <span class="ref" data-ref="lattice">lattice</span> by an integer vector and you get a <span class="ref" data-ref="coset">coset</span>. Counting the cosets measures how dense the lattice is.</p>
+<p class="hook">The secret $(\mathbf{s},\mathbf{e})$ lives in a shifted copy of the <span class="ref" data-ref="lattice">lattice</span>.</p>
+<p>Slide the whole lattice by an integer vector $\mathbf{z}$: every point of the copy gives the same value under the test, $[\mathbf{A}\mid\mathbf{I}_n]\mathbf{z}$ mod $q$. That value is the copy&rsquo;s label, and the copy is called a <span class="ref" data-ref="coset">coset</span>. One coset per label makes $q^n$ of them, and together they use every integer vector exactly once.</p>
+<p>So only one integer vector in $q^n$ is a lattice point. That number is the <span class="ref" data-ref="det">determinant</span>, and also the volume of the cell of any basis.</p>
 <p class="claim"><span class="ref" data-ref="det">$\det\Lambda$</span> is one over the density of $\Lambda$. It equals $|\det\mathbf{B}|$ and the number of cosets: $q^n$ for the lattice of (31). <span class="cite">§3.1.1, pp. 19&ndash;20</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="det" data-def-label="determinant" data-def-tex="\det(\Lambda)" data-def-keys="density">The determinant of a full-rank lattice $\Lambda \subseteq \mathbb{Z}^m$ is the inverse of its density: with $S_r = \{\mathbf{z} \in \mathbb{Z}^m : \|\mathbf{z}\| &lt; r\}$,
 $$\det(\Lambda) = \lim_{r\to\infty}\frac{|S_r|}{|\Lambda \cap S_r|}.$$</span>
 <span data-def="coset" data-def-label="cosets" data-def-tex="\mathbb{Z}^m/\Lambda" data-def-keys="quotient group coset">If $\Lambda = \mathcal{L}(\mathbf{B})$ for a full-rank $\mathbf{B} \in \mathbb{Z}^{m\times m}$, then $\det(\Lambda) = |\det(\mathbf{B})|$; for the $(n+m)$-dimensional lattice in (31) this is $q^n$. Equivalently, $\det(\Lambda)$ is the size of the quotient group $\mathbb{Z}^m/\Lambda$. The parity-check form makes cosets easy to test: for $\Lambda = \mathcal{L}_q^\perp(\mathbf{A})$, $\mathbf{z}_1, \mathbf{z}_2$ are in the same coset iff $\mathbf{A}\mathbf{z}_1 \equiv \mathbf{A}\mathbf{z}_2 \pmod q$; for $\Lambda = \mathcal{L}_q^\perp([\mathbf{A} \mid \mathbf{I}_n])$ there are exactly $q^n$ cosets, consistent with $\det = q^n$.</span> <span class="cite">§3.1.1, pp. 19&ndash;20</span></p>
 </details>
+
+<p>In the figure, the thin cell of basis (31) and the square tile of a shorter basis both have area 13 and hold 13 integer points, one per coset.</p>
 
 <div class="try fig" id="p2-cell">
 <span class="vlabel">Step through</span>
@@ -884,12 +942,14 @@ $$\det(\Lambda) = \lim_{r\to\infty}\frac{|S_r|}{|\Lambda \cap S_r|}.$$</span>
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>$q^n$ cosets, each named by a label $\mathbf{t}\in\mathbb{Z}_q^n$: the same shape as an <span class="ref" data-ref="lwe">LWE</span> value $\mathbf{t}$. <span class="next">How far is a coset from the lattice?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>An <span class="ref" data-ref="lwe">LWE</span> value $\mathbf{t}$ names one coset out of $q^n$: the one that contains $(\mathbf{s},\mathbf{e})$. <span class="next">What makes that coset different from a random one?</span></p>
 <button class="readbtn" data-for="sec-3-1-1">mark as read</button>
 
 <!-- ============================ 3.1.2 ============================ -->
 <h3 id="sec-3-1-2" data-num="3.1.2"><span class="n">3.1.2</span>Distance to the Lattice</h3>
-<p class="hook"><span class="ref" data-ref="lwe">LWE</span> <span class="ref" data-ref="coset">cosets</span> sit close to the <span class="ref" data-ref="lattice">lattice</span>; random cosets sit far.</p>
+<p class="hook">An <span class="ref" data-ref="lwe">LWE</span> <span class="ref" data-ref="coset">coset</span> contains a very short vector, the secret $(\mathbf{s},\mathbf{e})$. Does a random coset?</p>
+<p>Usually not. A coset&rsquo;s distance to the <span class="ref" data-ref="lattice">lattice</span> is the size of its shortest member, measured by its largest entry, so an LWE coset is within $\beta$: every entry of $(\mathbf{s},\mathbf{e})$ is in <span class="ref" data-ref="beta">$[\beta]$</span>. But only $(2\beta+1)^{n+m}$ vectors are that short, each in one coset, and $q^n$ cosets share them. When the first number is far below the second, most cosets get none (the main term of <span class="ref" data-ref="cor1">Corollary 1</span>).</p>
+<p>The lattice itself, the coset with label $\mathbf{0}$, also rarely has a very short non-zero vector (<span class="ref" data-ref="lemma3">Lemma 3</span>: random $\mathbf{A}$, prime $q$). But pigeonhole forces one soon: more than $q^n$ vectors have entries between 0 and $q^{n/(n+m)}$, so two share a label, and their difference is a non-zero lattice vector that short (<span class="ref" data-ref="lemma4">Lemma 4</span>). <span class="cite">pp. 20&ndash;21</span></p>
 <p class="claim">Random cosets lie farther than $\beta$ when $\beta^{1+m/n}\ll q$ (prime or power-of-2 $q$). Short vectors: almost none below $\tfrac14 q^{n/(n+m)}$, always one at $q^{n/(n+m)}$. <span class="cite">§3.1.2, Lemmas 2&ndash;4, Corollary 1, pp. 20&ndash;21</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="delta-p" data-def-label="distance to the lattice" data-def-tex="\Delta_p(\mathbf{r},\Lambda)" data-def-keys="distance eq 33">For an $m$-dimensional lattice and any $\mathbf{r} \in \mathbb{Z}^m$, the $\ell_p$ distance to the lattice is
@@ -911,6 +971,8 @@ For any $q$ and any $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$: $\;\exists\,\math
 <div class="voice note"><span class="vlabel">Note &middot; a gap in <span class="ref" data-ref="lemma2">Lemma 2</span> (ours)</span>
 <p>For $\mathbf{t}\in[\beta]^n\setminus\{\mathbf{0}\}$, $\mathbf{z}=(\mathbf{0},\mathbf{t})$ hits $\mathbf{t}$ for every $\mathbf{A}$, so the lemma needs $\mathbf{t}\notin[\beta]^n$. <span class="ref" data-ref="cor1">Corollary 1</span> survives.</p>
 </div>
+
+<p>The first figure starts at $q=101$, $\beta=2$: $5\times5=25$ short vectors, so at most 25 of the 101 cosets can be close. The second shows short vectors going from rare to certain between the two lemmas&rsquo; levels.</p>
 
 <div class="try fig" id="p2-coset">
 <span class="vlabel">Step through</span>
@@ -943,12 +1005,14 @@ For any $q$ and any $\mathbf{A} \in \mathbb{Z}_q^{n\times m}$: $\;\exists\,\math
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>Random cosets are far; short vectors start near $q^{n/(n+m)}$. <span class="next">How hard is it to find one?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Close for LWE, far for random when $\beta^{1+m/n}\ll q$; and the lattice&rsquo;s own short vectors begin near $q^{n/(n+m)}$. <span class="next">Can anyone find them?</span></p>
 <button class="readbtn" data-for="sec-3-1-2">mark as read</button>
 
 <!-- ============================ 3.2 ============================ -->
 <h3 id="sec-3-2" data-num="3.2"><span class="n">3.2</span>Finding Short Vectors in Random Lattices (the SIS Problem)</h3>
-<p class="hook"><span class="ref" data-ref="lemma4">Lemma 4</span> promises short vectors, not how to find them. Reduction finds longer ones; <span class="ref" data-ref="delta">$\delta$</span> measures effort.</p>
+<p class="hook"><span class="ref" data-ref="lemma4">Lemma 4</span> promises a short vector in every one of our <span class="ref" data-ref="lattice">lattices</span>, but its proof cannot find one: pigeonhole says two vectors collide, not which two.</p>
+<p>All known algorithms for finding such a vector for <span class="ref" data-ref="unif">uniformly random</span> $\mathbf{A}$, quantum ones included, take time $2^{\Omega(m+n)}$. So attackers settle for less: lattice reduction, descended from LLL, finds a vector whose length (next line) carries a factor $\delta^{n+m}$: the penalty for being in a hurry. More time buys a smaller <span class="ref" data-ref="delta">$\delta$</span>. <span class="cite">pp. 21&ndash;22</span></p>
+<p>$\delta$ looks harmless, but it is raised to the dimension: $1.01^{1024}\approx2^{14.7}$ against $1.005^{1024}\approx2^{7.4}$ (our arithmetic).</p>
 <p class="claim">Reduction finds vectors of length about $q^{n/(n+m)}\delta^{n+m}$; roughly, $\delta=1.01$ is in reach and $1.005$ may never be for high-enough dimension (e.g. above 500). <span class="cite">§3.2, Eqs. (34)&ndash;(36), pp. 21&ndash;22</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Lemma 4 guarantees a non-zero $\mathbf{z} \in [q^{n/(n+m)}]^{n+m}$ with $[\mathbf{A} \mid \mathbf{I}_n]\mathbf{z} \equiv \mathbf{0}$, but all known (quantum) algorithms for finding such vectors for <span class="ref" data-ref="unif">uniformly random</span> $\mathbf{A}$ take $2^{\Omega(m+n)}$ time [AKS01, ADRS15, AS18]. The problem gets easier as $\beta$ grows; at $\beta = q/2$ it is trivial (set the coefficients multiplied by $\mathbf{I}_n$ to the target). All modern (i.e. polynomial-time) algorithms are descendants of LLL [LLL82], which guarantees a vector at most $2^{O(n+m)}$ times longer than the shortest; in practice the factor is exponential but with a small base. <span data-def="delta" data-def-label="δ in Eq. (34)" data-def-tex="\delta" data-def-keys="lattice reduction quality running time eq 34">Experiments [GN08, MR09] show that one can find non-trivial vectors of length approximately
@@ -966,6 +1030,9 @@ For positive integers $m, n, q$ and $\beta &lt; q$: given a random $\mathbf{A} \
 <div class="voice note"><span class="vlabel">Note on the paper&rsquo;s text</span><p>As printed, $\mathbf{s}_1 = \mathbf{s}_2 = \mathbf{0}$ solves Definition 4; the surrounding text (pp. 21&ndash;22) asks for a <em>non-zero</em> vector.</p></div>
 <p>By <span class="ref" data-ref="lemma3">Lemma 3</span>, SIS is vacuously hard when $\beta \ll \frac12 q^{n/(n+m)}$, and by (36) it gets easier as $\beta$ grows. <span data-def="sis-nqb" data-def-label="SIS, short form" data-def-tex="\mathrm{SIS}_{n,q,\beta}" data-def-keys="small integer solution">Once $m &gt; \sqrt{n\log q/\log\delta}$, $m$ has no impact on hardness, so one writes $\mathrm{SIS}_{n,q,\beta}$.</span> SIS is defined in the $\ell_\infty$ norm (natural for Dilithium, which avoids complicated operations; all its sampling is uniform, footnote 11), while (36) is an $\ell_2$ norm: finding a vector of $\ell_\infty$ norm $\beta$ requires at least finding one of $\ell_2$ norm (36) multiplied by the square root of the dimension. Footnote 10: [MR09] only state the bound when the found vector is shorter than $q$. <span class="cite">§3.2, p. 22</span></p>
 </details>
+
+<p>Finding short vectors is the SIS problem, roughly <span class="ref" data-ref="lwe">LWE</span>&rsquo;s mirror image in $\beta$ (our analogy): a larger $\beta$ gives LWE more noise to hide behind, and lets SIS accept longer vectors.</p>
+<p>In the first figure two terms pull against each other: more dimensions $k$ shrink $q^{n/k}$ but grow the penalty $\delta^k$. The second shows the LWE and SIS curves crossing as $\beta$ grows.</p>
 
 <div class="try fig" id="p2-delta">
 <span class="vlabel">Step through</span>
@@ -994,12 +1061,14 @@ For positive integers $m, n, q$ and $\beta &lt; q$: given a random $\mathbf{A} \
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>Smaller $\delta$: shorter vectors, more work. <span class="next">How does a short vector break LWE?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>One dial, $\delta$, measures the attacker. <span class="next">But LWE asks us to tell close <span class="ref" data-ref="coset">cosets</span> from random ones. How does a short vector help?</span></p>
 <button class="readbtn" data-for="sec-3-2">mark as read</button>
 
 <!-- ============================ 3.3 ============================ -->
 <h3 id="sec-3-3" data-num="3.3"><span class="n">3.3</span>The LWE Lattices</h3>
-<p class="hook">An <span class="ref" data-ref="lwe">LWE</span> pair is a <span class="ref" data-ref="lattice">lattice</span> plus a <span class="ref" data-ref="coset">coset</span>: close if $\mathbf{t}=\mathbf{A}\mathbf{s}+\mathbf{e}$, random if $\mathbf{t}$ is uniform. One short lattice vector tells them apart.</p>
+<p class="hook">A short vector cancels $\mathbf{A}$, roughly as the decryptor of §2.3.1 does (our comparison). That is enough to tell an <span class="ref" data-ref="lwe">LWE</span> <span class="ref" data-ref="coset">coset</span>, close to the <span class="ref" data-ref="lattice">lattice</span>, from a random one.</p>
+<p>Suppose the attacker has short $\mathbf{r}_1,\mathbf{r}_2$ with $\mathbf{r}_1^T\mathbf{A}+\mathbf{r}_2^T=\mathbf{0}$: a short vector of a different lattice, the one <span class="ref" data-ref="p2-latt">built from $\mathbf{A}^T$</span> <span class="cite">p. 23</span>. Multiplying $\mathbf{t}=\mathbf{A}\mathbf{s}+\mathbf{e}$ by $\mathbf{r}_1^T$ leaves $-\mathbf{r}_2^T\mathbf{s}+\mathbf{r}_1^T\mathbf{e}$: short times small, a small number. A uniform $\mathbf{t}$ gives a uniform number. The decryptor could cancel because it knows $\mathbf{s}$; the attacker must find a short vector first.</p>
+<p>The defence is the noise. Treated as normal, as the paper does, the leftover has spread equal to the length of $(\mathbf{r}_1,\mathbf{r}_2)$ times $\sqrt{\beta(\beta+1)/3}$. If the vector is too long, the spread passes $\sqrt3\cdot q$, the bump wraps around mod $q$, and the result is within about $2^{-80}$ of uniform [MR07]. A shorter vector needs a smaller <span class="ref" data-ref="delta">$\delta$</span>. <span class="cite">pp. 23&ndash;24</span></p>
 <p class="claim">If $\mathbf{r}_1^T\mathbf{A}+\mathbf{r}_2^T=\mathbf{0}$ with short $\mathbf{r}_1,\mathbf{r}_2$, then $\mathbf{r}_1^T\mathbf{t}$ is small for LWE and uniform otherwise. LWE resists this attack when <span class="ref" data-ref="p2-eq41">(41)</span> holds. <span class="cite">§3.3, Eqs. (37)&ndash;(41), pp. 23&ndash;24</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Outputting $(\mathbf{A}, \mathbf{t} = \mathbf{A}\mathbf{s} + \mathbf{e})$ with $\mathbf{s} \leftarrow [\beta]^m$, $\mathbf{e} \leftarrow [\beta]^n$ is the same as outputting a lattice $\Lambda = \mathcal{L}_q^\perp([\mathbf{A} \mid \mathbf{I}_n])$ and a coset $\mathbf{t}$ with <span class="ref" data-ref="delta-c">$\Delta^C_\infty(\mathbf{t}, \Lambda) \le \beta$</span>; a uniform $\mathbf{u}$ is a random coset. So <strong>$\mathrm{LWE}_{n,m,q,\beta}$ is distinguishing cosets close to the lattice from random cosets.</strong> The encryption scheme had $m = n$ and needed $\beta^2 = O(q/\sqrt m)$ for correctness, so $\beta \ll \sqrt q$; by <span class="ref" data-ref="cor1">Corollary 1</span> random cosets are then further than $\beta$ from the lattice.</p>
@@ -1015,6 +1084,8 @@ $$\|(\mathbf{r}_1, \mathbf{r}_2)\|\cdot\sqrt{\tfrac{\beta(\beta+1)}{3}} \approx 
 $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qquad (41)$$</span>
 <span class="cite">§3.3, Eqs. (37)&ndash;(41), pp. 23&ndash;24</span></p>
 </details>
+
+<p>The first figure runs the attack on a toy with $q=97$: 200 LWE samples pile up near 0 and uniform ones stay flat. In the second, slide the attacker&rsquo;s $\delta$ up: the bump looks flat well before the spread reaches the paper&rsquo;s $\sqrt3\,q$.</p>
 
 <div class="try fig" id="p2-expose">
 <span class="vlabel">Step through</span>
@@ -1049,12 +1120,13 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>(41) turns the attack into one number: the $\delta$ an attacker must reach. <span class="next">What does that give for real parameters?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>(41) turns the attack into one number: the $\delta$ an attacker must reach. <span class="next">Which $\delta$ do real parameters demand?</span></p>
 <button class="readbtn" data-for="sec-3-3">mark as read</button>
 
 <!-- ============================ 3.4 ============================ -->
 <h3 id="sec-3-4" data-num="3.4"><span class="n">3.4</span>Practical Parameters</h3>
-<p class="hook">Every <span class="ref" data-ref="delta">$\delta$</span> in <span class="ref" data-ref="p2-tables">Tables 1&ndash;2</span> is below $1.005$, which §3.2&rsquo;s &ldquo;very rough rule of thumb&rdquo; says may never be achieved in high enough dimension.</p>
+<p class="hook">Real parameters demand a <span class="ref" data-ref="delta">$\delta$</span> that, by a rough rule of thumb, may never be reached.</p>
+<p>Take sizes like Kyber&rsquo;s, $m=512$, $\beta=2$, $q=2^{12}$: solving <span class="ref" data-ref="p2-eq41">(41)</span> at equality gives $\delta\approx1.0043$ (our arithmetic), matching the paper&rsquo;s first row. Every $\delta$ in <span class="ref" data-ref="p2-tables">Tables 1&ndash;2</span> lies between 1.0022 and 1.0043, below the 1.005 that §3.2&rsquo;s &ldquo;very rough rule of thumb&rdquo; says may never be achieved in high enough dimension. So the answer to §2&rsquo;s question is not a proof: the best attack we know needs a shorter vector than that rule of thumb expects reduction to find.</p>
 <p class="claim">Table 1 resembles Kyber, Table 2 Dilithium, both set by today&rsquo;s best lattice reduction. <span class="cite">§3.4, Tables 1&ndash;2, pp. 24&ndash;25</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Table 1 lists sample <span class="ref" data-ref="lwe-mqb">$\mathrm{LWE}_{m,q,\beta}$</span> parameters similar to those used in Kyber (ML-KEM, §4.7); the signature scheme of §5 depends on both <span class="ref" data-ref="sis">SIS</span> and LWE, and Table 2 gives parameters resembling Dilithium (ML-DSA). The tables are set from the best currently-known lattice-reduction algorithms (cf. the Lattice Estimator [APS15]). <span class="cite">§3.4, Tables 1&ndash;2, pp. 24&ndash;25</span></p>
@@ -1070,6 +1142,7 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 </div></div>
 </details>
 <div id="p2-sis"></div>
+<p>One caution: this is measured against today&rsquo;s best algorithms, for which hardness rises smoothly with the noise. For short vectors in <em>ideal</em> lattices, a quantum algorithm is fast on one range of $q/\beta$ and no help outside it; the paper does not rule out such a surprise for <span class="ref" data-ref="lwe">LWE</span>, so it suggests a hedge.</p>
 <p class="claim">Hardness grows smoothly, about $2^k$ for $q/\beta=2^{m/k}$, but jumps are possible: keep $q/\beta$ small. <span class="cite">§3.4, p. 25</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Looking at Figure 2, LWE hardness increases monotonically in $\beta$, without jumps: if $q/\beta = 2^{m/k}$ with $1 \le k \le m$, the best known algorithm takes time about $2^k$ (ignoring polynomial factors). But a sudden jump is not out of the realm of possibility: it is exactly what happens for short vectors in lattices corresponding to an ideal of some algebraic ring [CGS14, BS16, CDPR16, CDW17]. When $q/\beta &gt; 2^{\sqrt m}$ (i.e. $k &lt; \sqrt m$) that problem can be solved in quantum polynomial time, but as soon as $k &gt; \sqrt m$ the hardness jumps back to $2^k$. Some not-yet-invented (quantum) algorithm might do much better on a particular range of $q/\beta$, so &ldquo;it may therefore be prudent&rdquo; to build cryptography on LWE with $q/\beta$ as small as possible. <span class="cite">§3.4, p. 25</span></p>
@@ -1088,13 +1161,16 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 <li><span class="ref" data-ref="p2-eq41">(41)</span> gives the $\delta$ an attacker needs.</li>
 </ol></div>
 
-<p class="remember"><span class="vlabel">Remember</span>Small $q/\beta$ hedges against unknown algorithms. <span class="next">§4: the same over polynomial rings.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Parameters are read off the best known attack. <span class="next">Safe sizes are large: Table 1 starts at $m = 512$. §4 looks at the bill.</span></p>
 <button class="readbtn" data-for="sec-3-4">mark as read</button>
 </section>
 
     <section class="psec" id="sec-4" data-num="§4" data-toc="Encryption Over Polynomial Rings">
 <h2><span class="n">§4</span>Encryption Over Polynomial Rings</h2>
-<p class="hook">Plain <span class="ref" data-ref="lwe">LWE</span> spends a whole ciphertext on one bit. Over a polynomial ring, one ciphertext carries a whole key.</p>
+<p class="hook">What does a 256-bit key cost at safe sizes? The <span class="ref" data-ref="lwe">LWE</span> encryption of §2.3.1 spends a whole ciphertext on a single bit.</p>
+<p>The size calculator in §4.3.1 puts numbers on it (our arithmetic): at LWE dimension 768 with a 12-bit $q$, 256 bits sent one at a time take 295,296 bytes of ciphertext. §2.4 brings that down to 18,816, but only by growing the public key from 1,184 bytes to 18,464.</p>
+<p>The fix is to change what a &ldquo;number&rdquo; is. Every entry of $\mathbf{A}$, of $\mathbf{s}$ and of the message stops being an integer modulo $q$ and becomes a polynomial with $d$ coefficients. A message polynomial holds $d$ bits, so one ciphertext carries the whole key and the public key has no need to grow.</p>
+<p>Polynomials bring structure, which makes things fast (§4.6) and can also help an attacker (§4.5), so we go carefully. The destination is Kyber (§4.7).</p>
 <p class="claim">Section 4 removes the square-root blow-up of Section 2.4 by doing LWE over higher-degree polynomial rings instead of <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span>. <span class="cite">§4, p. 26</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>The LWE scheme of Section 2.3 needs a fairly large ciphertext for <em>one</em> message bit ($(m+1)\log q$ bits, §2.4, p. 10): its expansion is linear in the security parameter. The scheme of Section 2.4 reduced this to a square-root expansion, at the price of blowing up the public key by the same factor. Section 4 removes the square-root blow-up by doing LWE not over $\mathbb{Z}_q$ but over <strong>higher-degree polynomial rings</strong>. <span class="cite">§4, p. 26</span></p>
@@ -1102,28 +1178,34 @@ $$\sqrt{\beta(\beta+1)} &gt; 3\cdot q\cdot 2^{-2\sqrt{m\log q\log\delta}}. \qqua
 
 <!-- ================= 4.1 ================= -->
 <h3 id="sec-4-1" data-num="4.1"><span class="n">4.1</span>Polynomial Rings</h3>
-<p class="hook"><span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> is integers reduced modulo a number; <span class="ref" data-ref="ring">$\mathcal{R}_f$</span> is polynomials reduced modulo a polynomial $f$.</p>
-<p class="claim">For a <span class="ref" data-ref="monic">monic</span> $f$ of degree $d$, every $a$ is uniquely $a = bf + r$ with $\deg(r) &lt; d$, and $a \bmod f = r$. <span class="cite">§4.1, p. 26</span></p>
+<p class="hook">Multiply two polynomials and the degrees add: two of degree 3 give one of degree 6. How do we keep them a fixed size?</p>
+<p>As <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> keeps integers a fixed size: after every multiplication, divide and keep the remainder. We divide by a fixed polynomial $f$ of degree $d$, so an element of the ring <span class="ref" data-ref="ring">$\mathcal{R}_f$</span> is just $d$ integer coefficients, and adding two elements is adding two vectors of length $d$.</p>
+<p>The division is the long division from school, and it never needs fractions, because $f$ is <span class="ref" data-ref="monic">monic</span>: its leading coefficient is 1.</p>
+<p class="claim">For a monic $f$ of degree $d$, every $a$ is uniquely $a = bf + r$ with $\deg(r) &lt; d$, and $a \bmod f = r$. <span class="cite">§4.1, p. 26</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>$\mathbb{Z}[X]$ is the ring of polynomials $a = \sum_i a_i X^i$ with integer coefficients. <span data-def="monic" data-def-label="monic polynomial" data-def-keys="monic leading coefficient degree">$\deg(a)$ is the largest $i$ with $a_i \neq 0$; $a$ is <em>monic</em> if $a_{\deg(a)} = 1$</span>; <span data-def="irreducible" data-def-label="irreducible polynomial" data-def-keys="irreducible factor product">$a$ is <em>irreducible</em> if it cannot be written as $a = bc$ with $\deg(b), \deg(c) &lt; \deg(a)$.</span> <span class="cite">§4.1</span></p>
 <p>For a monic $f \in \mathbb{Z}[X]$ of degree $d$, the ring $\mathcal{R}_f$ (often written $\mathbb{Z}[X]/(f(X))$, footnote 12) consists of the polynomials $a = \sum_{i=0}^{d-1} a_i X^i$. Addition is coefficient-wise, so $\mathcal{R}_f$ under addition is $\mathbb{Z}^d$. Multiplication is ordinary multiplication followed by reduction modulo $f$: every $a$ can be written uniquely as $a = bf + r$ with $\deg(r) &lt; d$, and $a \bmod f = r$. The usual $\mathbb{Z}$ is the special case $f = X$ (or $f = X - \alpha$). <span class="cite">§4.1, p. 26–27</span></p>
 </details>
+<p>Step through the paper&rsquo;s own example below and watch the leading term disappear at each step until $27X - 11$ is left.</p>
 <div class="try" id="p3-div"><span class="vlabel">Try it</span>
 <p class="tt">Division with remainder, one leading term at a time <span class="tag">illustration</span></p>
 <p class="how">The paper&rsquo;s example (§4.1, p. 27); press <em>step</em>, or type your own (highest degree first).</p>
 <div class="mount"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>Multiply, then keep the remainder modulo $f$. <span class="next">Multiplying by a fixed $a$ is linear: what is its matrix?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>We have polynomials that stay $d$ coefficients long. <span class="next">But <span class="ref" data-ref="lwe">LWE</span> is linear algebra. Is multiplying by a polynomial a matrix?</span></p>
 <button class="readbtn" data-for="sec-4-1">mark as read</button>
 
 <h3 id="sec-4-1-1" data-num="4.1.1"><span class="n">4.1.1</span>Polynomials and Linear Algebra</h3>
-<p class="hook">Column $i$ of the matrix of $a$ is $aX^i \bmod f$. Times $X$ raises every degree by one; the coefficient that overflows comes back through $X^d \bmod f$.</p>
-<p class="claim"><span class="ref" data-ref="vm">$\mathcal{M}_a\mathcal{V}_b = \mathcal{V}_{ab}$</span>; e.g. $(2X^2-1)(X^2-X+2) \bmod X^3-X+1 = 5X^2-3X$. <span class="cite">§4.1.1, Eqs. (42)–(44)</span></p>
+<p class="hook">Multiplying by a fixed polynomial is a matrix, which is a relief: <span class="ref" data-ref="lwe">LWE</span> was all matrices and vectors, and so was every attack in §3.</p>
+<p>The product $ab \bmod f$ is linear in $b$, so it is enough to know what $a$ does to $1, X, \dots, X^{d-1}$. Those are the columns: counting from 0, column $i$ is $aX^i \bmod f$ (Eqs. (42), (44)).</p>
+<p>Each column is the one before it times $X$: every coefficient moves along one slot, and the last one overflows into $X^d$. The polynomial $f$ says what $X^d$ is worth. For $X^d - 1$ it is worth $1$, a pure rotation; for $X^d + 1$ the overflow comes back with its sign flipped. So the whole $d \times d$ matrix <span class="ref" data-ref="vm">$\mathcal{M}_a$</span> is its first column, shifted and wrapped again and again.</p>
+<p class="claim">$\mathcal{M}_a\mathcal{V}_b = \mathcal{V}_{ab}$; e.g. $(2X^2-1)(X^2-X+2) \bmod X^3-X+1 = 5X^2-3X$. <span class="cite">§4.1.1, Eqs. (42)–(44)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Multiplication modulo $f$ is a matrix times a vector (Eq. (42)):
 $$ab \bmod f = a\cdot\Big(\sum_{i=0}^{d-1} b_iX^i\Big) \bmod f = \sum_{i=0}^{d-1}(aX^i \bmod f)\,b_i.$$
 With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a = [\,\mathcal{V}_a \;\; \mathcal{V}_{aX \bmod f} \;\cdots\; \mathcal{V}_{aX^{d-1} \bmod f}\,] \in \mathbb{Z}^{d\times d}$ (Eq. (44)) we get $\mathcal{M}_a\mathcal{V}_b = \mathcal{V}_{ab}$. For $\mathbf{A} \in \mathcal{R}_f^{n\times m}$ and $\mathbf{b} \in \mathcal{R}_f^m$, stacking blocks gives $\mathcal{M}_\mathbf{A}\cdot\mathcal{V}_\mathbf{b} = \mathcal{V}_{\mathbf{A}\mathbf{b}} \in \mathbb{Z}^{dn}$ (Eqs. (45)–(46)). Example (Eq. (43)): $(2X^2-1)(X^2-X+2) \bmod X^3-X+1 = 5X^2 - 3X$. <span class="cite">§4.1.1, Eqs. (42)–(46)</span></p>
 </details>
+<p>In the figure, watch the last coefficient spill out at the bottom and come back the way $f$ dictates.</p>
 <div class="try fig" id="p3-ma">
   <span class="vlabel">Step through</span>
   <p class="tt">Times $X$ shifts the coefficients and wraps the last one back <span class="tag">illustration</span></p>
@@ -1141,11 +1223,13 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
   </div>
   <div class="steps"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>Multiplying by $a$ is a $d\times d$ integer matrix. <span class="next">How large do its entries get?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Multiplying by $a$ is a $d\times d$ integer matrix fixed by $d$ numbers. <span class="next">Can a bad $f$ make small things large?</span></p>
 <button class="readbtn" data-for="sec-4-1-1">mark as read</button>
 
 <h3 id="sec-4-1-2" data-num="4.1.2"><span class="n">4.1.2</span>Coefficient Growth</h3>
-<p class="hook">Decryption noise is built from products of small ring elements, so those products must stay small. That depends on $f$.</p>
+<p class="hook">A bad $f$ can make small things large. §2 rested on small times small being small. With integers that is automatic; with polynomials it depends on $f$.</p>
+<p>A product $ab$ is $\mathcal{M}_a\mathcal{V}_b$, so it is small when the entries of <span class="ref" data-ref="vm">$\mathcal{M}_a$</span> are. For $f = X^d \pm 1$ the overflow returns as one coefficient, at worst with its sign flipped, so every entry of $\mathcal{M}_a$ is a coefficient of $a$ up to sign: the best we could hope for.</p>
+<p>Now take $f = X^d + 2X^{d-1} + 1$. Here $X^d = -2X^{d-1} - 1$: each overflow comes back <em>doubled</em>, into the very slot that overflows next. The doubling compounds, and the entries of $\mathcal{M}_a$ grow exponentially in $d$. The paper&rsquo;s verdict on such $f$: not useful for cryptographic purposes.</p>
 <p class="claim">Only $X^d \pm 1$ give $\|\mathcal{M}_a\|_\infty = \|\mathcal{V}_a\|_\infty$; $X^d \pm X^{d/2} + 1$ and $\sum_{i=0}^{d} X^i$ give at most twice that; $X^d + 2X^{d-1} + 1$ grows exponentially. <span class="cite">§4.1.2, p. 28</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Since $ab = \mathcal{M}_a\mathcal{V}_b$, a simple bound on the largest coefficient is $d\,\|\mathcal{M}_a\|_\infty\cdot\|\mathcal{V}_b\|_\infty$ (better $\ell_2$ bounds use the largest singular value of <span class="ref" data-ref="vm">$\mathcal{M}_a$</span>). The best we could hope for is $\|\mathcal{M}_a\|_\infty = \|\mathcal{V}_a\|_\infty$; the only $f$ with this property are $X^d \pm 1$. For $X^d \pm X^{d/2} + 1$ and $\sum_{i=0}^{d} X^i$, $\|\mathcal{M}_a\|_\infty \le 2\|\mathcal{V}_a\|_\infty$ (Eqs. (47)–(50) show $d = 4$). Some $f$ with small coefficients, e.g. $X^d + 2X^{d-1} + 1$, give $\mathcal{M}_a$ with <em>exponentially</em> larger coefficients than $a$; such $f$ are not useful for cryptography. We prefer a ratio of 1 or 2. <span class="cite">§4.1.2, p. 28</span></p>
@@ -1153,17 +1237,20 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>In Eq. (49) ($f = X^4 - X^2 + 1$) the entry in row 3, column 4 should be $a_1$; the paper prints $-a_3 + a_1$. Modulo $f$: $X^4 \equiv X^2 - 1$, $X^5 \equiv X^3 - X$, $X^6 \equiv -1$, so $aX^3 \equiv (-a_1 - a_3) - a_2X + a_1X^2 + (a_0 + a_2)X^3$.</p>
 </div>
 </details>
+<p>In the calculator, compare the largest entry of $\mathcal{M}_a$ with the largest coefficient of $a$: the bad family with $a = X^{d-1}$ reaches a ratio of $2^{15}$ at $d = 16$ (our computation).</p>
 <div class="try" id="p3-growth"><span class="vlabel">Try it</span>
 <p class="tt">Which $f$ keeps products small? <span class="tag">illustration</span></p>
 <div class="mount"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>$X^d \pm 1$: ratio 1. Some innocent-looking $f$: exponential. <span class="next">What do <span class="ref" data-ref="lwe">LWE</span> and <span class="ref" data-ref="sis">SIS</span> look like over these rings?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>With $X^d \pm 1$ products stay as small as they can. <span class="next">What do <span class="ref" data-ref="lwe">LWE</span> and <span class="ref" data-ref="sis">SIS</span> look like over such a ring?</span></p>
 <button class="readbtn" data-for="sec-4-1-2">mark as read</button>
 
 <!-- ================= 4.2 ================= -->
 <h3 id="sec-4-2" data-num="4.2"><span class="n">4.2</span>The Generalized-LWE and SIS Problems</h3>
-<p class="hook">Replace every integer in <span class="ref" data-ref="lwe">LWE</span> and <span class="ref" data-ref="sis">SIS</span> by a ring element; the problems keep their shape.</p>
-<p class="claim"><span class="ref" data-ref="rlwe">$\mathcal{R}_{q,f}$-LWE</span> and <span class="ref" data-ref="rsis">$\mathcal{R}_{q,f}$-SIS</span> are Definitions 1 and 4 over <span class="ref" data-ref="ring">$\mathcal{R}_{q,f} = \mathbb{Z}_q[X]/(f(X))$</span>: Ring- or Module-LWE/SIS, the &ldquo;ML&rdquo; of ML-KEM and ML-DSA. <span class="cite">§4.2, Definitions 5–6</span></p>
+<p class="hook">We do the obvious thing: take <span class="ref" data-ref="lwe">LWE</span> and <span class="ref" data-ref="sis">SIS</span> and put a ring element wherever there was an integer.</p>
+<p>Nothing else changes. $\mathbf{A}$ is a matrix of random ring elements, $\mathbf{s}$ and $\mathbf{e}$ have small coefficients, and the question is still whether $(\mathbf{A}, \mathbf{A}\mathbf{s} + \mathbf{e})$ can be told apart from random. The coefficients now live in <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span>, which is what the $q$ in <span class="ref" data-ref="ring">$\mathcal{R}_{q,f}$</span> records.</p>
+<p>Underneath, every ring element opens into its $d \times d$ block (§4.1.1). A ring matrix with $n$ rows and $m$ columns is then an integer matrix with $dn$ rows and $dm$ columns: an ordinary LWE instance, except that each block is one column shifted and wrapped. Whether that repetition helps an attacker is the question of §4.5.</p>
+<p class="claim"><span class="ref" data-ref="rlwe">$\mathcal{R}_{q,f}$-LWE</span> and <span class="ref" data-ref="rsis">$\mathcal{R}_{q,f}$-SIS</span> are Definitions 1 and 4 over $\mathcal{R}_{q,f} = \mathbb{Z}_q[X]/(f(X))$: Ring- or Module-LWE/SIS, the &ldquo;ML&rdquo; of ML-KEM and ML-DSA. <span class="cite">§4.2, Definitions 5–6</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>$\mathcal{R}_{q,f}$ is like $\mathcal{R}_f$ but with coefficients in <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> (written $\mathbb{Z}_q[X]/(f(X))$ in the literature). <span class="cite">§4.2</span></p>
 <div class="boxdef" data-def="rlwe" data-def-label="Ring / Module-LWE" data-def-tex="\mathcal{R}_{q,f}\text{-}\mathsf{LWE}_{n,m,\beta}" data-def-keys="ring module generalized lwe definition 5"><p class="t">Definition 5 — $\mathcal{R}_{q,f}$-$\mathsf{LWE}_{n,m,\beta}$</p>
@@ -1172,6 +1259,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>For a random $\mathbf{A} \leftarrow \mathcal{R}_{q,f}^{n\times m}$, find $\mathbf{s}_1 \in [\beta]^m$ and $\mathbf{s}_2 \in [\beta]^n$, not both $\mathbf{0}$, with $\mathbf{A}\mathbf{s}_1 + \mathbf{s}_2 = \mathbf{0} \pmod q$.</p></div>
 <p>As before, $n$ has no known effect on hardness unless it is large, so one writes $\mathcal{R}_{q,f}$-$\mathsf{LWE}_{m,\beta}$. The definition and the cryptosystem follow [LPR10, BV11, LPR13b, LS15]; SIS is generalized following [PR06, LM06, LS15]. In the literature these are called Ring-LWE / Ring-SIS or Module-LWE / Module-SIS; in ML-KEM and ML-DSA, "ML" stands for "Module Lattice". <span class="cite">§4.2, Definitions 5–6</span></p>
 </details>
+<p>In the figure, a $2 \times 2$ matrix over $\mathcal{R}_f$ opens into an $8 \times 8$ integer matrix with the same product.</p>
 <div class="try fig" id="p3-blocks">
   <span class="vlabel">Step through</span>
   <p class="tt">A ring matrix is an integer matrix made of blocks <span class="tag">illustration</span></p>
@@ -1183,12 +1271,14 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
   </div>
   <div class="steps"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>Same LWE and SIS, with ring elements in place of integers. <span class="next">What does the ring version of the scheme buy?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Ring-LWE and Ring-SIS are the old problems with a ring element in every slot. <span class="next">What does encryption gain from this?</span></p>
 <button class="readbtn" data-for="sec-4-2">mark as read</button>
 
 <!-- ================= 4.3 ================= -->
 <h3 id="sec-4-3" data-num="4.3"><span class="n">4.3</span>Generalized-LWE Encryption</h3>
-<p class="hook">§2.3.1&rsquo;s scheme over <span class="ref" data-ref="ring">$\mathcal{R}_f$</span>: one message now holds $d$ bits.</p>
+<p class="hook">Encryption gains a bigger message. Take the scheme of §2.3.1 and change nothing but the type: every integer becomes an element of <span class="ref" data-ref="ring">$\mathcal{R}_f$</span>.</p>
+<p>Before, $\mu$ was one bit, sent as $0$ or $q/2$. Now $\mu$ is a polynomial with $d$ coefficients, each 0 or 1, and every coefficient is its own small copy of the old scheme, blurred by its own noise. One ciphertext, $d$ bits.</p>
+<p>Decryption is the same cancellation, and the small terms left over are now products of ring elements. This is where §4.1.2 pays off: with $f = X^d \pm 1$, the chance that one coefficient of the noise exceeds $q/4$ is computed just as it was over the integers, and we add up the $d$ chances (a union bound).</p>
 <p class="claim">Eqs. <span class="ref" data-ref="glwe-enc">(51)–(54)</span> with ring elements; the noise (55) is bounded per coefficient, then a union bound. <span class="cite">§4.3, Eqs. (51)–(55)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>The scheme is virtually identical to Section 2.3.1 with $\mathbb{Z}$ replaced by $\mathcal{R}_f$; its main advantage is that $\mu \in \mathcal{R}_f$ packs $d$ bits. <span class="cite">§4.3, Eqs. (51)–(55)</span></p>
@@ -1199,6 +1289,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>Security based on <span class="ref" data-ref="rlwe">$\mathcal{R}_{q,f}$-$\mathsf{LWE}_{m,\beta}$</span> is identical to the proof for <span class="ref" data-ref="lwe-mqb">$\mathsf{LWE}_{m,q,\beta}$</span>. The decryption noise is $\mathcal{M}_{\mathbf{r}^T}\mathcal{V}_{\mathbf{e}_1} + \mathcal{V}_{e_3} - \mathcal{M}_{\mathbf{e}_2^T}\mathcal{V}_\mathbf{s}$ (55), handled with the techniques of Section 2.3.2. For $f = X^d \pm 1$ each coefficient is computed exactly as over the integers, because each row of $\mathcal{M}_{\mathbf{r}^T}$ and $\mathcal{M}_{\mathbf{e}_2^T}$ has independent coefficients (see (47) and (48)); a union bound over the $d$ coefficients finishes. For other $f$ the technique still applies if the product can be rewritten as a sum of independent random variables.</p>
 </details>
 
+<p>In the figure ($q = 97$, $d = 4$), watch four bits drop into the four coefficients of $v$, and each come back on its own number line.</p>
 <div class="try fig" id="p3-enc">
   <span class="vlabel">Step through</span>
   <p class="tt">Four bits in one ciphertext <span class="tag">illustration</span></p>
@@ -1244,6 +1335,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 </div>
 
 <h4 class="fold" id="sec-4-3-1"><span class="n">§4.3.1</span>Optimizations and Efficiency</h4>
+<p>This settles the size problem: the room for $d$ bits comes with the ring. At the calculator&rsquo;s starting values (our arithmetic, uncompressed) the public key is back to 1,184 bytes and the ciphertext is 1,536.</p>
 <p class="claim">With $d \ge 256$ one ciphertext carries an AES key; the public key stays optimally small. <span class="cite">§4.3.1</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>One no longer needs to enlarge the public key (as in Section 2.4) to encrypt a longer message: a degree-$d$ ring carries $d$ bits, so with $d \ge 256$ — the length of an AES key — the public key is optimally small. There is no need to pack several bits per coefficient (Section 2.5.4). The compression of Section 2.5.1 still applies, and <span class="ref" data-ref="lwr">LWR</span> (2.5.3) and the NIKE (2.6) are defined analogously over $\mathcal{R}_f$. <span class="cite">§4.3.1</span></p>
@@ -1254,24 +1346,31 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 </div>
 
 <h4 class="fold" id="sec-4-3-2"><span class="n">§4.3.2</span>Security and Connection to Integer Lattices</h4>
+<p>Is it still secure? The attacks of §3 apply as they are. If the ring gives the attacker nothing extra (§4.5), what counts is the product $dm$ (next line): $256 \cdot 3 = 768$ for Kyber-768 (our arithmetic).</p>
 <p class="claim">By (46) this is LWE over <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> (figure in §4.2); what matters is $dm$ ($dn$ for <span class="ref" data-ref="sis">SIS</span>). <span class="cite">§4.3.2, Eq. (56)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>By (46), distinguishing $(\mathbf{A}, \mathbf{t} = \mathbf{A}\mathbf{s} + \mathbf{e})$ from uniform over $\mathcal{R}_{q,f}$ is distinguishing $(\mathcal{M}_\mathbf{A}, \mathcal{V}_\mathbf{t} = \mathcal{M}_\mathbf{A}\mathcal{V}_\mathbf{s} + \mathcal{V}_\mathbf{e})$ from $(\mathcal{M}_\mathbf{A}, \mathcal{V}_\mathbf{u})$ — a problem over $\mathbb{Z}_q$, attacked (as in Section 3.3, <span class="ref" data-ref="lattice">lattice</span> (56) <span class="ref" data-ref="qary">$\mathcal{L}_q^\perp([\mathbf{A}^T \mid \mathbf{I}_m])$</span>) by finding short vectors in $\mathcal{L}_q^\perp([\mathcal{M}_\mathbf{A}^T \mid \mathbf{I}_{dm}])$, a lattice of dimension $d(m+n)$. If $\mathcal{R}_f$'s algebraic structure has no weaknesses (Section 4.5), finding a short vector in this lattice is as hard as in the $\mathsf{LWE}_{n',m',q,\beta}$ lattice (56) with $n' = dn$, $m' = dm$. So for $\mathcal{R}_{q,f}$-$\mathsf{LWE}_{n,m,\beta}$ the important value is $dm$ (degree of $f$ × columns of $\mathbf{A}$); for <span class="ref" data-ref="rsis">$\mathcal{R}_{q,f}$-$\mathsf{SIS}_{n,m,\beta}$</span> it is $dn$ (degree × rows). <span class="cite">§4.3.2, Eq. (56)</span></p>
 </details>
-<p class="remember"><span class="vlabel">Remember</span>$d$ bits per ciphertext; dimension $d \times$ rank. <span class="next">Who used rings first?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>One ciphertext carries $d$ bits with no larger key. <span class="next">Who first put polynomial rings into lattice cryptography?</span></p>
 <button class="readbtn" data-for="sec-4-3">mark as read</button>
 
 <!-- ================= 4.4 ================= -->
 <h3 id="sec-4-4" data-num="4.4"><span class="n">4.4</span>NTRU</h3>
-<p class="hook"><span class="ref" data-ref="ntru">NTRU</span> works like RSA (our analogy): anyone can evaluate $b = as + e$; only the holder of a trapdoor can invert it.</p>
+<p class="hook">Polynomial rings entered lattice cryptography not through <span class="ref" data-ref="lwe">LWE</span> but with <span class="ref" data-ref="ntru">NTRU</span>, which hides its secret in a different place: a short detour.</p>
+<p>NTRU is a trapdoor one-way function, closer in spirit to RSA than to ElGamal (our analogy, not the paper&rsquo;s). Anyone can compute $(s, e) \mapsto as + e$ for the public ring element $a$ and small $s, e$, and the output has the same form as a ring-LWE sample. But $a$ is not random: the key holder built it from two small secret polynomials, and one of them, $g_2$, is the trapdoor that recovers $s$ and $e$.</p>
+
 <p class="claim">NTRU [HPS98] was the first truly efficient lattice-based encryption scheme and the first to use polynomial rings, as a trapdoor one-way function. <span class="cite">§4.4, p. 30</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>NTRU [HPS98] was the first truly efficient lattice-based encryption scheme and the first to use polynomial rings — specifically <span class="ref" data-ref="ring">$\mathcal{R}_{q,X^d-1}$</span>. It was proposed as a trapdoor one-way function, which can be seen as a OW-CPA cryptosystem (footnote 13: an attacker holding the public key cannot recover the message of a ciphertext of a randomly chosen message). A simple modification gives <span class="ref" data-ref="cpa">CPA security</span> [SS11], but usually the one-way function suffices, since there are black-box transformations to CCA-secure encryption (cf. [Den02]). <span class="cite">§4.4, p. 30</span></p>
 </details>
+<p class="remember"><span class="vlabel">Remember</span>NTRU has the form of ring-LWE, with a trapdoor built into $a$. <span class="next">How can knowing how $a$ was made undo $as + e$?</span></p>
 <button class="readbtn" data-for="sec-4-4">mark as read</button>
 
 <h3 id="sec-4-4-1" data-num="4.4.1"><span class="n">4.4.1</span>The NTRU Trapdoor 1-way Function</h3>
-<p class="hook">Multiply $b$ by the secret $g_2$: nothing wraps around modulo $q$, and reducing modulo $p$ wipes out the part that involves $s$.</p>
+<p class="hook">The trapdoor does modular arithmetic with two relatively prime moduli at once, which the paper notes &ldquo;is very rarely an idea that leads to any meaningful results&rdquo; (p. 31).</p>
+<p>The public $a$ is $p\,g_1g_2^{-1}$, where $g_1, g_2$ are small secret polynomials and $p$ is a small integer ($p = 3$ when the coefficients are in $\{-1, 0, 1\}$). Multiply $b$ by the secret $g_2$. The $g_2^{-1}$ cancels: $g_2b = p\,g_1s + g_2e$ modulo $q$.</p>
+<p>Everything on the right is built from small things, so if $q$ is chosen large enough, its coefficients stay below $q/2$ in magnitude: the reduction modulo $q$ does nothing, and the equation holds over the integers. So we may reduce it modulo $p$ instead. The first term is a multiple of $p$ and vanishes, leaving $g_2e$, and dividing by $g_2$ modulo $p$ gives $e$ modulo $p$. Since $p = 2\beta + 1$, that pins down $e$ exactly, and $s$ follows.</p>
+
 <p class="claim">With $a = pg_1g_2^{-1}$ and $b = as + e$: $g_2b \bmod p = g_2e \bmod p$ (59) gives $e$, then $s = (b - e)a^{-1}$ (61). <span class="cite">§4.4.1, Definition 7, Eqs. (57)–(61)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="search-glwe" data-def-label="search Generalized-LWE" data-def-keys="search generalized lwe find e"><em>Search</em> Generalized-LWE: given $(a, as + e)$ with $a \leftarrow \mathcal{R}_{q,f}$, $s, e \leftarrow [\beta]$, find $e$ (if $a$ is invertible this also gives $s$).</span> NTRU is the same problem (with $n = m = 1$) except $a = pg_1g_2^{-1}$ for small $g_1, g_2 \leftarrow [\beta]$ and $p = 2\beta + 1$ relatively prime to $q$ ($\beta = 1$ is popular). <span class="cite">§4.4.1</span></p>
@@ -1279,9 +1378,10 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>Let $p = 2\beta + 1$. Given $(a, as + e)$ where $a = pg_1g_2^{-1}$ for $g_1, g_2, s, e \leftarrow [\beta]$ and $g_2$ invertible in $\mathcal{R}_{q,f}$ and $\mathcal{R}_{p,f}$, find $e$.</p></div>
 <p>Trapdoor function: public key $a = pg_1g_2^{-1}$ (57), secret key $g_2$; evaluate $b = as + e \in \mathcal{R}_{q,f}$ (58); invert via $g_2b \bmod p = pg_1s + g_2e \bmod p = g_2e \bmod p$ (59), then $(g_2b \bmod p)g_2^{-1} \bmod p = e$ (60) and $(b - e)a^{-1} = s$ (61). It suffices to recover $s, e$ modulo $p$, since elements of <span class="ref" data-ref="beta">$[\beta]$</span> and residues mod $p = 2\beta+1$ correspond one-to-one. The paper urges first-time readers to appreciate that (59) holds despite using two relatively prime moduli, "which is very rarely an idea that leads to any meaningful results". <span class="cite">§4.4.1, Eqs. (57)–(61)</span></p>
 </details>
+<p>In the figure nothing wraps at $q = 97$, where the largest coefficient of $g_2b$ is 9 in magnitude; at $q = 13$ two coefficients wrap and the recovery fails.</p>
 <div class="try fig" id="p3-ntru">
   <span class="vlabel">Step through</span>
-  <p class="tt"><span class="ref" data-ref="ntru">NTRU</span> inversion over $\mathcal{R}_{q,X^4+1}$, $p = 3$, and what breaks when $q$ is too small <span class="tag">illustration</span></p>
+  <p class="tt"><span class="ref" data-ref="ntru">NTRU</span> inversion over <span class="ref" data-ref="ring">$\mathcal{R}_{q,X^4+1}$</span>, $p = 3$, and what breaks when $q$ is too small <span class="tag">illustration</span></p>
   <div class="controls"></div>
   <div class="stage"></div>
   <div class="caps" aria-live="polite">
@@ -1298,25 +1398,31 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
   </div>
   <div class="steps"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>NTRU inverts because $pg_1s + g_2e$ is too small to wrap modulo $q$. <span class="next">Is the special form of $a$ a weakness?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>NTRU inverts because $pg_1s + g_2e$ is too small to wrap modulo $q$. <span class="next">Does the special form of $a$ help an attacker?</span></p>
 <button class="readbtn" data-for="sec-4-4-1">mark as read</button>
 
 <h3 id="sec-4-4-2" data-num="4.4.2"><span class="n">4.4.2</span>Security</h3>
-<p class="hook">Two <span class="ref" data-ref="lattice">lattices</span> that differ by one vector, and when $q$ is much larger than $\beta$, one of them is much easier.</p>
-<p class="claim">Recovering $s, e$ is the <span class="ref" data-ref="rlwe">LWE</span> key attack on lattice (62); recovering $g_1, g_2$ via lattice (63) is significantly easier when $q \gg \beta$, so large-modulus schemes such as FHE use <span class="ref" data-ref="rlwe">Generalized-LWE</span>. <span class="cite">§4.4.2, Eqs. (62)–(63)</span></p>
+<p class="hook"><span class="ref" data-ref="ntru">NTRU</span>&rsquo;s $a$ hides two small polynomials. So an attacker has two targets: the sender&rsquo;s $s, e$, as with <span class="ref" data-ref="lwe">LWE</span>, or the key itself.</p>
+<p>Both are short-vector problems as in §3, in two <span class="ref" data-ref="lattice">lattices</span> that look almost the same: lattice (62) for the sender&rsquo;s $s, e$, the usual attack on an LWE instance, and lattice (63) for the key. One would guess that they are equally hard. Surprisingly, in certain scenarios where $q$ is significantly larger than $\beta$, short vectors turned out to be significantly easier to find in (63). These attacks do not carry over to NTRU&rsquo;s own parameters, but they do keep the NTRU assumption out of advanced primitives that need a large modulus and small noise, such as fully homomorphic encryption.</p>
+
+<p class="claim">Recovering $s, e$ is the LWE key attack on lattice (62); recovering $g_1, g_2$ via lattice (63) is significantly easier when $q \gg \beta$, so large-modulus schemes such as FHE use <span class="ref" data-ref="rlwe">Generalized-LWE</span>. <span class="cite">§4.4.2, Eqs. (62)–(63)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Ignoring the special form of $a$, recovering $s, e$ from (58) is the Generalized-LWE key attack: a short vector in <span class="ref" data-ref="qary">$\mathcal{L}_q^\perp([\mathcal{M}_a \mid \mathcal{V}_b \mid \mathbf{I}_d])$</span> (62). One can also try to recover $g_1, g_2$ (or related short polynomials) from $a$ via $\mathcal{L}_q^\perp([\mathcal{M}_{p^{-1}a} \mid \mathbf{I}_d])$ (63). The two lattices differ only by the extra vector <span class="ref" data-ref="vm">$\mathcal{V}_b$</span>, yet when $q$ is significantly larger than $\beta$ (but not so large that generic reduction clearly works), finding short vectors in (63) was found to be significantly easier than in (62) [ABD16, CJL16, KF17]. This does not affect NTRU's parameters, but rules the NTRU assumption out of advanced primitives (e.g. FHE) needing large moduli and small noise; there, Generalized-LWE (security resting essentially on (62)) is used. <span class="cite">§4.4.2, Eqs. (62)–(63)</span></p>
 </details>
-<p class="remember"><span class="vlabel">Remember</span><span class="ref" data-ref="ntru">NTRU</span> is fine at its own parameters, not for large moduli. <span class="next">Can ring structure help an attacker?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>A structured $a$ can make short vectors easier to find. <span class="next">Our ring has structure too. Can that help an attacker?</span></p>
 <button class="readbtn" data-for="sec-4-4-2">mark as read</button>
 
 <!-- ================= 4.5 ================= -->
 <h3 id="sec-4-5" data-num="4.5"><span class="n">4.5</span>Exploiting the Algebraic Structure … for Attacks</h3>
-<p class="hook">If $X - 1$ divides $f$, evaluating at $X = 1$ maps the ring onto <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> and keeps small things small.</p>
+<p class="hook">Here is a ring with exactly the kind of weakness §4.3.2 warned about.</p>
+<p>Take $f = X^d - 1$, the ring <span class="ref" data-ref="ntru">NTRU</span> first used. Put $X = 1$ and $f$ becomes $0$, so &ldquo;evaluate at 1&rdquo;, which just adds up the coefficients of a polynomial, survives reduction modulo $f$: sums go to sums, products to products. It maps the whole ring onto plain <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span>.</p>
+<p>Apply it to a ring instance $\mathbf{t} = \mathbf{A}\mathbf{s} + \mathbf{e}$. Every ring element collapses to a single number and the equation survives: $\mathbf{A}'\mathbf{s}' + \mathbf{e}' = \mathbf{t}'$. The fatal part is that small stays small: $d$ coefficients from <span class="ref" data-ref="beta">$[\beta]$</span> add up to at most $d\beta$ in magnitude. The attacker now holds an integer <span class="ref" data-ref="lwe">LWE</span> instance with $m$ columns instead of $dm$, its secrets in $[d\beta]$: a small-dimensional problem, solvable as in §3.3 (p. 32).</p>
+<p>The hardness reductions the paper cites ask only that $f$ be <span class="ref" data-ref="irreducible">irreducible</span> over the integers (for <span class="ref" data-ref="rsis">SIS</span>, a large-degree irreducible factor is enough); nothing is asked modulo $q$.</p>
 <p class="claim">For $f = X^d - 1$, $a \mapsto \sum_i a_i$ turns <span class="ref" data-ref="rlwe">$\mathcal{R}_{q,f}$-LWE</span> into a small <span class="ref" data-ref="lwe">LWE</span> instance with secrets in $[d\beta]$. <span class="cite">§4.5, p. 32</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Over <span class="ref" data-ref="ring">$\mathcal{R}_{q,f}$</span> with $f = X^d - 1$, since $X - 1$ divides $f$ there is a ring homomorphism to $\mathcal{R}_{q,X-1} = \mathbb{Z}_q$: $a = \sum a_iX^i \mapsto a' = \sum a_i$. If $a$'s coefficients are small, so is $a'$ (at most a factor $d$ larger). Attack (adapted from [PR06, LM06]): map $\mathbf{A}, \mathbf{t}$ to $\mathbf{A}' \in \mathbb{Z}_q^{n\times m}$, $\mathbf{t}' \in \mathbb{Z}_q^n$. If $\mathbf{s} \in [\beta]^m$, $\mathbf{e} \in [\beta]^n$ with $\mathbf{A}\mathbf{s} + \mathbf{e} = \mathbf{t}$ exist, then $\mathbf{s}' \in [d\beta]^m$, $\mathbf{e}' \in [d\beta]^n$ satisfy $\mathbf{A}'\mathbf{s}' + \mathbf{e}' = \mathbf{t}'$ — a small-dimensional LWE problem, solvable as in Section 3.3. If $f$ had a factor like $X - 2$ instead, the image $\sum a_i2^i$ would be exponentially large in $d$. Interestingly, the worst-case to average-case reductions [PR06, LM06, LPR13a, LS15, PRS17] only need $f$ irreducible (or, for <span class="ref" data-ref="rsis">SIS</span>, with a large-degree irreducible factor) over $\mathbb{Z}[X]$, not over $\mathbb{Z}_q[X]$ — and many low-degree factors in $\mathbb{Z}_q[X]$ are good for efficiency. <span class="cite">§4.5, p. 32</span></p>
 </details>
+<p>In the figure, add up each row and try every candidate $s'$. That tells LWE from random: a true instance always leaves a survivor, a uniform one at most $(2d+1)^2/q$ of the time at the figure&rsquo;s $\beta = 1$ (2.4% at $d = 4$, our arithmetic).</p>
 <div class="try fig" id="p3-eval1">
   <span class="vlabel">Step through</span>
   <p class="tt">Evaluate at 1: a ring LWE instance collapses to one dimension <span class="tag">illustration</span></p>
@@ -1330,12 +1436,15 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
   </div>
   <div class="steps"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>A small-preserving map to a smaller ring breaks Ring-LWE; the reductions want $f$ <span class="ref" data-ref="irreducible">irreducible</span> over $\mathbb{Z}$. <span class="next">Can factors modulo $q$ help the implementer instead?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>A map to a smaller ring that keeps small things small breaks Ring-LWE. <span class="next">Factors modulo $q$ are still allowed. Can they help the implementer instead?</span></p>
 <button class="readbtn" data-for="sec-4-5">mark as read</button>
 
 <!-- ================= 4.6 ================= -->
 <h3 id="sec-4-6" data-num="4.6" data-toc="Exploiting the Algebraic Structure … for Efficiency (NTT)"><span class="n">4.6</span>Exploiting the Algebraic Structure … for Efficiency (The NTT)</h3>
-<p class="hook">Schoolbook multiplication costs $O(d^2)$. Split the ring in two by the CRT, again and again, and it costs $O(d\log d)$.</p>
+<p class="hook">Structure can also buy speed. The costliest operation in the scheme is multiplying polynomials, and the schoolbook way takes $d^2$ products: 65,536 for Kyber&rsquo;s $d = 256$ (our arithmetic).</p>
+<p>We factor $f$ modulo $q$ only, which the reductions do not forbid, and compute in the pieces. If $X^d + 1 \equiv (X^{d/2} - r)(X^{d/2} + r) \pmod q$, the Chinese Remainder Theorem says that a polynomial modulo $X^d + 1$ carries the same information as its two remainders modulo the halves. So we reduce $a$ and $b$ modulo each half, multiply half by half, and glue the results back together.</p>
+<p>Reducing modulo $X^{d/2} - r$ is cheap: replace $X^{d/2}$ by $r$, which folds the top half of the coefficients onto the bottom half. By itself that buys little: two half-size schoolbook products are still quadratic. But if the halves split again and again, we recurse down to single numbers. That is $\log d$ levels of about $d$ operations each, $O(d \log d)$ in all.</p>
+
 <p class="claim">If $X^d + \alpha \equiv (X^{d/2} - r)(X^{d/2} + r)$, one split costs $d$ additions and $d/2$ multiplications (<span class="ref" data-ref="lemma5">Lemma 5</span>); recursing gives $T(d) = dT(1) + 2d\log d\cdot A + d\log d\cdot M$. <span class="cite">§4.6, Lemma 5, Eqs. (64)–(68)</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Schoolbook multiplication of degree-$d$ polynomials takes $O(d^2)$ operations; Karatsuba and Toom–Cook take approximately $O(d^{1.5})$. <span data-def="ntt" data-def-label="Number Theoretic Transform (NTT)" data-def-keys="ntt fft fast multiplication">Multiplication in $\mathcal{R}_{q,f}$ via the Number Theoretic Transform needs as few as $O(d\log d)$ operations over $\mathbb{Z}_q$; the NTT is &ldquo;a special case of the FFT performed over the field $\mathbb{Z}_q^*$ rather than over the complex numbers&rdquo;.</span> It was first used for lattice primitives in SWIFFT [LMPR08], and is now standard in encryption [ADPS16, BDK<sup>+</sup>18] and signatures [DKL<sup>+</sup>18, PFH<sup>+</sup>17]. <span class="cite">§4.6, p. 32–33</span></p>
@@ -1347,6 +1456,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>The proof of Lemma 5 says the reverse direction takes "$2n$ additions (or subtractions)"; the lemma states $n$. The formulas above use $n/2$ additions plus $n/2$ subtractions: $n$, matching the statement.</p>
 </div>
 </details>
+<p>In the figure ($q = 17$, $d = 4$), follow $a$ and $b$ down the tree, multiply leaf by leaf, and climb back to the schoolbook answer.</p>
 <div class="try fig" id="p3-ntt">
   <span class="vlabel">Step through</span>
   <p class="tt">The <span class="ref" data-ref="ntt">NTT</span> for $q = 17$, $d = 4$: down the tree, multiply, back up <span class="tag">illustration</span></p>
@@ -1363,11 +1473,13 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
   </div>
   <div class="steps"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>NTT: split down the tree, multiply pointwise, merge back up, divide by $d$. <span class="next">When does $X^d + 1$ split, and is it still safe?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>This is the <span class="ref" data-ref="ntt">NTT</span>, the fast Fourier transform done modulo $q$. <span class="next">Can one $f$ have no factors over the integers and many modulo $q$?</span></p>
 <button class="readbtn" data-for="sec-4-6">mark as read</button>
 
 <h3 id="sec-4-6-1" data-num="4.6.1" data-toc="Useful Algebraic Properties of the Ring R_{q,X^d+1}"><span class="n">4.6.1</span>Useful Algebraic Properties of the Ring $\mathcal{R}_{q,X^d+1}$</h3>
-<p class="hook">Security wants $X^d + 1$ <span class="ref" data-ref="irreducible">irreducible</span> over the integers; speed wants it to split modulo $q$. Both can hold at once.</p>
+<p class="hook">One $f$ can do both, and there is no paradox. A polynomial can have factors modulo $q$ that it lacks over the integers, because <span class="ref" data-ref="zq">$\mathbb{Z}_q$</span> has roots the integers do not.</p>
+<p>The <span class="ref" data-ref="ntt">NTT</span> figure used $q = 17$. No integer squares to $-1$, so $X^2 + 1$ is <span class="ref" data-ref="irreducible">irreducible</span> over the integers. But $4^2 = 16 \equiv -1 \pmod{17}$, so modulo 17 it is $(X - 4)(X + 4)$.</p>
+<p>The two lemmas on the next line say when this happens.</p>
 <p class="claim">$X^d + 1$ is irreducible over $\mathbb{Z}[X]$ iff $d$ is a power of 2 (<span class="ref" data-ref="lemma6">Lemma 6</span>); for a prime $q \equiv 1 \pmod{2k}$ it splits into $k$ factors $X^{d/k} - r_i$ (<span class="ref" data-ref="lemma7">Lemma 7</span>). <span class="cite">§4.6.1, Lemmas 6–7</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div class="boxdef" data-def="lemma6" data-def-label="Lemma 6" data-def-keys="irreducible power of 2"><p class="t">Lemma 6</p><p>$X^d + 1$ is irreducible over $\mathbb{Z}[X]$ if and only if $d$ is a power of 2.</p></div>
@@ -1380,18 +1492,22 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <p>The paper's proof of Lemma 7 says "for all odd $i$"; it is the exponents $2i + 1$ that are odd, for all $i \in \{0,\dots,k-1\}$.</p>
 </div>
 </details>
+<p>Kyber takes $d = 256$ and $q = 3329 = 13 \cdot 256 + 1$, so $k = 128$: its tree stops at 128 quadratic pieces $X^2 - r_i$ instead of 256 linear ones, with virtually the same number of operations (p. 34).</p>
+<p>The calculator finds the $r_i$; its preset, $q = 17$ and $k = 4$, gives the four leaves of the NTT figure.</p>
 <div class="try" id="p3-roots"><span class="vlabel">Try it</span>
 <p class="tt">Lemma 7: find the $r_i$ <span class="tag">illustration</span></p>
 <p class="how">Smallest $r$ with $r^k \equiv -1$, then its odd powers. Preset: $q = 17$, as in the <span class="ref" data-ref="ntt">NTT</span> above.</p>
 <div class="mount"></div>
 </div>
-<p class="remember"><span class="vlabel">Remember</span>$X^d + 1$ with $d$ a power of 2 and $q \equiv 1 \pmod{2k}$: secure and fast. <span class="next">Kyber puts it all together.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>One $f$ does both jobs. <span class="next">We now have every piece. What does the real scheme look like?</span></p>
 <button class="readbtn" data-for="sec-4-6-1">mark as read</button>
 
 <!-- ================= 4.7 ================= -->
 <h3 id="sec-4-7" data-num="4.7"><span class="n">4.7</span>The Encryption Scheme CRYSTALS-Kyber (ML-KEM)</h3>
-<p class="hook">The scheme of §4.3, plus binomial noise, compression and the <span class="ref" data-ref="ntt">NTT</span>.</p>
-<p class="claim"><span class="ref" data-ref="rlwe">Generalized-LWE</span> over <span class="ref" data-ref="ring">$\mathcal{R}_{3329,X^{256}+1}$</span>; binomial secrets <span class="ref" data-ref="psi">$\psi_\eta$</span>, easy to sample. <span class="cite">§4.7, Definition 8</span></p>
+<p class="hook">Nothing in Kyber is new to us. It is the scheme of §4.3 with every dial set, plus three engineering choices.</p>
+<p>The ring is <span class="ref" data-ref="ring">$\mathcal{R}_{3329,X^{256}+1}$</span>: $d = 256$ for a 256-bit key per ciphertext, $X^{256} + 1$ for small products and irreducibility over the integers, $q = 3329$ for the <span class="ref" data-ref="ntt">NTT</span>. The matrix $\mathbf{A}$ is $k \times k$ over this ring, and $k = 2, 3$ or $4$ is the main dial between the security levels.</p>
+<p>First, the noise is binomial instead of uniform in <span class="ref" data-ref="beta">$[\beta]$</span>: flip $2\eta$ coins and subtract the heads in one half from the heads in the other. The reason is plain: it is easier to sample. Second, each ciphertext coefficient is compressed to $d_u$ or $d_v$ bits (§2.5.1–2.5.2). Third, $\mathbf{A}$ is never stored: it is expanded from a 256-bit seed, directly in NTT form.</p>
+<p class="claim"><span class="ref" data-ref="rlwe">Generalized-LWE</span> over $\mathcal{R}_{3329,X^{256}+1}$; binomial secrets <span class="ref" data-ref="psi">$\psi_\eta$</span>, easy to sample. <span class="cite">§4.7, Definition 8</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Kyber, standardized by NIST as ML-KEM, is based on <span class="ref" data-ref="rlwe">generalized LWE</span> over $\mathcal{R}_{3329,X^{256}+1}$ with secrets from the binomial distribution, mainly because it is easier to sample. <span class="cite">§4.7, p. 36–37</span></p>
 <div class="boxdef" data-def="psi" data-def-label="binomial distribution" data-def-tex="\psi_\eta" data-def-keys="binomial psi eta definition 8 coin"><p class="t">Definition 8 — binomial distribution $\psi_\eta$</p><p>Generate $a_1,\dots,a_\eta,b_1,\dots,b_\eta \leftarrow \{0,1\}$ and output $\sum a_i - \sum b_i$. For polynomials, every coefficient is sampled independently; $\mathbf{a} \leftarrow \psi_\eta^k$ means every element of a dimension-$k$ vector is sampled so.</p></div>
@@ -1402,6 +1518,7 @@ With $\mathcal{V}_a = (a_0,\dots,a_{d-1})^T \in \mathbb{Z}^d$ and $\mathcal{M}_a
 <div class="mount"></div>
 </div>
 
+<p>It still decrypts as in §4.3; its <span class="ref" data-ref="decerr">decryption error</span> is computed as in §2.3.2, with two extra noise terms from the rounding. The pipeline figure walks through the three algorithms at the real sizes, and the calculator under it recomputes the error column of Table 3.</p>
 <p class="claim">Correct if every coefficient of (71) is below $q/4$ in magnitude; one coefficient&rsquo;s error probability × 256 is the upper bound Table 3 lists. <span class="cite">Figure 3, Eqs. (70)–(71), Table 3</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Public parameters $k, \eta_1, \eta_2, d_u, d_v \in \mathbb{Z}^+$. <span class="cite">Figure 3</span></p>
@@ -1476,13 +1593,15 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
 <p><strong>Computational efficiency.</strong> Store a 256-bit seed $\rho$ and create $\mathbf{A} = \mathcal{H}(\rho)$ (e.g. SHAKE); the public key is $(\rho, \mathbf{t})$. $3329 \equiv 1 \pmod{256}$, so (<span class="ref" data-ref="lemma7">Lemma 7</span>) $X^{256} + 1$ splits into 128 quadratics $X^2 - r_i$; the NTT representation is $\hat a = (a \bmod X^2 - r_1, \dots, a \bmod X^2 - r_{128})$ (72), and converting $a \leftrightarrow \hat a$ takes $O(d\log d)$. No prime of similar size splits $X^{256} + 1$ into linear factors (that needs $q \equiv 1 \bmod 512$, footnote 18), and there is virtually no computational difference. Since the NTT is a bijection, sample $\mathbf{A}$ directly in NTT form: this avoids $k^2$ NTT computations. Store $\mathbf{t}$ in NTT form too: no inverse NTT after $\mathbf{A}\mathbf{s}$, and $\hat{\mathbf{t}}$ is needed anyway for $\mathbf{r}^T\mathbf{t}$ — a double win. $\mathbf{s}, \mathbf{e}, \mathbf{r}, \mathbf{e}_1, e$ cannot be sampled in NTT form (not uniform), and compression cannot be done in NTT form. <span class="cite">§4.7, Eq. (72), footnote 18</span></p>
 <div class="voice note"><span class="vlabel">Note — slips in the paper</span><p>The paper says "the matrix $\mathbf{A}$ consists of $k$ polynomials"; a $k\times k$ matrix has $k^2$ — as the paper's own "avoid doing $k^2$ NTT computations" implies. In the list of values that cannot be sampled in NTT form, its last "$e$" is Figure 3's $e_2$.</p></div>
 </details>
-<p class="remember"><span class="vlabel">Remember</span>Kyber = Module-LWE + binomial noise + compression + NTT. <span class="next">And <span class="ref" data-ref="cca">CCA security</span>?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Kyber = Module-LWE over $\mathcal{R}_{3329,X^{256}+1}$ + binomial noise + compression + NTT. <span class="next">What about an attacker who sends ciphertexts of their own making?</span></p>
 <button class="readbtn" data-for="sec-4-7">mark as read</button>
 
 <!-- ================= 4.8 ================= -->
 <h3 id="sec-4-8" data-num="4.8"><span class="n">4.8</span>From CPA Encryption to a CCA-KEM</h3>
-<p class="hook">Decapsulation re-encrypts what it decrypted and rejects any mismatch.</p>
-<p class="claim"><span class="ref" data-ref="fo">Fujisaki–Okamoto</span>: coins from the message, $(K, \rho) := \mathcal{H}(m, pk)$; Decaps outputs $\perp$ if re-encryption differs. <span class="cite">§4.8, Figure 4</span></p>
+<p class="hook">Kyber as built so far is <span class="ref" data-ref="cpa">CPA</span>-secure: safe against someone who only listens. But a server decrypts whatever arrives.</p>
+<p>One move shows the danger (our illustration, not the paper&rsquo;s). An <span class="ref" data-ref="lwe">LWE</span> ciphertext is malleable, as an ElGamal ciphertext is: add about $q/2$ to one coefficient of $v$ and the matching message bit flips. <span class="ref" data-ref="cca">CCA security</span> asks that the shared key still look random even to an adversary with access to a decapsulation oracle (on any ciphertext but the challenge).</p>
+<p>The <span class="ref" data-ref="fo">Fujisaki–Okamoto</span> transform makes that oracle useless: it should answer only for ciphertexts whose message the attacker already knows. The sender hashes a random $m$ with the public key. One half of the hash is the shared key $K$, the other the coins $\rho$ used to encrypt $m$, so each $m$ has exactly one valid ciphertext. The receiver decrypts to $m'$, encrypts it again in the same way, and compares.</p>
+<p class="claim">Fujisaki–Okamoto: coins from the message, $(K, \rho) := \mathcal{H}(m, pk)$; Decaps outputs $\perp$ if re-encryption differs. <span class="cite">§4.8, Figure 4</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="kem" data-def-label="key encapsulation mechanism (KEM)" data-def-keys="kem encaps decaps shared key">A KEM has KEM-KeyGen, KEM-Encaps (public key → shared key + ciphertext) and KEM-Decaps (ciphertext + secret key → the same shared key).</span> <span data-def="cca" data-def-label="CPA- and CCA-secure KEM" data-def-keys="cca cpa kem decapsulation oracle chosen ciphertext">CPA-secure: the adversary cannot distinguish the shared key from uniform given public key and ciphertext; any CPA-secure encryption gives one by encrypting a random message (footnote 19: for slightly more advanced notions output a hash of it with the public key, as in Figure 4). CCA-secure: this remains true even with a decapsulation oracle usable on anything but the given ciphertext.</span> <span data-def="fo" data-def-label="Fujisaki–Okamoto transform" data-def-keys="fo fujisaki okamoto re-encrypt cca">The Fujisaki–Okamoto transform makes the decapsulation oracle "useless": it outputs non-$\perp$ only on ciphertexts whose message the adversary already knows — by making the encryption randomness depend on the message (encryption becomes deterministic, harmless since messages are random, footnote 20) and having decapsulation decrypt, re-encrypt, and output $\perp$ if the ciphertexts differ.</span> <span class="cite">§4.8, Figure 4</span></p>
 <div class="scrollx"><table class="dt" id="p3-fig4">
@@ -1495,6 +1614,7 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
 </tbody></table></div>
 <p>$\mathcal{H}$ and $\mathcal{G}$ are modelled as random oracles; $\rho \in \{0,1\}^{256}$ is the random coins of CPA-Encrypt (used to generate $(\mathbf{r}, \mathbf{e}_1, e_2)$). The Decaps inputs $h, z$ belong to the ML-KEM modifications below: $h = \mathcal{G}(pk)$; the paper never names $z$, which we read as the secret random value used for implicit rejection.</p>
 </details>
+<p>In the figure, an attacker flips a bit in transit. Watch the re-encryption disagree with what arrived, and Decaps refuse.</p>
 <div class="try fig" id="p3-fo">
   <span class="vlabel">Step through</span>
   <p class="tt">Decrypt, re-encrypt, compare <span class="tag">illustration</span></p>
@@ -1533,6 +1653,7 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
   </div>
   <div class="steps"></div>
 </div>
+<p>ML-KEM changes two details (next line). One is about speed: the paper says hashing a public key of about 1 KB could be somewhere between 30 and 50 percent of the running time in an AVX-2 implementation (p. 40), so decapsulation hashes a stored 32-byte digest $h$ instead.</p>
 <p class="claim">ML-KEM stores $h = \mathcal{G}(pk)$ and never outputs $\perp$: a mismatch returns a hash of $c$ and a secret. <span class="cite">§4.8, p. 40</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><strong>Pre-hashing the public key.</strong> Lattice public keys are large ($\approx$ 1 KB) and <span class="ref" data-ref="ntt">NTT</span> operations are fast compared with exponentiation or elliptic-curve operations, so hashing $pk$ in Encaps/Decaps is noticeable — between 30 and 50 percent of the running time with AVX-2. Since in many practical scenarios decapsulation runs more often than key generation, compute $h = \mathcal{G}(pk)$ in KeyGen, store it, and use $h$ instead of $pk$ as input to $\mathcal{H}$ in Decaps (nothing is saved in Encaps; Decaps hashes 32 bytes instead of $\approx$ 1 KB). <strong>Implicit rejection.</strong> Kyber never outputs $\perp$: on a mismatch it outputs a random key computed as a hash of the input ciphertext and a secret random value created at key generation. The reasoning is "somewhat technical, and it is not really clear whether this adds any security in practice". <span class="cite">§4.8, p. 40</span></p>
@@ -1542,13 +1663,15 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
 <li>A ring element carries $d$ bits; $X^d \pm 1$ keeps products small.</li>
 <li>$X^d + 1$ ($d$ a power of 2): <span class="ref" data-ref="irreducible">irreducible</span> over $\mathbb{Z}$, split mod $q$: safe and fast.</li>
 </ol></div>
-<p class="remember"><span class="vlabel">Remember</span>FO: coins from the message; re-encrypt; reject mismatches. <span class="next">§5: signatures from the same rings.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Kyber, wrapped by FO, is ML-KEM: ElGamal rebuilt. <span class="next">Its partner was the Schnorr signature. Can the same rings sign?</span></p>
 <button class="readbtn" data-for="sec-4-8">mark as read</button>
 </section>
 
     <section class="psec" id="sec-5" data-num="§5" data-toc="Digital Signatures from Σ-Protocols">
 <h2><span class="n">§5</span>Digital Signatures from Σ-Protocols</h2>
-<p class="hook">Schnorr&rsquo;s signature, rebuilt from <span class="ref" data-ref="lattice">lattices</span>.</p>
+<p class="hook">The same rings can sign, and the road is Schnorr&rsquo;s.</p>
+<p>Schnorr&rsquo;s public key is $h = g^x$, and a signature is a proof that the signer knows $x$, given without handing $x$ over. It takes two steps: a three-move conversation (commit, challenge, respond), then a hash in place of the person asking the challenge. We walk the same road from <span class="ref" data-ref="lattice">lattices</span>, with $\mathbf{t} = \mathbf{A}\mathbf{s}_1 + \mathbf{s}_2$ in place of $g^x$.</p>
+<p>Two things go wrong on the way, both because our secret is <em>small</em>. Smallness is awkward to prove, and a small secret shows through the answers the prover gives. Repairing those takes §5.1 and §5.2. §5.3 is a side trip that ends in a toy signature of our own, and the rest of the section shrinks the result until it is Dilithium.</p>
 <p class="claim">Build a <span class="ref" data-ref="sigma">Σ-protocol</span> that proves knowledge of a short secret, then make it non-interactive with <span class="ref" data-ref="fs-transform">Fiat&ndash;Shamir</span>; the end point is Dilithium (ML-DSA). <span class="cite">§5, p. 41</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>The goal is a lattice signature whose high-level structure is like Schnorr's [Sch89]. In a Schnorr signature the public key is $g, h$ and the signature is a non-interactive zero-knowledge proof of knowledge (ZKPoK) of $x$ with $g^x = h$. It is built in two steps: (1) a 3-move interactive Σ-protocol that is an honest-verifier ZKPoK of $x$; (2) the Fiat–Shamir transform, which makes it non-interactive. Section 5 follows the same road map with <span class="ref" data-ref="rlwe">$\mathcal{R}_{q,f}$-LWE</span> and <span class="ref" data-ref="rsis">$\mathcal{R}_{q,f}$-SIS</span>, and ends with Dilithium (ML-DSA). <span class="cite">§5, p. 41</span></p>
@@ -1556,7 +1679,9 @@ which is $m$ if every coefficient of $\mathbf{r}^T\mathbf{e} + e_2 + e' - (\math
 
 <!-- ============================ 5.1 ============================ -->
 <h3 id="sec-5-1" data-num="5.1"><span class="n">5.1</span>The Statements and Witnesses</h3>
-<p class="hook">Knowing some $\mathbf{s}_1, \mathbf{s}_2$ with $\mathbf{A}\mathbf{s}_1 + \mathbf{s}_2 = \mathbf{t}$ is trivial; the secret is that they are <em>small</em>. Proving smallness exactly is costly, so we prove something weaker.</p>
+<p class="hook">What exactly does the signer prove? Schnorr&rsquo;s sentence is easy to say: &ldquo;I know $x$ with $g^x = h$.&rdquo;</p>
+<p>Our matching sentence, &ldquo;I know $\mathbf{s}_1, \mathbf{s}_2$ with $\mathbf{A}\mathbf{s}_1 + \mathbf{s}_2 = \mathbf{t}$&rdquo;, is worth nothing as it stands: pick any $\mathbf{s}_1$ and set $\mathbf{s}_2 = \mathbf{t} - \mathbf{A}\mathbf{s}_1$ (our remark). The proof must also cover that both vectors are <em>small</em>, and the paper calls that less straightforward and significantly less efficient than for discrete logs.</p>
+<p>So the efficient schemes prove a <span class="ref" data-ref="relaxed">relaxed</span> sentence: &ldquo;I know <em>somewhat larger</em> $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2$ and a small multiplier $\bar c$ with $\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}$.&rdquo; Could a forger find such a solution without the key? <span class="ref" data-ref="lemma9">Lemma 9</span> says a forger who could would also solve <span class="ref" data-ref="rlwe">Ring-LWE</span> or <span class="ref" data-ref="rsis">Ring-SIS</span>: move $\bar c\,\mathbf{t}$ to the other side and the three pieces form one short vector that solves <span class="ref" data-ref="sis">SIS</span> for $[\mathbf{A} \mid \mathbf{t}]$, as in §3. One condition: $\mathbf{t}$ must look random, and that is <span class="ref" data-ref="rlwe">Ring-LWE</span>&rsquo;s job.</p>
 <p class="claim">Prove knowledge of a <span class="ref" data-ref="relaxed">relaxed solution</span> $\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}$ with larger coefficients and small $\bar c$; by <span class="ref" data-ref="lemma9">Lemma 9</span>, producing one still solves <span class="ref" data-ref="rlwe">Ring-LWE</span> or <span class="ref" data-ref="rsis">Ring-SIS</span>. <span class="cite">§5.1, Eqs. (73)–(74), Lemma 9, p. 41</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Start from an $\mathcal{R}_{q,f}$-$\mathrm{LWE}_{n,m,\beta}$ instance: $\mathbf{A} \leftarrow \mathcal{R}_{q,f}^{n\times m}$, $\mathbf{s}_1 \leftarrow [\beta]^m$, $\mathbf{s}_2 \leftarrow [\beta]^n$, $\mathbf{t} = \mathbf{A}\mathbf{s}_1 + \mathbf{s}_2$. The public key is $(\mathbf{A}, \mathbf{t})$; we want to prove knowledge of $\mathbf{s}_1, \mathbf{s}_2$ in the right range. This is harder than for discrete log: besides the algebraic relation we must also prove that the coefficients are small (ideally in <span class="ref" data-ref="beta">$[\beta]$</span>, but $[\bar\beta]$ for some $\bar\beta$ a little larger is fine).</p>
@@ -1569,6 +1694,7 @@ $$\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}. \qquad
 <p>Implicit in the proof: the SIS solution is $(\bar{\mathbf{s}}_1, -\bar c, \bar{\mathbf{s}}_2)$, and a SIS solution must be non-zero; it is, because $\bar c \neq 0$, which in use holds since $\bar c \in \bar{\mathcal C}$ (76).</p></div>
 </details>
 
+<p>In the figure the key is a single number: watch one exact solution become four relaxed ones, and one of those turn into a short vector for $[a \mid t]$.</p>
 <div class="try fig" id="p4-wit"><span class="vlabel">Step through</span>
 <p class="tt">Exact versus relaxed, in a one-number key <span class="tag">illustration</span></p>
 <div class="stage"></div>
@@ -1581,11 +1707,14 @@ $$\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}. \qquad
 <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>We prove a relaxed statement; by Lemma 9 even that is as hard as Ring-LWE or Ring-SIS. <span class="next">How small is $\bar c$? That depends on the challenges.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>A relaxed statement is enough to prove. <span class="next">Where does the multiplier $\bar c$ come from, and how small is it?</span></p>
 <button class="readbtn" data-for="sec-5-1">mark as read</button>
 
 <!-- ============================ 5.1.1 ============================ -->
 <h3 id="sec-5-1-1" data-num="5.1.1"><span class="n">5.1.1</span>The Challenge Space</h3>
+<p class="hook">$\bar c$ will be the difference of two challenges (§5.2.2). So what should a challenge look like?</p>
+<p>In Schnorr a challenge is simply a random number. Here the challenge multiplies our small secret, and whatever multiplies the secret also stretches it. So we want challenges that are small, yet too many to guess.</p>
+<p>The paper&rsquo;s choice is a polynomial with exactly $\eta$ coefficients equal to $\pm1$ and zeros everywhere else. Its product with a secret in <span class="ref" data-ref="beta">$[\beta]$</span> has coefficients at most $\eta\beta$ (footnote 23, p. 43), yet there are $2^\eta\binom{d}{\eta}$ such challenges: choose where the non-zeros go, then choose their signs.</p>
 <p class="claim">Challenges are polynomials with exactly $\eta$ coefficients $\pm1$, with $\eta$ the smallest such that $2^\eta\binom{d}{\eta} &gt; 2^{256}$; differences $\bar c$ then lie in $[2]$. <span class="cite">§5.1.1, Eqs. (75)–(76), p. 42</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div data-def="chal" data-def-label="challenge space" data-def-tex="\mathcal{C},\ \bar{\mathcal{C}},\ \eta" data-def-keys="challenge space sparse eta η weight non-zero coefficients eq 75 76"><p>The coefficients of $\bar c$ (and of $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2$) depend on the challenge space, so we want challenges with small norms. Over $\mathcal{R}_f$ with $\deg f = d$, let $\eta$ be the smallest integer with $2^\eta\binom{d}{\eta} &gt; 2^{256}$ (assuming $d$ is large enough). Define</p>
@@ -1593,16 +1722,20 @@ $$\mathcal{C} = \{c \in [1] : \|c\|_1 = \eta\}, \qquad \bar{\mathcal{C}} = \{\ba
 <p>So $\mathcal{C}$ contains the polynomials with exactly $\eta$ non-zero coefficients from $\{-1, 1\}$, and $|\mathcal{C}| = 2^\eta\binom{d}{\eta}$. Allowing fewer non-zero coefficients would complicate sampling without increasing the size by much. <strong>Footnote 22:</strong> to sample, start from a length-$d$ vector with $\eta$ ones, shuffle it (e.g. Fisher–Yates), then randomly negate each $1$. <span class="cite">§5.1.1, Eqs. (75)–(76), p. 42</span></p></div>
 </details>
 
+<p>The calculator counts them, and shows a loose end in the paper&rsquo;s own numbers.</p>
 <div class="try" id="p4-chal"><span class="vlabel">Try it</span><p class="tt">How big is the <span class="ref" data-ref="chal">challenge space</span>?</p>
 <p class="how">The default $\eta = 49$ is Table 4&rsquo;s (p. 56): about $2^{225.35}$ challenges (our count), below the $2^{256}$ the §5.1.1 rule asks for; $\eta$ by the §5.1.1 rule (our count) is 60. The paper does not comment.</p>
 <div class="mount"></div></div>
 
-<p class="remember"><span class="vlabel">Remember</span>Sparse $\pm1$ challenges: small, yet over $2^{256}$ by the §5.1.1 rule (Table 4&rsquo;s $\eta = 49$ gives about $2^{225}$, our count). <span class="next">Now the protocol.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Sparse $\pm1$ challenges are small, yet too many to guess. <span class="next">We have the statement and the challenges. What is the conversation?</span></p>
 <button class="readbtn" data-for="sec-5-1-1">mark as read</button>
 
 <!-- ============================ 5.2 ============================ -->
 <h3 id="sec-5-2" data-num="5.2"><span class="n">5.2</span>The Basic Σ-Protocol</h3>
-<p class="hook">Schnorr&rsquo;s three moves, plus one lattice-only step: the prover throws away any answer that would leak the secret.</p>
+<p class="hook">We copy Schnorr move for move and see what breaks.</p>
+<p>Schnorr&rsquo;s prover picks a random mask $y$, sends $w = g^y$, receives a challenge $c$ and answers $z = y + xc$. Copy it with vectors: <span class="ref" data-ref="mask-y">masks $\mathbf{y}_1, \mathbf{y}_2$</span> and answers $\mathbf{z}_i = c\mathbf{s}_i + \mathbf{y}_i$.</p>
+<p>The answers must stay small, because the short witness of §5.1 will be built from them, so the masks must come from a bounded range. But then the possible answers are that range <em>slid sideways</em> by $c\mathbf{s}$, and an answer near the edge gives the slide away. With the figure&rsquo;s toy numbers: masks go up to 6, so an answer of 7 can only mean $cs \ge 1$.</p>
+<p>The fix is blunt. Draw the masks from a range a little wider than the answers may have, and send an answer only when it lands in a middle window <span class="ref" data-ref="betabar">$[\bar\beta]$</span> that every possible slide still covers. Otherwise send $\perp$ and start again. The paper calls this <span class="ref" data-ref="rejection">rejection sampling</span>.</p>
 <p class="claim"><span class="ref" data-ref="sigma">Figure 5</span> [Lyu09]: draw <span class="ref" data-ref="mask-y">masks $\mathbf{y}_i$</span>, send $\mathbf{w} = \mathbf{A}\mathbf{y}_1 + \mathbf{y}_2$, receive $c$, answer $\mathbf{z}_i = c\mathbf{s}_i + \mathbf{y}_i$, or $\perp$ if some $\mathbf{z}_i$ leaves <span class="ref" data-ref="betabar">$[\bar\beta]$</span>; accept iff both $\mathbf{z}_i \in [\bar\beta]$ and $\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t} = \mathbf{w}$. <span class="cite">§5.2, Figure 5, pp. 42–43</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div class="boxdef" data-def="sigma" data-def-label="Σ-protocol (Figure 5)" data-def-tex="\Sigma" data-def-keys="sigma protocol zero-knowledge proof rejection sampling"><p class="t">Figure 5 — the basic zero-knowledge proof system (from [Lyu09])</p>
@@ -1617,6 +1750,7 @@ $$\mathcal{C} = \{c \in [1] : \|c\|_1 = \eta\}, \qquad \bar{\mathcal{C}} = \{\ba
 <p>An unusual feature: the protocol does <em>not</em> have perfect completeness. <span data-def="rejection" data-def-label="rejection sampling" data-def-keys="abort reject range check">To keep the output small and independent of the secret, the last round uses <strong>rejection sampling</strong>. Here it is simply a check that all coefficients lie in a range.</span> Discrete-Gaussian rejection gives slightly smaller outputs [Lyu12, DDLL13], but it is more complex: a slightly incorrect implementation may leak the secret key, and it may be harder to defend against side channels. As a result, the signer's running time is a random variable, but one independent of $\mathbf{s}_1, \mathbf{s}_2$. Sending a hash of the first message is a common compaction trick, and with rejection it would also let one simulate aborting transcripts. It is unnecessary for signature security, because the signer's aborted attempts are never seen. So the paper proves zero-knowledge only for non-aborting transcripts. <span class="cite">§5.2, Figure 5, pp. 42–43</span></p>
 </details>
 
+<p>Step through one run with one-number keys: at step 4 the possible answers slide off the dashed mask range, and at step 7 watch what the window keeps as the secret changes.</p>
 <div class="try fig" id="p4-sigma">
   <span class="vlabel">Step through</span>
   <p class="tt">Figure 5 with one-number keys: commit, challenge, respond, reject, rewind <span class="tag">illustration</span></p>
@@ -1640,11 +1774,14 @@ $$\mathcal{C} = \{c \in [1] : \|c\|_1 = \eta\}, \qquad \bar{\mathcal{C}} = \{\ba
   <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>Schnorr plus a range check that sometimes aborts. <span class="next">Why is it safe to reveal $\mathbf{z}$? <span class="ref" data-ref="lemma10">Lemma 10</span>.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Schnorr, plus a range check that sometimes aborts. <span class="next">Does the window really hide the secret, or only in a toy? <span class="ref" data-ref="lemma10">Lemma 10</span> counts.</span></p>
 <button class="readbtn" data-for="sec-5-2">mark as read</button>
 
 <!-- ============================ 5.2.1 ============================ -->
 <h3 id="sec-5-2-1" data-num="5.2.1"><span class="n">5.2.1</span>Honest-Verifier Zero-Knowledge</h3>
+<p class="hook">The window really hides the secret, and the proof is a count.</p>
+<p>Take one coefficient and fix the secret&rsquo;s slide, some $\nu_s$ in <span class="ref" data-ref="gamma">$[\gamma]$</span>. A given window value $\nu_z$ comes from exactly one <span class="ref" data-ref="mask-y">mask</span>, $\nu_y = \nu_z - \nu_s$, and the mask range $[\bar\beta + \gamma]$ always contains it. So sent answers are uniform on the window, and the chance of landing in it is the same for every secret. In the toy above: 9 window values out of 13 masks, for each of the five slides.</p>
+<p>So anyone can write a convincing conversation without the key: choose the answers and the challenge first, then solve for the commitment, as in Schnorr&rsquo;s proof. A conversation we could have written ourselves teaches us nothing. This covers conversations that end in an answer; the signer never shows the others (§5.6).</p>
 <p class="claim"><span class="ref" data-ref="lemma10">Lemma 10</span>: if every $cs$ lies in <span class="ref" data-ref="gamma">$[\gamma]$</span>, the chance of no $\perp$ is $\bigl(\frac{2\bar\beta+1}{2(\bar\beta+\gamma)+1}\bigr)^{d(m+n)}$, about $1/e$ when <span class="ref" data-ref="betabar">$\bar\beta = \gamma d(m+n)$</span>, and sent answers are uniform on $[\bar\beta]$; neither depends on the secret (step 7 above), so transcripts can be simulated. <span class="cite">§5.2.1, Lemma 10, Eqs. (77)–(80), pp. 43–44</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div class="boxdef" data-def="lemma10" data-def-label="Lemma 10" data-def-keys="abort probability rejection"><p class="t">Lemma 10</p>
@@ -1662,31 +1799,40 @@ $$\left(\frac{2\bar\beta+1}{2(\bar\beta+\gamma)+1}\right)^{d(m+n)} &gt; \left(\f
 <p>In (78) the paper quantifies over $\mathbf{z}_1' \in [\beta]^m$, $\mathbf{z}_2' \in [\beta]^n$; it must be $[\bar\beta]$, as in (79) and the proof. On p. 44 the proof's first sentence gives the probability that a coefficient equals $\nu_z$ as “exactly $\frac{1}{2\bar\beta+1}$”. That is the conditional probability (78); the unconditional value, which the argument shows and (79) states, is $\frac{1}{2(\bar\beta+\gamma)+1}$.</p>
 </div>
 </details>
-<p class="remember"><span class="vlabel">Remember</span>Sent answers and the abort rate look the same whatever the secret. <span class="next">Must a convincing prover know anything?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Sent answers and the abort rate are the same whatever the secret. <span class="next">Must a prover who convinces us know anything?</span></p>
 <button class="readbtn" data-for="sec-5-2-1">mark as read</button>
 
 <!-- ============================ 5.2.2 ============================ -->
 <h3 id="sec-5-2-2" data-num="5.2.2"><span class="n">5.2.2</span>Proof of Knowledge</h3>
+<p class="hook">A convincing prover must know something. The argument is Schnorr&rsquo;s, and it is a thought experiment, not a move of the protocol.</p>
+<p>Take any prover that manages to convince us. Let it send its commitment $\mathbf{w}$; then, like rewinding a tape, put it back at that point and ask a different challenge. If it answers both, we subtract one verification equation from the other and $\mathbf{w}$ cancels, leaving an equation between the <em>differences</em> of the answers and of the challenges.</p>
+<p>In Schnorr that equation is $g^{\bar z} = h^{\bar c}$, and dividing $\bar z$ by $\bar c$ gives the secret $x$ itself. Here dividing would not help, since nothing says the quotient is small (our remark). So we leave $\bar c$ in the equation: the <span class="ref" data-ref="relaxed">relaxed</span> statement of §5.1. Differences of two answers reach <span class="ref" data-ref="betabar">$2\bar\beta$</span>, and the difference of two challenges lies in $[2]$. In the figure&rsquo;s first run the differences are $(4, -2)$ with $\bar c = -2$: that is $\bar c$ times the secret $(-2, 1)$ <span class="tag">illustration</span>.</p>
 <p class="claim">Rewinding (Figure 6, step 8 above): two accepting answers to one $\mathbf{w}$ subtract to $\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c - c')\mathbf{t}$, a <span class="ref" data-ref="relaxed">relaxed witness</span> (74) with coefficients in <span class="ref" data-ref="betabar">$[2\bar\beta]$</span>. <span class="cite">§5.2.2, Figure 6, Eq. (81), pp. 44&ndash;45</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Use the usual rewinding argument (Figure 6): after the prover sends $\mathbf{w}$, get answers to two challenges $c \neq c'$. If both transcripts $(\mathbf{w}, c, \mathbf{z}_1, \mathbf{z}_2)$ and $(\mathbf{w}, c', \mathbf{z}_1', \mathbf{z}_2')$ verify, then $\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t} = \mathbf{A}\mathbf{z}_1' + \mathbf{z}_2' - c'\mathbf{t}$, which simplifies to</p>
 $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c - c')\mathbf{t}, \qquad (81)$$
 <p>exactly the statement (74) with $\bar{\mathbf{s}}_1 \in [2\bar\beta]^m$, $\bar{\mathbf{s}}_2 \in [2\bar\beta]^n$, $\bar c \in [2]$. <span class="cite">§5.2.2, Figure 6, Eq. (81), pp. 44&ndash;45</span></p>
 </details>
-<p class="remember"><span class="vlabel">Remember</span>Two answers to one commitment give a relaxed witness. <span class="next">Put the two halves together.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Two answers to one commitment give a relaxed witness. <span class="next">What do zero-knowledge and extraction add up to?</span></p>
 <button class="readbtn" data-for="sec-5-2-2">mark as read</button>
 
 <!-- ============================ 5.2.3 ============================ -->
 <h3 id="sec-5-2-3" data-num="5.2.3"><span class="n">5.2.3</span>Putting It All Together</h3>
+<p class="hook">Zero-knowledge and extraction together are a way to prove who we are.</p>
+<p>Picture an adversary who watches as many honest conversations as it likes and then tries to pass as the prover. The conversations gave it nothing it could not have written alone (§5.2.1). If it succeeds anyway, rewinding it yields a <span class="ref" data-ref="relaxed">relaxed</span> witness (§5.2.2), which <span class="ref" data-ref="lemma9">Lemma 9</span> turns into a solution of <span class="ref" data-ref="rlwe">Ring-LWE</span> or <span class="ref" data-ref="rsis">Ring-SIS</span>.</p>
+<p>A signature is one idea away, the same idea as for Schnorr: let a hash of the message and the commitment play the verifier. The challenge is then fixed by what is being signed, and nobody has to be there to ask it (a toy in §5.3, full size in §5.6).</p>
 <p class="claim">Zero-knowledge plus <span class="ref" data-ref="pok">proof of knowledge</span> plus <span class="ref" data-ref="lemma9">Lemma 9</span>: impersonating the prover means solving <span class="ref" data-ref="rlwe">Ring-LWE</span> or <span class="ref" data-ref="rsis">Ring-SIS</span>, and <span class="ref" data-ref="fs-transform">Fiat–Shamir</span> gives a signature secure in the random oracle model. <span class="cite">§5.2.3, pp. 44–45</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="hvzk" data-def-label="honest-verifier zero-knowledge (HVZK)" data-def-keys="hvzk honest verifier zero knowledge simulator">HVZK means an adversary learns nothing from non-aborted transcripts.</span> <span data-def="pok" data-def-label="proof of knowledge" data-def-keys="pok extract rewind impersonate">Proof of knowledge means an adversary who can impersonate the prover can produce a solution to (74), which by Lemma 9 solves Ring-LWE or Ring-SIS.</span> Together, assuming Ring-SIS and Ring-LWE are hard, an adversary cannot impersonate the prover even after observing valid interactions. Fiat–Shamir then yields a signature scheme secure in the random oracle model, based on the hardness of Ring-SIS and Ring-LWE. <span class="cite">§5.2.3, pp. 44–45</span></p>
 </details>
-<p class="remember"><span class="vlabel">Remember</span>An identification scheme as hard as Ring-LWE or Ring-SIS. <span class="next">How large must <span class="ref" data-ref="betabar">$\bar\beta$</span> be?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>An identification scheme as hard as Ring-LWE or Ring-SIS. <span class="next">Two problems, two sizes: how large must <span class="ref" data-ref="betabar">$\bar\beta$</span> be?</span></p>
 <button class="readbtn" data-for="sec-5-2-3">mark as read</button>
 
 <!-- ============================ 5.2.4 ============================ -->
 <h3 id="sec-5-2-4" data-num="5.2.4"><span class="n">5.2.4</span>Setting the Parameters</h3>
+<p class="hook">Two problems now guard the scheme, at two very different sizes.</p>
+<p><span class="ref" data-ref="rlwe">Ring-LWE</span> guards the key, whose secrets have coefficients in <span class="ref" data-ref="beta">$[\beta]$</span>. <span class="ref" data-ref="rsis">Ring-SIS</span> guards against forgery, where the witness pulled out by rewinding has coefficients up to <span class="ref" data-ref="betabar">$2\bar\beta$</span>. And $\bar\beta$ is not ours to pick freely: the window must be wide compared with the slide <span class="ref" data-ref="gamma">$\gamma = \eta\beta$</span> times the number of coefficients, $d(m+n)$, or the prover almost never answers (next line). So the forger&rsquo;s target is far looser than the key&rsquo;s secret.</p>
+<p>From §3: <span class="ref" data-ref="lwe">LWE</span> gets harder as its bound grows, <span class="ref" data-ref="sis">SIS</span> easier. The scheme is only as strong as the weaker of its two guards (our reading), so the best setting has them equally hard. With the sample parameters of §5.7, $\beta = 4$ and $2\bar\beta$ is about $2^{20}$.</p>
 <p class="claim"><span class="ref" data-ref="betabar">$\bar\beta \approx \gamma d(m+n)$</span> with <span class="ref" data-ref="gamma">$\gamma = \eta\beta$</span>, so $\bar\beta$ is about $\eta d(m+n)$ times $\beta$; the best setting makes <span class="ref" data-ref="rlwe">Ring-LWE</span> at $\beta$ and <span class="ref" data-ref="rsis">Ring-SIS</span> at $2\bar\beta$ equally hard. <span class="cite">§5.2.4, p. 45</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>Extraction gives $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2$ with coefficients in $[2\bar\beta]$ and $\|\bar c\|_1 \le 2\eta$. By <span class="ref" data-ref="lemma9">Lemma 9</span>, if $\mathcal{R}_{q,f}$-$\mathrm{LWE}_{n,m,\beta}$ is hard, this implies solving an $\mathcal{R}_{q,f}$-SIS problem with $m+1$ columns. The optimal setting makes the two problems equally hard, i.e. at the same vertical position (height) in Figure 2. $\bar\beta$ is dictated by <span class="ref" data-ref="lemma10">Lemma 10</span>: by (80) it should be around $\gamma d(m+n)$, and with $\|c\|_1 \le \eta$, $\gamma = \eta\beta$. So $\bar\beta$ is roughly a factor $\eta d(m+n)$ larger than $\beta$. <span class="cite">§5.2.4, p. 45</span></p>
@@ -1694,12 +1840,14 @@ $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c
 <p>Here the paper writes the SIS problem as $\mathcal{R}_{q,f}$-$\mathrm{SIS}_{n,m+1,\bar\beta}$. Since the extracted coefficients lie in $[2\bar\beta]$, applying Lemma 9 gives bound $2\bar\beta$, which is what the paper itself writes in §5.7 ($\mathcal{R}_{q,f}$-$\mathrm{SIS}_{n,m+1,2\bar\beta}$).</p>
 </div>
 </details>
-<p class="remember"><span class="vlabel">Remember</span><span class="ref" data-ref="rlwe">LWE</span> is hard at small $\beta$; <span class="ref" data-ref="rsis">SIS</span> must stay hard at the much larger $2\bar\beta$. <span class="next">Change $\beta$ alone and you get other classic protocols.</span></p>
+<p class="remember"><span class="vlabel">Remember</span><span class="ref" data-ref="rlwe">LWE</span> is hard at small $\beta$; <span class="ref" data-ref="rsis">SIS</span> must stay hard at the much larger $2\bar\beta$. <span class="next">What happens if we set the sizes differently?</span></p>
 <button class="readbtn" data-for="sec-5-2-4">mark as read</button>
 
 <!-- ============================ 5.3 ============================ -->
 <h3 id="sec-5-3" data-num="5.3" data-toc="Schnorr, Okamoto, Katz–Wang"><span class="n">5.3</span>Analogies to Discrete-Log Schemes: Schnorr, Okamoto, and Katz–Wang</h3>
-<p class="hook">Optional comparison (footnote 24): changing only $\beta$ mimics three discrete-log schemes. The toy signature at the end is not optional: §5.6 returns to it.</p>
+<p class="hook">Other sizes give Schnorr&rsquo;s cousins. The paper marks this side trip as skippable (footnote 24); we need only the stop we add at its end, a toy signature of our own.</p>
+<p>Schnorr has two well-known discrete-log cousins: Okamoto&rsquo;s, where one public key has many matching secret keys, and Katz&ndash;Wang&rsquo;s, whose security proof needs no rewinding. The lattice protocol of §5.2 turns into either by moving one dial. Make $\beta$ large, and many small secrets fit the same key: Okamoto-like. Make <span class="ref" data-ref="betabar">$\bar\beta$</span> so small that, for a random key, answers to two different challenges cannot both exist (with high probability): Katz&ndash;Wang-like. Both pay in <span class="ref" data-ref="lwe">LWE</span> or <span class="ref" data-ref="sis">SIS</span> hardness (next line) and remain, the paper says, &ldquo;mostly of only theoretical interest&rdquo;.</p>
+
 <p class="claim">Okamoto-like needs $\beta &gt; q^{n/(n+m)}$ and Katz–Wang-like <span class="ref" data-ref="betabar">$\bar\beta &lt; q^{n/(n+m)}$</span>; both put $\beta$ and $\bar\beta$ on one side of the <span class="ref" data-ref="lwe">LWE</span>/<span class="ref" data-ref="sis">SIS</span> crossing, so the unconstrained Schnorr-like one is the most efficient (Figure 7). <span class="cite">§5.3, Figure 7, pp. 45–49</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>This section is not needed for the sequel (footnote 24). By changing only $\beta$ (and the derived $\bar\beta$), the lattice protocol mimics three discrete-log schemes with different security properties. The Schnorr-like variant, with $\beta$ unconstrained, is the most efficient. The common blueprint: a homomorphic one-way function family $\mathcal F$; the public key is $f, f(x)$; the prover sends $w = f(y)$ for a random mask $y$ and answers $c$ with $z = y + xc$. Different properties come from changing the relation between the domain and range sizes of $f$. <span class="cite">§5.3, pp. 45–46</span></p>
@@ -1718,6 +1866,7 @@ $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c
 <div class="voice note"><span class="vlabel">Note on the paper's text</span><p>The paper writes Schnorr's verification check as $g^z = t^c\cdot w$, using $t$ for $h$.</p></div>
 </details>
 
+<p>The figure redraws the paper&rsquo;s Figure 7. Watch the dotted line, the weaker of the two problems, as each variant places $\beta$ and $\bar\beta$.</p>
 <div class="try fig" id="p4-fig7">
   <span class="vlabel">Step through</span>
   <p class="tt">Figure 7: where each variant puts $\beta$, $\bar\beta$ <span class="tag">illustration</span></p>
@@ -1742,6 +1891,7 @@ $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c
 <tr><td>assumption</td><td>discrete log</td><td><span class="ref" data-ref="rlwe">Ring-LWE</span> + <span class="ref" data-ref="rsis">Ring-SIS</span></td></tr>
 </tbody></table></div>
 
+<p>Now the stop we need: the hash of §5.2.3 at work. With nobody waiting for a reply, a failed attempt is thrown away in private, and only the attempt that succeeds is ever seen.</p>
 <p class="claim"><span class="ref" data-ref="fs-transform">Fiat&ndash;Shamir</span> makes Figure 5 a signature: a hash of the message and the first message replaces the challenge, the signer restarts instead of sending $\perp$, and the verifier recomputes $\mathbf{w} = \mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t}$ to check that hash. <span class="cite">§5.2, p. 42; §5.4, p. 49; §5.6, Figure 10, p. 55</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p data-def="fs-transform" data-def-label="Fiat–Shamir transform" data-def-keys="fiat shamir transform hash challenge non-interactive signature">&ldquo;The transformation of this protocol to a signature scheme will use the usual Fiat-Shamir transform, in which the challenge is created as a hash of the message and the first message of the prover.&rdquo; <span class="cite">§5.2, p. 42</span></p>
@@ -1750,6 +1900,7 @@ $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c
 <p>&ldquo;[B]ecause the protocol is no longer interactive, there is never a need for the prover to send $\perp$ &ndash; he can simply keep restarting the protocol until the <span class="ref" data-ref="rejection">rejection sampling</span> step is successful.&rdquo; Figure 10 also puts the public key into $\mathcal{H}$, &ldquo;as good cryptographic practice&rdquo;. <span class="cite">§5.6, Figure 10, p. 55</span></p>
 <div class="voice note"><span class="vlabel">What is ours</span><p>The paper writes a signature out only for Figure 9 (Figure 10). The toy below applies the same recipe to Figure 5 with §5.2&rsquo;s one-number keys: $c = \mathcal{H}(w, \mu, a, t)$, $\sigma = (c, z_1, z_2)$. Its hash is a stand-in, and its two-element challenge set makes it insecure.</p></div>
 </details>
+<p>Step through the toy: with message 1 the first attempt is discarded and the second is sent, and $w$ never travels, because the verifier rebuilds it from the answers.</p>
 <div class="try fig" id="p4-fs">
   <span class="vlabel">Step through</span>
   <p class="tt">Figure 5 as a signature (ours, following §5.2 and <span class="ref" data-ref="fs">Figure 10</span>), with §5.2&rsquo;s one-number keys <span class="tag">illustration</span></p>
@@ -1793,12 +1944,15 @@ $$\mathbf{A}(\mathbf{z}_1 - \mathbf{z}_1') + (\mathbf{z}_2 - \mathbf{z}_2') = (c
   <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>Same protocol, three parameter regimes; the free Schnorr-like one is cheapest. <span class="next">Can the prover send less?</span></p>
+<p class="remember"><span class="vlabel">Remember</span>A hash turns the Schnorr-like protocol into a signature. <span class="next">It sends both answers. Can the signer send less?</span></p>
 <button class="readbtn" data-for="sec-5-3">mark as read</button>
 
 <!-- ============================ 5.4 ============================ -->
 <h3 id="sec-5-4" data-num="5.4"><span class="n">5.4</span>Reducing the Proof Size</h3>
-<p class="hook">Drop $\mathbf{z}_2$ from the proof: a small change rarely moves a number&rsquo;s high bits.</p>
+<p class="hook">The small part, $\mathbf{z}_2$, can go.</p>
+<p>In the verifier&rsquo;s equation $\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t} = \mathbf{w}$, $\mathbf{z}_2$ is a small correction to large numbers, roughly like the last digits of a long number (an analogy). Change them a little and the leading digits stay put, unless the number sat right at a rounding boundary.</p>
+<p>So let the commitment be only the leading part, $\mathbf{w} = \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{y})$: the nearest point of a coarse grid <span class="ref" data-ref="S-set">$\mathcal{S}$</span>, as in §2.5.1. The verifier computes $\mathbf{A}\mathbf{z} - c\mathbf{t}$, which equals $\mathbf{A}\mathbf{y} - c\mathbf{s}_2$: the right number, off by a slide of at most <span class="ref" data-ref="gamma">$\gamma$</span>. Unless that number is within $\gamma$ of a rounding boundary, its leading part is $\mathbf{w}$, and the verifier never needs $\mathbf{z}_2$.</p>
+<p>And if it is too close? The prover does what it already knows how to do: refuse and restart.</p>
 <p class="claim"><span class="ref" data-ref="fig8">Figure 8</span> [BG14] sends only $\mathbf{z}$, with $\mathbf{w} = \mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{y})$; the verifier checks <span class="ref" data-ref="high-low">$\mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{z} - c\mathbf{t}) = \mathbf{w}$</span>. It works because of (85): if $\mathrm{LOW}_\mathcal{S}(w) \in [\delta_\mathcal{S} - \gamma]$, adding any <span class="ref" data-ref="gamma">$s \in [\gamma]$</span> keeps the high part. <span class="cite">§5.4, Figure 8, Eq. (85), pp. 49–51</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>In <span class="ref" data-ref="sigma">Figure 5</span> the verifier can recompute $\mathbf{z}_2 = \mathbf{w} - \mathbf{A}\mathbf{z}_1 + c\mathbf{t}$, so $\mathbf{z}_2$ need not be sent. But this is incompatible with using the protocol efficiently or turning it into a signature with <span class="ref" data-ref="fs-transform">Fiat–Shamir</span> (§5.6). There one sends the short hash $\rho = \mathcal{H}(\mathbf{w})$ instead of $\mathbf{w}$ (the verifier checks $\mathcal{H}(\mathbf{A}\mathbf{z}_1 + \mathbf{z}_2 - c\mathbf{t}) = \rho$), and then $\mathbf{z}_2$ can no longer be recomputed. Not sending $\mathbf{w}$ essentially halves the signature size. So at first glance the prover must send either $\mathbf{w}$ or $\mathbf{z}_2$.</p>
@@ -1816,6 +1970,7 @@ $$\mathrm{LOW}_\mathcal{S}(w) \in [\delta_\mathcal{S} - \gamma] \implies \mathrm
 <p><span class="cite">§5.4, Figure 8, Eq. (85), pp. 49–51</span></p>
 </details>
 
+<p>The figure puts $\mathbb{Z}_{97}$ on a circle with four grid points: watch the shaded safe zones at step 3, and at step 4 a number that starts outside them.</p>
 <div class="try fig" id="p4-high">
   <span class="vlabel">Step through</span>
   <p class="tt">HIGH, LOW and one <span class="ref" data-ref="hint">hint bit</span> on $\mathbb{Z}_{97}$ <span class="tag">illustration</span></p>
@@ -1837,6 +1992,7 @@ $$\mathrm{LOW}_\mathcal{S}(w) \in [\delta_\mathcal{S} - \gamma] \implies \mathrm
   <div class="steps"></div>
 </div>
 
+<p>Four short checks remain, folded below. Open the second for a surprise: the prover tests the distance to the boundary, not &ldquo;will the verifier accept?&rdquo;. Open the fourth to see how the forger&rsquo;s target changes.</p>
 <h4 class="fold" id="sec-5-4-1"><span class="n">§5.4.1</span>Correctness</h4>
 <p class="claim">$\mathbf{A}\mathbf{z} - c\mathbf{t} = \mathbf{A}\mathbf{y} - c\mathbf{s}_2$, so the prover&rsquo;s LOW check and (85) make the honest $\mathbf{w}$ pass. <span class="cite">§5.4.1, Eq. (86), p. 51</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
@@ -1870,12 +2026,14 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t} = \mathrm{LOW}_\math
 <p>This is (74), with $\bar{\mathbf{s}}_2$ set to the difference of the two LOW parts. <span class="cite">§5.4.4, Eq. (90), p. 52</span></p>
 </details>
 
-<p class="remember"><span class="vlabel">Remember</span>Send only $\mathbf{z}$: the high bits of $\mathbf{A}\mathbf{y}$ survive small shifts. <span class="next">Next: shrink the public key.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Send only $\mathbf{z}$, and restart when the high bits might not survive. <span class="next">Can the public key lose its low bits too?</span></p>
 <button class="readbtn" data-for="sec-5-4">mark as read</button>
 
 <!-- ============================ 5.5 ============================ -->
 <h3 id="sec-5-5" data-num="5.5"><span class="n">5.5</span>Reducing the Public Key Size</h3>
-<p class="hook">Publish only the high part <span class="ref" data-ref="high-t">$\mathbf{t}_1$</span> of $\mathbf{t}$; one <span class="ref" data-ref="hint">hint bit</span> per coefficient repairs what the verifier then gets wrong (steps 5&ndash;7 above).</p>
+<p class="hook">The key can lose its low bits too, with a twist: this time the error is not secret.</p>
+<p>Split $\mathbf{t} = \mathbf{t}_1 + \mathbf{t}_0$ into a high part and a low part, and publish only <span class="ref" data-ref="high-t">$\mathbf{t}_1$</span>. The verifier can now compute $\mathbf{A}\mathbf{z} - c\mathbf{t}_1$: the number it wants plus an error $c\mathbf{t}_0$. Restarting whenever that error might matter, as §5.4 did for $c\mathbf{s}_2$, would be wasteful, the paper says. We handled $\mathbf{s}_2$ blindly because it is secret. But $\mathbf{t}_0$ is only left out: the signer knows the error exactly and is free to talk about it.</p>
+<p>There is little to say. If the error is at most <span class="ref" data-ref="delta-s">$\delta_\mathcal{S}$</span>, about half the grid spacing, the number the verifier wanted rounds to one of the two grid points around the number it has. One bit per coefficient says which: the <span class="ref" data-ref="hint">hint</span>. Steps 5&ndash;7 of the figure above play this out on $\mathbb{Z}_{97}$, where one bit is enough for all 2,231 pairs $(v, v')$ (our exhaustive count).</p>
 <p class="claim">Figure 9 [DKL<sup>+</sup>18]: if $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$, the needed high part is one of the two points around each coefficient of $\mathbf{A}\mathbf{z} - c\mathbf{t}_1$, and the hint $\mathbf{h}$ says which; it proves (93), $\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}_1$. <span class="cite">§5.5, Figure 9, Eqs. (91)–(93), pp. 52–54</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p><span data-def="high-t" data-def-label="the split t = t1 + t0" data-def-tex="\mathbf{t}_1=\mathrm{HIGH}_\mathcal{T}(\mathbf{t}),\ \mathbf{t}_0" data-def-keys="high low t1 t0 public key compression">Write $\mathbf{t} = \mathrm{HIGH}_\mathcal{T}(\mathbf{t}) + \mathrm{LOW}_\mathcal{T}(\mathbf{t})$ for a set $\mathcal T \subset \mathbb{Z}_q$ of $2^\ell$ elements about $q/2^\ell$ apart. Since $\mathbf{A}\mathbf{z}_1 \approx c\mathbf{t} \approx c\cdot\mathrm{HIGH}_\mathcal{T}(\mathbf{t})$, the verifier does not need the low bits of $\mathbf{t}$ to verify approximately. So publish only $\mathbf{t}_1 = \mathrm{HIGH}_\mathcal{T}(\mathbf{t})$, which takes $nd\ell$ bits instead of $nd\log q$; here $\mathbf{t} = \mathbf{t}_1 + \mathbf{t}_0$.</span> The techniques are from [DKL<sup>+</sup>18]. The verifier can only compute $\mathbf{A}\mathbf{z} - c\mathbf{t}_1 = \mathbf{A}\mathbf{z} - c\mathbf{t} + c\mathbf{t}_0$, and would need</p>
@@ -1887,6 +2045,7 @@ $$\mathbf{A}\bar{\mathbf{s}}_1 + \bar{\mathbf{s}}_2 = \bar c\,\mathbf{t}_1. \qqu
 <p>Substituting $\mathbf{t}_1 = \mathbf{t} - \mathbf{t}_0$ gives $\mathbf{A}\bar{\mathbf{s}}_1 + (\bar{\mathbf{s}}_2 + \bar c\mathbf{t}_0) = \bar c\mathbf{t}$, i.e. (74) with $\bar{\mathbf{s}}_2$ grown by the largest $\bar c\mathbf{t}_0$. <span class="cite">§5.5, Figure 9, Eqs. (91)–(93), pp. 52–54</span></p>
 </details>
 
+<p>The checks go as before (folded below), with one change: the bound on the second part of the forger&rsquo;s target doubles.</p>
 <h4 class="fold" id="sec-5-5-1"><span class="n">§5.5.1</span>Correctness and Zero-Knowledge</h4>
 <p class="claim">$\mathbf{t}_0$ is not secret (the hint leaks information about it); zero-knowledge carries over from <span class="ref" data-ref="fig8">Figure 8</span>, and correctness holds whenever $c\mathbf{t}_0 \in [\delta_\mathcal{S}]^n$. <span class="cite">§5.5.1, p. 54</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
@@ -1901,12 +2060,14 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
 <p>which is knowledge of $\bar{\mathbf{s}}_1, \bar{\mathbf{s}}_2, \bar c$ as in (93). <span class="cite">§5.5.2, Eqs. (94)–(95), pp. 54–55</span></p>
 </details>
 
-<p class="remember"><span class="vlabel">Remember</span>Publish only $\mathbf{t}_1$; pay with $dn$ hint bits, mostly zeros. <span class="next">Now remove the verifier.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>Publish only $\mathbf{t}_1$ and pay with $dn$ hint bits, mostly zeros. <span class="next">What does the finished signature look like?</span></p>
 <button class="readbtn" data-for="sec-5-5">mark as read</button>
 
 <!-- ============================ 5.6 ============================ -->
 <h3 id="sec-5-6" data-num="5.6"><span class="n">5.6</span>Digital Signatures</h3>
 <p class="hook">Replace the verifier by a hash, $c = \mathcal H(\mathrm{HIGH}_\mathcal{S}(\mathbf{A}\mathbf{y}), \mu, \mathbf{A}, \mathbf{t})$, and let the signer restart instead of sending $\perp$: the <a href="#p4-fs">toy signature of §5.3</a>, at full size and with §5.4&ndash;§5.5&rsquo;s savings.</p>
+<p>The signer works alone in a loop: draw a <span class="ref" data-ref="mask-y">mask</span>, hash, compute $\mathbf{z}$, run the checks, and on any failure throw the attempt away and start over. Only the attempt that passes is published, which is why it was enough to prove zero-knowledge for conversations that end in an answer.</p>
+
 <p class="claim"><span class="ref" data-ref="fs">Figure 10</span> is the <span class="ref" data-ref="fs-transform">Fiat–Shamir transform</span> of Figure 9; a forger yields (93), as hard as <span class="ref" data-ref="rlwe">Ring-LWE</span> or <span class="ref" data-ref="rsis">Ring-SIS</span> by <span class="ref" data-ref="lemma9">Lemma 9</span>. <span class="cite">§5.6, Figure 10, p. 55</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <div class="boxdef" data-def="fs" data-def-label="Fiat–Shamir signature (Figure 10)" data-def-keys="fiat shamir signature sign verify hash usehint"><p class="t">Figure 10 — the Fiat–Shamir signature scheme (signing a message digest $\mu$)</p>
@@ -1918,6 +2079,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
 <p>Figure 10 lists $(\mathbf{z}, \mathbf{h})$ as the output, but verification uses $c$, so the signature also contains $c$. The §5.7 size count agrees: “the signature consists of the vector $\mathbf{z}_1$, the challenge $c$, and the <span class="ref" data-ref="hint">hint vector</span> $\mathbf{h}$”. Both parties also hash “$\mathbf{A}, \mathbf{t}$”, although the verifier only has <span class="ref" data-ref="high-t">$\mathbf{t}_1$</span>; read this input as “the public key”.</p>
 </div>
 </details>
+<p>The figure lines up the four versions at the size of §5.7&rsquo;s parameters. The signature shrinks from 7,072 bytes (our count for the plain protocol) to about 3,290 (§5.7, p. 57), and the key from 4,448 (ours) to 1,952. The bound on the second part of what a forger must find, $\bar{\mathbf{s}}_2$, halves and then doubles back to about where it started; the bound on $\bar{\mathbf{s}}_1$ stays at $2\bar\beta$ throughout.</p>
 <div class="try fig" id="p4-ladder">
   <span class="vlabel">Step through</span>
   <p class="tt">What each protocol sends, to scale at Table 4 size <span class="tag">illustration</span></p>
@@ -1932,12 +2094,14 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
   <div class="steps"></div>
 </div>
 
-<p class="remember"><span class="vlabel">Remember</span>The signer loops until every check passes; only the last attempt is ever seen. <span class="next">Concrete numbers: Dilithium.</span></p>
+<p class="remember"><span class="vlabel">Remember</span>A hash, a loop and two savings: that is the whole signature. <span class="next">What do the numbers look like in a real scheme?</span></p>
 <button class="readbtn" data-for="sec-5-6">mark as read</button>
 
 <!-- ============================ 5.7 ============================ -->
 <h3 id="sec-5-7" data-num="5.7" data-toc="CRYSTALS-Dilithium (ML-DSA)"><span class="n">5.7</span>The Signature Scheme CRYSTALS-Dilithium (ML-DSA)</h3>
-<p class="hook"><span class="ref" data-ref="fs">Figure 10</span> at real size: about five tries per signature.</p>
+<p class="hook">Put real numbers into <span class="ref" data-ref="fs">Figure 10</span> and what comes out is very nearly Dilithium.</p>
+<p>The sizes tell the section&rsquo;s story once more (next line). The secret is tiny. The slide $c\mathbf{s}$ can reach <span class="ref" data-ref="gamma">$\gamma = 49 \cdot 4 = 196$</span>. And the <span class="ref" data-ref="mask-y">masks</span> have to dwarf that slide: they range up to about $2^{19}$, more than 2,600 times $\gamma$ (our division).</p>
+<p>Even so, one signature involves 1,280 coefficients of $\mathbf{z}$ and 1,536 low parts, and all of them must stay out of their rims at once. So signing takes about five attempts on average, against a single pass to verify. The paper reports optimized signing in well under a millisecond on a standard PC.</p>
 <p class="claim">Table 4: $q = 2^{23} - 2^{13} + 1$, $f = X^{256}+1$, $\beta = 4$, $(n, m) = (6, 5)$, 49 non-zero challenge coefficients, <span class="ref" data-ref="gamma">$\gamma = 196$</span>, <span class="ref" data-ref="betabar">$\bar\beta = 2^{19} - \gamma - 1$</span>. An attempt succeeds with probability about 0.2; the public key is 1952 bytes, a signature about 3424. <span class="cite">§5.7, Table 4, p. 56</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
 <p>A sample instantiation very much resembling [DKL<sup>+</sup>18], (conservatively) with 192 bits of security (NIST Level 3), over <span class="ref" data-ref="ring">$\mathcal{R}_{q,f}$</span> with $f = X^{256}+1$ and $q = 2^{23} - 2^{13} + 1$. Since $q \equiv 1 \pmod{512}$, this $q$ allows efficient <span class="ref" data-ref="ntt">NTT</span> (§4.6).</p>
@@ -1961,6 +2125,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
 </div>
 </details>
 
+<p>Step through the loop: for message 1, the first attempt fails on $\mathbf{z}$, the next two on a low part, and the fourth is sent.</p>
 <div class="try fig" id="p4-sign">
   <span class="vlabel">Step through</span>
   <p class="tt">The signing loop at Table 4 size <span class="tag">illustration</span></p>
@@ -2008,6 +2173,7 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
 <div class="try" id="p4-dil"><span class="vlabel">Try it</span><p class="tt">Dilithium calculator (Table 4 preset, p. 56; read-outs computed here; no-restart probability from Eq. (89)) <span class="tag">illustration</span></p>
 <div class="mount"></div></div>
 
+<p>Two loose ends before we close: the standard squeezes out a little more, and we still owe §5.2.4 its balance.</p>
 <h4>Some optimizations in ML-DSA</h4>
 <p class="claim">Hash the message once, sample $\mathbf{y}$ with exactly 20 bits per coefficient, and send only the positions of the hint&rsquo;s ones: about 3290 bytes. <span class="cite">§5.7, p. 57</span></p>
 <details class="paper-exact"><summary>The paper&rsquo;s exact statement</summary>
@@ -2034,6 +2200,11 @@ $$\mathbf{A}(\mathbf{z} - \mathbf{z}') - (c - c')\mathbf{t}_1 \in [q/2^{\kappa-1
 <li>High bits and hints drop $\mathbf{z}_2$ from the signature and the low bits of $\mathbf{t}$ from the key.</li>
 <li>Dilithium: about 5 attempts, a 1952-byte key, about 3290-byte signatures with the compact hint (§5.7, pp. 56&ndash;57).</li>
 </ol></div>
+<h4>So, can we rebuild them?</h4>
+<p>§1 asked whether we could rebuild ElGamal and Schnorr from noisy linear algebra, and why anyone would believe the result is hard to break. We can: keep the shape of the discrete-log scheme and replace $g^x$ by a public $\mathbf{A}$ times a small secret, plus a small error.</p>
+<p>Kyber is ElGamal rebuilt this way. The small error defeats Gaussian elimination (§2). Polynomials let one ciphertext carry a whole key without a bigger public key, and the <span class="ref" data-ref="ntt">NTT</span> makes them fast (§4). The <span class="ref" data-ref="fo">Fujisaki&ndash;Okamoto</span> transform protects against chosen ciphertexts.</p>
+<p>Dilithium is Schnorr rebuilt this way: answer with $\mathbf{z} = c\mathbf{s} + \mathbf{y}$, refuse whenever the answer would give the secret away, and let a hash ask the challenge (§5).</p>
+<p>And why believe it is hard? Both rest on <span class="ref" data-ref="lwe">LWE</span> over polynomial rings, Dilithium on <span class="ref" data-ref="sis">SIS</span> as well, and §3 read both as <span class="ref" data-ref="lattice">lattice</span> problems: SIS asks for a short vector, LWE for telling points close to a lattice from random ones, and the attack §3 weighs against each is a search for short vectors. The sizes are chosen so that the best known attacks fall short: evidence, not a proof (our caution). The details are messy, as §1 warned, but the deep ideas are few (§1, p. 3). We have just rebuilt them.</p>
 <button class="readbtn" data-for="sec-5-7">mark as read</button>
 </section>
 
