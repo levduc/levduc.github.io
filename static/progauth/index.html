@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Progressive Authentication</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="Progressive Authentication: a pointwise soundness guarantee for interruptible verifiers. Soundness as a function of how far verification got, worked out for Lamport–Diffie, Freivalds, FRI and Merkle batch verifiers, and the Fiat–Shamir dead zone.">
+<link rel="stylesheet" href="../css/Typewriter/cmun-typewriter-variable.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu+Mono&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" integrity="sha512-fHwaWebuwA7NSF5Qg/af4UeDx9XqUpYpOGgubo3yWu+b2IQR4UeQwbb42Ti7gVAjNtVoI/I9TEoYeu9omwcC6g==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" integrity="sha512-LQNxIMR5rXv7o+b1l8+N1EZMfhG7iFZ9HhnbJkTp4zjNr5Wvst75AqUeFDxeRUa7l5vEDyUiAip//r+EFLLCyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" integrity="sha512-iWiuBS5nt6r60fCz26Nd0Zqe0nbk1ZTIQbl3Kv7kYsX+yKMUFHzjaH2+AnM6vp2Xs+gNmaBAVWJjSmuPw76Efg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* Layout: one 1000px reading column, sections as a numbered story, charts on #fafafa cards. */
+:root{
+  color-scheme: light only;
+  --font:"Computer Modern Typewriter", "Courier New", monospace;
+  --mono:"Ubuntu Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --plane:#ffffff; --surface-1:#fafafa;
+  --ink-1:#333333; --ink-head:#333300; --ink-2:#333333; --ink-muted:#767676;
+  --grid:#e8e8e8; --axis:#cfcfcf; --ring:rgba(0,0,0,.13);
+  /* categorical slots in fixed order — validated against #fafafa (dataviz validate_palette.js, light):
+     Lamport–Diffie, Freivalds, FRI, Merkle batch */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --dead:#9a9a9a; --idle:#ececec;
+  --good:#0ca30c; --critical:#d03b3b;
+  --accent:#00008b;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth; background:var(--plane)}
+body{
+  margin:0; background:var(--plane); color:var(--ink-1);
+  font-family:var(--font); font-weight:300; font-size:17px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top, 0px); z-index:60; background:var(--plane)}
+.wrap{max-width:1000px; margin:0 auto; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+h1,h2,h3{font-family:var(--font); color:var(--ink-head); line-height:1.2; margin:0; text-wrap:balance}
+h2{font-size:1.75rem; font-weight:400; margin:0 0 .5rem}
+h3{font-size:1.15rem; font-weight:700; margin:0 0 .35rem}
+p{margin:0 0 1rem; color:var(--ink-2)}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+section{padding:42px 0; border-top:1px solid var(--grid)}
+.eyebrow{font-family:var(--mono); font-size:.8rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-muted); font-weight:700; margin:0 0 .4rem}
+.lede{max-width:72ch}
+.note{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); line-height:1.5}
+.mono{font-family:var(--mono)}
+.ours{font-family:var(--mono); font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-muted);
+  border:1px solid var(--ring); border-radius:3px; padding:0 .35rem; white-space:nowrap; font-weight:700}
+
+/* ---------- header ---------- */
+.topbar{position:sticky; top:env(safe-area-inset-top, 0px); z-index:50; background:var(--plane); border-bottom:1px solid var(--grid)}
+.topbar .wrap{display:flex; align-items:center; gap:16px; height:46px}
+.topbar .home{font-weight:700; white-space:nowrap}
+.topbar nav{display:flex; gap:15px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none}
+.topbar nav::-webkit-scrollbar{display:none}
+.topbar nav a{font-family:var(--mono); color:var(--ink-2); font-size:.86rem; white-space:nowrap}
+.topbar nav a:hover{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:52px 0 38px}
+.hero h1{font-size:2.6rem; font-weight:400; color:var(--ink-head)}
+.hero .subtitle{font-size:1.2rem; margin:.45rem 0 0; color:var(--ink-head)}
+.hero .sub{font-size:1.1rem; margin:1.1rem 0 1.4rem; max-width:66ch}
+.status{display:inline-block; font-family:var(--mono); font-size:.8rem; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--ink-muted);
+  border:1px solid var(--ring); border-radius:3px; padding:.1rem .55rem; margin-bottom:1rem}
+.authors{font-size:.95rem; margin:0 0 .35rem; line-height:1.8}
+.authors .me{font-weight:700; text-decoration:underline; text-underline-offset:3px}
+.affils{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 1.4rem}
+.btns{display:flex; flex-wrap:wrap; gap:10px}
+.btn{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--mono);
+  border:1px solid var(--ring); background:var(--surface-1); color:var(--ink-1);
+  padding:.4rem .85rem; border-radius:3px; font-size:.9rem; cursor:pointer}
+.btn:hover{border-color:var(--accent); color:var(--accent); text-decoration:none}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.btn.primary:hover{opacity:.88; color:#fff}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+
+/* ---------- tiles / claim cards ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px}
+.tile{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px 18px; min-width:0}
+.tile .k{font-family:var(--mono); font-size:.78rem; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700}
+.tile .d{font-size:.92rem; margin:.35rem 0 .6rem; line-height:1.45}
+.claim{display:flex; flex-direction:column}
+.claim .see{margin-top:auto; font-family:var(--mono); font-size:.86rem}
+
+/* ---------- controls ---------- */
+.controls{display:flex; flex-wrap:wrap; gap:14px 18px; align-items:flex-end; margin-bottom:14px}
+.controls.stack .ctl{flex:1 1 100%; min-width:0}
+.ctl{display:flex; flex-direction:column; gap:.3rem; min-width:190px; flex:1}
+.ctl label, .ctl .lbl{font-family:var(--mono); font-size:.84rem; color:var(--ink-2)}
+.ctl .val{font-weight:700; color:var(--ink-1)}
+input[type=range]{width:100%; accent-color:var(--accent); height:22px; margin:0}
+select{font-family:var(--mono); font-size:.88rem; padding:.25rem .4rem; border:1px solid var(--ring); border-radius:3px; background:var(--plane); color:var(--ink-1)}
+.seg{display:inline-flex; flex-wrap:wrap; border:1px solid var(--ring); border-radius:3px;
+  overflow:hidden; background:var(--surface-1); max-width:100%}
+.seg button{border:0; background:transparent; color:var(--ink-2); font-family:var(--mono);
+  font-size:.88rem; padding:.35rem .8rem; cursor:pointer; border-right:1px solid var(--ring)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent); color:#fff; font-weight:700}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chipbtn{font-family:var(--mono); font-size:.82rem; border:1px solid var(--ring); background:var(--surface-1);
+  color:var(--ink-1); border-radius:999px; padding:.2rem .7rem; cursor:pointer; text-align:left}
+.chipbtn[aria-pressed=true]{border-color:var(--accent); background:var(--accent); color:#fff}
+.chipbtn:hover{border-color:var(--accent)}
+
+/* ---------- chart shell ---------- */
+.chart{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px;
+  padding:16px 16px 12px; box-shadow:var(--shadow); min-width:0}
+.chart svg{display:block; width:100%; height:auto; overflow:visible}
+.chart .ttl{font-family:var(--mono); font-size:.82rem; color:var(--ink-muted); margin:0 0 6px}
+.legend{display:flex; flex-wrap:wrap; gap:7px 18px; margin:12px 0 0; padding:0; list-style:none}
+.legend li{display:flex; align-items:center; gap:.45rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-2)}
+.swatch{width:14px; height:3px; border-radius:2px; flex:none}
+.swatch.box{width:11px; height:11px}
+.legend svg{width:auto; height:auto; display:inline-block; flex:none; overflow:visible}
+.tip{position:fixed; left:0; top:0; pointer-events:none; opacity:0;
+  background:var(--plane); border:1px solid var(--ring); border-radius:4px;
+  padding:.5rem .7rem; font-family:var(--mono); font-size:.82rem; color:var(--ink-1);
+  box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:99; max-width:280px}
+.tip b{display:block; margin-bottom:.15rem}
+.tip .row{display:flex; align-items:center; gap:.4rem}
+.k .katex, .eyebrow .katex{text-transform:none}
+
+/* ---------- guess ---------- */
+.guessbox{display:flex; flex-direction:column; gap:8px}
+.guessbox .chipbtn{border-radius:4px; padding:.45rem .7rem; font-size:.88rem; line-height:1.35}
+
+/* ---------- read-outs ---------- */
+.rogrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-top:14px}
+.ro{border:1px solid var(--ring); border-radius:4px; padding:12px 14px; background:var(--surface-1); min-width:0}
+.ro .k{font-family:var(--mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em;
+  color:var(--ink-muted); font-weight:700; margin-bottom:.25rem}
+.ro .v{font-size:1.35rem; font-weight:700; color:var(--ink-head); font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+.ro p{font-size:.88rem; margin:.25rem 0 0}
+.ro.focus{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+#exRO{grid-template-columns:repeat(auto-fit,minmax(172px,1fr))}
+@media (max-width:480px){ #exRO{grid-template-columns:1fr} }
+.verdict{display:inline-block; font-family:var(--mono); font-size:.78rem; font-weight:700;
+  border:1px solid currentColor; border-radius:999px; padding:.05rem .55rem; margin-top:.35rem}
+.verdict.bad{color:var(--critical)} .verdict.ok{color:var(--good)} .verdict.na{color:var(--ink-muted)}
+.split{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:20px; align-items:start}
+.panel{border:1px solid var(--ring); border-radius:4px; padding:14px 16px; background:var(--plane); min-width:0}
+.panel .formula{font-size:.95rem; margin:.2rem 0 .8rem; overflow-x:auto; position:relative}
+.defbox{border:1px solid var(--ring); border-left:3px solid var(--ink-head); border-radius:4px; padding:14px 16px; background:var(--surface-1); margin:16px 0; max-width:84ch}
+.defbox .k{font-family:var(--mono); font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700; margin-bottom:.35rem}
+.defbox p{margin:.3rem 0}
+.mathscroll{overflow-x:auto; position:relative; padding:2px 0}
+.nw{white-space:nowrap}
+.narrow-only{display:none}
+@media (max-width:760px){ .wide-only{display:none} .narrow-only{display:block} }
+.code{font-family:var(--mono); font-size:.92rem; background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:10px 12px; overflow-x:auto; position:relative}
+.warn{color:var(--critical); font-family:var(--mono); font-size:.84rem; font-weight:700}
+
+/* ---------- tables ---------- */
+details.tbl{margin-top:14px}
+details.tbl summary{cursor:pointer; font-family:var(--mono); font-size:.85rem; color:var(--accent)}
+.tscroll{overflow-x:auto; -webkit-overflow-scrolling:touch; position:relative}
+table.data{width:100%; border-collapse:collapse; font-size:.86rem; margin-top:10px}
+table.data th, table.data td{text-align:left; padding:.45rem .6rem; border-bottom:1px solid var(--grid); vertical-align:top}
+table.data th{font-family:var(--mono); font-size:.76rem; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:700}
+table.data td.num, table.data th.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+table.data tr.grp td{font-family:var(--mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-weight:700; background:var(--surface-1)}
+table.data tr.hl td{background:var(--surface-1)}
+table.data.wide{min-width:700px}
+
+/* ---------- misc ---------- */
+.callout{border-left:3px solid var(--accent); padding:.1rem 0 .1rem 14px; margin:18px 0 0; max-width:74ch}
+ul.plain{padding-left:1.15rem; margin:.4rem 0 1rem; max-width:80ch} ul.plain li{margin-bottom:.5rem}
+pre.bib{background:var(--surface-1); border:1px solid var(--ring); border-radius:4px; padding:16px;
+  overflow-x:auto; font-family:var(--mono); font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+footer{padding:22px 0 50px; border-top:1px solid var(--grid); font-size:.8rem; color:var(--ink-muted); text-align:right}
+.katex{font-size:1.02em}
+.ro .katex{font-size:1em}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .hero h1{font-size:2rem}
+  .hero .subtitle{font-size:1.05rem}
+  .split{grid-template-columns:1fr}
+  .controls .ctl{flex:1 1 100%; min-width:0}
+  .seg button{flex:1 1 auto}
+  .chart{padding:12px 10px 10px}
+  .panel{padding:12px}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap">
+  <a class="home" href="../">&larr; Duc V. Le</a>
+  <nav aria-label="Sections">
+    <a href="#puzzle">Puzzle</a>
+    <a href="#why">Why</a>
+    <a href="#sandbox">Definition</a>
+    <a href="#order">Order</a>
+    <a href="#payoff">Payoff</a>
+    <a href="#limits">Limits</a>
+    <a href="#appendix">Appendix</a>
+    <a href="#cite">Cite</a>
+  </nav>
+</div></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero"><div class="wrap">
+  <span class="status">Manuscript · not yet published</span>
+  <h1>Progressive Authentication</h1>
+  <p class="subtitle">A Pointwise Soundness Guarantee for Interruptible Verifiers</p>
+  <p class="sub">If a verifier is stopped after $t$ of its checks, what has it proven? We make that a precise, adversarially robust number: a confidence $\alpha_{\mathrm{prog}}(t)$ for every prefix of the verification. We work it out for four verifiers. For Fiat&ndash;Shamir proofs it holds a surprise: the first checks can prove nothing at all.</p>
+  <p class="authors"><span class="me">Duc V. Le</span></p>
+  <p class="affils">Circle Research, USA</p>
+  <div class="btns">
+    <a class="btn primary" href="#puzzle">Start with the puzzle</a>
+    <a class="btn" href="#cite">[BibTeX]</a>
+  </div>
+  <p class="note" style="margin:14px 0 0">This page follows the current draft of the paper (22 November 2026). Every definition, theorem, figure and table number on it is that draft's, and may change before publication. Values marked <span class="ours">computed</span> are worked out live in this page from the paper's formulas.</p>
+</div></header>
+
+<!-- ============ 1. PUZZLE ============ -->
+<section id="puzzle"><div class="wrap">
+  <p class="eyebrow">1 · The puzzle</p>
+  <h2>Seventy FRI queries passed. What did they prove?</h2>
+  <p class="lede">A STARK proof is checked by FRI queries, each an independent spot check of the proof. At ethSTARK's provable 128-bit design point a proof carries $s = 140$ of them. Suppose your verifier is interrupted after the first 70, and every one of them passed. The prover could compute $Q = 2^{80}$ hashes. How much soundness has the verifier proven so far?</p>
+  <div class="split">
+    <div class="chart">
+      <p class="ttl">The 140 queries of one proof, in the order they are checked</p>
+      <svg id="puzSvg" role="img" aria-label="The 140 queries of one FRI proof; the verifier stopped after query 70"></svg>
+      <ul class="legend" id="puzLegend"></ul>
+      <div id="puzCurveWrap" style="margin-top:10px">
+        <p class="ttl" id="puzCurveTtl">Bits of soundness proven after $t$ queries</p>
+        <svg id="puzCurve" role="img" aria-label="Bits of soundness proven after t queries"></svg>
+      </div>
+    </div>
+    <div>
+      <p class="mono" style="font-size:.86rem; margin:0 0 8px">Your guess, at $t = 70$:</p>
+      <div id="puzGuess" class="guessbox" role="group" aria-label="Your guess"></div>
+      <div class="btns" style="margin-top:12px">
+        <button class="btn primary" type="button" id="puzReveal" disabled>Reveal</button>
+        <button class="btn" type="button" id="puzReset">Start over</button>
+      </div>
+      <p id="puzAnswer" class="callout" style="margin-top:14px" hidden></p>
+    </div>
+  </div>
+  <p class="callout" id="puzPunch" hidden><strong>Half the checks passed, and they proved nothing.</strong> A Fiat&ndash;Shamir prover derives its own challenges by hashing, so it can retry until a short prefix of queries passes. Full verification hides that retry budget inside all 140 queries. Interruption exposes it. The rest of this page builds the definition that says exactly when a prefix starts to count.</p>
+  <p class="note" style="margin-top:12px">The parameters are those the paper uses for ethSTARK's provable 128-bit point (&sect;5.2): rate $\rho = 1/4$, proximity slack $m = 3$, $s = 140$ queries, a $w = 20$-bit proof-of-work, against $Q = 2^{80}$ random-oracle queries, for a word $\delta$-far from the code with $\delta \ge 5/12$, where $\alpha_\circ = 7/12$. A bit of soundness here is $-\log_2$ of the bound on accepting a false statement. The 48.9 bits at $t = 140$ is the query term $2^{-48.9}$, which the paper calls ethSTARK's 128-bit level against $Q = 2^{80}$ (&sect;5.2). The figures hold in the provable proximity regime of Ben-Sasson et al. (BCIKS) and neglect $\varepsilon_c(Q)$, the commit-phase and compilation terms, as the paper's estimates do. Figure 3(a) of the paper shows the same split schematically; this grid of 140 cells is our drawing.</p>
+
+  <h3 style="margin-top:34px">What this page shows</h3>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile claim"><div class="k">Claim 1</div><p class="d"><strong>Confidence is a function of how far verification got.</strong> A progressive verifier reports a proven bound after every step $t$. The bound holds at each $t$ separately, jointly with the stopping point $t^{*} = t$, so it stays valid against a prover that stops at its longest passing prefix; no union over the stopping point is needed (Def. 7; Appendix B of the paper).</p><a class="see" href="#sandbox">See it &rarr;</a></div>
+    <div class="tile claim"><div class="k">Claim 2</div><p class="d"><strong>Under Fiat&ndash;Shamir, the first steps can prove nothing.</strong> At ethSTARK's provable 128-bit point, the first 77 of 140 FRI queries carry no provable soundness against $Q = 2^{80}$ (Thm. 2 and &sect;5.2, in the BCIKS regime, neglecting $\varepsilon_c(Q)$).</p><a class="see" href="#why">See it &rarr;</a></div>
+    <div class="tile claim"><div class="k">Claim 3</div><p class="d"><strong>The checks must run in derivation order.</strong> A batched multi-opening checks the $t$ smallest sampled positions instead. For a word corrupted on the top $\delta$ of the domain, that sorted prefix passes with probability near 1 until somewhat below $t = (1-\delta)s$ (Prop. 3 says &ldquo;up to about $(1-\delta)s$&rdquo;; the computed curve shows where).</p><a class="see" href="#order">See it &rarr;</a></div>
+  </div>
+</div></section>
+
+<!-- ============ 2. WHY ============ -->
+<section id="why"><div class="wrap">
+  <p class="eyebrow">2 · Why did that happen?</p>
+  <h2>A verifier that can stop, and a prover that can retry</h2>
+  <p class="lede">We first need words for a verifier that can be stopped. In a <em>progressive authentication scheme</em> (Def. 1), $\mathtt{Verify}$ is iterable: each call runs one verification step and updates a <em>confirmation code</em> $\mathcal{C} = (\mathcal{C}^{\mathrm{pub}}, \mathcal{C}^{\mathrm{priv}})$. The public part holds the step counter $j$, a failure flag that stays set once set, and the scheme's declared confidence $\alpha_{\mathrm{prog}}(j)$. The private part holds the verifier's own state, such as its coins, and never leaves it. An application-supplied policy $\mathtt{ProcessC}$ reads $\mathcal{C}^{\mathrm{pub}}$ and answers <em>accept</em>, <em>reject</em> or <em>continue</em>. $\mathtt{Verify}$ is the mechanism; $\mathtt{ProcessC}$ is the policy.</p>
+  <p class="lede">For FRI, a step is one whole query (Con. 4). In the provable regime, one query passes a word that is $\delta$-far from the code with probability at most $\alpha_\circ$, which is $7/12$ at the puzzle's parameters once $\delta \ge 5/12$ (Thm. 2). Against a prover with a single attempt, $t$ passing queries would leave a cheating chance of at most $\alpha_\circ^{t}$. But a Fiat&ndash;Shamir prover does not get one attempt. Its query positions come from hashing its own proof, so it can hash again. Toggle between the two pictures below.</p>
+  <div class="controls" style="margin-top:6px">
+    <div class="ctl" style="flex:0 1 auto; min-width:0">
+      <span class="lbl">Whose picture?</span>
+      <div class="seg" role="group" aria-label="Whose picture" id="grView">
+        <button type="button" data-v="one" aria-pressed="false">Verifier: one attempt</button>
+        <button type="button" data-v="many" aria-pressed="true">Prover: many attempts</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <label for="grK">Attempts with a valid proof-of-work: $M = 2^{k}$, <span class="val" id="grKv"></span></label>
+      <input type="range" id="grK" min="0" max="20" step="1" value="10">
+    </div>
+    <div class="ctl" style="flex:0 1 auto; min-width:0">
+      <button class="btn" type="button" id="grGo">Grind again</button>
+    </div>
+  </div>
+  <div class="split">
+    <div class="chart">
+      <p class="ttl" id="grTtl"></p>
+      <svg id="grSvg" role="img" aria-label="Simulated attempts of a grinding prover and their passing query prefixes"></svg>
+      <ul class="legend" id="grLegend"></ul>
+    </div>
+    <div>
+      <div class="rogrid" style="margin-top:0">
+        <div class="ro focus"><div class="k">Longest passing prefix found</div><div class="v" id="grBest"></div><p id="grBestP"></p></div>
+        <div class="ro"><div class="k">Union bound $M\,(7/12)^{t} \ge 1$ up to</div><div class="v" id="grStar"></div><p>$t^{*} = \log_2 M \,/ \log_2(12/7)$ <span class="ours">computed</span></p></div>
+      </div>
+      <p class="note" style="margin-top:12px">A toy model, not the paper's experiment. Each attempt checks queries in order and each passes independently with probability $7/12$. That is the per-query rate of the grinding attack in Appendix B of the paper at $\delta = 5/12$, where it meets the provable threshold. Like that attack, the toy assumes a far word that survives the commit phase. Attempts are drawn by this page's seeded generator.</p>
+    </div>
+  </div>
+  <p class="callout">The real prover's budget is enormous. $Q = 2^{80}$ hashes and a 20-bit proof-of-work leave about $Q\,2^{-w} = 2^{60}$ attempts with a valid nonce. Each derives its own query set (Thm. 2, (H2)). Their union bound $Q\,2^{-w}\alpha_\circ^{t}$ stays at or above 1 until $t_0 \approx (\log_2 Q - w)/(-\log_2 \alpha_\circ)$, which is 77 at these parameters (&sect;5.2). Appendix B of the paper shows the effect is a real attack, not slack in the union bound. That attack uses the $1-\delta$ branch of $\alpha_\circ$ and meets the provable threshold at $\delta = 5/12$. It does not show that 77 itself is tight.</p>
+  <p class="lede" style="margin-top:18px">So how should soundness be stated, when the verifier can stop anywhere and the prover can retry? It has to be a separate promise for every prefix.</p>
+</div></section>
+
+<!-- ============ 3. DEFINITION + SANDBOX ============ -->
+<section id="sandbox"><div class="wrap">
+  <p class="eyebrow">3 · The definition that falls out</p>
+  <h2>Soundness as a function of how far you got</h2>
+  <div class="defbox">
+    <div class="k">Definition 7 (Progressive soundness)</div>
+    <p>A non-interactive argument $\Pi$ in the random-oracle model, whose verifier runs steps $V_0, \ldots, V_T$, has $(T, \alpha_{\mathrm{prog}})$-progressive soundness if for every $Q$, every $t \le T$, and every adversary making at most $Q$ random-oracle queries and outputting a statement <span class="nw">$x$,</span> a proof $\pi$ and an interruption point <span class="nw">$t^{*} \le T$,</span></p>
+    <div class="mathscroll wide-only">$$\Pr\bigl[\,x \text{ is false} \;\wedge\; V_{\le t}(x, \pi) \text{ accepts} \;\wedge\; t^{*} = t\,\bigr] \;\le\; 1 - \alpha_{\mathrm{prog}}(t, Q).$$</div>
+    <div class="mathscroll narrow-only">$$\begin{aligned}&\Pr\bigl[\,x \text{ is false} \;\wedge\; V_{\le t}(x, \pi) \text{ accepts}\\ &\qquad \wedge\; t^{*} = t\,\bigr] \;\le\; 1 - \alpha_{\mathrm{prog}}(t, Q).\end{aligned}$$</div>
+    <p>Here $V_{\le t}$ runs only $V_0, \ldots, V_t$, and $\alpha_{\mathrm{prog}}$ is non-decreasing in $t$ and efficiently computable. There is no asymptotic slack term: the residual oracle terms live inside $\alpha_{\mathrm{prog}}$.</p>
+  </div>
+  <p class="lede">The bound is on the joint event with $t^{*} = t$, one $t$ at a time. That is what lets a per-prefix guarantee stand against a prover that stops at its longest passing prefix. Theorem 2 gives FRI's curve. Under hypotheses (H1) on the pre-query rounds, (H2) on the query positions (independent, uniform, checked in derivation order) and (H3) on the proximity regime <span class="nw">($m \ge 3$),</span></p>
+  <div class="mathscroll">$$\alpha_{\mathrm{prog}}(t, Q) = 1 - \min\Bigl\{1,\; Q \cdot 2^{-w} \cdot \alpha_\circ^{\,t} + \varepsilon_c(Q)\Bigr\},$$</div>
+  <div class="mathscroll">$$\alpha_\circ = \max\Bigl\{1-\delta,\; \sqrt{\rho}\,\bigl(1 + \tfrac{1}{2m}\bigr)\Bigr\}.$$</div>
+  <p class="lede">Here $\varepsilon_c(Q) = Q \cdot \max_i \varepsilon_i + 3(Q^2+1)/2^{\kappa}$ collects the $Q$-inflated commit-phase error and the compilation term, with $\kappa$ the random-oracle output length, and $Q$ counts every random-oracle call, those the verifier makes on the presented proof included.</p>
+  <p class="lede">The other verifiers of the paper declare their own curves. Pick one below and edit it. The chart puts all four on one axis. The readouts show the public confirmation code at your stopping step and what a threshold policy does with it.</p>
+
+  <div class="controls" style="margin-top:10px">
+    <div class="ctl" style="flex:1 1 100%">
+      <span class="lbl">Verifier to edit</span>
+      <div class="seg" role="group" aria-label="Verifier to edit" id="exSel">
+        <button type="button" data-k="ld" aria-pressed="false">Lamport&ndash;Diffie</button>
+        <button type="button" data-k="fv" aria-pressed="false">Freivalds</button>
+        <button type="button" data-k="fri" aria-pressed="true">FRI</button>
+        <button type="button" data-k="mk" aria-pressed="false">Merkle batch</button>
+      </div>
+    </div>
+  </div>
+  <div class="split">
+    <div style="min-width:0"><div class="chart">
+      <p class="ttl">Bits after $t$ steps: $-\log_2\bigl(1-\alpha_{\mathrm{prog}}(t)\bigr)$, and for the Merkle batch $-\log_2 \beta(t,\delta)$, a fraction bound. Capped at 64 on screen.</p>
+      <svg id="exSvg" role="img" aria-label="Bits of soundness against verification steps for four progressive verifiers"></svg>
+      <ul class="legend" id="exLegend"></ul>
+      <details class="tbl"><summary>Table view</summary><div class="tscroll"><table class="data" id="exTable"></table></div></details>
+    </div>
+    <div class="controls stack" style="margin-top:16px">
+    <div class="ctl">
+      <label for="exT">Stop after $t$ steps: <span class="val" id="exTv"></span></label>
+      <input type="range" id="exT" min="0" max="256" step="1" value="100">
+    </div>
+    <div class="ctl">
+      <label for="exQ">Adversary budget $\log_2 Q$: <span class="val" id="exQv"></span></label>
+      <input type="range" id="exQ" min="40" max="128" step="1" value="80">
+    </div>
+    <div class="ctl">
+      <label for="exB">Policy threshold, in bits: <span class="val" id="exBv"></span></label>
+      <input type="range" id="exB" min="1" max="64" step="1" value="32">
+    </div>
+    </div>
+    </div>
+    <div class="panel" id="exPanel"></div>
+  </div>
+  <div class="rogrid" id="exRO"></div>
+  <p class="note" style="margin-top:12px">The four curves are the paper's declared confidences (Con. 1, 2, 4 and 5, Thm. 2, Def. 8); the Fiat&ndash;Shamir option for Freivalds is a remark in &sect;4.1, not a construction. Every value on the chart is <span class="ours">computed</span> from them at the parameters shown. Steps are not comparable in cost across verifiers, so the chart compares shapes, not speed. Section 5.4 of the paper puts measured costs on one time axis (Fig. 5).</p>
+  <p class="lede" style="margin-top:18px">Theorem 2 has one hypothesis that a careless implementation can break: the queries must be checked in the order they were derived. Why does the order matter, if the set of positions is the same?</p>
+</div></section>
+
+<!-- ============ 4. ORDER ============ -->
+<section id="order"><div class="wrap">
+  <p class="eyebrow">4 · Order matters</p>
+  <h2>The same positions, checked sorted, lose the prefix bound</h2>
+  <p class="lede">A deployed verifier, Winterfell, sorts and deduplicates the query positions and authenticates all their openings at once (&sect;5.4). A batched multi-opening checks the $t$ <em>smallest</em> sampled positions first. Proposition 3 shows the $\alpha_\circ^{t}$ bound fails for them. Take a word that disagrees with the code only on the top $\delta$-fraction of the domain. Below, the $s$ sampled positions sit on that domain.</p>
+  <div class="controls">
+    <div class="ctl"><label for="orS">Samples $s$: <span class="val" id="orSv"></span></label><input type="range" id="orS" min="20" max="300" step="1" value="140"></div>
+    <div class="ctl"><label for="orD">Corrupted fraction $\delta$: <span class="val" id="orDv"></span></label><input type="range" id="orD" min="0.05" max="0.75" step="any" value="0.4166666666666667"></div>
+    <div class="ctl"><label for="orT">Prefix length $t$: <span class="val" id="orTv"></span></label><input type="range" id="orT" min="1" max="140" step="1" value="60"></div>
+    <div class="ctl" style="flex:0 1 auto; min-width:0"><button class="btn" type="button" id="orRoll">Draw new samples</button></div>
+  </div>
+  <div class="chart">
+    <p class="ttl">The evaluation domain: one draw of the $s$ query positions</p>
+    <svg id="orBar" role="img" aria-label="Sampled positions on the domain, with the derivation-order prefix above and the sorted prefix below"></svg>
+    <ul class="legend" id="orLegend"></ul>
+  </div>
+  <div class="rogrid">
+    <div class="ro"><div class="k">This draw, derivation order</div><div class="v" id="orDer"></div><p id="orDerP"></p></div>
+    <div class="ro"><div class="k">This draw, sorted order</div><div class="v" id="orSrt"></div><p id="orSrtP"></p></div>
+    <div class="ro focus"><div class="k">Pass probability at this $t$</div><div class="v" id="orProb"></div><p id="orProbP"></p></div>
+  </div>
+  <div class="chart" style="margin-top:14px">
+    <p class="ttl">Bits proven against this word, $-\log_2 \Pr[\text{the } t\text{-prefix passes}]$ <span class="ours">computed</span></p>
+    <svg id="orCurve" role="img" aria-label="Bits proven by the derivation-order and sorted prefixes"></svg>
+    <ul class="legend" id="orCLegend"></ul>
+    <details class="tbl"><summary>Table view</summary><div class="tscroll"><table class="data" id="orTable"></table></div></details>
+  </div>
+  <p class="note" style="margin-top:12px">From Prop. 3: the derivation-order prefix passes with probability $(1-\delta)^{t}$, and the sorted prefix passes whenever at most $s - t$ of the $s$ samples land in the corrupted fraction. The expression $\Pr[\mathrm{Bin}(s, \delta) \le s - t]$ is this page's exact computation of that event for independent uniform positions (H2). At $t = s$ both check everything and agree. Prop. 3 names the deterministic core of the sorted case, <code>sorted_prefix_avoids</code>, and adds that Ligero's columns behave the same way. At $s = 140$, $\delta = 5/12$ the sorted prefix passes with probability about $0.96$ at $t = 72$ and about $0.51$ at $t = 82 \approx (1-\delta)s$ <span class="ours">computed</span>, so &ldquo;near 1&rdquo; holds for $t$ somewhat below $(1-\delta)s$.</p>
+  <p class="lede" style="margin-top:18px">With the definition and its two traps in hand, what does the model buy across verifiers?</p>
+</div></section>
+
+<!-- ============ 5. PAYOFF ============ -->
+<section id="payoff"><div class="wrap">
+  <p class="eyebrow">5 · What it buys</p>
+  <h2>One interface, four verifiers, and the price of cheap confidence</h2>
+  <p class="lede">The verifiers this paper builds all report through one confirmation code. That makes them comparable on the axis that matters to a policy: what a prefix of $t$ steps has established, and from which step on. The table lists prior work for contrast.</p>
+  <div class="tscroll"><table class="data wide" id="mapTable">
+    <thead><tr><th>Verifier</th><th>Coins</th><th>Survival after $t$ steps</th><th>Dead zone, $Q = 2^{80}$</th><th>How cheap exponential confidence is paid for</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="5">Prior work</td></tr>
+      <tr><td>Flexible Lamport&ndash;Diffie (Le et al.)</td><td>fresh</td><td>$1 - t/n$</td><td>none</td><td>public, but confidence only linear</td></tr>
+      <tr><td>Freivalds compiler (Boschini et al.; Heljeberg&ndash;Nyberg)</td><td>fresh or one-use state</td><td>$q^{-t}$</td><td>none</td><td>verifier secrecy: setup before the claim, gives up public verifiability</td></tr>
+      <tr><td>FRI (ethSTARK)</td><td>Fiat&ndash;Shamir</td><td>full verification only</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr><td>Naysayer proofs (Seres et al.)</td><td>none</td><td>reject side only</td><td>&mdash;</td><td>&mdash;</td></tr>
+      <tr class="grp"><td colspan="5">This work</td></tr>
+      <tr><td>Beacon Freivalds (Con. 3)</td><td>beacon</td><td>$q^{-t}$ per presented claim</td><td>none per claim</td><td>amortization across claims</td></tr>
+      <tr class="hl"><td>FRI (Con. 4, Thm. 2)</td><td>Fiat&ndash;Shamir</td><td>$\min\{1, Q\,2^{-w}\alpha_\circ^{t} + \varepsilon_c(Q)\}$</td><td>77 queries</td><td>prover re-encoding of the object</td></tr>
+      <tr><td>Ligero (&sect;5.2, a sketch)</td><td>Fiat&ndash;Shamir</td><td>$\min\{1, 3Q\,(\alpha_\circ^{\mathrm{Lig}})^{t} + \varepsilon_c(Q)\}$</td><td>139 columns</td><td>prover re-encoding of the object</td></tr>
+      <tr><td>Merkle batch (Con. 5)</td><td>fresh</td><td>$(1-\delta)^{t}$</td><td>none</td><td>&mdash; bounds the invalid fraction, not validity (&sect;5.3)</td></tr>
+      <tr><td></td><td>Fiat&ndash;Shamir</td><td>$\min\{1, Q(1-\delta)^{t}\}$</td><td>while $Q(1-\delta)^{t} \ge 1$</td><td>&mdash;</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:8px">Columns 1&ndash;4 follow Table 1 of the paper. Survival for batch openings bounds a batch whose invalid fraction is at least $\delta$. The dead-zone entries for FRI and Ligero are at ethSTARK's provable 128-bit point and at Ligero's 128-bit parameters without proof-of-work. The last column follows the paragraph &ldquo;The design space&rdquo; in &sect;5.2.</p>
+  <p class="callout"><strong>The design space (&sect;5.2, &sect;6).</strong> Among the instantiations of Table 1, every route to validity confidence that rises exponentially with cheap steps pays with <em>amortization</em> across claims (beacon Freivalds), <em>prover re-encoding</em> of the authenticated object (FRI and Ligero), or <em>verifier secrecy</em> backed by setup work done before the claim arrives, which gives up public verifiability (the Freivalds compiler). Hash-based flexible signatures are public but linear. Whether public, per-claim, prover-unassisted exponential confidence is achievable for native matrix&ndash;vector verification is open.</p>
+
+  <h3 style="margin-top:30px">From a per-step bound to a policy</h3>
+  <p class="lede">Take a sound policy whose earliest accepting step is $t_P$; the per-step bound at $t_P$ carries over to sessions (Thm. 1). For a progressively unforgeable scheme with fresh coins, $N$ sessions cost a factor $N$: some session accepts a forgery with probability at most $N\,(1 - \alpha_{\mathrm{prog}}(t_P) + \nu(\lambda))$. For a progressively sound Fiat&ndash;Shamir argument the bound is $1 - \alpha_{\mathrm{prog}}(t_P, Q)$ whatever $N$, because $Q$ already counts every oracle call, the verifier's included. The fresh-coin factor is nearly attained: a distance-one Lamport&ndash;Diffie forgery shown to $N = 16$ sessions at $t_P = n - 1$, $n = 256$, is accepted with probability $0.061$, against the bound $0.0625$ (&sect;4.2; calculator in the appendix).</p>
+  <div class="tscroll"><table class="data wide">
+    <thead><tr><th>Worked policy (&sect;5.4)</th><th>Accept at</th><th>Online cost</th><th>Against plain verification</th></tr></thead>
+    <tbody>
+      <tr><td>Fresh-coin Merkle batch</td><td>$t_P = \lceil \log(1-\alpha^{*})/\log(1-\delta) \rceil$ samples</td><td colspan="2">the remaining $B - t_P$ authentication-path checks are saved; no setup, no dead zone</td></tr>
+      <tr><td>Freivalds on uov-Ip dimensions, state precomputed before the claim</td><td>$t_P = 4$ for $\alpha^{*} = 1 - 2^{-32}$</td><td class="num">claim hash $0.61$ + $4 \cdot 0.42 \approx 2.3\,\mu$s</td><td>$11.4\,\mu$s online; the $439\,\mu$s setup must be amortized across claims</td></tr>
+      <tr><td>Flexible Lamport&ndash;Diffie, $n = 256$</td><td>$t_P = 128$ for $\alpha^{*} = \tfrac12$</td><td class="num">about $25\,\mu$s</td><td>$47\,\mu$s; saves work, but confidence is only linear</td></tr>
+      <tr><td>Fiat&ndash;Shamir arguments (FRI)</td><td>only in the suffix $[t_0, s]$</td><td colspan="2">wait past the dead zone, or provision a larger proof-of-work; the 77 dead-zone queries take 57% of the measured verification time (a 77-query proof against a 140-query one)</td></tr>
+    </tbody>
+  </table></div>
+  <details class="tbl"><summary>Measured costs behind the worked policy (Table 2)</summary><div class="tscroll"><table class="data wide">
+    <thead><tr><th>Instantiation</th><th class="num">Plain</th><th class="num">Before step 1</th><th class="num">Per step</th><th>One step buys</th></tr></thead>
+    <tbody>
+      <tr><td>flexible Lamport&ndash;Diffie, $n = 256$</td><td class="num">$47.0\,\mu$s</td><td class="num">$1.9\,\mu$s</td><td class="num">$0.18\,\mu$s</td><td>see the paper's Fig. 5</td></tr>
+      <tr><td>Freivalds, uov-Ip dimensions, $T = 45$</td><td class="num">$11.4\,\mu$s</td><td class="num">$439\,\mu$s</td><td class="num">$0.42\,\mu$s</td><td>8 bits</td></tr>
+      <tr><td>Freivalds, uov-III dimensions, $T = 72$</td><td class="num">$55.2\,\mu$s</td><td class="num">$4.44$ ms</td><td class="num">$1.12\,\mu$s</td><td>8 bits</td></tr>
+      <tr><td>Freivalds, uov-V dimensions, $T = 96$</td><td class="num">$124\,\mu$s</td><td class="num">$12.1$ ms</td><td class="num">$2.09\,\mu$s</td><td>8 bits</td></tr>
+      <tr><td>FRI (Winterfell), trace $2^{20}$, $s = 140$</td><td class="num">$5.37$ ms</td><td class="num">$\le 46\,\mu$s</td><td class="num">$36.1\,\mu$s</td><td>0.78 bits once $t > 77$</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin-top:8px">Medians of three runs on one pinned core of an Intel Core i7-7800X; the repeat spread is at most 6.3% for every cited entry. The Freivalds online cost adds the claim hash $V_0$ ($0.61\,\mu$s) to the steps. The Freivalds rows time the compiler over a public map with UOV dimensions and random coefficients, not a UOV implementation. The FRI row is a <em>cost model</em>: Winterfell checks layer by layer, not per prefix, so it is not the timing of an interruptible verifier. It runs over a cubic extension of a 64-bit field, where the commit-phase error caps the guarantee against $Q = 2^{80}$ at about 54 bits (&sect;5.4).</p></details>
+
+  <h3 style="margin-top:30px">The reject side: naysayer proofs</h3>
+  <p class="lede">Naysayer proofs (Seres et al.) convince anyone that a claim is invalid, with less work than verifying it. They work on the reject side; progressive verification works on the accept side. A verifier with a public check decomposition $\phi_0, \ldots, \phi_K$ (Def. 4: deterministic checks of the claim, all of which hold exactly when it is valid) compiles into a naysayer that names one failing check in $\lceil \log_2(K+1) \rceil$ bits, complete and perfectly sound (Prop. 1). This still works when private coins choose the order of the checks. What no naysayer can do for a secret-coin verifier is certify the run. Take a verifier that is accept-perfect and reject-complete, with step outcomes that depend on its private coins, and a public, stateless, deterministic $\mathtt{VerifyNay}$ whose inputs are the claim and the refutation. On invalid and honestly generated valid inputs, its outcome is then determined by the base scheme's validity predicate alone, up to negligible error, and it cannot certify a per-run event, such as &ldquo;step $j$ of this run failed&rdquo;, whose probability $p$ over the verifier's coins has $p(1-p)$ non-negligible (Lemma 1).</p>
+  <p class="lede" style="margin-top:18px">So the model makes these verifiers comparable. Where does it stop?</p>
+</div></section>
+
+<!-- ============ 6. LIMITS ============ -->
+<section id="limits"><div class="wrap">
+  <p class="eyebrow">6 · Where this goes next</p>
+  <h2>Open questions, and what the model leaves out</h2>
+  <h3 style="margin-top:12px">Open (&sect;6)</h3>
+  <ul class="plain">
+    <li>Whether public verifiability with exponentially rising confidence and cheap verification steps is achievable per claim, without prover assistance, for native matrix&ndash;vector verification.</li>
+    <li>Whether bounds beyond the Johnson radius (Dao et al.) shorten the dead zone at deployed parameters. The paper has not checked their commit-phase term at these parameters.</li>
+    <li>What a principled composition of heuristic, contextual confidence (the systems-side meaning of progressive authentication, where a device fuses sensor signals) and cryptographic confidence into one policy-facing quantity should look like. The paper calls this the central question its bridge opens.</li>
+  </ul>
+  <h3 style="margin-top:18px">What the model leaves out, and where it does not apply</h3>
+  <ul class="plain">
+    <li>For the Fiat&ndash;Shamir arguments, $\alpha_{\mathrm{prog}}$ is a soundness level relative to the declared proximity regime and adversary budget, not a per-instance posterior probability (&sect;5.2).</li>
+    <li>The confidence reported at the stopping step is calibrated when the stopping point is fixed before the session's challenges exist and does not depend on step outcomes, as for a deadline when step times do not depend on them. It need not be otherwise: a Fiat&ndash;Shamir prover can stop at its longest passing prefix. The bound attaches to the policy's acceptance step $t_P$ (&sect;4.2).</li>
+    <li>Physical side channels, such as timing that depends on a secret verifier state, are outside the model (the paper's App. A).</li>
+    <li>Progressive verification is a property of natively decomposable verification. A single Pedersen vector-commitment opening is one multi-scalar multiplication, with no native decomposition into progressively checkable steps (&sect;5.3).</li>
+  </ul>
+</div></section>
+
+<!-- ============ APPENDIX ============ -->
+<section id="appendix"><div class="wrap">
+  <p class="eyebrow">Appendix</p>
+  <h2>Calculators and notes</h2>
+
+  <h3 style="margin-top:18px">Calculator 1. Reusing a Freivalds state (Prop. 2)</h3>
+  <p class="lede">A verifier that precomputes a secret state of $k$ rows and reuses it across $N$ sessions leaks information through early outcomes. Session $i$ <em>reaches depth</em> $t$ if its residual is nonzero yet passes rows $1, \ldots, t$. For $N \le q$, Prop. 2 bounds the chance that some session reaches depth $t$ by $\binom{N+t-1}{t}(q-N+1)^{-t} + q^{k-T}$ when the first failing row leaks (item 1), and by $\bigl(N/(q-N+1)\bigr)^{t} + q^{k-T}$ when every row's outcome leaks (item 2). Item 3 gives an attack that, seeing one accept bit per session, reaches depth $t$ <span class="nw">(for $t \lt T$)</span> within an expected number of sessions below $q\,t(t+1)/2 + t\,q^{2}/(q-1)^{2}$; it is shown only for free residuals, and whether a UOV residual can follow it is not checked (&sect;5.1). The calculator omits $q^{k-T}$, which is negligible when $T \gg k$; the paper's example also leaves $T$ unstated.</p>
+  <div class="controls">
+    <div class="ctl"><label for="ruQ">Structure size $q$</label><select id="ruQ"><option value="16">16</option><option value="256" selected>256</option></select></div>
+    <div class="ctl"><label for="ruT">Depth $t$ (rows, $k = t$): <span class="val" id="ruTv"></span></label><input type="range" id="ruT" min="1" max="24" step="1" value="8"></div>
+    <div class="ctl"><label for="ruN">Sessions $N$ (forgery included): <span class="val" id="ruNv"></span></label><input type="range" id="ruN" min="1" max="256" step="1" value="49"></div>
+    <div class="ctl" style="flex:0 1 auto; min-width:0"><button class="chipbtn" type="button" id="ruPreset">Paper's example: $q = 256$, $k = t = 8$, $N = 49$</button></div>
+  </div>
+  <div class="rogrid" id="ruRO"></div>
+  <p class="note" style="margin-top:10px" id="ruNote"></p>
+
+  <h3 style="margin-top:28px">Calculator 2. A policy over $N$ fresh sessions (Thm. 1)</h3>
+  <p class="lede">A distance-one Lamport&ndash;Diffie forgery survives $t_P = n-1$ checks with probability $1/n$. Shown to $N$ fresh sessions, it is accepted by some session with probability $1-(1-1/n)^{N}$; Theorem 1 bounds this by $N/n$.</p>
+  <div class="controls">
+    <div class="ctl"><label for="poN">Digest length $n$: <span class="val" id="poNv"></span></label><input type="range" id="poN" min="16" max="512" step="16" value="256"></div>
+    <div class="ctl"><label for="poS">Sessions $N$: <span class="val" id="poSv"></span></label><input type="range" id="poS" min="1" max="64" step="1" value="16"></div>
+  </div>
+  <div class="rogrid" id="poRO"></div>
+
+  <h3 style="margin-top:28px">Note 3. Ligero, as a sketch</h3>
+  <p class="lede">The same prefix accounting fits Fiat&ndash;Shamir Ligero, with one column, opened and run through all three tests, in the role of one FRI query. The per-column pass rate is $\alpha_\circ^{\mathrm{Lig}} = \max\{1 - e/n,\, (k+\ell)/n,\, 2k/n\} = 2/3$ at the optimal parameters, about 0.585 bits per column, and the three tests' union costs $\log_2 3$ bits. Published Ligero specifies no proof-of-work, so $w = 0$ and the dead zone is large: $t_0 \approx 139$ columns at $Q = 2^{80}$, against the about 219 columns the 128-bit parameter formula gives, which cap the confidence at about 46.5 bits. The paper marks this a sketch, not a theorem on the footing of Theorem 2: it takes the round-by-round Fiat&ndash;Shamir analysis of the extended Ligero paper as given.</p>
+
+  <h3 style="margin-top:28px">Note 4. What is machine-checked</h3>
+  <p class="lede">Proposition 2, items 1 and 2 including their Step 2, is mechanized in Lean for a deterministic adversary given as a decision tree over at most $N$ sequential sessions, the model to which Step 1 reduces. Step 1 itself is not mechanized. For item 3, only the arithmetic of the attack and one dimension bound are mechanized; the attack's correctness, its probabilities and its expectation are not (the paper's App. A, &ldquo;Mechanization&rdquo;).</p>
+
+  <h3 style="margin-top:28px">Note 5. Code and data</h3>
+  <p class="lede">The Lean formalization and the benchmark code are not public at the time of writing. Everything this page computes is in its own script, which you can read with your browser's view-source.</p>
+</div></section>
+
+<!-- ============ CITE ============ -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">Cite</p>
+  <h2>BibTeX</h2>
+  <pre class="bib" id="bibtex">@unpublished{le2026progressive,
+  title  = {Progressive Authentication: A Pointwise Soundness
+            Guarantee for Interruptible Verifiers},
+  author = {Le, Duc V.},
+  note   = {Manuscript},
+  year   = {2026}
+}</pre>
+  <div class="btns"><button class="btn" type="button" id="bibCopy">Copy BibTeX</button></div>
+</div></section>
+
+<footer><div class="wrap">Duc V. Le &middot; Progressive Authentication &middot; draft of 22 November 2026</div></footer>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* Light only, like the rest of levduc.github.io. */
+var SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text){
+  var n = document.createElementNS(SVGNS, name);
+  for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]);
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function $(id){ return document.getElementById(id); }
+function clear(svg){ while (svg.firstChild) svg.removeChild(svg.firstChild); }
+function isNarrow(){ return window.innerWidth < 620; }
+function boxW(svg){ var w = svg.parentNode.clientWidth; var cs = getComputedStyle(svg.parentNode);
+  w -= (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0); return Math.max(260, Math.min(940, Math.floor(w))); }
+var LOG2 = Math.log2 || function(x){ return Math.log(x) / Math.LN2; };
+
+/* =======================================================================
+   Motion — every animation goes through tween(). It force-settles via
+   setTimeout(finish, ms + 150) if requestAnimationFrame is starved.
+   ===================================================================== */
+var REDUCED = false;
+try { REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+function easeOut(p){ return 1 - Math.pow(1 - p, 3); }
+function tween(ms, step, done){
+  var h = { finished:false, cancelled:false };
+  function finish(){
+    if (h.finished || h.cancelled) return;
+    h.finished = true; step(1); if (done) done();
+  }
+  h.finish = finish;
+  h.cancel = function(){ h.cancelled = true; };
+  if (REDUCED || ms <= 0){ finish(); return h; }
+  var t0 = null;
+  function frame(t){
+    if (h.finished || h.cancelled) return;
+    if (t0 === null) t0 = t;
+    var p = (t - t0) / ms;
+    if (p >= 1){ finish(); return; }
+    step(easeOut(p));
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  setTimeout(finish, ms + 150);
+  return h;
+}
+var ANIMS = {};
+function run(key, ms, step, done){
+  if (ANIMS[key]) ANIMS[key].cancel();
+  var h = tween(ms, step, done);
+  if (!h.finished) ANIMS[key] = h;
+  return h;
+}
+function settle(key){ if (ANIMS[key]){ ANIMS[key].finish(); delete ANIMS[key]; } }
+function lerp(a, b, p){ return a + (b - a) * p; }
+
+/* tooltip */
+var tipEl = $('tip');
+function showTip(evt, html){
+  tipEl.innerHTML = html; tipEl.style.opacity = 1;
+  var r = tipEl.getBoundingClientRect();
+  var x = evt.clientX + 14, y = evt.clientY + 14;
+  if (x + r.width > window.innerWidth - 8) x = evt.clientX - r.width - 14;
+  if (y + r.height > window.innerHeight - 8) y = evt.clientY - r.height - 14;
+  tipEl.style.left = Math.max(4, x) + 'px'; tipEl.style.top = Math.max(4, y) + 'px';
+}
+function hideTip(){ tipEl.style.opacity = 0; }
+
+/* KaTeX */
+function katexRender(root){
+  if (!window.renderMathInElement) return;
+  window.renderMathInElement(root, {
+    delimiters: [ { left:'$$', right:'$$', display:true }, { left:'$', right:'$', display:false } ],
+    throwOnError:false,
+    ignoredTags:['script','noscript','style','textarea','pre','code','option']
+  });
+}
+function setMath(node, html){ node.innerHTML = html; katexRender(node); }
+
+/* seeded generator (mulberry32) */
+function rng(seed){ var a = seed >>> 0; return function(){
+  a = (a + 0x6D2B79F5) >>> 0; var t = a;
+  t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+/* number formatting */
+function f1(x){ return (Math.round(x * 10) / 10).toFixed(1); }
+function f2(x){ return x.toFixed(2); }
+function bitsTxt(b){ if (b === Infinity) return '∞'; return f1(b); }
+/* alpha_prog = 1 - 2^{-b}, written exactly when it is near 1 */
+function alphaTex(b, exact){
+  if (exact !== undefined) return exact;
+  if (b <= 0) return '0';
+  if (b === Infinity) return '1';
+  if (b < 6) return (1 - Math.pow(2, -b)).toFixed(3);
+  return '1 - 2^{-' + f1(b) + '}';
+}
+var LGT = [0, 0]; for (var _i = 2; _i <= 1200; _i++) LGT[_i] = LGT[_i - 1] + LOG2(_i);
+function lgam2(n){ /* log2(n!) from a table */ return LGT[n]; }
+function log2Binom(n, k){ if (k < 0 || k > n) return -Infinity; return lgam2(n) - lgam2(k) - lgam2(n - k); }
+/* log2 Pr[Bin(s, d) <= k], summed in log space */
+function log2BinCdf(s, d, k){
+  if (k >= s) return 0; if (k < 0) return -Infinity;
+  var la = LOG2(d), lb = LOG2(1 - d), terms = [], mx = -Infinity;
+  for (var i = 0; i <= k; i++){ var v = log2Binom(s, i) + i * la + (s - i) * lb; terms.push(v); if (v > mx) mx = v; }
+  var sum = 0; for (var j = 0; j < terms.length; j++) sum += Math.pow(2, terms[j] - mx);
+  return Math.min(0, mx + LOG2(sum));
+}
+
+/* =======================================================================
+   The paper's FRI point (Section 5.2) — shared by the puzzle and the sandbox
+   ===================================================================== */
+var PAPER = { rho:0.25, m:3, delta:5/12, w:20, s:140, logQ:80 };
+function alphaCirc(rho, m, delta){ return Math.max(1 - delta, Math.sqrt(rho) * (1 + 1 / (2 * m))); }
+function friBitsAt(t, rho, m, delta, w, logQ){ var x = -LOG2(alphaCirc(rho, m, delta)); return Math.max(0, t * x - (logQ - w)); }
+
+/* =======================================================================
+   1. Puzzle
+   ===================================================================== */
+var PUZ = { guess:null, revealed:false, dead:0, live:0, curveT:0, t:70 };
+var GUESSES = [
+  { id:'half', label:'About half of the final guarantee, roughly 24 bits' },
+  { id:'rate', label:'70 queries at about 0.78 bits each, roughly 54 bits' },
+  { id:'few',  label:'A few bits: small, but something' },
+  { id:'none', label:'Nothing at all' }
+];
+var ANSWERS = {
+  half: 'Not here. For a Fiat&ndash;Shamir proof, confidence does not grow in proportion to work. At $t = 70$ the term $Q\\,2^{-w}\\alpha_\\circ^{t}$ in Theorem 2 is still above 1, so the bound is the trivial 1 and proves nothing. The guarantee starts at query 78 and reaches $2^{-48.9}$ only at query 140.',
+  rate: 'Your per-query rate is right: in the provable regime one query passes a far word with probability at most $\\alpha_\\circ = 7/12$ (for $\\delta \\ge 5/12$), about 0.78 bits. But the prover&rsquo;s queries come from its own hashing, so it can re-derive them, up to $2^{80}$ hashes. After the 20-bit proof-of-work that still leaves about $2^{60}$ usable attempts, and they cancel the first 77 queries&rsquo; worth of bits.',
+  few:  'Not even a few. While $Q\\,2^{-w}\\alpha_\\circ^{t} \\ge 1$, the bound of Theorem 2 is the trivial 1, which says nothing. At $t = 70$ we compute $Q\\,2^{-w}\\alpha_\\circ^{70} \\approx 2^{5.6}$ <span class=\"ours\">computed</span>. The term drops below 1 only at query 78.',
+  none: 'Right. With $Q = 2^{80}$ and $w = 20$, the term $Q\\,2^{-w}\\alpha_\\circ^{t}$ stays at or above 1 through $t = 77$, so the bound is the trivial 1. The first 77 queries prove nothing, and query 78 is the first that does.'
+};
+var PUZ_DOM = null;
+function puzLayout(){
+  var svg = $('puzSvg'), W = boxW(svg);
+  var cols = W < 420 ? 14 : (W < 640 ? 20 : 28);
+  var gap = 3, cell = Math.floor((W - (cols - 1) * gap) / cols); cell = Math.min(cell, 26);
+  var rows = Math.ceil(140 / cols), top = 18;
+  return { W:W, cols:cols, gap:gap, cell:cell, rows:rows, top:top, H: top + rows * (cell + gap) + 4 };
+}
+function puzDraw(){
+  var svg = $('puzSvg'); clear(svg);
+  var L = puzLayout(); svg.setAttribute('viewBox', '0 0 ' + L.W + ' ' + L.H);
+  var defs = el('defs', {});
+  var pat = el('pattern', { id:'hatch', width:5, height:5, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)' });
+  pat.appendChild(el('rect', { width:5, height:5, fill:css('--surface-1') }));
+  pat.appendChild(el('line', { x1:0, y1:0, x2:0, y2:5, stroke:css('--dead'), 'stroke-width':2 }));
+  defs.appendChild(pat); svg.appendChild(defs);
+  var cells = [];
+  for (var i = 1; i <= 140; i++){
+    var r = Math.floor((i - 1) / L.cols), c = (i - 1) % L.cols;
+    var x = c * (L.cell + L.gap), y = L.top + r * (L.cell + L.gap);
+    var rect = el('rect', { x:x, y:y, width:L.cell, height:L.cell, rx:2, 'data-i':i });
+    svg.appendChild(rect); cells.push({ rect:rect, x:x, y:y });
+    (function(idx){
+      rect.addEventListener('pointermove', function(e){ showTip(e, puzTip(idx)); });
+      rect.addEventListener('pointerleave', hideTip);
+    })(i);
+  }
+  /* stop marker after query 70 */
+  var c70 = cells[69], sx = c70.x + L.cell + L.gap / 2;
+  svg.appendChild(el('line', { x1:sx, y1:c70.y - 5, x2:sx, y2:c70.y + L.cell + 5, stroke:css('--critical'), 'stroke-width':2.5 }));
+  svg.appendChild(el('text', { x:sx, y:c70.y - 8 > 9 ? c70.y - 8 : 10, 'text-anchor':'middle', 'font-family':css('--mono'), 'font-size':11, fill:css('--ink-1'), 'font-weight':700, 'paint-order':'stroke', stroke:css('--surface-1'), 'stroke-width':4 }, 'stop'));
+  /* row labels: first query of the first row */
+  svg.appendChild(el('text', { x:0, y:11, 'font-family':css('--mono'), 'font-size':11, fill:css('--ink-muted') }, 'query 1 →'));
+  PUZ_DOM = { svg:svg, cells:cells, L:L };
+  puzPaint();
+}
+function puzTip(i){
+  var checked = i <= 70 ? 'checked, passed' : 'not checked yet';
+  if (!PUZ.revealed) return '<b>Query ' + i + '</b>' + checked;
+  var b = friBitsAt(i, PAPER.rho, PAPER.m, PAPER.delta, PAPER.w, PAPER.logQ);
+  return '<b>Query ' + i + '</b>' + checked + '<br>' + (b <= 0 ? 'dead zone: a prefix ending here proves nothing' : 'a prefix ending here proves ' + f1(b) + ' bits');
+}
+function puzPaint(){
+  if (!PUZ_DOM) return;
+  var surf = css('--surface-1'), ring = css('--axis'), s3 = css('--s3');
+  PUZ_DOM.cells.forEach(function(c, k){
+    var i = k + 1, r = c.rect;
+    var isDead = PUZ.revealed && i <= PUZ.dead, isLive = PUZ.revealed && i >= 78 && i < 78 + PUZ.live;
+    if (isDead){ r.setAttribute('fill', 'url(#hatch)'); r.setAttribute('stroke', css('--dead')); }
+    else if (isLive){ r.setAttribute('fill', s3); r.setAttribute('stroke', s3); r.setAttribute('fill-opacity', i <= 70 ? 1 : 0.45); }
+    else { r.setAttribute('fill', i <= 70 ? css('--idle') : surf); r.setAttribute('stroke', i <= 70 ? css('--dead') : ring); r.setAttribute('fill-opacity', 1); }
+    r.setAttribute('stroke-width', i <= 70 ? 1.4 : 1);
+    if (i > 70) r.setAttribute('stroke-dasharray', '3 2'); else r.removeAttribute('stroke-dasharray');
+    if (!isLive) r.setAttribute('fill-opacity', 1);
+  });
+  PUZ_DOM.svg.setAttribute('data-dead', PUZ.dead);
+  PUZ_DOM.svg.setAttribute('data-live', PUZ.live);
+  puzLegend();
+}
+function puzLegend(){
+  var ul = $('puzLegend'); ul.innerHTML = '';
+  function item(fill, stroke, dash, label){
+    var li = document.createElement('li');
+    var s = el('svg', { width:13, height:13, viewBox:'0 0 13 13' });
+    s.appendChild(el('rect', { x:1, y:1, width:11, height:11, rx:2, fill:fill, stroke:stroke, 'stroke-dasharray':dash }));
+    li.appendChild(s); li.appendChild(document.createTextNode(label)); ul.appendChild(li);
+  }
+  if (!PUZ.revealed){
+    item(css('--idle'), css('--dead'), null, 'checked, passed (1–70)');
+    item(css('--surface-1'), css('--axis'), '3 2', 'not checked (71–140)');
+  } else {
+    item('url(#hatch)', css('--dead'), null, 'dead zone, checked (1–70)');
+    item('url(#hatch)', css('--dead'), '3 2', 'dead zone, not checked (71–77)');
+    item('rgba(27,175,122,.45)', css('--s3'), '3 2', 'would carry a guarantee, not checked (78–140)');
+  }
+}
+function puzCurve(){
+  var svg = $('puzCurve'); clear(svg);
+  var W = boxW(svg), H = isNarrow() ? 170 : 190, ml = 36, mr = 14, mt = 10, mb = 30;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var pw = W - ml - mr, ph = H - mt - mb, yMax = 50;
+  function X(t){ return ml + pw * t / 140; } function Y(b){ return mt + ph * (1 - b / yMax); }
+  var mono = css('--mono'), muted = css('--ink-muted');
+  [0, 10, 20, 30, 40, 50].forEach(function(b){
+    svg.appendChild(el('line', { x1:ml, x2:W - mr, y1:Y(b), y2:Y(b), stroke:css('--grid'), 'stroke-width':1 }));
+    svg.appendChild(el('text', { x:ml - 6, y:Y(b) + 4, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:muted }, b));
+  });
+  [0, 20, 40, 60, 77, 100, 120, 140].forEach(function(t){
+    svg.appendChild(el('text', { x:X(t), y:H - 12, 'text-anchor':'middle', 'font-family':mono, 'font-size':11, fill: t === 77 ? css('--ink-1') : muted }, t));
+  });
+  svg.appendChild(el('text', { x:W - mr, y:H - 1, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:muted }, 'queries checked, t'));
+  /* dead-zone band */
+  var band = el('rect', { x:X(0), y:mt, width:X(77) - X(0), height:ph, fill:'url(#hatch)', opacity:PUZ.revealed ? 0.55 : 0 });
+  svg.appendChild(band);
+  var pts = [];
+  var upTo = PUZ.revealed ? 78 + PUZ.live - 1 : 0;
+  for (var t = 0; t <= Math.min(140, upTo); t++) pts.push(X(t) + ',' + Y(friBitsAt(t, PAPER.rho, PAPER.m, PAPER.delta, PAPER.w, PAPER.logQ)));
+  if (pts.length > 1) svg.appendChild(el('polyline', { points:pts.join(' '), fill:'none', stroke:css('--s3'), 'stroke-width':2, 'stroke-linejoin':'round' }));
+  /* marker at t = 70 */
+  svg.appendChild(el('line', { x1:X(70), x2:X(70), y1:mt, y2:mt + ph, stroke:css('--critical'), 'stroke-width':1.5, 'stroke-dasharray':'4 3' }));
+  if (PUZ.revealed){
+    svg.appendChild(el('circle', { cx:X(70), cy:Y(0), r:4.5, fill:css('--critical'), stroke:css('--surface-1'), 'stroke-width':2 }));
+    svg.appendChild(el('text', { x:X(70) - 7, y:Y(0) - 8, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700, 'paint-order':'stroke', stroke:css('--surface-1'), 'stroke-width':4 }, 't = 70: 0 bits'));
+    if (PUZ.live >= 63){
+      svg.appendChild(el('circle', { cx:X(140), cy:Y(48.87), r:4, fill:css('--s3'), stroke:css('--surface-1'), 'stroke-width':2 }));
+      svg.appendChild(el('text', { x:X(140) - 6, y:Y(48.87) - 8, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700 }, '48.9 bits at t = 140'));
+    }
+  }
+  svg.style.opacity = PUZ.revealed ? 1 : 0.35;
+}
+function puzGuessUI(){
+  var box = $('puzGuess'); box.innerHTML = '';
+  GUESSES.forEach(function(g){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chipbtn'; b.id = 'g-' + g.id;
+    b.textContent = g.label; b.setAttribute('aria-pressed', PUZ.guess === g.id ? 'true' : 'false');
+    b.addEventListener('click', function(){ if (PUZ.revealed) return; PUZ.guess = g.id; puzGuessUI(); $('puzReveal').disabled = false; });
+    box.appendChild(b);
+  });
+}
+function puzReveal(){
+  if (PUZ.revealed || !PUZ.guess) return;
+  PUZ.revealed = true; $('puzReveal').disabled = true;
+  PUZ.dead = 0; PUZ.live = 0; puzPaint(); puzCurve();
+  /* stage 1: the dead zone fills in; stage 2: the live suffix and its curve */
+  run('puz', 1600, function(p){
+    var s1 = Math.min(1, p / 0.45), s2 = Math.max(0, (p - 0.45) / 0.55);
+    PUZ.dead = Math.round(77 * s1); PUZ.live = Math.round(63 * s2);
+    puzPaint(); puzCurve();
+  }, function(){
+    PUZ.dead = 77; PUZ.live = 63; puzPaint(); puzCurve();
+    var a = $('puzAnswer'); a.hidden = false;
+    setMath(a, '<strong>' + (PUZ.guess === 'none' ? 'Correct.' : 'Not quite.') + '</strong> ' + ANSWERS[PUZ.guess]);
+    $('puzPunch').hidden = false; katexRender($('puzPunch'));
+  });
+}
+function puzReset(){
+  settle('puz'); PUZ.guess = null; PUZ.revealed = false; PUZ.dead = 0; PUZ.live = 0;
+  $('puzReveal').disabled = true; $('puzAnswer').hidden = true; $('puzPunch').hidden = true;
+  puzGuessUI(); puzPaint(); puzCurve();
+}
+$('puzReveal').addEventListener('click', puzReveal);
+$('puzReset').addEventListener('click', puzReset);
+
+/* =======================================================================
+   2. Why: a grinding prover (toy)
+   ===================================================================== */
+var GR = { view:'many', k:10, seed:1, shown:0, data:null };
+var P_PASS = 7 / 12;
+function grSimulate(){
+  var M = GR.view === 'one' ? 1 : Math.pow(2, GR.k), R = rng(GR.seed * 7919 + GR.k * 31 + (GR.view === 'one' ? 5 : 0));
+  var best = -1, bestI = 0, rows = [], showN = Math.min(M, isNarrow() ? 8 : 12);
+  var lp = Math.log(P_PASS);
+  for (var i = 0; i < M; i++){
+    var u = 1 - R(); var L = Math.floor(Math.log(u) / lp); /* Pr[L >= l] = (7/12)^l */
+    if (i < showN) rows.push({ i:i, L:L });
+    if (L > best){ best = L; bestI = i; }
+  }
+  GR.data = { M:M, rows:rows, best:best, bestI:bestI };
+}
+function grDraw(){
+  var svg = $('grSvg'); clear(svg);
+  var D = GR.data, W = boxW(svg), cols = W < 420 ? 16 : 26;
+  var lab = 52, gap = 2, cell = Math.max(8, Math.min(18, Math.floor((W - lab - 30 - (cols - 1) * gap) / cols)));
+  var rows = D.rows.slice(), extra = D.bestI >= rows.length;
+  if (extra) rows.push({ i:D.bestI, L:D.best, isBest:true });
+  rows.forEach(function(r){ if (r.i === D.bestI) r.isBest = true; });
+  var rh = cell + 5, H = 8 + rows.length * rh + (extra ? 12 : 0) + 6;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var mono = css('--mono'), s3 = css('--s3'), crit = css('--critical');
+  var vis = Math.round(cols * GR.shown);
+  rows.forEach(function(r, ri){
+    var y = 8 + ri * rh + (extra && ri === rows.length - 1 ? 12 : 0);
+    if (extra && ri === rows.length - 1) svg.appendChild(el('text', { x:lab - 8, y:y - 3, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:css('--ink-muted') }, '⋮'));
+    svg.appendChild(el('text', { x:lab - 8, y:y + cell - 3, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight': r.isBest ? 700 : 400 }, '#' + (r.i + 1)));
+    for (var c = 0; c < cols; c++){
+      var x = lab + c * (cell + gap);
+      if (c >= vis) { svg.appendChild(el('rect', { x:x, y:y, width:cell, height:cell, rx:2, fill:css('--surface-1'), stroke:css('--grid') })); continue; }
+      if (c < r.L) svg.appendChild(el('rect', { x:x, y:y, width:cell, height:cell, rx:2, fill:s3 }));
+      else if (c === r.L){ svg.appendChild(el('rect', { x:x, y:y, width:cell, height:cell, rx:2, fill:css('--plane'), stroke:crit, 'stroke-width':1.5 }));
+        svg.appendChild(el('text', { x:x + cell / 2, y:y + cell - 3, 'text-anchor':'middle', 'font-family':mono, 'font-size':Math.max(9, cell - 4), fill:crit, 'font-weight':700 }, '✕')); }
+      else svg.appendChild(el('rect', { x:x, y:y, width:cell, height:cell, rx:2, fill:css('--idle') }));
+    }
+    if (r.L > cols && vis >= cols) svg.appendChild(el('text', { x:lab + cols * (cell + gap) + 2, y:y + cell - 3, 'font-family':mono, 'font-size':11, fill:css('--ink-1') }, '+' + (r.L - cols)));
+    if (r.isBest) svg.appendChild(el('rect', { x:lab - 3, y:y - 2.5, width:cols * (cell + gap) + 4, height:cell + 5, rx:3, fill:'none', stroke:css('--accent'), 'stroke-width':1.5 }));
+  });
+  svg.setAttribute('data-best', D.best);
+  $('grTtl').textContent = D.M === 1 ? 'One attempt: its queries, checked in order' :
+    'First ' + D.rows.length + ' of ' + D.M.toLocaleString('en-US') + ' attempts' + (extra ? ', plus the longest' : '') + ': queries checked in order';
+  var ul = $('grLegend'); ul.innerHTML = '';
+  [[s3, null, 'query passed'], [css('--plane'), crit, 'first failing query ✕'], [css('--idle'), null, 'not reached']].forEach(function(it){
+    var li = document.createElement('li'); var s = el('svg', { width:13, height:13, viewBox:'0 0 13 13' });
+    s.appendChild(el('rect', { x:1, y:1, width:11, height:11, rx:2, fill:it[0], stroke:it[1] })); li.appendChild(s);
+    li.appendChild(document.createTextNode(it[2])); ul.appendChild(li);
+  });
+}
+function grReadouts(){
+  var D = GR.data, x = LOG2(12 / 7);
+  $('grBest').textContent = D.best + (D.best === 1 ? ' query' : ' queries');
+  setMath($('grBestP'), D.M === 1 ? 'One attempt passes $t$ queries with probability $(7/12)^{t}$, so it rarely gets far.' :
+    'Over $M = 2^{' + GR.k + '}$ attempts the prover keeps the best one. This draw: attempt #' + (D.bestI + 1) + '.');
+  var ts = LOG2(D.M) / x;
+  $('grStar').textContent = D.M === 1 ? 't* = 0' : 't* ≈ ' + f1(ts);
+  $('grKv').textContent = (GR.view === 'one' ? '1 (one attempt)' : Math.pow(2, GR.k).toLocaleString('en-US'));
+}
+function grRun(animate){
+  grSimulate(); grReadouts();
+  if (!animate){ GR.shown = 1; grDraw(); return; }
+  GR.shown = 0; grDraw();
+  run('gr', 900, function(p){ GR.shown = p; grDraw(); });
+}
+Array.prototype.forEach.call(document.querySelectorAll('#grView button'), function(b){
+  b.addEventListener('click', function(){
+    GR.view = b.getAttribute('data-v');
+    Array.prototype.forEach.call(document.querySelectorAll('#grView button'), function(o){ o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+    $('grK').disabled = GR.view === 'one'; grRun(true);
+  });
+});
+$('grK').addEventListener('input', function(){ GR.k = +this.value; grRun(false); });
+$('grK').addEventListener('change', function(){ GR.k = +this.value; settle('gr'); grRun(false); });
+$('grGo').addEventListener('click', function(){ GR.seed++; grRun(true); });
+
+/* =======================================================================
+   3. Sandbox: four declared confidences on one axis
+   ===================================================================== */
+var SERIES = [
+  { key:'ld',  name:'Lamport–Diffie', short:'LD',     color:'--s1' },
+  { key:'fv',  name:'Freivalds',      short:'Freiv.', color:'--s2' },
+  { key:'fri', name:'FRI',            short:'FRI',    color:'--s3' },
+  { key:'mk',  name:'Merkle batch',   short:'Merkle', color:'--s4' }
+];
+var EX = { sel:'fri', t:100, logQ:80, bstar:32,
+  ld:{ n:256 }, fv:{ q:256, T:45, fs:false }, fri:{ rho:0.25, m:3, delta:5/12, jc:true, w:20, s:140, tP:78 }, mk:{ delta:0.1, B:256, fs:false } };
+var XMAX = 256, YMAX = 64;
+function budget(k){ return k === 'ld' ? EX.ld.n : k === 'fv' ? EX.fv.T : k === 'fri' ? EX.fri.s : EX.mk.B; }
+function friJ(){ return Math.sqrt(EX.fri.rho) * (1 + 1 / (2 * EX.fri.m)); }
+function friA(){ return EX.fri.jc ? friJ() : alphaCirc(EX.fri.rho, EX.fri.m, EX.fri.delta); }
+function friX(){ return -LOG2(friA()); }
+function bits(k, t){
+  if (t < 0 || t > budget(k)) return null;
+  if (k === 'ld'){ var n = EX.ld.n; return t >= n ? Infinity : -LOG2(1 - t / n); }
+  if (k === 'fv'){ var b = t * LOG2(EX.fv.q); return EX.fv.fs ? Math.max(0, b - EX.logQ) : b; }
+  if (k === 'fri') return Math.max(0, t * friX() - (EX.logQ - EX.fri.w));
+  var y = -LOG2(1 - EX.mk.delta) * t; return EX.mk.fs ? Math.max(0, y - EX.logQ) : y;
+}
+function deadInfo(k){
+  var num, x;
+  if (k === 'fri'){ num = EX.logQ - EX.fri.w; x = friX(); }
+  else if (k === 'fv' && EX.fv.fs){ num = EX.logQ; x = LOG2(EX.fv.q); }
+  else if (k === 'mk' && EX.mk.fs){ num = EX.logQ; x = -LOG2(1 - EX.mk.delta); }
+  else return null;
+  var t0 = num / x;
+  return { t0:t0, dead: Math.max(0, Math.min(budget(k), Math.floor(t0 + 1e-9))) };
+}
+function alphaOf(k, t){
+  var b = bits(k, t); if (b === null) return null;
+  if (k === 'ld') return { tex: (t / EX.ld.n).toFixed(3).replace(/0+$/,'').replace(/\.$/,''), b:b };
+  return { tex: alphaTex(b), b:b };
+}
+function isFS(k){ return k === 'fri' || (k === 'fv' && EX.fv.fs) || (k === 'mk' && EX.mk.fs); }
+function betaTex(b){ if (b <= 0) return '1'; if (b < 6) return Math.pow(2, -b).toFixed(3); return '2^{-' + f1(b) + '}'; }
+function policyTP(k){ var B = budget(k); for (var t = 0; t <= B; t++){ var b = bits(k, t); if (b !== null && b >= EX.bstar) return t; } return null; }
+
+/* per-verifier panels */
+var FRI_PRESETS = [
+  { id:'p128', label:'ethSTARK 128-bit point', set:{ rho:0.25, m:3, jc:true, w:20, s:140 }, logQ:80, paper:'first 77 of 140 queries dead; $2^{-48.9}$ at $t = s$' },
+  { id:'pw0',  label:'$w = 0$', set:{ rho:0.25, m:3, jc:true, w:0, s:140 }, logQ:80, paper:'$t_0 \\approx 103$' },
+  { id:'pw32', label:'$w = 32$', set:{ rho:0.25, m:3, jc:true, w:32, s:140 }, logQ:80, paper:'$t_0 \\approx 62$' },
+  { id:'pm44', label:'$m = 44$', set:{ rho:0.25, m:44, jc:true, w:20, s:140 }, logQ:80, paper:'the first 60 queries buy nothing, for every $m \\ge 44$' }
+];
+var FV_PRESETS = [ { id:'ip', label:'uov-Ip, $T = 45$', T:45 }, { id:'iii', label:'uov-III, $T = 72$', T:72 }, { id:'v', label:'uov-V, $T = 96$', T:96 } ];
+function panelHTML(){
+  var k = EX.sel, h = '';
+  if (k === 'ld'){
+    h += '<h3>Flexible Lamport–Diffie (Con. 1)</h3><div class="formula">$\\alpha_{\\mathrm{prog}}(t) = t/n$, budget $T = n$</div>';
+    h += ctl('pLdN', 'Digest length $n$', 16, 256, 16, EX.ld.n);
+    h += '<div class="chips"><button class="chipbtn" type="button" data-preset="ld256">$n = 256$ (Table 2)</button></div>';
+    h += '<p class="note" style="margin-top:10px">Fresh coins: positions drawn after the signature, so no grinding and no dead zone. $t/n$ is the sharpest declarable curve: an adversary holding a distance-one near-collision attains it. Against a bounded adversary the curve is far better (&sect;5.4).</p>';
+  } else if (k === 'fv'){
+    h += '<h3>Freivalds compiler (Con. 2)</h3><div class="formula">' + (EX.fv.fs ? '$1 - \\min\\{1,\\, Q/q^{t}\\}$, derandomized by Fiat&ndash;Shamir (&sect;4.1)' : '$\\alpha_{\\mathrm{prog}}(t) = 1 - q^{-t}$, budget $T = \\mathrm{rows}(M)$') + '</div>';
+    h += '<div class="ctl" style="margin-bottom:8px"><span class="lbl">Coins</span><div class="seg" role="group" aria-label="Freivalds coins" id="pFvMode"><button type="button" data-m="fresh" aria-pressed="' + (!EX.fv.fs) + '">fresh</button><button type="button" data-m="fs" aria-pressed="' + EX.fv.fs + '">Fiat–Shamir</button></div></div>';
+    h += '<div class="ctl" style="margin-bottom:8px"><span class="lbl">Structure size $q$</span><select id="pFvQ"><option value="16"' + (EX.fv.q === 16 ? ' selected' : '') + '>16</option><option value="256"' + (EX.fv.q === 256 ? ' selected' : '') + '>256 (8 bits per step, Table 2)</option></select></div>';
+    h += '<div class="chips">' + FV_PRESETS.map(function(p){ return '<button class="chipbtn" type="button" data-fv="' + p.T + '" aria-pressed="' + (EX.fv.T === p.T && EX.fv.q === 256) + '">' + p.label + '</button>'; }).join('') + '</div>';
+    h += '<p class="note" style="margin-top:10px">Budgets $T$ are the UOV row counts of Table 2' + (EX.fv.q !== 256 ? '; at $q = ' + EX.fv.q + '$ this is <span class="ours">our evaluation</span>, since Table 2&rsquo;s rows buy 8 bits per step ($q = 256$). ' : '. ') + (EX.fv.fs ? 'This option is a remark in &sect;4.1, not a construction: derandomizing the compiler with Fiat&ndash;Shamir makes its curve vacuous below a dead zone $t_0 \\approx \\log_q Q$ when $q$ is polynomial, and leaves each check as costly as full verification for a public verifier. ' : 'Fresh secret coins drawn per session, or a one-use secret state computed before the claim. A state reused across sessions is outside this curve; Proposition 2 bounds it instead (&sect;5.1). ') + 'The bits shown are the progressive term only; the total advantage adds the base scheme&rsquo;s unforgeability (&sect;5.1).</p>';
+  } else if (k === 'fri'){
+    var f = EX.fri;
+    h += '<h3>Progressive FRI (Con. 4, Thm. 2)</h3><div class="formula">$1 - \\min\\{1,\\, Q\\,2^{-w}\\alpha_\\circ^{t}\\}$, neglecting $\\varepsilon_c(Q)$, which is accurate only when $\\kappa \\gg 2\\log_2 Q$ and $Q\\max_i\\varepsilon_i \\ll 1$ (&sect;5.2)</div>';
+    h += '<div class="chips" style="margin-bottom:10px">' + FRI_PRESETS.map(function(p){ return '<button class="chipbtn" type="button" data-fri="' + p.id + '" aria-pressed="' + friPresetOn(p) + '">' + p.label + '</button>'; }).join('') + '</div>';
+    h += '<div class="ctl" style="margin-bottom:8px"><span class="lbl">Rate $\\rho$</span><select id="pFriRho">' + [0.5, 0.25, 0.125, 0.0625].map(function(r){ return '<option value="' + r + '"' + (f.rho === r ? ' selected' : '') + '>' + (r === 0.5 ? '1/2' : r === 0.25 ? '1/4' : r === 0.125 ? '1/8' : '1/16') + '</option>'; }).join('') + '</select></div>';
+    h += ctl('pFriM', 'Proximity slack $m$ ($\\ge 3$)', 3, 100, 1, f.m);
+    h += '<div class="ctl" style="margin-bottom:8px"><span class="lbl">$\\alpha_\\circ$ from</span><div class="seg" role="group" aria-label="How alpha is set" id="pFriJc"><button type="button" data-j="1" aria-pressed="' + f.jc + '">Johnson cap</button><button type="button" data-j="0" aria-pressed="' + (!f.jc) + '">a chosen $\\delta$</button></div></div>';
+    if (!f.jc) h += ctl('pFriD', 'Proximity parameter $\\delta$', 0.05, 0.95, 'any', f.delta, f.delta.toFixed(3) + (Math.abs(f.delta - 5 / 12) < 1e-9 ? ' = 5/12' : ''));
+    h += ctl('pFriW', 'Proof-of-work $w$ (bits)', 0, 40, 1, f.w);
+    h += ctl('pFriS', 'Queries $s$', 1, 256, 1, f.s);
+    h += ctl('pFriP', 'Provisioning: intended accept step', 1, 256, 1, f.tP);
+    h += '<div id="pFriPaper" class="note" style="margin-top:8px"></div>';
+  } else {
+    h += '<h3>Progressive Merkle batch opening (Con. 5)</h3><div class="formula">' + (EX.mk.fs ? '$\\beta(t,\\delta,Q) = \\min\\{1,\\, Q(1-\\delta)^{t}\\}$' : '$\\beta(t,\\delta) = (1-\\delta)^{t}$') + ', fraction soundness (Def. 8)</div>';
+    h += '<div class="ctl" style="margin-bottom:8px"><span class="lbl">Coins</span><div class="seg" role="group" aria-label="Merkle coins" id="pMkMode"><button type="button" data-m="fresh" aria-pressed="' + (!EX.mk.fs) + '">fresh</button><button type="button" data-m="fs" aria-pressed="' + EX.mk.fs + '">Fiat–Shamir</button></div></div>';
+    h += ctl('pMkD', 'Invalid fraction $\\delta$', 0.01, 0.5, 0.01, EX.mk.delta, f2(EX.mk.delta));
+    h += ctl('pMkB', 'Batch size $B$', 16, 256, 1, EX.mk.B);
+    h += '<p class="note" style="margin-top:10px">The bound is on a batch with at least $\\lceil \\delta B \\rceil$ invalid openings, not on any single opening. The paper fixes no $\\delta$ or $B$; the defaults here are an <span class="ours">illustration</span>. Fresh-coin sessions on one claim compose; in Fiat&ndash;Shamir mode repeating adds nothing (&sect;5.3).</p>';
+  }
+  return h;
+}
+function ctl(id, label, min, max, step, val, shown){
+  return '<div class="ctl" style="margin-bottom:8px"><label for="' + id + '">' + label + ': <span class="val" id="' + id + 'v">' + (shown !== undefined ? shown : val) + '</span></label><input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '"></div>';
+}
+function friPresetOn(p){ var f = EX.fri, s = p.set, pa = Math.sqrt(s.rho) * (1 + 1 / (2 * s.m));
+  return f.rho === s.rho && f.m === s.m && Math.abs(friA() - pa) < 1e-12 && f.w === s.w && f.s === s.s && EX.logQ === p.logQ; }
+function buildPanel(){
+  var P = $('exPanel'); P.innerHTML = panelHTML(); katexRender(P);
+  function on(id, fn){ var n = $(id); if (!n) return; n.addEventListener('input', function(){ fn(this); exUpdate(); }); }
+  on('pLdN', function(n){ EX.ld.n = +n.value; $('pLdNv').textContent = n.value; });
+  on('pFriM', function(n){ EX.fri.m = +n.value; $('pFriMv').textContent = n.value; });
+  on('pFriD', function(n){ EX.fri.delta = +n.value; $('pFriDv').textContent = (+n.value).toFixed(3); });
+  on('pFriW', function(n){ EX.fri.w = +n.value; $('pFriWv').textContent = n.value; });
+  on('pFriS', function(n){ EX.fri.s = +n.value; $('pFriSv').textContent = n.value; });
+  on('pFriP', function(n){ EX.fri.tP = +n.value; $('pFriPv').textContent = n.value; });
+  on('pMkD', function(n){ EX.mk.delta = +n.value; $('pMkDv').textContent = f2(+n.value); });
+  on('pMkB', function(n){ EX.mk.B = +n.value; $('pMkBv').textContent = n.value; });
+  var rho = $('pFriRho'); if (rho) rho.addEventListener('change', function(){ EX.fri.rho = +this.value; buildPanel(); exUpdate(); });
+  var fq = $('pFvQ'); if (fq) fq.addEventListener('change', function(){ EX.fv.q = +this.value; buildPanel(); exUpdate(); });
+  Array.prototype.forEach.call(P.querySelectorAll('[data-preset="ld256"]'), function(b){ b.addEventListener('click', function(){ EX.ld.n = 256; buildPanel(); exUpdate(); }); });
+  Array.prototype.forEach.call(P.querySelectorAll('[data-fv]'), function(b){ b.addEventListener('click', function(){ EX.fv.T = +b.getAttribute('data-fv'); EX.fv.q = 256; buildPanel(); exUpdate(); }); });
+  Array.prototype.forEach.call(P.querySelectorAll('[data-fri]'), function(b){ b.addEventListener('click', function(){
+    var p = FRI_PRESETS.filter(function(x){ return x.id === b.getAttribute('data-fri'); })[0];
+    for (var key in p.set) EX.fri[key] = p.set[key]; EX.logQ = p.logQ; $('exQ').value = p.logQ;
+    buildPanel(); exUpdate(); }); });
+  function modeSeg(id, obj){ var s = $(id); if (!s) return; Array.prototype.forEach.call(s.querySelectorAll('button'), function(b){
+    b.addEventListener('click', function(){ obj.fs = b.getAttribute('data-m') === 'fs'; buildPanel(); exUpdate(); }); }); }
+  modeSeg('pFvMode', EX.fv); modeSeg('pMkMode', EX.mk);
+  var jc = $('pFriJc'); if (jc) Array.prototype.forEach.call(jc.querySelectorAll('button'), function(b){
+    b.addEventListener('click', function(){ EX.fri.jc = b.getAttribute('data-j') === '1'; if (!EX.fri.jc) EX.fri.delta = 1 - friJ(); buildPanel(); exUpdate(); }); });
+}
+function friPaperNote(){
+  var n = $('pFriPaper'); if (!n) return;
+  var f = EX.fri, on = FRI_PRESETS.filter(friPresetOn)[0], d = deadInfo('fri'), a = friA(), J = friJ();
+  var cross = !f.jc && Math.abs((1 - f.delta) - J) < 1e-9;
+  var branch = f.jc ? 'the Johnson cap $\\sqrt{\\rho}(1+\\tfrac{1}{2m})$ of the provable regime, which binds once $\\delta \\ge ' + (1 - J).toFixed(3) + '$' :
+    (cross ? 'the crossover $\\delta = ' + (1 - J).toFixed(3) + '$, where the $1-\\delta$ branch and the Johnson cap agree' :
+    ((1 - f.delta) > J ? 'the $1-\\delta$ branch' : 'the Johnson cap $\\sqrt{\\rho}(1+\\tfrac{1}{2m})$'));
+  var bigM = Math.abs(a - J) < 1e-12 && f.rho === 0.25 && f.m >= 44 && f.w === 20 && EX.logQ === 80;
+  var here = '<strong>Here</strong> <span class="ours">computed</span>: $t_0 = ' + f2(d.t0) + '$, so queries $1$&ndash;$' + d.dead + '$ are dead and query ' + (d.dead + 1) + ' is the first with a guarantee.';
+  var s = '$\\alpha_\\circ = ' + a.toFixed(4) + (Math.abs(a - 7 / 12) < 1e-12 ? ' = 7/12' : '') + '$, from ' + branch + '. ';
+  if (on) s += '<strong>Paper (&sect;5.2):</strong> ' + on.paper + '. ' + here + ' The paper quotes $t_0$ rounded in its $w$ sweep and counts dead queries elsewhere; both are shown here.';
+  else if (bigM) s += '<strong>Paper (&sect;5.2):</strong> the first 60 queries buy nothing, for every $m \\ge 44$. ' + here;
+  else if (f.rho !== 0.25) s += '<span class="ours">our evaluation</span> of Theorem 2&rsquo;s formula off the paper&rsquo;s rate $\\rho = 1/4$. The paper reports numbers only at $\\rho = 1/4$.';
+  else s += '<span class="ours">our evaluation</span> of Theorem 2&rsquo;s formula; this is not one of the paper&rsquo;s stated points, so no 128-bit claim applies.';
+  setMath(n, s);
+}
+/* chart */
+var EXD = null;
+function exDraw(){
+  var svg = $('exSvg'); clear(svg);
+  var W = boxW(svg), narrow = W < 520, H = narrow ? 260 : 300;
+  var ml = 34, mr = narrow ? 60 : 104, mt = 24, mb = 32;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var pw = W - ml - mr, ph = H - mt - mb;
+  function X(t){ return ml + pw * t / XMAX; } function Y(b){ return mt + ph * (1 - Math.min(b, YMAX) / YMAX); }
+  var mono = css('--mono'), muted = css('--ink-muted');
+  var defs = el('defs', {});
+  var cp = el('clipPath', { id:'exClip' }); cp.appendChild(el('rect', { x:ml - 2, y:mt - 2, width:pw + 4, height:ph + 4 })); defs.appendChild(cp);
+  var pat = el('pattern', { id:'hatch2', width:6, height:6, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)' });
+  pat.appendChild(el('line', { x1:0, y1:0, x2:0, y2:6, stroke:css('--dead'), 'stroke-width':1.5 })); defs.appendChild(pat);
+  svg.appendChild(defs);
+  [0, 16, 32, 48, 64].forEach(function(b){
+    svg.appendChild(el('line', { x1:ml, x2:ml + pw, y1:Y(b), y2:Y(b), stroke:css('--grid') }));
+    svg.appendChild(el('text', { x:ml - 6, y:Y(b) + 4, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:muted }, b));
+  });
+  (narrow ? [0, 64, 128, 192, 256] : [0, 32, 64, 96, 128, 160, 192, 224, 256]).forEach(function(t){
+    svg.appendChild(el('text', { x:X(t), y:H - 14, 'text-anchor':'middle', 'font-family':mono, 'font-size':11, fill:muted }, t));
+  });
+  svg.appendChild(el('text', { x:ml + pw, y:H - 1, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:muted }, 'steps t'));
+  svg.appendChild(el('text', { x:0, y:11, 'font-family':mono, 'font-size':11, fill:muted }, 'bits'));
+  /* dead zone of the selected verifier */
+  var d = deadInfo(EX.sel);
+  if (d && d.dead > 0){
+    svg.appendChild(el('rect', { x:X(0), y:mt, width:X(Math.min(d.dead, XMAX)) - X(0), height:ph, fill:'url(#hatch2)', opacity:0.45 }));
+    svg.appendChild(el('text', { x:X(Math.min(d.dead, XMAX) / 2), y:mt + ph * 0.42, 'text-anchor':'middle', 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700 }, 'dead zone'));
+  }
+  var g = el('g', { 'clip-path':'url(#exClip)' }); svg.appendChild(g);
+  var labels = [];
+  SERIES.forEach(function(S){
+    var B = Math.min(budget(S.key), XMAX), pts = [], exitT = null, lastT = 0, lastB = 0;
+    for (var t = 0; t <= B; t++){
+      var b = bits(S.key, t); if (b === null) break;
+      if (b === Infinity) break;
+      if (b > YMAX){ var tc = t === 0 ? 0 : (t - 1) + (YMAX - lastB) / (b - lastB); pts.push(X(tc) + ',' + Y(YMAX)); exitT = tc; break; }
+      pts.push(X(t) + ',' + Y(b));
+      lastT = t; lastB = b;
+    }
+    var on = S.key === EX.sel;
+    g.appendChild(el('polyline', { points:pts.join(' '), fill:'none', stroke:css(S.color), 'stroke-width': on ? 2.6 : 1.6, opacity: on ? 1 : 0.45, 'stroke-linejoin':'round', 'data-key':S.key }));
+    var ly, lx;
+    if (exitT !== null){ lx = X(exitT); ly = mt - 9; }
+    else { lx = X(lastT); ly = Y(lastB); }
+    labels.push({ S:S, x:lx, y:ly, off: exitT !== null, on:on });
+  });
+  /* direct labels: ink text with a colour swatch, nudged apart */
+  labels.sort(function(a, b){ return a.y - b.y; });
+  for (var i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 14) labels[i].y = labels[i - 1].y + 14;
+  labels.forEach(function(Lb){
+    var tx = Math.min(Lb.x + 8, ml + pw + 6);
+    if (Lb.off) tx = Lb.x + 6;
+    if (tx > W - (narrow ? 50 : 96)) tx = W - (narrow ? 50 : 96);
+    svg.appendChild(el('line', { x1:tx, x2:tx + 9, y1:Lb.y, y2:Lb.y, stroke:css(Lb.S.color), 'stroke-width':3 }));
+    svg.appendChild(el('text', { x:tx + 12, y:Lb.y + 4, 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight': Lb.on ? 700 : 400 }, (narrow ? Lb.S.short : Lb.S.name) + (Lb.off ? ' ↑' : '')));
+  });
+  /* stop marker */
+  var tm = Math.min(EX.t, XMAX);
+  var mk = el('line', { x1:X(tm), x2:X(tm), y1:mt, y2:mt + ph, stroke:css('--ink-1'), 'stroke-width':1.2, 'stroke-dasharray':'4 3', id:'exStop' });
+  svg.appendChild(mk);
+  var sb = bits(EX.sel, EX.t), dot = null;
+  if (sb !== null && sb !== Infinity && sb <= YMAX){ dot = el('circle', { cx:X(tm), cy:Y(sb), r:5, fill:css(SERIES.filter(function(s){ return s.key === EX.sel; })[0].color), stroke:css('--surface-1'), 'stroke-width':2, id:'exDot' }); svg.appendChild(dot); }
+  /* hover layer */
+  var cross = el('line', { x1:0, x2:0, y1:mt, y2:mt + ph, stroke:css('--axis'), 'stroke-width':1, opacity:0 }); svg.appendChild(cross);
+  var hit = el('rect', { x:ml, y:mt, width:pw, height:ph, fill:'transparent', style:'cursor:crosshair' }); svg.appendChild(hit);
+  function tAt(evt){ var r = svg.getBoundingClientRect(), sx = (evt.clientX - r.left) * (W / r.width); return Math.max(0, Math.min(XMAX, Math.round((sx - ml) / pw * XMAX))); }
+  hit.addEventListener('pointermove', function(evt){
+    var t = tAt(evt); cross.setAttribute('x1', X(t)); cross.setAttribute('x2', X(t)); cross.setAttribute('opacity', 1);
+    var h = '<b>t = ' + t + '</b>';
+    SERIES.forEach(function(S){ var b = bits(S.key, t);
+      h += '<div class="row"><span class="swatch" style="background:' + css(S.color) + '"></span>' + S.name + ': ' + (b === null ? 'past budget' : (b === Infinity ? 'full verification' : bitsTxt(b) + ' bits')) + '</div>'; });
+    showTip(evt, h);
+  });
+  hit.addEventListener('pointerleave', function(){ cross.setAttribute('opacity', 0); hideTip(); });
+  hit.addEventListener('click', function(evt){ EX.t = tAt(evt); $('exT').value = EX.t; exUpdate(); });
+  EXD = { X:X, Y:Y };
+  var ul = $('exLegend'); ul.innerHTML = '';
+  SERIES.forEach(function(S){ var li = document.createElement('li'); li.innerHTML = '<span class="swatch" style="background:' + css(S.color) + '"></span>' + S.name + (S.key === EX.sel ? ' (editing)' : ''); ul.appendChild(li); });
+}
+function exReadouts(){
+  var k = EX.sel, S = SERIES.filter(function(s){ return s.key === k; })[0], B = budget(k), t = Math.min(EX.t, B);
+  var a = alphaOf(k, t), d = deadInfo(k), thr = policyTP(k), tp = thr === null ? B : thr, mk = k === 'mk', h = '';
+  /* public code (Def. 1): counter, failure flag, declared confidence; for batch openings the fraction bound */
+  var code = t === 0 ? '\\mathcal{C}_0 = (\\bot, \\bot)' :
+    '(' + t + ',\\ \\mathsf{fail} = 0,\\ ' + (mk ? '\\beta = ' + betaTex(a.b) : a.tex) + ')';
+  var what = t === 0 ? 'No step has run. ' + (k === 'mk' && !EX.mk.fs ? 'In fresh-coin mode there is no $V_0$; the first invocation runs $V_1$.' : (k === 'fv' && EX.fv.fs ? '' : 'The first invocation runs $V_0$ and $V_1$ together.')) :
+    (a.b === Infinity ? 'Full verification: the base scheme&rsquo;s unforgeability takes over.' :
+     (mk ? 'A bound on a batch with at least $\\lceil \\delta B \\rceil$ invalid openings, at $\\delta = ' + f2(EX.mk.delta) + '$: ' : 'That is ') + bitsTxt(a.b) + ' bits <span class="ours">computed</span>' +
+     (k === 'fv' ? ', the progressive term only; the base scheme&rsquo;s unforgeability adds' : '') + '.');
+  h += '<div class="ro focus"><div class="k">' + (t === 0 ? 'Confirmation code' : 'Public code $\\mathcal{C}^{\\mathrm{pub}}_{t}$') + ', ' + S.name + '</div><div class="v" style="font-size:1.05rem">$' + code + '$</div><p>' + (EX.t > B ? 'Stopped at the budget $T = ' + B + '$; further calls are absorbing. ' : '') + what + '</p></div>';
+  /* the threshold policy; an admissible policy accepts at T when no step failed (Def. 1) */
+  var dec = t >= tp ? 'accept' : 'continue';
+  var ptxt = thr === null ? 'The threshold is not reached before the budget. An admissible policy still accepts at $T = ' + B + '$ when no step failed (Def. 1), so here $t_P = T$.' :
+    'It first accepts at step ' + thr + ' if no step failed, so $t_P = ' + thr + '$ (Thm. 1). Any failure means reject.';
+  h += '<div class="ro"><div class="k">$\\mathtt{ProcessC}$, threshold ' + EX.bstar + ' bits</div><div class="v">' + dec + '</div><p>' + ptxt + '</p></div>';
+  /* what the policy guarantees (Thm. 1): the bound attaches to t_P, not to the stopping step */
+  var bp = bits(k, tp), gv, gtxt;
+  if (bp === Infinity){ gv = '$N \\cdot \\nu(\\lambda)$'; gtxt = 'At $t_P = T$, $\\alpha_{\\mathrm{prog}}(T) = 1$, so over $N$ fresh sessions Thm. 1(1) leaves $N\\,\\nu(\\lambda)$, the base scheme&rsquo;s term.'; }
+  else if (mk){ gv = '$\\beta = ' + betaTex(bp) + '$' + (bp <= 0 ? ' (vacuous)' : ''); gtxt = 'At $t_P = ' + tp + '$, for a batch with at least $\\lceil \\delta B \\rceil$ invalid openings' + (EX.mk.fs ? ', for all claims jointly (Def. 8; Thm. 1)' : ', per session (Def. 8)') + '.'; }
+  else if (k === 'fv' && EX.fv.fs){ gv = bp <= 0 ? 'vacuous' : '$2^{-' + f1(bp) + '}$'; gtxt = 'Fiat&ndash;Shamir pays for $Q$ already, so repeated presentations add nothing (&sect;4.2): some session accepts a forgery with probability at most $1 - \\alpha_{\\mathrm{prog}}(t_P, Q)$ plus the base scheme&rsquo;s unforgeability. <span class="ours">our extrapolation</span>: Thm. 1(3) is stated for progressively sound Fiat&ndash;Shamir arguments, and &sect;4.1 gives this curve but no soundness proof.'; }
+  else if (isFS(k)){ gv = bp <= 0 ? 'vacuous' : '$2^{-' + f1(bp) + '}$'; gtxt = 'Some session accepts a false statement with probability at most $1 - \\alpha_{\\mathrm{prog}}(t_P, Q)$, whatever the number of sessions $N$ (Thm. 1(3)).'; }
+  else { gv = '$N \\cdot ' + (bp <= 0 ? '1' : '2^{-' + f1(bp) + '}') + '$'; gtxt = 'Over $N$ fresh sessions, a forgery is accepted with probability at most $N\\,(1 - \\alpha_{\\mathrm{prog}}(t_P) + \\nu(\\lambda))$ (Thm. 1(1)).'; }
+  h += '<div class="ro"><div class="k">What the policy guarantees</div><div class="v">' + gv + '</div><p>' + gtxt + ' The bound attaches to $t_P$, not to the step where a session stops (&sect;4.2). <span class="ours">computed</span></p></div>';
+  if (d) h += '<div class="ro"><div class="k">Dead zone</div><div class="v">' + (d.dead > 0 ? '1&ndash;' + d.dead : 'none') + '</div><p>$t_0 = ' + f2(d.t0) + '$ <span class="ours">computed</span>. ' + (d.dead > 0 ? 'Steps up to ' + d.dead + ' carry ' + (mk ? '$\\beta = 1$, a vacuous bound.' : '$\\alpha_{\\mathrm{prog}} = 0$.') : '') + '</p></div>';
+  else h += '<div class="ro"><div class="k">Dead zone</div><div class="v">none</div><p>' + ({ ld:'Positions are drawn after the signature, so there is no grinding term (&sect;5.1).',
+    fv:'Coins are fresh per session, or a one-use state, so there is no grinding term. A reused state is bounded by Prop. 2 instead.',
+    mk:'Fresh-coin indices are drawn after the claim, so there is no grinding term (&sect;5.3).' })[k] + '</p></div>';
+  if (k === 'fri'){
+    var x = friX(), tq = EX.fri.tP, wNeed = EX.logQ - tq * x, wThr = EX.logQ + EX.bstar - tq * x;
+    h += '<div class="ro"><div class="k">Provisioning, intended accept step ' + tq + '</div><div class="v">$w \\ge ' + f2(Math.max(0, wNeed)) + '$</div><p>For any guarantee at step ' + tq + ': $w \\ge \\log_2 Q - ' + tq + ' \\log_2(1/\\alpha_\\circ)$ and $s \\ge ' + tq + '$ (&sect;5.2&rsquo;s provisioning rule, evaluated at this intended accept step). ' +
+      (EX.fri.s < tq ? '<span class="warn">Needs $s \\ge ' + tq + '$.</span> ' : (EX.fri.w >= wNeed ? 'The current $w = ' + EX.fri.w + '$ suffices. ' : 'The current $w = ' + EX.fri.w + '$ falls short. ')) +
+      'To reach the ' + EX.bstar + '-bit threshold by that step: $w \\ge ' + f2(Math.max(0, wThr)) + '$ <span class="ours">our evaluation</span>.</p></div>';
+  }
+  setMath($('exRO'), h);
+  /* keep preset chips truthful while sliders move */
+  Array.prototype.forEach.call(document.querySelectorAll('#exPanel [data-fri]'), function(btn){
+    var pr = FRI_PRESETS.filter(function(x){ return x.id === btn.getAttribute('data-fri'); })[0]; btn.setAttribute('aria-pressed', friPresetOn(pr) ? 'true' : 'false'); });
+  Array.prototype.forEach.call(document.querySelectorAll('#exPanel [data-fv]'), function(btn){
+    btn.setAttribute('aria-pressed', (EX.fv.T === +btn.getAttribute('data-fv') && EX.fv.q === 256) ? 'true' : 'false'); });
+  $('exTv').textContent = EX.t; $('exQv').textContent = EX.logQ; $('exBv').textContent = EX.bstar;
+  friPaperNote();
+}
+function exTable(){
+  var ts = [0, 1, 4, 8, 10, 32, 60, 61, 77, 78, 100, 128, 140, 200, 255, 256], h = '<thead><tr><th class="num">$t$</th>';
+  SERIES.forEach(function(S){ h += '<th class="num">' + S.name + '</th>'; }); h += '</tr></thead><tbody>';
+  ts.forEach(function(t){ h += '<tr' + (t === EX.t ? ' class="hl"' : '') + '><td class="num">' + t + '</td>';
+    SERIES.forEach(function(S){ var b = bits(S.key, t); h += '<td class="num">' + (b === null ? '—' : (b === Infinity ? 'full' : bitsTxt(b))) + '</td>'; });
+    h += '</tr>'; });
+  setMath($('exTable'), h + '</tbody>');
+}
+function exUpdate(){ exDraw(); exReadouts(); exTable(); }
+Array.prototype.forEach.call(document.querySelectorAll('#exSel button'), function(b){
+  b.addEventListener('click', function(){
+    EX.sel = b.getAttribute('data-k');
+    Array.prototype.forEach.call(document.querySelectorAll('#exSel button'), function(o){ o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+    buildPanel(); exUpdate();
+  });
+});
+$('exT').addEventListener('input', function(){ settle('exEnter'); EX.t = +this.value; exUpdate(); });
+$('exQ').addEventListener('input', function(){ EX.logQ = +this.value; buildPanel(); exUpdate(); });
+$('exB').addEventListener('input', function(){ EX.bstar = +this.value; exReadouts(); });
+
+/* =======================================================================
+   4. Order matters (Prop. 3)
+   ===================================================================== */
+var OR = { s:140, delta:5/12, t:60, seed:3, u:null };
+function orSample(){ var R = rng(OR.seed * 104729 + OR.s); OR.u = []; for (var i = 0; i < OR.s; i++) OR.u.push(R()); }
+function orDraw(){
+  var svg = $('orBar'); clear(svg);
+  var W = boxW(svg), ml = 4, mr = 4, H = 118, bx = ml, bw = W - ml - mr, by = 52, bh = 16;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var mono = css('--mono'), cut = 1 - OR.delta;
+  var defs = el('defs', {}); var pat = el('pattern', { id:'hatch3', width:6, height:6, patternUnits:'userSpaceOnUse', patternTransform:'rotate(45)' });
+  pat.appendChild(el('rect', { width:6, height:6, fill:css('--plane') }));
+  pat.appendChild(el('line', { x1:0, y1:0, x2:0, y2:6, stroke:css('--critical'), 'stroke-width':1.6 })); defs.appendChild(pat); svg.appendChild(defs);
+  svg.appendChild(el('rect', { x:bx, y:by, width:bw * cut, height:bh, fill:css('--idle'), stroke:css('--axis') }));
+  svg.appendChild(el('rect', { x:bx + bw * cut, y:by, width:bw * OR.delta, height:bh, fill:'url(#hatch3)', stroke:css('--critical') }));
+  svg.appendChild(el('text', { x:bx + bw * cut + 3, y:by + bh + 28, 'font-family':mono, 'font-size':11, fill:css('--ink-1') }, 'disagrees (top δ)'));
+  svg.appendChild(el('text', { x:bx, y:by + bh + 28, 'font-family':mono, 'font-size':11, fill:css('--ink-muted') }, 'agrees with the code'));
+  var order = OR.u.map(function(v, i){ return { v:v, i:i }; });
+  var sorted = order.slice().sort(function(a, b){ return a.v - b.v; });
+  var der = order.slice(0, OR.t), srt = sorted.slice(0, OR.t);
+  OR.u.forEach(function(v){ svg.appendChild(el('line', { x1:bx + bw * v, x2:bx + bw * v, y1:by, y2:by + bh, stroke:css('--ink-muted'), 'stroke-width':1, opacity:0.55 })); });
+  function dots(list, y){ list.forEach(function(o){ var bad = o.v >= cut, x = bx + bw * o.v;
+    if (bad) svg.appendChild(el('text', { x:x, y:y + 4, 'text-anchor':'middle', 'font-family':mono, 'font-size':11, fill:css('--critical'), 'font-weight':700 }, '✕'));
+    else svg.appendChild(el('circle', { cx:x, cy:y, r:2.6, fill:css('--s3') })); }); }
+  dots(der, by - 12); dots(srt, by + bh + 12);
+  svg.appendChild(el('text', { x:bx, y:by - 26, 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700 }, 'derivation order: first ' + OR.t + ' checks'));
+  svg.appendChild(el('text', { x:bx, y:H - 2, 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700 }, 'sorted order: ' + OR.t + ' smallest positions'));
+  var derFail = -1; for (var j = 0; j < der.length; j++) if (der[j].v >= cut){ derFail = j + 1; break; }
+  var srtFail = srt.some(function(o){ return o.v >= cut; });
+  $('orDer').textContent = derFail < 0 ? 'passes' : 'fails';
+  $('orDerP').textContent = derFail < 0 ? 'None of the first ' + OR.t + ' checks hit the corrupted region.' : 'Check #' + derFail + ' lands in the corrupted region.';
+  $('orSrt').textContent = srtFail ? 'fails' : 'passes';
+  var nBad = OR.u.filter(function(v){ return v >= cut; }).length;
+  $('orSrtP').textContent = nBad + ' of the ' + OR.s + ' samples are corrupted, so the ' + (OR.s - nBad) + ' smallest are clean' + (srtFail ? '; the prefix reaches past them.' : '; the prefix of ' + OR.t + ' stays among them.');
+  svg.setAttribute('data-der', derFail < 0 ? 'pass' : 'fail'); svg.setAttribute('data-srt', srtFail ? 'fail' : 'pass');
+  var ul = $('orLegend'); ul.innerHTML = '';
+  [['dot', 'checked, clean'], ['x', 'checked, corrupted: the check fails'], ['tick', 'a sampled position']].forEach(function(it){
+    var li = document.createElement('li'); var s = el('svg', { width:13, height:13, viewBox:'0 0 13 13' });
+    if (it[0] === 'dot') s.appendChild(el('circle', { cx:6.5, cy:6.5, r:3.5, fill:css('--s3') }));
+    else if (it[0] === 'x') s.appendChild(el('text', { x:6.5, y:11, 'text-anchor':'middle', 'font-size':12, fill:css('--critical'), 'font-weight':700 }, '✕'));
+    else s.appendChild(el('line', { x1:6.5, x2:6.5, y1:1, y2:12, stroke:css('--ink-muted'), 'stroke-width':1.5 }));
+    li.appendChild(s); li.appendChild(document.createTextNode(it[1])); ul.appendChild(li);
+  });
+}
+function orBits(t){ var x = -LOG2(1 - OR.delta); return { der: t * x, srt: -log2BinCdf(OR.s, OR.delta, OR.s - t) }; }
+function orCurve(){
+  var svg = $('orCurve'); clear(svg);
+  var W = boxW(svg), H = isNarrow() ? 200 : 230, ml = 40, mr = isNarrow() ? 70 : 120, mt = 12, mb = 30;
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+  var pw = W - ml - mr, ph = H - mt - mb, x1 = -LOG2(1 - OR.delta), top = OR.s * x1;
+  var step = [2, 5, 10, 20, 25, 50, 100, 200].filter(function(v){ return top / v <= 5; })[0] || 500, yMax = Math.max(step, Math.ceil(top / step) * step);
+  function X(t){ return ml + pw * t / OR.s; } function Y(b){ return mt + ph * (1 - Math.min(b, yMax) / yMax); }
+  var mono = css('--mono'), muted = css('--ink-muted');
+  var tk = []; for (var bb = 0; bb <= yMax + 1e-9; bb += step) tk.push(bb);
+  tk.forEach(function(b){
+    svg.appendChild(el('line', { x1:ml, x2:ml + pw, y1:Y(b), y2:Y(b), stroke:css('--grid') }));
+    svg.appendChild(el('text', { x:ml - 6, y:Y(b) + 4, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:muted }, b)); });
+  [0, Math.round(OR.s / 2), OR.s].forEach(function(t){ svg.appendChild(el('text', { x:X(t), y:H - 12, 'text-anchor':'middle', 'font-family':mono, 'font-size':11, fill:muted }, t)); });
+  svg.appendChild(el('text', { x:ml + pw, y:H - 1, 'text-anchor':'end', 'font-family':mono, 'font-size':11, fill:muted }, 'prefix length t'));
+  var pd = [], ps = [];
+  for (var t = 0; t <= OR.s; t++){ var b = orBits(t); pd.push(X(t) + ',' + Y(b.der)); ps.push(X(t) + ',' + Y(b.srt)); }
+  svg.appendChild(el('polyline', { points:pd.join(' '), fill:'none', stroke:css('--s3'), 'stroke-width':2 }));
+  svg.appendChild(el('polyline', { points:ps.join(' '), fill:'none', stroke:css('--s3'), 'stroke-width':2, 'stroke-dasharray':'6 4' }));
+  var bt = orBits(OR.t);
+  svg.appendChild(el('line', { x1:X(OR.t), x2:X(OR.t), y1:mt, y2:mt + ph, stroke:css('--ink-1'), 'stroke-width':1.2, 'stroke-dasharray':'4 3' }));
+  svg.appendChild(el('circle', { cx:X(OR.t), cy:Y(bt.der), r:4.5, fill:css('--s3'), stroke:css('--surface-1'), 'stroke-width':2 }));
+  svg.appendChild(el('circle', { cx:X(OR.t), cy:Y(bt.srt), r:4.5, fill:css('--plane'), stroke:css('--s3'), 'stroke-width':2 }));
+  var midT = Math.round(OR.s * 0.55), bm = orBits(midT);
+  var lx = ml + pw + 6;
+  svg.appendChild(el('text', { x:lx, y:Y(orBits(OR.s).der) + 4, 'font-family':mono, 'font-size':11, fill:css('--ink-1') }, 'both: ' + f1(orBits(OR.s).der)));
+  svg.appendChild(el('text', { x:Math.min(X(midT) + 6, ml + pw - 60), y:Y(bm.der) - 8, 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700 }, 'derivation'));
+  svg.appendChild(el('text', { x:X(midT) + 6, y:Math.min(Y(bm.srt) - 6, mt + ph - 6), 'font-family':mono, 'font-size':11, fill:css('--ink-1'), 'font-weight':700 }, 'sorted'));
+  var ul = $('orCLegend'); ul.innerHTML = '';
+  [['', 'derivation order: $(1-\\delta)^{t}$'], ['6 4', 'sorted order: $\\Pr[\\mathrm{Bin}(s,\\delta) \\le s-t]$']].forEach(function(it){
+    var li = document.createElement('li'); var s = el('svg', { width:22, height:8, viewBox:'0 0 22 8' });
+    s.appendChild(el('line', { x1:1, x2:21, y1:4, y2:4, stroke:css('--s3'), 'stroke-width':2.5, 'stroke-dasharray':it[0] || null }));
+    li.appendChild(s); var sp = document.createElement('span'); sp.innerHTML = it[1]; li.appendChild(sp); ul.appendChild(li); });
+  katexRender(ul);
+  var pDer = Math.pow(2, -bt.der), pSrt = Math.pow(2, -bt.srt);
+  function fmtP(pp, bb){ return pp > 0.999 ? '\\gt 0.999' : (pp < 1e-4 ? '2^{-' + f2(bb) + '}' : pp.toPrecision(3)); }
+  setMath($('orProb'), 'sorted $' + fmtP(pSrt, bt.srt) + '$ · derivation $' + fmtP(pDer, bt.der) + '$');
+  setMath($('orProbP'), 'The word is caught by the derivation-order prefix except with probability $(1-\\delta)^{t}$. The sorted prefix proves ' + f2(bt.srt) + ' bits here, against ' + f2(bt.der) + '. <span class="ours">computed</span>');
+  var ts = [1, 10, 20, 40, 60, Math.round((1 - OR.delta) * OR.s), Math.round(OR.s * 0.8), OR.s].filter(function(v, i, a){ return v >= 1 && v <= OR.s && a.indexOf(v) === i; }).sort(function(a, b){ return a - b; });
+  var h = '<thead><tr><th class="num">$t$</th><th class="num">derivation: bits</th><th class="num">sorted: bits</th></tr></thead><tbody>';
+  ts.forEach(function(t){ var b = orBits(t); h += '<tr' + (t === OR.t ? ' class="hl"' : '') + '><td class="num">' + t + '</td><td class="num">' + f2(b.der) + '</td><td class="num">' + f2(b.srt) + '</td></tr>'; });
+  setMath($('orTable'), h + '</tbody>');
+}
+function orUpdate(resample){ if (resample || !OR.u) orSample(); $('orSv').textContent = OR.s; $('orDv').textContent = OR.delta.toFixed(3) + (Math.abs(OR.delta - 5/12) < 1e-9 ? ' = 5/12' : ''); $('orTv').textContent = OR.t; orDraw(); orCurve(); }
+$('orS').addEventListener('input', function(){ OR.s = +this.value; var tt = $('orT'); tt.max = OR.s; if (OR.t > OR.s){ OR.t = OR.s; tt.value = OR.s; } orUpdate(true); });
+$('orD').addEventListener('input', function(){ OR.delta = +this.value; orUpdate(false); });
+$('orT').addEventListener('input', function(){ OR.t = +this.value; orUpdate(false); });
+$('orRoll').addEventListener('click', function(){ OR.seed++; orUpdate(true); });
+
+/* =======================================================================
+   Appendix calculators
+   ===================================================================== */
+function ruUpdate(){
+  var q = +$('ruQ').value, t = +$('ruT').value, N = +$('ruN').value;
+  $('ruN').max = q; if (N > q){ N = q; $('ruN').value = q; }
+  $('ruTv').textContent = t; $('ruNv').textContent = N;
+  var h = '';
+  /* one-bit bound of Boschini et al. Thm 1 with k = t rows and q_V = N - 1 */
+  var qv = N - 1, lOne = LOG2(qv + 1) - (t * LOG2(q) + LOG2(1 - qv / Math.pow(q, t)));
+  var l1 = log2Binom(N + t - 1, t) - t * LOG2(q - N + 1);
+  var l2 = t * (LOG2(N) - LOG2(q - N + 1));
+  var att = q * t * (t + 1) / 2 + t * q * q / ((q - 1) * (q - 1));
+  var lOneAtt = LOG2(att + 1) - (t * LOG2(q) + LOG2(Math.max(1e-300, 1 - att / Math.pow(q, t))));
+  function fmtL(l){ return l >= 0 ? '$\\ge 1$ (vacuous)' : '$2^{' + f1(l) + '}$'; }
+  h += '<div class="ro"><div class="k">One bit, all $k$ rows always checked</div><div class="v">' + fmtL(lOne) + '</div><p>$(q_V+1)/(q^{k}-q_V)$ of Boschini et al., Thm. 1, with $q_V = N-1$; efficient, not progressive.</p></div>';
+  h += '<div class="ro focus"><div class="k">Item 1: first failing row leaks</div><div class="v">' + fmtL(l1) + '</div><p>$\\binom{N+t-1}{t}(q-N+1)^{-t}$</p></div>';
+  h += '<div class="ro"><div class="k">Item 2: every row leaks</div><div class="v">' + fmtL(l2) + '</div><p>$\\bigl(N/(q-N+1)\\bigr)^{t}$</p></div>';
+  h += '<div class="ro"><div class="k">Item 3: attack, one accept bit</div><div class="v">$2^{' + f1(LOG2(att)) + '}$ sessions</div><p>expected, below $q\\,t(t+1)/2 + t\\,q^{2}/(q-1)^{2}$; there the one-bit bound is ' + fmtL(lOneAtt) + '.</p></div>';
+  setMath($('ruRO'), h);
+  var need = null; for (var k = 1; k <= 64; k++){ if (log2Binom(N + k - 1, k) - k * LOG2(q - N + 1) <= -64){ need = k; break; } }
+  setMath($('ruNote'), 'All values <span class="ours">computed</span>. To keep item 1 at or below $2^{-64}$ for these $N$ sessions you need ' + (need ? '$k = t = ' + need + '$ rows' : 'more than 64 rows') + '. The paper&rsquo;s example ($q = 256$, $k = t = 8$, $N = 49$): one bit $2^{-58.4}$, item 1 $2^{-31.2}$, item 2 $2^{-16.7}$, attack after about $2^{13.2}$ sessions where the one-bit bound is still $2^{-50.8}$; 15 rows give $2^{-64}$ for 49 claims (&sect;5.1). Items 1 and 2 are upper bounds valid for $N \\le q$; the attack uses more than $q$ sessions, so it does not sandwich them, and where the truth lies is open.');
+}
+['ruQ', 'ruT', 'ruN'].forEach(function(id){ $(id).addEventListener('input', ruUpdate); $(id).addEventListener('change', ruUpdate); });
+$('ruPreset').addEventListener('click', function(){ $('ruQ').value = 256; $('ruT').value = 8; $('ruN').max = 256; $('ruN').value = 49; ruUpdate(); });
+function poUpdate(){
+  var n = +$('poN').value, N = +$('poS').value; $('poNv').textContent = n; $('poSv').textContent = N;
+  var exact = 1 - Math.pow(1 - 1 / n, N), bound = N / n;
+  setMath($('poRO'), '<div class="ro focus"><div class="k">Accepted by some session</div><div class="v">' + exact.toFixed(4) + '</div><p>$1 - (1-1/n)^{N}$ <span class="ours">computed</span></p></div>' +
+    '<div class="ro"><div class="k">Theorem 1 bound</div><div class="v">' + (bound >= 1 ? '≥ 1 (vacuous)' : bound.toFixed(4)) + '</div><p>$N\\,(1-\\alpha_{\\mathrm{prog}}(t_P)) = N/n$. Paper, $n = 256$, $N = 16$: $0.061$ against $0.0625$.</p></div>');
+}
+['poN', 'poS'].forEach(function(id){ $(id).addEventListener('input', poUpdate); });
+$('bibCopy').addEventListener('click', function(){
+  var txt = $('bibtex').textContent, btn = this;
+  function done(){ btn.textContent = 'Copied'; setTimeout(function(){ btn.textContent = 'Copy BibTeX'; }, 1500); }
+  try { navigator.clipboard.writeText(txt).then(done, function(){ selectBib(); }); } catch(e){ selectBib(); }
+  function selectBib(){ var r = document.createRange(); r.selectNodeContents($('bibtex')); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected: copy with your keyboard'; }
+});
+
+/* =======================================================================
+   Boot, entrances, resize
+   ===================================================================== */
+function drawAll(){ puzDraw(); puzCurve(); grRun(false); buildPanel(); exUpdate(); orUpdate(false); ruUpdate(); poUpdate(); }
+puzGuessUI();
+drawAll();
+/* Entrances: content is complete at rest; when a chart first scrolls into view its
+   moving part replays (the grinding rows fill, the stop marker sweeps to t). */
+var ENTER = {
+  why: function(){ grRun(true); },
+  sandbox: function(){ var target = EX.t; run('exEnter', 900, function(p){ EX.t = Math.round(lerp(0, target, p)); $('exT').value = EX.t; exDraw(); exReadouts(); }, function(){ EX.t = target; $('exT').value = target; exUpdate(); }); }
+};
+var hasIO = ('IntersectionObserver' in window) && !REDUCED;
+if (hasIO){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target); if (ENTER[en.target.id]) ENTER[en.target.id]();
+    });
+  }, { threshold:0.18 });
+  ['why', 'sandbox'].forEach(function(id){ io.observe($(id)); });
+}
+var lastW = window.innerWidth, rT = null;
+window.addEventListener('resize', function(){
+  if (rT) clearTimeout(rT);
+  rT = setTimeout(function(){ if (Math.abs(window.innerWidth - lastW) < 2) return; lastW = window.innerWidth; Object.keys(ANIMS).forEach(settle); drawAll(); }, 120);
+});
+window.addEventListener('load', function(){ katexRender(document.body); });
+</script>
+</body>
+</html>
